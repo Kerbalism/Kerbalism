@@ -223,18 +223,18 @@ namespace KERBALISM
 				resNameText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 5, 0);
 				resNameText.TopTransform.SetSizeDelta(95, 16);
 
-				resRateText = new KsmGuiText(this, "", null, TextAlignmentOptions.Left);
+				resRateText = new KsmGuiText(this, "", null, TextAlignmentOptions.Right);
 				resRateText.TextComponent.color = Lib.KolorToColor(isInput ? Lib.Kolor.NegRate : Lib.Kolor.PosRate);
 				resRateText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 105, 0);
 				resRateText.TopTransform.SetSizeDelta(65, 16);
 
-				resStatusText = new KsmGuiText(this, "", null, TextAlignmentOptions.Left);
+				resStatusText = new KsmGuiText(this, "", null, TextAlignmentOptions.Right);
 				resStatusText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 175, 0);
 				resStatusText.TopTransform.SetSizeDelta(80, 16);
 
 				if (dumpable)
 				{
-					resDumpText = new KsmGuiTextButton(this, "", null, null, TextAlignmentOptions.Center);
+					resDumpText = new KsmGuiTextButton(this, "", null, null, TextAlignmentOptions.Right);
 					resDumpText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 					resDumpText.TextComponent.fontStyle = FontStyles.Bold;
 					resDumpText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 250, 0);
@@ -258,7 +258,10 @@ namespace KERBALISM
 				else if (!isInput && !dump && resource.ProduceRequests == 0.0 && (resource.Capacity == 0.0 || resource.Level == 1.0))
 				{
 					resStatusText.Text = Local.ProcessPopup_NoStorage; // "no storage";
-					resStatusText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Red);
+					if(dumpable)
+						resStatusText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Red);
+					else
+						resStatusText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 					usage = 0.0;
 				}
 				else
