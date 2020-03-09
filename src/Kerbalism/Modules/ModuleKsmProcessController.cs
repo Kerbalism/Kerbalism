@@ -190,7 +190,7 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
-			Process process = Profile.processes.Find(k => k.modifiers.Contains(processName));
+			Process process = Profile.processes.Find(k => k.name == processName);
 			if (process == null)
 				return new Specifics();
 			return process.Specifics(capacity);

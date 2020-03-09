@@ -550,7 +550,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
 		{
 			if (part.editorStarted && isInitialized && isEnabled && editorEnabled)
 			{
@@ -558,14 +558,14 @@ namespace KERBALISM
 				switch (Planner.Planner.Sunlight)
 				{
 					case Planner.Planner.SunlightState.SunlightNominal:
-						editorOutput = nominalRate * (environment.solar_flux / Sim.SolarFluxAtHome);
+						editorOutput = nominalRate * (vesselData.solarFlux / Sim.SolarFluxAtHome);
 						if (editorOutput > 0.0) resHandler.ElectricCharge.Produce(editorOutput, ResourceBroker.GetOrCreate("solar panel (nominal)", ResourceBroker.BrokerCategory.SolarPanel, "solar panel (nominal)"));
 						break;
 					case Planner.Planner.SunlightState.SunlightSimulated:
 						// create a sun direction according to the shadows direction in the VAB / SPH
 						Vector3d sunDir = EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
 						double effiencyFactor = SolarPanel.GetCosineFactor(sunDir, true) * SolarPanel.GetOccludedFactor(sunDir, out string occludingPart, true);
-						double distanceFactor = environment.solar_flux / Sim.SolarFluxAtHome;
+						double distanceFactor = vesselData.solarFlux / Sim.SolarFluxAtHome;
 						editorOutput = nominalRate * effiencyFactor * distanceFactor;
 						if (editorOutput > 0.0) resHandler.ElectricCharge.Produce(editorOutput, ResourceBroker.GetOrCreate("solar panel (estimated)", ResourceBroker.BrokerCategory.SolarPanel, "solar panel (estimated)"));
 						break;

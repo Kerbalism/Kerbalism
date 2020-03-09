@@ -93,6 +93,9 @@ namespace KERBALISM
 
 		void SaveHabitatData()
 		{
+			if (ModuleKsmHabitat.habitatDatabase == null)
+				return;
+
 			ConfigNode fakeNode = new ConfigNode();
 
 			foreach (KeyValuePair<string, Lib.PartVolumeAndSurfaceInfo> habInfo in ModuleKsmHabitat.habitatDatabase)

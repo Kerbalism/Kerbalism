@@ -7,6 +7,7 @@
 using System;
 using System.Reflection;
 using System.Collections.Generic;
+using KERBALISM.Planner;
 
 namespace KERBALISM
 {
@@ -53,7 +54,7 @@ namespace KERBALISM
 			KerbalData kd = DB.Kerbal(k_name);
 			foreach (Rule rule in Profile.rules)
 			{
-				if (rule.modifiers.Contains("radiation"))
+				if (rule.name.Contains("radiation"))
 				{
 					RuleData rd = kd.rules[rule.name];
 					rd.problem = Math.Max(rd.problem + amount, 0.0);
@@ -66,7 +67,7 @@ namespace KERBALISM
 		{
 			foreach (Rule rule in Profile.rules)
 			{
-				if (rule.modifiers.Contains("radiation"))
+				if (rule.name.Contains("radiation"))
 				{
 					foreach (KerbalData kd in DB.Kerbals().Values)
 					{
@@ -509,12 +510,12 @@ namespace KERBALISM
 
 		public static void PlannerConsumeResource(string resource_name, double quantity, string title)
 		{
-			EditorResHandler.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			PlannerResourceSimulator.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerProduceResource(string resource_name, double quantity, string title)
 		{
-			EditorResHandler.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			PlannerResourceSimulator.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerAddResourceRecipe(string[] resources, double[] rates, bool[] dump, string title)
@@ -529,22 +530,22 @@ namespace KERBALISM
 					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
 
-			EditorResHandler.Handler.AddRecipe(recipe);
+			PlannerResourceSimulator.Handler.AddRecipe(recipe);
 		}
 
 		public static double PlannerResourceAmount(string resource_name)
 		{
-			return EditorResHandler.Handler.GetResource(resource_name).Amount;
+			return PlannerResourceSimulator.Handler.GetResource(resource_name).Amount;
 		}
 
 		public static double PlannerResourceCapacity(string resource_name)
 		{
-			return EditorResHandler.Handler.GetResource(resource_name).Capacity;
+			return PlannerResourceSimulator.Handler.GetResource(resource_name).Capacity;
 		}
 
 		public static double PlannerResourceAvailability(string resource_name)
 		{
-			return EditorResHandler.Handler.GetResource(resource_name).AvailabilityFactor;
+			return PlannerResourceSimulator.Handler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		#endregion

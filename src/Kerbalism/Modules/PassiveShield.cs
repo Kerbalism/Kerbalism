@@ -95,7 +95,7 @@ namespace KERBALISM
 			vd.ResHandler.ElectricCharge.Consume(ec_rate * elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
 		{
 			if (deployed && ec_rate > 0)
 				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.GetOrCreate(title));

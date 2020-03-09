@@ -1,4 +1,5 @@
 ﻿using Harmony;
+using KERBALISM.Planner;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -266,7 +267,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = EditorResHandler.Handler;
+				vesselResHandler = PlannerResourceSimulator.Handler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;

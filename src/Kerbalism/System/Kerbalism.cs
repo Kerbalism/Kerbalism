@@ -815,7 +815,7 @@ namespace KERBALISM
 						foreach (var subtype in list)
 						{
 							var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
-							var process = Profile.processes.Find(p => p.modifiers.Contains(subtypeName));
+							var process = Profile.processes.Find(p => p.name.Contains(subtypeName));
 
 							if (process != null)
 							{

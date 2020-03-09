@@ -174,7 +174,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
 		{
 			if (running)
 				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Laboratory);

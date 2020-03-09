@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Flee.PublicTypes;
+using System;
 using System.Collections.Generic;
 
 namespace KERBALISM
@@ -10,14 +11,14 @@ namespace KERBALISM
 
 		public VesselProcesses() { }
 
-		public VesselProcesses(ConfigNode node)
+		public VesselProcesses(VesselData vd, ConfigNode node)
 		{
 			if (node == null)
 				return;
 
 			foreach (var process_node in node.GetNodes())
 			{
-				var pd = new VesselProcessData(process_node);
+				var pd = new VesselProcessData(vd, process_node);
 				if (pd.process != null)
 					processes.Add(pd);
 			}
@@ -34,7 +35,7 @@ namespace KERBALISM
 		/// <summary>
 		/// condense all ProcessData (processes running on individual parts) into one vessel-global process info, aggregating the total capacity
 		/// </summary>
-		internal void Evaluate(List<PartProcessData> partProcessDatas, VesselResHandler resHandler)
+		internal void Evaluate(VesselData vd, List<PartProcessData> partProcessDatas, VesselResHandler resHandler)
 		{
 			// reset all newTotalCapacities so we know which processes were removed or changed capacities
 			foreach (VesselProcessData vesselProcess in processes)
@@ -55,7 +56,7 @@ namespace KERBALISM
 					// found a part process data node without a corresponding vessel process.
 					// add the vessel process
 					Lib.LogDebug($"adding new vessel process for {partProcessData.processName}");
-					vesselProcess = new VesselProcessData(partProcessData.processName, partProcessData.process);
+					vesselProcess = new VesselProcessData(vd, partProcessData.processName, partProcessData.process);
 					processes.Add(vesselProcess);
 				}
 
@@ -87,13 +88,16 @@ namespace KERBALISM
 			}
 		}
 
-		internal void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
+		internal void Execute(VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// execute all processes on vessel
-			foreach (var p in processes)
+			foreach (VesselProcessData vpd in processes)
 			{
-				if (p.enabled)
-					p.process.Execute(v, vd, resources, elapsed_s, p.maxSetting, p.dumpedOutputs);
+				if (vpd.enabled)
+				{
+					vpd.process.Execute(vd, resources, elapsed_s, vpd.dumpedOutputs);
+				}
+
 			}
 		}
 	}
@@ -112,7 +116,7 @@ namespace KERBALISM
 		private string cachedDescription;
 		internal double newTotalCapacity;
 
-		public VesselProcessData(string name, Process process)
+		public VesselProcessData(VesselData vd, string name, Process process)
 		{
 			this.processName = name;
 			this.process = process;
@@ -120,7 +124,7 @@ namespace KERBALISM
 			this.visible = process.canToggle;
 		}
 
-		public VesselProcessData(ConfigNode node)
+		public VesselProcessData(VesselData vd, ConfigNode node)
 		{
 			enabled = Lib.ConfigValue(node, "enabled", true);
 			maxSetting = Lib.ConfigValue(node, "maxSetting", 1.0);
@@ -154,14 +158,9 @@ namespace KERBALISM
 		{
 			totalCapacity = capacity;
 
-			foreach(var res in process.scalars)
-			{
-				if(resHandler.GetResource(res) is VesselVirtualResource vr)
-				{
-					vr.SetCapacity(capacity);
-					vr.SetAmount(capacity);
-				}
-			}
+			VesselVirtualResource processRes = (VesselVirtualResource)resHandler.GetResource(process.resourceName);
+			processRes.SetCapacity(capacity);
+			processRes.SetAmount(capacity);
 		}
 
 		public void SetMaxSetting(double setting, VesselResHandler resHandler)

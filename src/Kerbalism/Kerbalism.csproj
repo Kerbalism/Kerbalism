@@ -65,6 +65,9 @@
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
     <!-- System Dlls -->
+    <Reference Include="Flee.Net45, Version=1.0.0.0, Culture=neutral, PublicKeyToken=951a102ce2413032, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Flee.1.2.2\lib\net45\Flee.Net45.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -150,6 +153,7 @@
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
+    <Compile Include="Database\VesselModifierData.cs" />
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
@@ -157,6 +161,7 @@
     <Compile Include="Modules\IPlannerModule.cs" />
     <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />
     <Compile Include="UI\KsmGui\KsmGuiTextButton.cs" />
+    <Compile Include="UI\Planner\PlannerVesselData.cs" />
     <Compile Include="UI\ProcessPopup.cs" />
     <Compile Include="VesselLogic\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
@@ -204,7 +209,6 @@
     <Compile Include="ResourceSim\Recipe.cs" />
     <Compile Include="ResourceSim\VesselKSPResource.cs" />
     <Compile Include="ResourceSim\VesselResHandler.cs" />
-    <Compile Include="ResourceSim\EditorResHandler.cs" />
     <Compile Include="VesselLogic\Drive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
@@ -240,9 +244,7 @@
     <Compile Include="UI\KsmGui\KsmGuiVerticalSection.cs" />
     <Compile Include="UI\KsmGui\KsmGuiWindow.cs" />
     <Compile Include="UI\KsmGui\KsmGuiUpdate.cs" />
-    <Compile Include="UI\Planner\EnvironmentAnalyzer.cs" />
-    <Compile Include="UI\Planner\ResourceSimulator.cs" />
-    <Compile Include="UI\Planner\VesselAnalyzer.cs" />
+    <Compile Include="UI\Planner\PlannerResourceSimulator.cs" />
     <Compile Include="UI\Science\ExperimentSubjectsList.cs" />
     <Compile Include="UI\Science\ExperimentPopup.cs" />
     <Compile Include="UI\Science\ScienceArchiveWindow.cs" />
@@ -310,7 +312,9 @@
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

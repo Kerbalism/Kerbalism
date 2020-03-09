@@ -166,7 +166,7 @@ namespace KERBALISM
 				}
 			}
 
-			vd.VesselProcesses.Execute(v, vd, resources, elapsed_s);
+			vd.VesselProcesses.Execute(vd, resources, elapsed_s);
 		}
 
 		public static void CheckSupplies(Vessel v, VesselData vd)

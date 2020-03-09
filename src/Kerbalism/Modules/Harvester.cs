@@ -134,7 +134,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
 		{
 			if (running && simulated_abundance > min_abundance)
 			{
@@ -142,7 +142,7 @@ namespace KERBALISM
 				if (ec_rate > 0.0)
 					recipe.AddInput("ElectricCharge", ec_rate);
 
-				recipe.AddOutput(resource, AdjustedRate(this, engineer_cs, vessel.crew, simulated_abundance), false);
+				recipe.AddOutput(resource, AdjustedRate(this, engineer_cs, vesselData.crew, simulated_abundance), false);
 
 				resHandler.AddRecipe(recipe);
 			}
