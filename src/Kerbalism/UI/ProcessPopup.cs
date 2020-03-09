@@ -81,7 +81,7 @@ namespace KERBALISM
 			KsmGuiText nominalHeaderText = new KsmGuiText(resListHeader,
 				Local.ProcessPopup_MaxRateTitle,
 				Local.ProcessPopup_MaxRateTooltip,
-				TextAlignmentOptions.Left);
+				TextAlignmentOptions.Right);
 			nominalHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			nominalHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 105, 0);
 			nominalHeaderText.TopTransform.SetSizeDelta(65, 16);
@@ -89,7 +89,7 @@ namespace KERBALISM
 			KsmGuiText statusHeaderText = new KsmGuiText(resListHeader,
 				Local.ProcessPopup_StatusTitle,
 				Local.ProcessPopup_StatusTooltip,
-				TextAlignmentOptions.Left);
+				TextAlignmentOptions.Right);
 			statusHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			statusHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 175, 0);
 			statusHeaderText.TopTransform.SetSizeDelta(80, 16);
@@ -97,7 +97,7 @@ namespace KERBALISM
 			KsmGuiText dumpHeaderText = new KsmGuiText(resListHeader,
 				Local.ProcessPopup_DumpTitle,
 				Local.ProcessPopup_DumpTooltip,
-				TextAlignmentOptions.Center);
+				TextAlignmentOptions.Right);
 			dumpHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 			dumpHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			dumpHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 250, 0);
