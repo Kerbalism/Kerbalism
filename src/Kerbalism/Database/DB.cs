@@ -149,10 +149,12 @@ namespace KERBALISM
 					continue;
 				}
 
-				VesselData vd = pv.KerbalismData();
-				ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
-				vd.Save(vesselNode);
-			}
+                // TODO we currently save vessel data even for asteroids. save only
+				// vessels with hard drives?
+                VesselData vd = pv.KerbalismData();
+                ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
+                vd.Save(vesselNode);
+            }
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			// save the science database

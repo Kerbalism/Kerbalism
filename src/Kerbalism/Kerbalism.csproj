@@ -132,7 +132,6 @@
     <Compile Include="Automation\Devices\Greenhouse.cs" />
     <Compile Include="Automation\Devices\Light.cs" />
     <Compile Include="Automation\Devices\Panel.cs" />
-    <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
     <Compile Include="Comms\CommHandlerEditorRemoteTech.cs" />
     <Compile Include="Comms\CommHandlerEditorCommNet.cs" />
@@ -156,6 +155,9 @@
     <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\IPlannerModule.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />
+    <Compile Include="UI\KsmGui\KsmGuiTextButton.cs" />
+    <Compile Include="UI\ProcessPopup.cs" />
     <Compile Include="VesselLogic\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
     <Compile Include="Database\LandmarkData.cs" />
@@ -187,7 +189,6 @@
     <Compile Include="Modules\Greenhouse.cs" />
     <Compile Include="Modules\HardDrive.cs" />
     <Compile Include="Modules\Laboratory.cs" />
-    <Compile Include="Modules\ProcessController.cs" />
     <Compile Include="Modules\Sensor.cs" />
     <Compile Include="Modules\Experiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
@@ -198,12 +199,12 @@
     <Compile Include="Renderer\LineRenderer.cs" />
     <Compile Include="Renderer\ParticleMesh.cs" />
     <Compile Include="Renderer\ParticleRenderer.cs" />
-    <Compile Include="ResourceSim\IResource.cs" />
-    <Compile Include="ResourceSim\VirtualResource.cs" />
-    <Compile Include="ResourceSim\Recipe.cs" />
     <Compile Include="ResourceSim\VesselResource.cs" />
+    <Compile Include="ResourceSim\VesselVirtualResource.cs" />
+    <Compile Include="ResourceSim\Recipe.cs" />
+    <Compile Include="ResourceSim\VesselKSPResource.cs" />
     <Compile Include="ResourceSim\VesselResHandler.cs" />
-    <Compile Include="ResourceSim\EditorResourceHandler.cs" />
+    <Compile Include="ResourceSim\EditorResHandler.cs" />
     <Compile Include="VesselLogic\Drive.cs" />
     <Compile Include="Science\ExperimentRequirements.cs" />
     <Compile Include="Science\ExperimentInfo.cs" />
@@ -279,7 +280,6 @@
     <Compile Include="Utility\Animator.cs" />
     <Compile Include="Utility\Archive.cs" />
     <Compile Include="Utility\CrewSpecs.cs" />
-    <Compile Include="Utility\DumpSpec.cs" />
     <Compile Include="Utility\Highlighter.cs" />
     <Compile Include="Utility\Profiler.cs" />
     <Compile Include="Utility\Serialization.cs" />
@@ -304,6 +304,8 @@
     <Compile Include="Modules\IBackgroundModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
     <Compile Include="Modules\ModuleKsmProcessController.cs" />
+    <Compile Include="VesselLogic\ProcessData.cs" />
+    <Compile Include="Automation\VesselDevices\VesselProcess.cs" />
   </ItemGroup>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->

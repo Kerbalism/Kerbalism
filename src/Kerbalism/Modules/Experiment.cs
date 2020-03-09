@@ -583,7 +583,7 @@ namespace KERBALISM
 				resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
 
 			foreach (ObjectPair<string, double> res in resourceDefs)
-				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
+				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselKSPResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
 
 			if (resourcesProdFactor == 0.0)
 			{
@@ -874,31 +874,19 @@ namespace KERBALISM
 			return false;
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void ToggleEvent()
 		{
 			Toggle();
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void ShowPopup()
 		{
 			new ExperimentPopup(vessel, this, part.flightID, part.partInfo.title);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void Prepare()
 		{
 			// disable for dead eva kerbals
@@ -935,11 +923,7 @@ namespace KERBALISM
 			);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
-#else
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void Reset()
 		{
 			Reset(true);

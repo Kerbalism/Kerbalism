@@ -90,7 +90,7 @@ namespace KERBALISM
 		static void Render_habitat(Panel p, Vessel v, VesselData vd)
 		{
 			// if habitat feature is disabled, do not show the panel
-			if (!Features.Habitat) return;
+			if (!Features.LifeSupport) return;
 
 			// if vessel is unmanned, do not show the panel
 			if (vd.CrewCount == 0) return;
@@ -172,7 +172,7 @@ namespace KERBALISM
 			foreach (Supply supply in Profile.supplies)
 			{
 				// get resource info
-				VesselResource res = (VesselResource)vd.ResHandler.GetResource(supply.resource);
+				VesselResource res = vd.ResHandler.GetResource(supply.resource);
 
 				// only show estimate if the resource is present
 				if (res.Capacity <= 1e-10) continue;
@@ -192,7 +192,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					double depletion = res.DepletionTime();
+					double depletion = res.Depletion;
 					if (depletion > 3600.0 * Lib.HoursInDay * Lib.DaysInYear * 100.0) // more than 100 years = perpetual
 					{
 						sb.Append(Lib.Color(Local.Generic_PERPETUAL, Lib.Kolor.Green));

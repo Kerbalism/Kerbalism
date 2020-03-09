@@ -258,14 +258,14 @@ namespace KERBALISM
 		// return true if a solar storm is incoming at the vessel position
 		public static bool StormIncoming(Vessel v)
 		{
-			if (!Features.SpaceWeather) return false;
+			if (!Features.Radiation) return false;
 			return v.KerbalismData().IsSimulated && Storm.Incoming(v);
 		}
 
 		// return true if a solar storm is in progress at the vessel position
 		public static bool StormInProgress(Vessel v)
 		{
-			if (!Features.SpaceWeather) return false;
+			if (!Features.Radiation) return false;
 			VesselData vd = v.KerbalismData();
 			return vd.IsSimulated && vd.EnvStorm;
 		}
@@ -304,14 +304,14 @@ namespace KERBALISM
 		// return true if at least a component has malfunctioned, or had a critical failure
 		public static bool Malfunction(Vessel v)
 		{
-			if (!Features.Reliability) return false;
+			if (!Features.Failures) return false;
 			return v.KerbalismData().Malfunction;
 		}
 
 		// return true if at least a componet had a critical failure
 		public static bool Critical(Vessel v)
 		{
-			if (!Features.Reliability) return false;
+			if (!Features.Failures) return false;
 			return v.KerbalismData().Critical;
 		}
 
@@ -371,28 +371,28 @@ namespace KERBALISM
 		// return volume of internal habitat in m^3
 		public static double Volume(Vessel v)
 		{
-			if (!Features.Habitat) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.livingVolume;
 		}
 
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
-			if (!Features.Habitat) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.shieldingSurface;
 		}
 
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
-			if (!Features.Pressure) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.pressureAtm;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
-			if (!Features.Poisoning) return 0.0;
+			if (!Features.LifeSupport) return 0.0;
 			return v.KerbalismData().HabitatInfo.poisoningLevel;
 		}
 
@@ -482,7 +482,7 @@ namespace KERBALISM
 
 		public static double ResourceAvailability(Vessel v, string resource_name)
 		{
-			return ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).AvailabilityFactor;
+			return v.KerbalismData().ResHandler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		/// <summary>
@@ -498,7 +498,7 @@ namespace KERBALISM
 		private static List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
-			List<ResourceBrokerRate> brokers = ((VesselResource)v.KerbalismData().ResHandler.GetResource(resource_name)).ResourceBrokers;
+			List<ResourceBrokerRate> brokers = v.KerbalismData().ResHandler.GetResource(resource_name).ResourceBrokers;
 			apiBrokers.Clear();
 			foreach (ResourceBrokerRate rb in brokers)
 			{
@@ -509,12 +509,12 @@ namespace KERBALISM
 
 		public static void PlannerConsumeResource(string resource_name, double quantity, string title)
 		{
-			EditorResourceHandler.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			EditorResHandler.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerProduceResource(string resource_name, double quantity, string title)
 		{
-			EditorResourceHandler.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			EditorResHandler.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerAddResourceRecipe(string[] resources, double[] rates, bool[] dump, string title)
@@ -529,22 +529,22 @@ namespace KERBALISM
 					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
 
-			EditorResourceHandler.Handler.AddRecipe(recipe);
+			EditorResHandler.Handler.AddRecipe(recipe);
 		}
 
 		public static double PlannerResourceAmount(string resource_name)
 		{
-			return EditorResourceHandler.Handler.GetResource(resource_name).Amount;
+			return EditorResHandler.Handler.GetResource(resource_name).Amount;
 		}
 
 		public static double PlannerResourceCapacity(string resource_name)
 		{
-			return EditorResourceHandler.Handler.GetResource(resource_name).Capacity;
+			return EditorResHandler.Handler.GetResource(resource_name).Capacity;
 		}
 
 		public static double PlannerResourceAvailability(string resource_name)
 		{
-			return ((VesselResource)EditorResourceHandler.Handler.GetResource(resource_name)).AvailabilityFactor;
+			return EditorResHandler.Handler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		#endregion

@@ -65,7 +65,7 @@ namespace KERBALISM
 		public enum VesselState { Loaded, Unloaded, EditorInit, EditorStep, EditorFinalize}
 		private VesselState currentState;
 
-		public VesselResource ElectricCharge { get; protected set; }
+		public VesselKSPResource ElectricCharge { get; protected set; }
 
 		public Dictionary<string, double> APIResources = new Dictionary<string, double>();
 
@@ -86,7 +86,7 @@ namespace KERBALISM
 		}
 
 		private List<Recipe> recipes = new List<Recipe>(4);
-		private Dictionary<string, IResource> resources = new Dictionary<string, IResource>(32);
+		private Dictionary<string, VesselResource> resources = new Dictionary<string, VesselResource>(32);
 		private Dictionary<string, ResourceWrapper> resourceWrappers = new Dictionary<string, ResourceWrapper>(32);
 
 		public VesselResHandler(object vesselOrProtoVessel, VesselState state)
@@ -100,7 +100,7 @@ namespace KERBALISM
 					{
 						ResourceWrapper resourceWrapper = new LoadedResourceWrapper(resourceName);
 						resourceWrappers.Add(resourceName, resourceWrapper);
-						resources.Add(resourceName, new VesselResource(resourceWrapper));
+						resources.Add(resourceName, new VesselKSPResource(resourceWrapper));
 					}
 					break;
 				case VesselState.Unloaded:
@@ -108,7 +108,7 @@ namespace KERBALISM
 					{
 						ResourceWrapper resourceWrapper = new ProtoResourceWrapper(resourceName);
 						resourceWrappers.Add(resourceName, resourceWrapper);
-						resources.Add(resourceName, new VesselResource(resourceWrapper));
+						resources.Add(resourceName, new VesselKSPResource(resourceWrapper));
 					}
 					break;
 				case VesselState.EditorStep:
@@ -118,7 +118,7 @@ namespace KERBALISM
 					{
 						ResourceWrapper resourceWrapper = new EditorResourceWrapper(resourceName);
 						resourceWrappers.Add(resourceName, resourceWrapper);
-						resources.Add(resourceName, new VesselResource(resourceWrapper));
+						resources.Add(resourceName, new VesselKSPResource(resourceWrapper));
 					}
 					break;
 			}
@@ -138,25 +138,25 @@ namespace KERBALISM
 					break;
 			}
 
-			foreach (IResource resource in resources.Values)
+			foreach (VesselResource resource in resources.Values)
 			{
 				resource.Init();
 				if (resource.Name == "ElectricCharge")
-					ElectricCharge = (VesselResource)resource;
+					ElectricCharge = (VesselKSPResource)resource;
 
 				APIResources.Add(resource.Name, resource.Amount);
 			}
 		}
 
-		/// <summary>return the VesselResource object for this resource or create it if it doesn't exists</summary>
-		public IResource GetResource(string resourceName)
+		/// <summary>return the VesselResource for this resource or create a VirtualResource if the resource doesn't exists</summary>
+		public VesselResource GetResource(string resourceName)
 		{
 			// try to get existing entry if any
-			IResource resource;
+			VesselResource resource;
 			if (resources.TryGetValue(resourceName, out resource))
 				return resource;
 
-			resource = new VirtualResource(resourceName);
+			resource = new VesselVirtualResource(resourceName);
 
 			// remember new entry
 			resources.Add(resourceName, resource);
@@ -165,15 +165,40 @@ namespace KERBALISM
 			return resource;
 		}
 
+		public VesselResource SetupOrCreateVirtualResource(string name, string title, double amount = 0.0, double capacity = double.MaxValue)
+		{
+			VesselVirtualResource vres;
+			if (resources.TryGetValue(name, out VesselResource res))
+			{
+				if (!(res is VesselVirtualResource))
+				{
+					Lib.LogStack($"Can't create VirtualResource '{name}', a VesselResource with that name already exists", Lib.LogLevel.Error);
+					return res;
+				}
+				else
+				{
+					vres = (VesselVirtualResource)res;
+				}
+			}
+			else
+			{
+				vres = new VesselVirtualResource(name);
+				resources.Add(name, vres);
+			}
+
+			vres.Setup(title, amount, capacity);
+			return vres;
+		}
+
 		/// <summary>
 		/// Get all virtual resources that exist on the vessel. Quite slow, don't use this in update/fixedupdate.
 		/// Note that it isn't garanteed that these resources are still present/used on the vessel.
 		/// </summary>
-		public List<VirtualResource> GetVirtualResources()
+		public List<VesselVirtualResource> GetVirtualResources()
 		{
-			List<VirtualResource> virtualResources = new List<VirtualResource>();
-			foreach (IResource res in resources.Values)
-				if (res is VirtualResource) virtualResources.Add((VirtualResource)res);
+			List<VesselVirtualResource> virtualResources = new List<VesselVirtualResource>();
+			foreach (VesselResource res in resources.Values)
+				if (res is VesselVirtualResource) virtualResources.Add((VesselVirtualResource)res);
 
 			return virtualResources;
 		}
@@ -245,7 +270,7 @@ namespace KERBALISM
 					}
 
 					resourceWrappers[resourceName] = newWrapper;
-					((VesselResource)resources[resourceName]).SetWrapper(newWrapper);
+					((VesselKSPResource)resources[resourceName]).SetWrapper(newWrapper);
 				}
 			}
 			// else just reset amount, capacity, and the part/protopart resource object references,
@@ -273,9 +298,12 @@ namespace KERBALISM
 			}
 
 			// apply all deferred requests and synchronize to vessel
-			foreach (IResource resource in resources.Values)
+			foreach (VesselResource resource in resources.Values)
 			{
-				if (resource.Capacity == 0.0)
+				// note : we try to exclude resources that aren't relevant here to save some
+				// performance, but this might have minor side effects, like brokers not being reset
+				// after a vessel part count change for example. 
+				if (!resource.NeedUpdate)
 					continue;
 
 				if (resource.ExecuteAndSyncToParts(elapsed_s) && vessel != null && vessel.loaded)
@@ -325,6 +353,8 @@ namespace KERBALISM
 			}
 		}
 
+		// note : this can fail if called on a vessel with a resource that was removed (mod uninstalled),
+		// since the resource is serialized on the protovessel, but doesn't exist in the resource library
 		private void SyncPartResources(List<ProtoPartSnapshot> protoParts)
 		{
 			foreach (ProtoPartSnapshot p in protoParts)

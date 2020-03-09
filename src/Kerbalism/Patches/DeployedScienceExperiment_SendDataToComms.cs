@@ -1,4 +1,3 @@
-#if !KSP15_16
 using System.Collections.Generic;
 using Harmony;
 using Expansions.Serenity.DeployedScience.Runtime;
@@ -73,4 +72,3 @@ namespace KERBALISM
 		}
 	}
 }
-#endif

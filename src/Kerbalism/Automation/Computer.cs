@@ -89,11 +89,8 @@ namespace KERBALISM
 		// call scripts automatically when conditions are met
 		public void Automate(Vessel v, VesselData vd, VesselResHandler resources)
 		{
-			// do nothing if automation is disabled
-			if (!Features.Automation) return;
-
 			// get current states
-			IResource ec = resources.GetResource("ElectricCharge");
+			VesselResource ec = resources.GetResource("ElectricCharge");
 			bool sunlight = !vd.EnvInFullShadow;
 			bool power_low = ec.Level < 0.2;
 			bool power_high = ec.Level > 0.8;
@@ -244,8 +241,6 @@ namespace KERBALISM
 				{
 					switch (m.moduleName)
 					{
-						case "ProcessController":            device = new ProcessDevice(m as ProcessController);                 break;
-						case "ModuleKsmProcessController":		 device = new KSMProcessDevice(m as ModuleKsmProcessController);           break;
 						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
 						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
 						//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
@@ -308,8 +303,6 @@ namespace KERBALISM
 						// depending on module name
 						switch (m.moduleName)
 						{
-							case "ProcessController":            device = new ProtoProcessDevice(module_prefab as ProcessController, p, m);        break;
-							case "ModuleKsmProcessController":         device = new KSMProtoProcessDevice(module_prefab as ModuleKsmProcessController, p, m);  break;
 							case "Sickbay":                      device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m);                  break;
 							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
 							//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
@@ -354,6 +347,9 @@ namespace KERBALISM
 			VesselData vd = v.KerbalismData();
 
 			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
+
+			foreach(var process in vd.VesselProcesses.Processes)
+				moduleDevices.Add(new VesselProcessDevice(v, vd, process));
 
 			Cache.SetVesselObjectsCache(v, "computer", moduleDevices);
 			return moduleDevices;

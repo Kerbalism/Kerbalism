@@ -35,41 +35,28 @@ namespace KERBALISM
 			// log version
 			Lib.Log("Version : " + Lib.KerbalismVersion + " - Build : " + Lib.KerbalismDevBuild);
 
-			if (LocalHelpers.GenerateEnglishLoc)
+			if (LocalHelpers.GenerateEnglishLoc && Lib.IsDevBuild)
 				LocalHelpers.GenerateLoc();
 
-			if (LocalHelpers.UpdateNonEnglishLoc)
+			if (LocalHelpers.UpdateNonEnglishLoc && Lib.IsDevBuild)
 				LocalHelpers.RegenerateNonEnglishLoc();
 
 			Lib.Log("Forcing KSP to load resources...");
 			PartResourceLibrary.Instance.LoadDefinitions();
 
-			// parse settings
-			Settings.Parse();
-			// parse profile
-			Profile.Parse();
 			// detect features
-			Features.Detect();
+			Features.Parse();
 
 			// get configs from DB
 			UrlDir.UrlFile root = null;
 			foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs) { root = url.parent; break; }
 
 			// inject MM patches on-the-fly, so that profile/features can be queried with NEEDS[]
-			Inject(root, "Profile", Lib.UppercaseFirst(Settings.Profile));
-			if (Features.Reliability) Inject(root, "Feature", "Reliability");
-			if (Features.Deploy) Inject(root, "Feature", "Deploy");
-			if (Features.SpaceWeather) Inject(root, "Feature", "SpaceWeather");
-			if (Features.Automation) Inject(root, "Feature", "Automation");
-			if (Features.Science) Inject(root, "Feature", "Science");
-			if (Features.Radiation) Inject(root, "Feature", "Radiation");
-			if (Features.Shielding) Inject(root, "Feature", "Shielding");
-			if (Features.LivingSpace) Inject(root, "Feature", "LivingSpace");
-			if (Features.Comfort) Inject(root, "Feature", "Comfort");
-			if (Features.Poisoning) Inject(root, "Feature", "Poisoning");
-			if (Features.Pressure) Inject(root, "Feature", "Pressure");
-			if (Features.Habitat) Inject(root, "Feature", "Habitat");
-			if (Features.Supplies) Inject(root, "Feature", "Supplies");
+			if (Features.Failures) Inject(root, "Kerbalism", "Reliability");
+			if (Features.Science) Inject(root, "Kerbalism", "Science");
+			if (Features.Radiation) Inject(root, "Kerbalism", "Radiation");
+			if (Features.LifeSupport) Inject(root, "Kerbalism", "LifeSupport");
+			if (Features.Stress) Inject(root, "Kerbalism", "Stress");
 
 			// inject harmony patches
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
@@ -80,6 +67,7 @@ namespace KERBALISM
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
 				GameEvents.OnPartLoaderLoaded.Add(SaveHabitatData);
+				GameEvents.OnGameDatabaseLoaded.Add(LoadConfiguration);
 			}
 			
 		}
@@ -116,6 +104,12 @@ namespace KERBALISM
 			}
 
 			fakeNode.Save(ModuleKsmHabitat.HabitatDataCachePath);
+		}
+
+		void LoadConfiguration()
+		{
+			Settings.Parse();
+			Profile.Parse();
 		}
 	}
 

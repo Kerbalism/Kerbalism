@@ -40,13 +40,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public int ignitions = 0;           // accumulated ignitions
 
 		// status ui
-#if KSP15_16
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "_")]
-		public string Status;  // show component status
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 		public string Status; // show component status
-#endif
 
 		// data
 		List<PartModule> modules;                                           // components cache
@@ -474,12 +469,8 @@ namespace KERBALISM
 			}
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true)]
-#else
-		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
-#endif
 		// toggle between standard and high quality
+		[KSPEvent(guiActiveEditor = true, guiName = "_", active = true, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 		public void Quality()
 		{
 			quality = !quality;
@@ -498,12 +489,8 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
-#else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
-#endif
 		// show a message with some hint on time to next failure
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 		public void Inspect()
 		{
 			// disable for dead eva kerbals
@@ -543,12 +530,8 @@ namespace KERBALISM
 			}
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
-#else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
-#endif
 		// repair malfunctioned component
+		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 		public void Repair()
 		{
 			// disable for dead eva kerbals
@@ -717,16 +700,10 @@ namespace KERBALISM
 					Lib.Proto.Set(proto_module, "isEnabled", false);
 				}
 
-				// type-specific hacks
+				// TODO type-specific hacks
+				/*
 				switch (reliability.type)
 				{
-					case "ProcessController":
-						foreach (ProcessController pc in p.partPrefab.FindModulesImplementing<ProcessController>())
-						{
-							ProtoPartResourceSnapshot res = p.resources.Find(k => k.resourceName == pc.resource);
-							if (res != null) res.flowState = false;
-						}
-						break;
 					case "ModuleKsmProcessController":
 						foreach (ModuleKsmProcessController pc in p.partPrefab.FindModulesImplementing<ModuleKsmProcessController>())
 						{
@@ -735,6 +712,7 @@ namespace KERBALISM
 						}
 						break;
 				}
+				*/
 
 				// show message
 				Broken_msg(v, reliability.title, critical);
@@ -850,10 +828,6 @@ namespace KERBALISM
 
 			switch (type)
 			{
-				case "ProcessController":
-					foreach (PartModule m in modules)
-						return (m as ProcessController).running;
-					return false;
 				case "ModuleKsmProcessController":
 					foreach (PartModule m in modules)
 						return (m as ModuleKsmProcessController).running;
@@ -892,15 +866,8 @@ namespace KERBALISM
 
 			switch (type)
 			{
-				case "ProcessController":
-					if (b)
-					{
-						foreach (PartModule m in modules)
-						{
-							(m as ProcessController).ReliablityEvent(b);
-						}
-					}
-					break;
+				// TODO
+				/*
 				case "ModuleKsmProcessController":
 					if (b)
 					{
@@ -910,7 +877,7 @@ namespace KERBALISM
 						}
 					}
 					break;
-
+				*/
 				case "ModuleDeployableRadiator":
 					if (b)
 					{

@@ -109,7 +109,7 @@ namespace KERBALISM
 
 				bool hasVesselDeviceSection = false;
 				bool hasModuleDeviceSection = false;
-
+				
 				// for each device
 				for (int i = devices.Count - 1; i >= 0; i--)
 				{

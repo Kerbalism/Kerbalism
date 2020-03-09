@@ -14,7 +14,7 @@ namespace KERBALISM
         internal static void CreateStorm(StormData bd, CelestialBody body, double distanceToSun)
         {
             // do nothing if storms are disabled
-            if (!Features.SpaceWeather) return;
+            if (!Features.Radiation) return;
 
             var now = Planetarium.GetUniversalTime();
 
@@ -81,7 +81,7 @@ namespace KERBALISM
         public static void Update(CelestialBody body, double elapsed_s)
         {
 			// do nothing if storms are disabled
-			if (!Features.SpaceWeather) return;
+			if (!Features.Radiation) return;
 
             StormData bd = DB.Storm(body.name);
             CreateStorm(bd, body, body.orbit.semiMajorAxis);
@@ -124,7 +124,7 @@ namespace KERBALISM
         public static void Update(Vessel v, VesselData vd, double elapsed_s)
         {
             // do nothing if storms are disabled
-            if (!Features.SpaceWeather) return;
+            if (!Features.Radiation) return;
 
             // only consider vessels in interplanetary space
             if (!Lib.IsSun(v.mainBody)) return;
@@ -220,7 +220,7 @@ namespace KERBALISM
         public static bool Skip_body(CelestialBody body)
         {
             // skip all bodies if storms are disabled
-            if (!Features.SpaceWeather) return true;
+            if (!Features.Radiation) return true;
 
             // skip the sun
             if (Lib.IsSun(body)) return true;

@@ -259,10 +259,10 @@ namespace KERBALISM
 			Indicator_ec(p, v, vd);
 
 			// supply indicator
-			if (Features.Supplies) Indicator_supplies(p, v, vd);
+			if (Features.LifeSupport) Indicator_supplies(p, v, vd);
 
 			// reliability indicator
-			if (Features.Reliability) Indicator_reliability(p, v, vd);
+			if (Features.Failures) Indicator_reliability(p, v, vd);
 
 			// signal indicator
 			if (Features.Science) Indicator_signal(p, v, vd);
@@ -296,19 +296,18 @@ namespace KERBALISM
 						UI.Open((p) => p.Fileman(v));
 				}
 			}
-			if (Features.Automation)
+
+			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Local.Monitor_AUTO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Local.Monitor_AUTO_desc + Local.Monitor_tooltip), config_style);//AUTO"Control and automate components"
+			if (Lib.IsClicked()) page = MonitorPage.scripts;
+			else if (Lib.IsClicked(2))
 			{
-				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.scripts, " " + Local.Monitor_AUTO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_console, Local.Monitor_AUTO_desc + Local.Monitor_tooltip), config_style);//AUTO"Control and automate components"
-				if (Lib.IsClicked()) page = MonitorPage.scripts;
-				else if (Lib.IsClicked(2))
-				{
-					if (UI.window.PanelType == Panel.PanelType.scripts)
-						UI.window.Close();
-					else
-						UI.Open((p) => p.Devman(v));
-				}
+				if (UI.window.PanelType == Panel.PanelType.scripts)
+					UI.window.Close();
+				else
+					UI.Open((p) => p.Devman(v));
 			}
-			if (Features.Reliability)
+
+			if (Features.Failures)
 			{
 				GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.failures, " " + Local.Monitor_FAILURES, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_wrench, Local.Monitor_FAILURES_desc + Local.Monitor_tooltip), config_style);//FAILURES"See failures and maintenance state"
 				if (Lib.IsClicked()) page = MonitorPage.failures;
@@ -360,9 +359,7 @@ namespace KERBALISM
 			Render_TypeFilterButon(VesselType.Relay);
 			Render_TypeFilterButon(VesselType.EVA);
 
-#if !KSP15_16
 			if (Kerbalism.SerenityEnabled) Render_TypeFilterButon(VesselType.DeployedScienceController);
-#endif
 
 			// we abuse the type Unknown to show/hide vessels that have the hidden toggle set to on
 			Render_TypeFilterButon(VesselType.Unknown);
@@ -398,9 +395,7 @@ namespace KERBALISM
 				case VesselType.Rover:   return disabled ? Textures.rover_black :   Textures.rover_white;
 				case VesselType.Ship:    return disabled ? Textures.ship_black :    Textures.ship_white;
 				case VesselType.Station: return disabled ? Textures.station_black : Textures.station_white;
-#if !KSP15_16
 				case VesselType.DeployedScienceController: return disabled ? Textures.controller_black : Textures.controller_white;
-#endif
 				case VesselType.Unknown: return disabled ? Textures.sun_black : Textures.sun_white;
 				default: return Textures.empty; // this really shouldn't happen.
 			}
@@ -528,11 +523,11 @@ namespace KERBALISM
 
 			// detect problems
 			Problem_sunlight(vd, ref problem_icons, ref problem_tooltips);
-			if (Features.SpaceWeather) Problem_storm(v, ref problem_icons, ref problem_tooltips);
+			if (Features.Radiation) Problem_storm(v, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Profile.rules.Count > 0) Problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vd, ref problem_icons, ref problem_tooltips);
 			Problem_greenhouses(v, vd.Greenhouses, ref problem_icons, ref problem_tooltips);
-			if (Features.Poisoning) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
+			if (Features.LifeSupport) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon
 			const UInt64 problem_icon_time = 3;
@@ -544,25 +539,22 @@ namespace KERBALISM
 			}
 
 			// generate problem icon
-			p.AddRightIcon(problem_icon, String.Join("\n", problem_tooltips.ToArray()));
+			p.AddRightIcon(problem_icon, string.Join("\n", problem_tooltips.ToArray()), () => { page = MonitorPage.telemetry; });
 		}
 
 		void Indicator_ec(Panel p, Vessel v, VesselData vd)
 		{
-#if !KSP15_16
 			if (v.vesselType == VesselType.DeployedScienceController)
 				return;
-#endif
 
-			VesselResource ec = vd.ResHandler.ElectricCharge;
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
 			double low_threshold = supply != null ? supply.low_threshold : 0.15;
-			double depletion = ec.DepletionTime();
 
 			string tooltip = Lib.BuildString
 			(
 			  "<align=left /><b>", Local.Monitor_name, "\t", Local.Monitor_level, "\t" + Local.Monitor_duration, "</b>\n",//name"level"duration
-			  Lib.Color(Lib.BuildString("EC\t", Lib.HumanReadablePerc(ec.Level), "\t", depletion <= double.Epsilon ? Local.Monitor_depleted : Lib.HumanReadableDuration(depletion)),//"depleted"
+			  Lib.Color(Lib.BuildString("EC\t", Lib.HumanReadablePerc(ec.Level), "\t", ec.DepletionInfo),
 			  ec.Level <= 0.005 ? Lib.Kolor.Red : ec.Level <= low_threshold ? Lib.Kolor.Orange : Lib.Kolor.None)
 			);
 
@@ -572,7 +564,7 @@ namespace KERBALISM
 			  ? Textures.battery_yellow
 			  : Textures.battery_white;
 
-			p.AddRightIcon(image, tooltip);
+			p.AddRightIcon(image, tooltip, () => { page = MonitorPage.telemetry; });
 		}
 
 		void Indicator_supplies(Panel p, Vessel v, VesselData vd)
@@ -586,14 +578,15 @@ namespace KERBALISM
 					if (supply.resource == "ElectricCharge")
 						continue;
 
-					VesselResource res = (VesselResource)vd.ResHandler.GetResource(supply.resource);
-					double depletion = res.DepletionTime();
+					VesselResource res = vd.ResHandler.GetResource(supply.resource);
 
 					if (res.Capacity > double.Epsilon)
 					{
-						if (tooltips.Count == 0) tooltips.Add(String.Format("<align=left /><b>{0,-18}\t" + Local.Monitor_level + "\t" + Local.Monitor_duration + "</b>", Local.Monitor_name));//level"duration"name"
+						if (tooltips.Count == 0)
+							tooltips.Add(String.Format("<align=left /><b>{0,-18}\t" + Local.Monitor_level + "\t" + Local.Monitor_duration + "</b>", Local.Monitor_name));//level"duration"name"
+
 						tooltips.Add(Lib.Color(
-							String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level), depletion <= double.Epsilon ? Local.Monitor_depleted : Lib.HumanReadableDuration(depletion)),//"depleted"
+							String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level), res.DepletionInfo),//"depleted"
 							res.Level <= 0.005 ? Lib.Kolor.Red : res.Level <= supply.low_threshold ? Lib.Kolor.Orange : Lib.Kolor.None
 						));
 
@@ -609,7 +602,7 @@ namespace KERBALISM
 			  ? Textures.box_yellow
 			  : Textures.box_white;
 
-			p.AddRightIcon(image, string.Join("\n", tooltips.ToArray()));
+			p.AddRightIcon(image, string.Join("\n", tooltips.ToArray()), () => { page = MonitorPage.telemetry; });
 		}
 
 		void Indicator_reliability(Panel p, Vessel v, VesselData vd)
@@ -632,7 +625,7 @@ namespace KERBALISM
 				tooltip = Local.Monitor_Criticalfailures;//"Critical failures"
 			}
 
-			p.AddRightIcon(image, tooltip);
+			p.AddRightIcon(image, tooltip, () => { page = MonitorPage.failures; });
 		}
 
 		void Indicator_signal(Panel p, Vessel v, VesselData vd)

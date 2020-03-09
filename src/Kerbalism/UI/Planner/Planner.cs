@@ -28,15 +28,15 @@ namespace KERBALISM.Planner
 
 			// special panels
 			// - stress & radiation panels require that a rule using the living_space/radiation modifier exist (current limitation)
-			if (Features.LivingSpace && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null)
+			if (Features.LifeSupport && Profile.rules.Find(k => k.modifiers.Contains("living_space")) != null)
 				panel_special.Add("qol");
 			if (Features.Radiation && Profile.rules.Find(k => k.modifiers.Contains("radiation")) != null)
 				panel_special.Add("radiation");
-			if (Features.Reliability)
+			if (Features.Failures)
 				panel_special.Add("reliability");
 
 			// environment panels
-			if (Features.Pressure || Features.Poisoning)
+			if (Features.LifeSupport)
 				panel_environment.Add("habitat");
 
 			panel_environment.Add("environment");
@@ -150,7 +150,7 @@ namespace KERBALISM.Planner
 				// get vessel resources
 				panel_resource.Clear();
 				foreach (string res in supplies)
-					if (EditorResourceHandler.Handler.GetResource(res).Capacity > 0.0)
+					if (EditorResHandler.Handler.GetResource(res).Capacity > 0.0)
 						panel_resource.Add(res);
 
 				// reset current panel if necessary
@@ -271,7 +271,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
-			VesselResource res = EditorResourceHandler.Handler.ElectricCharge;
+			VesselKSPResource res = EditorResHandler.Handler.ElectricCharge;
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -281,7 +281,7 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_storage, Lib.HumanReadableStorage(res.Amount, res.Capacity), tooltip);//"storage"
 			p.AddContent(Local.Planner_consumed, Lib.HumanReadableRate(res.ConsumeRequests), tooltip);//"consumed"
 			p.AddContent(Local.Planner_produced, Lib.HumanReadableRate(res.ProduceRequests), tooltip);//"produced"
-			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.DepletionTime()));//"duration"
+			p.AddContent(Local.Planner_duration, res.DepletionInfo);//"duration"
 		}
 
 		///<summary> Add supply resource sub-panel, including tooltips </summary>
@@ -293,7 +293,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelResource(Panel p, string res_name)
 		{
 			// get simulated resource
-			VesselResource res = (VesselResource)EditorResourceHandler.Handler.GetResource(res_name);
+			VesselKSPResource res = (VesselKSPResource)EditorResHandler.Handler.GetResource(res_name);
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -305,7 +305,7 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_storage, Lib.BuildString(Lib.HumanReadableStorage(res.Amount, res.Capacity), " (" + Lib.HumanReadableMass(res.Amount * res.Density) + ")"), tooltip);//"storage"
 			p.AddContent(Local.Planner_consumed, Lib.HumanReadableRate(res.ConsumeRequests), tooltip);//"consumed"
 			p.AddContent(Local.Planner_produced, Lib.HumanReadableRate(res.ProduceRequests), tooltip);//"produced"
-			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.DepletionTime()));//"duration"
+			p.AddContent(Local.Planner_duration, res.DepletionInfo);//"duration"
 		}
 
 		///<summary> Add stress sub-panel, including tooltips </summary>
@@ -354,7 +354,7 @@ namespace KERBALISM.Planner
 			}
 
 			// render life estimate
-			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, rule.modifiers);
+			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, rule.modifiers, null);
 			p.AddContent(Local.Planner_lifeestimate, Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));//"duration"
 		}
 
@@ -385,7 +385,7 @@ namespace KERBALISM.Planner
 			List<string> modifiers_except_radiation = new List<string>();
 			foreach (string s in rule.modifiers)
 			{ if (s != "radiation") modifiers_except_radiation.Add(s); }
-			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, modifiers_except_radiation);
+			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, modifiers_except_radiation, null);
 
 			// calculate life expectancy at various radiation levels
 			double[] estimates = new double[7];
@@ -531,15 +531,15 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelHabitat(Panel p)
 		{
 
-			VesselResource atmo_res = (VesselResource)resource_sim.handler.GetResource("Atmosphere");
-			VesselResource waste_res = (VesselResource)resource_sim.handler.GetResource("WasteAtmosphere");
+			VesselKSPResource atmo_res = (VesselKSPResource)resource_sim.handler.GetResource("Atmosphere");
+			VesselKSPResource waste_res = (VesselKSPResource)resource_sim.handler.GetResource("WasteAtmosphere");
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.BrokersListTooltip();
 			string waste_tooltip = waste_res.BrokersListTooltip();
 
 			// generate status string for scrubbing
-			string waste_status = !Features.Poisoning                   //< feature disabled
+			string waste_status = !Features.LifeSupport                   //< feature disabled
 			  ? "n/a"
 			  : waste_res.ProduceRequests <= double.Epsilon                    //< unnecessary
 			  ? Local.Planner_scrubbingunnecessary//"not required"
@@ -550,7 +550,7 @@ namespace KERBALISM.Planner
 			  : Lib.Color(Local.Planner_sufficientscrubbing, Lib.Kolor.Green);//"good"                    //< sufficient scrubbing
 
 			// generate status string for pressurization
-			string atmo_status = !Features.Pressure                     //< feature disabled
+			string atmo_status = !Features.LifeSupport                     //< feature disabled
 			  ? "n/a"
 			  : atmo_res.ConsumeRequests <= double.Epsilon                     //< unnecessary
 			  ? Local.Planner_pressurizationunnecessary//"not required"

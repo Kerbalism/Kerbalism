@@ -734,11 +734,7 @@ namespace KERBALISM
 				RaycastHit hit = sunRayHitsCache[i];
 				if (hit.transform != null) // && hit.transform.gameObject != null)
 				{
-#if KSP15_16 || KSP17
-					Part blockingPart = Part.GetComponentUpwards<Part>(hit.transform.gameObject);
-#else
 					Part blockingPart = FlightGlobals.GetPartUpwardsCached(hit.transform.gameObject);
-#endif
 					if (blockingPart == null || blockingPart == habitat.module.part)
 						continue;
 

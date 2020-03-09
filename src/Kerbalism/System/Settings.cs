@@ -31,13 +31,6 @@ namespace KERBALISM
 			// profile used
 			Profile = Lib.ConfigValue(cfg, "Profile", string.Empty);
 
-			// user-defined features
-			Reliability = Lib.ConfigValue(cfg, "Reliability", false);
-			Deploy = Lib.ConfigValue(cfg, "Deploy", false);
-			Science = Lib.ConfigValue(cfg, "Science", false);
-			SpaceWeather = Lib.ConfigValue(cfg, "SpaceWeather", false);
-			Automation = Lib.ConfigValue(cfg, "Automation", false);
-
 			// habitat & pressure 
 			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 100.0);
 			HabitatAtmoResource = Lib.ConfigValue(cfg, "HabitatAtmoResource", "Atmosphere");
@@ -145,11 +138,11 @@ namespace KERBALISM
 		// name of profile to use, if any
 
 		// user-defined features
-		public static bool Reliability;                         // component malfunctions and critical failures
-		public static bool Deploy;                              // add EC cost to keep module working/animation, add EC cost to Extend\Retract
-		public static bool Science;                             // science data storage, transmission and analysis
-		public static bool SpaceWeather;                        // coronal mass ejections
-		public static bool Automation;                          // control vessel components using scripts
+		public static bool LifeSupport;
+		public static bool Stress;
+		public static bool Science;
+		public static bool Failures;
+		public static bool Radiation;
 
 		// habitat
 		public static double PressureSuitVolume;                // pressure / EVA suit volume in liters, used for determining CO2 poisoning level while kerbals are in a depressurized habitat

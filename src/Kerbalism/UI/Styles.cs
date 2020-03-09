@@ -82,6 +82,18 @@ namespace KERBALISM
 				normal = { textColor = Color.white }
 			};
 
+			// checkbox label
+			entry_checkbox = new GUIStyle(HighLogic.Skin.label)
+			{
+				richText = true,
+				wordWrap = false,
+				stretchHeight = true,
+				fixedWidth = ScaleInteger(150),
+				fontSize = ScaleInteger(12),
+				alignment = TextAnchor.MiddleLeft,
+				normal = { textColor = Color.white }
+			};
+
 			entry_label_nowrap = new GUIStyle(HighLogic.Skin.label)
 			{
 				richText = true,
@@ -254,6 +266,7 @@ namespace KERBALISM
 		public static GUIStyle section_text;              // text for a section subtitle
 		public static GUIStyle entry_container;           // container for a row
 		public static GUIStyle entry_label;               // left content for a row
+		public static GUIStyle entry_checkbox;            // left content for a row
 		public static GUIStyle entry_label_nowrap;        // left content for a row that doesn't wrap
 		public static GUIStyle entry_value;               // right content for a row
 		public static GUIStyle desc_container;            // multi-line description container

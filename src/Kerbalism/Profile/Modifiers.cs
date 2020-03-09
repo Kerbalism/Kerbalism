@@ -6,12 +6,10 @@ using KERBALISM.Planner;
 
 namespace KERBALISM
 {
-
-
 	public static class Modifiers
 	{
 		///<summary> Modifiers Evaluate method used for the Monitors background and current vessel simulation </summary>
-		public static double Evaluate(Vessel v, VesselData vd, VesselResHandler resources, List<string> modifiers)
+		public static double Evaluate(Vessel v, VesselData vd, VesselResHandler resources, List<string> modifiers, List<string> scalars)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -91,16 +89,27 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= resources.GetResource(mod).Amount;
+						Lib.LogDebug("Unknown modifier: " + mod);
 						break;
 				}
 			}
+
+			if (scalars != null)
+			{
+				foreach (string scalar in scalars)
+				{
+					var resource = resources.GetResource(scalar);
+					if (resource != null)
+						k *= resource.Amount;
+				}
+			}
+
 			return k;
 		}
 
 
 		///<summary> Modifiers Evaluate method used for the Planners vessel simulation in the VAB/SPH </summary>
-		public static double Evaluate(EnvironmentAnalyzer env, VesselAnalyzer va, ResourceSimulator sim, List<string> modifiers)
+		public static double Evaluate(EnvironmentAnalyzer env, VesselAnalyzer va, ResourceSimulator sim, List<string> modifiers, List<string> scalars)
 		{
 			double k = 1.0;
 			foreach (string mod in modifiers)
@@ -164,10 +173,21 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= sim.handler.GetResource(mod).Amount;
+						Lib.LogDebug("Unknown modifier in planner: " + mod);
 						break;
 				}
 			}
+
+			if (scalars != null)
+			{
+				foreach (string scalar in scalars)
+				{
+					var resource = sim.handler.GetResource(scalar);
+					if (resource != null)
+						k *= resource.Amount;
+				}
+			}
+
 			return k;
 		}
 	}

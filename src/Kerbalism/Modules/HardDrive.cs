@@ -32,22 +32,12 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public int effectiveSampleCapacity = -1;     // effective drive capacity, in slots. -1 = unlimited
 
 
-#if KSP15_16
-		[KSPField(isPersistant = false, guiName = "Data Capacity", guiActive = false, guiActiveEditor = false), UI_ChooseOption(scene = UI_Scene.Editor)]
-		public string dataCapacityUI = "0";
-		[KSPField(isPersistant = false, guiName = "Sample Capacity", guiActive = false, guiActiveEditor = false), UI_ChooseOption(scene = UI_Scene.Editor)]
-		public string sampleCapacityUI = "0";
-		[KSPField(guiActive = true, guiName = "Capacity", guiActiveEditor = true)]
-		public string Capacity;
-
-#else
 		[KSPField(isPersistant = false, guiName = "#KERBALISM_HardDrive_DataCapacity", guiActive = false, guiActiveEditor = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science"), UI_ChooseOption(scene = UI_Scene.Editor)]//Data Capacity--Science
 		public string dataCapacityUI = "0";
 		[KSPField(isPersistant = false, guiName = "#KERBALISM_HardDrive_SampleCapacity", guiActive = false, guiActiveEditor = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science"), UI_ChooseOption(scene = UI_Scene.Editor)]//Sample Capacity--Science
 		public string sampleCapacityUI = "0";
 		[KSPField(guiActive = true, guiName = "#KERBALISM_HardDrive_Capacity", guiActiveEditor = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Capacity--Science
 		public string Capacity;
-#endif
 
 		private Drive drive;
 		private double totalSampleMass;
@@ -277,21 +267,13 @@ namespace KERBALISM
 			return drive;
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void ToggleUI()
 		{
 			UI.Open((Panel p) => p.Fileman(vessel));
 		}
 
-#if KSP15_16
-		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false)]
-#else
 		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void TransferData()
 		{
 			var hardDrives = vessel.FindPartModulesImplementing<HardDrive>();
@@ -302,11 +284,7 @@ namespace KERBALISM
 			}
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true)]
-#else
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void TakeData()
 		{
 			// disable for dead eva kerbals
@@ -324,11 +302,7 @@ namespace KERBALISM
 			}
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true)]
-#else
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TransferData", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
-#endif
 		public void StoreData()
 		{
 			// disable for dead eva kerbals

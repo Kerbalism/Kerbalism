@@ -24,6 +24,7 @@ namespace KERBALISM.KsmGui
 			ButtonComponent.colors = KsmGuiStyle.iconTransitionColorBlock;
 			ButtonComponent.navigation = new Navigation() { mode = Navigation.Mode.None }; // fix the transitions getting stuck
 
+			this.onClick = onClick;
 			SetButtonOnClick(onClick);
 		}
 

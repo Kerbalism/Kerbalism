@@ -10,248 +10,195 @@ namespace KERBALISM
 	/// </summary>
 	public class ModuleKsmProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics
 	{
-		// config
-		[KSPField] public string resource = string.Empty; // pseudo-resource to control
-		[KSPField] public string title = string.Empty;    // name to show on ui
-		[KSPField] public string desc = string.Empty;     // description to show on tooltip
-		[KSPField] public double capacity = 1.0;          // amount of associated pseudo-resource
-		[KSPField] public bool toggle = true;             // show the enable/disable toggle button
+		// configuration values that are set by module configuration in the editor must be persitant
+
+		[KSPField(isPersistant = true)] public string processName = string.Empty;
+		[KSPField(isPersistant = true)] public double capacity = 1.0;
+		[KSPField(isPersistant = true)] public string id = string.Empty;
+
 		[KSPField] public string uiGroup = null;          // display name of the UI group
-		[KSPField] public string id = string.Empty;       // id field for targeting individual modules with B9PS
 
-		// persistence/config
-		// note: the running state doesn't need to be serialized, as it can be deduced from resource flow
-		// but we find useful to set running to true in the cfg node for some processes, and not others
-		[KSPField(isPersistant = true)] public bool running;
+		[KSPField(isPersistant = true)]
+		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
+		public bool running;
 
-		// index of currently active dump valve
-		[KSPField(isPersistant = true)] public int valve_i = 0;
-
-		// caching of GetInfo() for automation tooltip
-		public string ModuleInfo { get; private set; }
-
-		private DumpSpecs dump_specs;
+		// internal state
+		public PartProcessData ProcessData => partData; PartProcessData partData;
 		private bool broken = false;
 
-		// When switching a process controller via B9PS, it will call OnLoad
-		// with the new prefab data. Remember which resource we've added,
-		// so we can remove the old resource before we add a new one after being
-		// switched to a different type.
-		[KSPField(isPersistant = true)] string createdResource = string.Empty;
+		private BaseField runningField;
 
+		// parsing configs at prefab compilation
 		public override void OnLoad(ConfigNode node)
 		{
-			ModuleInfo = GetInfo();
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				// needed for part module info
+				partData = new PartProcessData(processName, capacity, id, running, broken);
+				return;
+			}
 
+			if (Lib.IsFlight() && string.IsNullOrEmpty(processName))
+			{
+				Lib.LogDebug($"Loaded in flight without process, disabling");
+				enabled = false;
+				isEnabled = false;
+			}
+
+			// data will be restored from OnLoad only in the following cases:
+			// - Part created in the editor from a saved ship (not a freshly instantiated part from the part list)
+			// - Part created in flight from a just launched vessel
+			ConfigNode editorDataNode = node.GetNode("EditorProcessData");
+			if (editorDataNode != null)
+				partData = new PartProcessData(editorDataNode);
+
+			// we might be restarted after a configuration change
 			if (Lib.IsEditor())
-			{
-				if (string.IsNullOrEmpty(resource))
-				{
-					Deactivate();
-					return;
-				}
-				InitProcess();
-			}
+				StartInternal();
 		}
 
-		protected void Deactivate()
+		// this is only for editor <--> editor and editor -> flight persistence
+		public override void OnSave(ConfigNode node)
 		{
-			RemoveResource();
-			resource = string.Empty;
-			isEnabled = false;
-			enabled = false;
-			Events["DumpValve"].active = false;
-			Events["Toggle"].active = false;
-			Actions["Action"].active = false;
-		}
-
-		protected void InitProcess()
-		{
-			isEnabled = true;
-			enabled = true;
-
-			if (!string.IsNullOrEmpty(createdResource) && createdResource != resource)
+			if (Lib.IsEditor() && partData != null)
 			{
-				RemoveResource();
+				ConfigNode processDataNode = node.AddNode("EditorProcessData");
+				partData.Save(processDataNode);
 			}
-			CreateResource();
-
-			// get dump specs for associated process
-			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
-
-			// set dump valve ui button
-			Events["DumpValve"].active = dump_specs.AnyValves;
-
-			// set active dump valve
-			dump_specs.ValveIndex = valve_i;
-			valve_i = dump_specs.ValveIndex;
-
-			// set action group ui
-			Actions["Action"].guiName = Lib.BuildString(Local.ProcessController_Start_Stop, " ", title);//"Start/Stop
-
-			// hide toggle if specified
-			Events["Toggle"].active = toggle;
-			Actions["Action"].active = toggle;
-
-			// deal with non-togglable processes
-			if (!toggle)
-				running = true;
-
-			// set processes enabled state
-			Lib.AddResource(part, resource, running ? capacity : 0.0, 0.0, true);
 		}
 
 		public override void OnStart(StartState state)
 		{
-			// don't break tutorial scenarios
-			if (Lib.DisableScenario(this))
-				return;
-
-			if (string.IsNullOrEmpty(resource))
+			if (string.IsNullOrEmpty(id))
 			{
-				Deactivate();
+				// auto-assign ID
+				id = part.name + "." + part.Modules.IndexOf(this);
+				Lib.Log($"ProcessController `{processName}` on {part.name} without id. Auto-assigning `{id}`, but you really should set a unique id in your configuration", Lib.LogLevel.Warning);
+			}
+
+			StartInternal();
+		}
+
+		/// <summary>  start the module. must be idempotent: expect to be called several times </summary>
+		private void StartInternal()
+		{
+			Lib.LogDebug($"ProcessController {id} on {part.name} starting with process '{processName}'");
+
+			if (string.IsNullOrEmpty(processName))
+			{
+				Lib.LogDebug($"No process, disabling module");
+				isEnabled = false;
+				enabled = false;
 				return;
 			}
 
-#if !KSP15_16
+			bool isFlight = Lib.IsFlight();
+
+			// make sure part data is valid (if we have it), we might be restarting with a different configuration
+			if(partData != null && partData.processName != processName)
+			{
+				Lib.LogDebug($"Restarting with different process '{processName}' (was '{partData.processName}'), discarding old part data");
+				partData = null;
+			}
+
+			// get persistent data
+			if (partData == null)
+			{
+				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (rescue, KIS...)
+				if (isFlight)
+					partData = PartProcessData.GetFlightReferenceFromPart(part, id);
+
+				// if all other cases, this is a newly instantiated part from prefab. Create the data object and set default values.
+				if (partData == null)
+				{
+					Lib.LogDebug($"Instantiating new part data with processName '{processName}'");
+					partData = new PartProcessData(processName, capacity, id, running, broken);
+
+					if(!string.IsNullOrEmpty(processName) && partData.process == null)
+					{
+						Lib.Log($"Invalid process '{processName}' in ModuleKsmProcessController id {id} for part {part.partName}", Lib.LogLevel.Error);
+						isEnabled = false;
+						enabled = false;
+						return;
+					}
+
+					// part was created in flight (rescue, KIS...)
+					if (isFlight)
+					{
+						// set the VesselData / PartData reference
+						PartProcessData.SetFlightReferenceFromPart(part, partData);
+					}
+				}
+			}
+			else if (isFlight)
+			{
+				PartProcessData.SetFlightReferenceFromPart(part, partData);
+			}
+
+			partData.module = this;
+
+			// PAW setup
+			running = partData.process != null && partData.isRunning;
+
+			runningField = Fields["running"];
+			runningField.OnValueModified += (field) => Toggle(partData, true);
+			runningField.guiActive = runningField.guiActiveEditor = partData.process != null && partData.process.canToggle;
+			runningField.guiName = partData.process?.title;
+
+			((UI_Toggle)runningField.uiControlFlight).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
+			((UI_Toggle)runningField.uiControlFlight).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
+			((UI_Toggle)runningField.uiControlEditor).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
+			((UI_Toggle)runningField.uiControlEditor).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
+
 			if (uiGroup != null)
-			{
-				var g = new BasePAWGroup(uiGroup, uiGroup, false);
-				Events["Toggle"].group = g;
-				Events["DumpValve"].group = g;
-			}
-#endif
-
-			InitProcess();
+				runningField.group = new BasePAWGroup(uiGroup, uiGroup, false);
 		}
 
-		protected void CreateResource()
+		public void OnDestroy()
 		{
-			// if never set
-			// - this is the case in the editor, the first time, or in flight
-			//   in the case the module was added post-launch, or EVA kerbals
-			// - resource will be != createdResource when controller was switched
-			//   to a different type in the editor
-			if (createdResource != resource)
-			{
-				RemoveResource();
-
-				// add the resource
-				// - always add the specified amount, even in flight
-				double amount = (!broken && running) ? capacity : 0.0;
-				Lib.AddResource(part, resource, 0.0, capacity, true);
-				createdResource = resource;
-			}
+			// clear loaded module reference to avoid memory leaks
+			if (partData != null)
+				partData.module = null;
 		}
 
-		protected void RemoveResource()
+		public static void Toggle(PartProcessData partData, bool isLoaded)
 		{
-			if (!string.IsNullOrEmpty(createdResource))
-			{
-				Lib.RemoveResource(part, createdResource, 0.0, capacity);
-				createdResource = string.Empty;
-			}
-		}
-
-		///<summary> Call this when process controller breaks down or is repaired </summary>
-		public void ReliablityEvent(bool breakdown)
-		{
-			double oldCapacity = !broken && running ? capacity : 0.0;
-			broken = breakdown;
-			double newCapacity = !broken && running ? capacity : 0.0;
-			double capacityChange = newCapacity - oldCapacity;
-			Lib.AddResource(part, resource, capacityChange, 0.0, true);
-		}
-
-		public void Update()
-		{
-			// update rmb ui
-			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
-			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dump_specs.valves[valve_i]);//"Dump"
-		}
-
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//Processes
-#endif
-		public void Toggle()
-		{
-			SetRunning(!running);
-		}
-
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Dump", active = true)]
-#else
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_ProcessController_Dump", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//"Dump""Processes"
-#endif
-		public void DumpValve()
-		{
-			valve_i = dump_specs.NextValve;
-
-			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-		}
-
-		public void SetRunning(bool value)
-		{
-			if (broken)
+			if (partData.isBroken)
 				return;
 
-			double oldCapacity = running ? capacity : 0.0;
-			running = value;
-			double newCapacity = running ? capacity : 0.0;
-			Lib.AddResource(part, resource, newCapacity - oldCapacity, 0.0, true);
+			partData.isRunning = !partData.isRunning;
+	
+			if (isLoaded)
+				partData.module.running = partData.isRunning;
 
 			// refresh VAB/SPH ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
-
-		// action groups
-		[KSPAction("_")] public void Action(KSPActionParam param) { Toggle(); }
 
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (string.IsNullOrEmpty(resource))
+			if (string.IsNullOrEmpty(processName) || partData == null || partData.process == null)
 				return string.Empty;
-			return Specs().Info(desc);
+			return Specs().Info(partData.process.desc);
 		}
 
 		public bool IsRunning() {
-			return running;
+			return running && !string.IsNullOrEmpty(processName);
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
-			Process process = Profile.processes.Find(k => k.modifiers.Contains(resource));
-			return Specifics(process, capacity);
-		}
-
-		public static Specifics Specifics(Process process, double capacity)
-		{
-			Specifics specs = new Specifics();
-			if (process != null)
-			{
-				foreach (KeyValuePair<string, double> pair in process.inputs)
-				{
-					if (!process.modifiers.Contains(pair.Key))
-						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-					else
-						specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
-				}
-				foreach (KeyValuePair<string, double> pair in process.outputs)
-				{
-					specs.Add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-				}
-			}
-			return specs;
+			Process process = Profile.processes.Find(k => k.modifiers.Contains(processName));
+			if (process == null)
+				return new Specifics();
+			return process.Specifics(capacity);
 		}
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
-		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
+		public string GetModuleTitle() { return partData?.process?.title; }
+		public override string GetModuleDisplayName() { return partData?.process?.title; }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
@@ -260,9 +207,7 @@ namespace KERBALISM
 		public void DisableModule() { }
 		public bool ModuleIsActive() { return broken ? false : running; }
 		public bool IsSituationValid() { return true; }
-
 	}
-
 
 } // KERBALISM
 

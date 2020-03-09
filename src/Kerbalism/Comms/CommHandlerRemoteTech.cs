@@ -199,22 +199,9 @@ namespace KERBALISM
 			else if (transmitterCount == 0)
 				baseRate = 0.0;
 
-			connection.ec *= Settings.TransmitterActiveEcFactor;
-			connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor;
-
-			// when transmitting, transmitters need more EC for the signal amplifiers.
-			// while not transmitting, transmitters only use 10-20% of that
-			//if (!v.loaded)
-			//{
-			//	connection.ec_idle += connection.ec;
-			//	connection.ec *= Settings.TransmitterActiveEcFactor;
-			//	connection.ec += connection.ec_idle; // ec_idle is substracted from ec in Science.Update(), don't change that as this is what is expected by the RealAntenna API handler
-			//}
-			//else
-			//{
-			//	connection.ec *= Settings.TransmitterActiveEcFactor;
-			//}
-
+			connection.ec_idle *= Settings.TransmitterPassiveEcFactor; // apply passive factor to "internal" antennas always-consumed rate
+			connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor; // add "transmit" antennas always-consumed rate
+			connection.ec *= Settings.TransmitterActiveEcFactor; // adjust "transmit" antennas transmit-only rate by the factor
 
 		}
 

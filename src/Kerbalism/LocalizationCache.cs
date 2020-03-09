@@ -52,14 +52,16 @@ namespace KERBALISM
 		// set this to true (and change the path) to generate on KSP startup
 		// the english localization file based on the contents of LocalizationCache.cs
 		// IMPORTANT : don't let this to true when commiting
-		public static bool GenerateEnglishLoc = false;
-		private const string PathToEnglishLocOutput = @"C:\Users\Got\Desktop\loctest\en-us.cfg";
+		// - will only work with dev builds
+		public static bool GenerateEnglishLoc = true;
+		private const string PathToEnglishLocOutput = @"/tmp/en-us.cfg";
 
 		// set this to true (and change the paths) to generate on KSP startup
 		// the non-english localization file based on the contents of LocalizationCache.cs
 		// and an existing (partial) localization file
 		// untranslated strings will have the comment // UNTRANSLATED
 		// IMPORTANT : don't let this to true when commiting
+		// - will only work with dev builds
 		public static bool UpdateNonEnglishLoc = false;
 		private const string locLanguage = "ru";
 		private const string PathToExistingNonEnglishLoc = @"C:\Users\Got\source\repos\Kerbalism\Kerbalism\GameData\Kerbalism\Localization\" + locLanguage + ".cfg";

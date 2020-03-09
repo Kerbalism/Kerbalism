@@ -75,10 +75,10 @@ namespace KERBALISM
 		private PartResourceWrapper wasteRes;
 		private PartResourceWrapper shieldRes;
 		private VesselResHandler vesselResHandler;
-		private VesselResource ecResInfo;
-		private VesselResource atmoResInfo;
-		private VesselResource wasteResInfo;
-		private VesselResource breathableResInfo;
+		private VesselKSPResource ecResInfo;
+		private VesselKSPResource atmoResInfo;
+		private VesselKSPResource wasteResInfo;
+		private VesselKSPResource breathableResInfo;
 		private string reclaimResAbbr;
 		private BaseField mainInfoField;
 		private BaseField secInfoField;
@@ -97,60 +97,31 @@ namespace KERBALISM
 		// PAW UI
 		// Note : the 4 bool using a UI_Toggle shouldn't by used from code.
 		// To change the state from code, use the static Toggle() methods
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public string mainPAWInfo;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public string secPAWInfo;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, requireFullControl = false, affectSymCounterparts = UI_Scene.None)]
 		public bool habitatEnabled;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool pressureEnabled;
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool deployEnabled;
 
 
-#if KSP15_16
-		[KSPField]
-#else
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool rotationEnabled;
 
-#if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "debug")]
-		public string debugInfo;
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "debug", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public string debugInfo;
-#endif
 
 		#endregion
 
@@ -165,23 +136,10 @@ namespace KERBALISM
 				baseComfortsMask = 0;
 				foreach (string comfortString in node.GetValues("comfort"))
 				{
-#if KSP15_16 || KSP17
-					Comfort comfort;
-					try
-					{
-						comfort = (Comfort)Enum.Parse(typeof(Comfort), comfortString);
-						baseComfortsMask |= (int)comfort;
-					}
-					catch
-					{
-						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.name}");
-					}
-#else
 					if (Enum.TryParse(comfortString, out Comfort comfort))
 						baseComfortsMask |= (int)comfort;
 					else
 						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.partName}");
-#endif
 				}
 
 				// instanciate animations from config
@@ -308,15 +266,15 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = EditorResourceHandler.Handler;
+				vesselResHandler = EditorResHandler.Handler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;
-			atmoResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatAtmoResource);
-			wasteResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatWasteResource);
+			atmoResInfo = (VesselKSPResource)vesselResHandler.GetResource(Settings.HabitatAtmoResource);
+			wasteResInfo = (VesselKSPResource)vesselResHandler.GetResource(Settings.HabitatWasteResource);
 
 			if (Settings.HabitatBreathableResourceRate > 0.0)
-				breathableResInfo = (VesselResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
+				breathableResInfo = (VesselKSPResource)vesselResHandler.GetResource(Settings.HabitatBreathableResource);
 
 			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
 
@@ -526,10 +484,8 @@ namespace KERBALISM
 			deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
 			rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
 
-#if !KSP15_16
 			if (part.PartActionWindow == null)
 				return;
-#endif
 
 			debugInfo = (data.isEnabled ? "Enabled - " : "Disabled - ") + data.pressureState.ToString() + " - " + data.animState.ToString();
 
@@ -707,12 +663,12 @@ namespace KERBALISM
 					return;
 				}
 
-				VesselResource ecResInfo = vd.ResHandler.ElectricCharge;
-				VesselResource atmoResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatAtmoResource);
-				VesselResource wasteResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatWasteResource);
-				VesselResource breathableResInfo;
+				VesselKSPResource ecResInfo = vd.ResHandler.ElectricCharge;
+				VesselKSPResource atmoResInfo = (VesselKSPResource)vd.ResHandler.GetResource(Settings.HabitatAtmoResource);
+				VesselKSPResource wasteResInfo = (VesselKSPResource)vd.ResHandler.GetResource(Settings.HabitatWasteResource);
+				VesselKSPResource breathableResInfo;
 				if (Settings.HabitatBreathableResourceRate > 0.0)
-					breathableResInfo = (VesselResource)vd.ResHandler.GetResource(Settings.HabitatBreathableResource);
+					breathableResInfo = (VesselKSPResource)vd.ResHandler.GetResource(Settings.HabitatBreathableResource);
 				else
 					breathableResInfo = null;
 
@@ -735,17 +691,17 @@ namespace KERBALISM
 			private PartResourceWrapper wasteRes;
 			private PartResourceWrapper shieldRes;
 
-			private VesselResource atmoResInfo;
-			private VesselResource wasteResInfo;
-			private VesselResource breathableResInfo;
-			private VesselResource ecResInfo;
+			private VesselKSPResource atmoResInfo;
+			private VesselKSPResource wasteResInfo;
+			private VesselKSPResource breathableResInfo;
+			private VesselKSPResource ecResInfo;
 
 			bool isEditor;
 			bool isLoaded;
 
 			public HabitatUpdateHandler(Vessel vessel, VesselData vd, HabitatData data,
 				PartResourceWrapper atmoRes, PartResourceWrapper wasteRes, PartResourceWrapper shieldRes,
-				VesselResource atmoResInfo, VesselResource wasteResInfo, VesselResource breathableResInfo, VesselResource ecResInfo)
+				VesselKSPResource atmoResInfo, VesselKSPResource wasteResInfo, VesselKSPResource breathableResInfo, VesselKSPResource ecResInfo)
 			{
 				this.vessel = vessel;
 				this.vd = vd;
@@ -1003,7 +959,7 @@ namespace KERBALISM
 					case PressureState.Pressurizing:
 
 						if (!isEditor)
-							atmoResInfo.equalizeMode = VesselResource.EqualizeMode.Disabled;
+							atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Disabled;
 
 						if (vessel.loaded && data.module.deployWithPressure && data.animState == AnimState.Deploying)
 							data.module.deployAnimator.Still(Math.Min((float)(atmoRes.Amount / (atmoRes.Capacity * Settings.PressureThreshold)), 1f));
@@ -1072,11 +1028,11 @@ namespace KERBALISM
 				// set equalizaton mode if it hasn't been explictely disabled in the breathable / depressurizing states
 				if (!isEditor)
 				{
-					if (atmoResInfo.equalizeMode == VesselResource.EqualizeMode.NotSet)
-						atmoResInfo.equalizeMode = VesselResource.EqualizeMode.Enabled;
+					if (atmoResInfo.equalizeMode == VesselKSPResource.EqualizeMode.NotSet)
+						atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Enabled;
 
-					if (wasteResInfo.equalizeMode == VesselResource.EqualizeMode.NotSet)
-						wasteResInfo.equalizeMode = VesselResource.EqualizeMode.Enabled;
+					if (wasteResInfo.equalizeMode == VesselKSPResource.EqualizeMode.NotSet)
+						wasteResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Enabled;
 				}
 			}
 
@@ -1118,7 +1074,7 @@ namespace KERBALISM
 
 				if (!isEditor)
 				{
-					atmoResInfo.equalizeMode = VesselResource.EqualizeMode.Disabled;
+					atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Disabled;
 					data.pressureState = PressureState.Pressurizing;
 				}
 				else
@@ -1481,11 +1437,7 @@ namespace KERBALISM
 		}
 
 		// debug
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
 		public void LogVolumeAndSurface() => Lib.GetPartVolumeAndSurface(part, true);
 
 		#endregion
