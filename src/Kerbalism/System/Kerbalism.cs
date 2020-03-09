@@ -372,7 +372,7 @@ namespace KERBALISM
 					resources.ResourceUpdate(v, VesselResHandler.VesselState.Loaded, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
-					Profile.CheckSupplies(v, vd);
+					Supply.SendMessages(vd);
 
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
@@ -449,7 +449,7 @@ namespace KERBALISM
 				resources.ResourceUpdate(last_v.protoVessel, VesselResHandler.VesselState.Unloaded, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
-				Profile.CheckSupplies(last_v, last_vd);
+				Supply.SendMessages(last_vd);
 
 				// call automation scripts
 				last_vd.computer.Automate(last_v, last_vd, resources);
@@ -556,7 +556,7 @@ namespace KERBALISM
 			{
 				// check for CRP
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water"))
 				{
 					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}

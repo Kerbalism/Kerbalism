@@ -33,7 +33,7 @@ namespace KERBALISM
 
 		// resources config
 		[KSPField] public string reclaimResource = "Nitrogen"; // Nitrogen
-		[KSPField] public string shieldingResource = "Shielding"; // KsmShielding
+		[KSPField] public string shieldingResource = "KsmShielding"; // KsmShielding
 
 		// animations config
 		[KSPField] public string deployAnim = string.Empty; // deploy / inflate animation, if any

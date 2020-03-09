@@ -169,19 +169,6 @@ namespace KERBALISM
 			vd.VesselProcesses.Execute(vd, resources, elapsed_s);
 		}
 
-		public static void CheckSupplies(Vessel v, VesselData vd)
-		{
-			// get crew
-			List<ProtoCrewMember> crew = Lib.CrewList(v);
-
-			// execute all supplies
-			foreach (Supply supply in supplies)
-			{
-				// this will just show warning messages if resources get low
-				supply.CheckMessages(v, vd, crew);
-			}
-		}
-
 
 		public static void SetupPods()
 		{

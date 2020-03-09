@@ -511,8 +511,8 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelHabitat(Panel p)
 		{
 
-			VesselKSPResource atmo_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource("Atmosphere");
-			VesselKSPResource waste_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource("WasteAtmosphere");
+			VesselKSPResource atmo_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(Settings.HabitatAtmoResource);
+			VesselKSPResource waste_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(Settings.HabitatWasteResource);
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.BrokersListTooltip();

@@ -73,7 +73,7 @@ namespace KERBALISM
         public bool msg_signal;       // message flag: link status
         public bool msg_belt;         // message flag: crossing radiation belt
         public StormData stormData;
-        private Dictionary<string, SupplyData> supplies; // supplies data
+        public Dictionary<string, Supply.SupplyState> supplies; // supplies data
         public List<uint> scansat_id; // used to remember scansat sensors that were disabled
         public double scienceTransmitted;
         public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
@@ -718,7 +718,6 @@ namespace KERBALISM
             isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
             stormData = new StormData(null);
             computer = new Computer(null);
-            supplies = new Dictionary<string, SupplyData>();
             scansat_id = new List<uint>();
             vesselProcesses = new VesselProcesses();
         }
@@ -733,6 +732,7 @@ namespace KERBALISM
             habitatInfo = new HabitatVesselData();
             connection = new ConnectionInfo();
             CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
+			supplies = Supply.CreateStateDictionary(resHandler);
 		}
 
         private void Load(ConfigNode node)
@@ -758,12 +758,6 @@ namespace KERBALISM
 
             stormData = new StormData(node.GetNode("StormData"));
             computer = new Computer(node.GetNode("computer"));
-
-            supplies = new Dictionary<string, SupplyData>();
-            foreach (var supply_node in node.GetNode("supplies").GetNodes())
-            {
-                supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
-            }
 
             scansat_id = new List<uint>();
             foreach (string s in node.GetValues("scansat_id"))
@@ -801,12 +795,6 @@ namespace KERBALISM
             stormData.Save(node.AddNode("StormData"));
             computer.Save(node.AddNode("computer"));
 
-            var supplies_node = node.AddNode("supplies");
-            foreach (var p in supplies)
-            {
-                p.Value.Save(supplies_node.AddNode(DB.To_safe_key(p.Key)));
-            }
-
             foreach (uint id in scansat_id)
             {
                 node.AddValue("scansat_id", id.ToString());
@@ -824,15 +812,6 @@ namespace KERBALISM
         }
 
         #endregion
-
-        public SupplyData Supply(string name)
-        {
-            if (!supplies.ContainsKey(name))
-            {
-                supplies.Add(name, new SupplyData());
-            }
-            return supplies[name];
-        }
 
         #region vessel state evaluation
         private void EvaluateStatus()
