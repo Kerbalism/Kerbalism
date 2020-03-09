@@ -524,7 +524,7 @@ namespace KERBALISM
 		///<summary>make the first letter uppercase</summary>
 		public static string UppercaseFirst(string s)
 		{
-			return s.Length > 0 ? char.ToUpper(s[0]) + s.Substring(1) : string.Empty;
+			return s.Length > 0 ? char.ToUpper(s[0]) + s.Substring(1).ToLower() : string.Empty;
 		}
 
 		///<summary>standardized kerbalism string colors</summary>

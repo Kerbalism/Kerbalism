@@ -6,39 +6,39 @@ using System;
 using System.Reflection;
 
 /*
-HOW TO USE THIS :
+HOW TO USE THIS:
 
 The local class contains all the localized strings of Kerbalism core.
 You can define parameterless fields and parametrized fields in the Local class, then use them from other places.
 Then use the LocalHelpers class to auto-generate the localization configs based on the contents of the Local class
-IMPORTANT : For that to work, it is imperative that you add the english localization string in quotations marks as a comment after the field defintion.
+IMPORTANT: For that to work, it is imperative that you add the english localization string in quotations marks as a comment after the field defintion.
 You can define either a plain string or a parametrized field.
 
-Plain string example :
+Plain string example:
 >> public static string Mycategory_MyField = GetLoc("Mycategory_MyField"); // "Science"
-This will autogenerate the following line for the en_us config :
+This will autogenerate the following line for the en_us config:
 >> #KERBALISM_Mycategory_MyField = Science
-And you can get it from the code with :
+And you can get it from the code with:
 >> Local.Mycategory_MyField
 
-Parametrized field example :
+Parametrized field example:
 >> public static ParamString Mycategory_MyField = new ParamString("Mycategory_MyField"); // "Getting <<1>> at <<2>>"
-This will autogenerate the following line for the en_us config :
+This will autogenerate the following line for the en_us config:
 >> #KERBALISM_Mycategory_MyField = Getting <<1>> at <<2>>
-And you can get it from the code with :
+And you can get it from the code with:
 >> Local.Mycategory_MyField.Format("some data", "4 ko/s"); // will output "Getting some data at 4 ko/s"
 
-IMPORTANT NOTE :
+IMPORTANT NOTE:
 
 localization strings used in KSP attributes don't use the localization cache because
 they need to be known at compile time. But since every localized string has to be in this file
 for the automatic generation done here to work, they still need to be added to the Local class.
 
-Example, if you want to do :
+Example, if you want to do:
 >> [KSPField(guiActive = true, guiName = "#KERBALISM_MyModule_MyFieldName")]
 >> public string myfield;
 
-you need to add in the Local class :
+you need to add in the Local class:
 >> public static string MyModule_MyFieldName = GetLoc("MyModule_MyFieldName"); // "myFieldName"
 */
 
@@ -47,20 +47,20 @@ namespace KERBALISM
 	public static class LocalHelpers
 	{
 		// change this to the full path of the LocalizationCache.cs source file
-		private const string PathToLocalizationCache = @"C:\Users\Got\source\repos\Kerbalism\Kerbalism\src\Kerbalism\LocalizationCache.cs";
+		private const string PathToLocalizationCache = @"/Users/martind/sandbox/Kerbalism/src/Kerbalism/LocalizationCache.cs";
 
 		// set this to true (and change the path) to generate on KSP startup
 		// the english localization file based on the contents of LocalizationCache.cs
-		// IMPORTANT : don't let this to true when commiting
+		// IMPORTANT: don't let this to true when commiting
 		// - will only work with dev builds
-		public static bool GenerateEnglishLoc = true;
+		public static bool GenerateEnglishLoc = false;
 		private const string PathToEnglishLocOutput = @"/tmp/en-us.cfg";
 
 		// set this to true (and change the paths) to generate on KSP startup
 		// the non-english localization file based on the contents of LocalizationCache.cs
 		// and an existing (partial) localization file
 		// untranslated strings will have the comment // UNTRANSLATED
-		// IMPORTANT : don't let this to true when commiting
+		// IMPORTANT: don't let this to true when commiting
 		// - will only work with dev builds
 		public static bool UpdateNonEnglishLoc = false;
 		private const string locLanguage = "ru";
@@ -96,7 +96,7 @@ namespace KERBALISM
 				if (locMatch.Success)
 				{
 					if (!template)
-						locFile.Add("    #KERBALISM_" + locMatch.Groups[1].Value + " = " + locMatch.Groups[2].Value);
+						locFile.Add("    #KERBALISM_" + locMatch.Groups[1].Value + " = " + locMatch.Groups[2].Value.Trim());
 					else
 						locFile.Add("    #KERBALISM_" + locMatch.Groups[1].Value + " = " + "// \"" + locMatch.Groups[2].Value + "\"");
 
@@ -108,7 +108,7 @@ namespace KERBALISM
 				if (parameterLocMatch.Success)
 				{
 					if (!template)
-						locFile.Add("    #KERBALISM_" + parameterLocMatch.Groups[1].Value + " = " + parameterLocMatch.Groups[2].Value);
+						locFile.Add("    #KERBALISM_" + parameterLocMatch.Groups[1].Value + " = " + parameterLocMatch.Groups[2].Value.Trim());
 					else
 						locFile.Add("    #KERBALISM_" + parameterLocMatch.Groups[1].Value + " = " + "// \"" + parameterLocMatch.Groups[2].Value + "\"");
 					continue;
@@ -261,7 +261,7 @@ namespace KERBALISM
 		private static string GetLoc(string template) => Localizer.Format(prefix + template);
 
 		////////////////////////////////////////////////////////////////////
-		// DON'T CHANGE THE FOLLOWING COMMENT (Used to find the beginning of the file) :
+		// DON'T CHANGE THE FOLLOWING COMMENT (Used to find the beginning of the file):
 		// STARTOFLOCALIZATION
 		////////////////////////////////////////////////////////////////////
 
@@ -319,7 +319,9 @@ namespace KERBALISM
 		public static string Generic_START = GetLoc("Generic_START"); // "start"
 		public static string Generic_STOP = GetLoc("Generic_STOP"); // "stop"
 		public static string Generic_search = GetLoc("Generic_search"); // "search"
-																		//$HIS_HER
+		public static string Generic_notAvailable = GetLoc("Generic_notAvailable"); // "n/a"
+
+		//$HIS_HER
 		public static string Kerbal_his = GetLoc("Kerbal_his"); // "his"
 		public static string Kerbal_her = GetLoc("Kerbal_her"); // "her"
 
@@ -437,7 +439,7 @@ namespace KERBALISM
 		public static string Monitor_Hidden_Vessels = GetLoc("Monitor_Hidden_Vessels"); // "Hidden vessels"
 
 		////////////////////////////////////////////////////////////////////
-		// Telemetry/Planner UI : Signal
+		// Telemetry/Planner UI: Signal
 		////////////////////////////////////////////////////////////////////
 		public static string UI_signallost = GetLoc("UI_signallost"); // "Signal lost with"
 		public static string UI_signalback = GetLoc("UI_signalback"); // "signal is back"
@@ -457,7 +459,7 @@ namespace KERBALISM
 		public static string UI_transmissiondisabled = GetLoc("UI_transmissiondisabled"); // "Data transmission disabled"
 
 		////////////////////////////////////////////////////////////////////
-		// Telemetry/Planner UI : Automation
+		// Telemetry/Planner UI: Automation
 		////////////////////////////////////////////////////////////////////
 		public static string UI_devman = GetLoc("UI_devman"); // "DEV MANAGER"
 		public static string UI_devices = GetLoc("UI_devices"); // "DEVICES"
@@ -511,7 +513,7 @@ namespace KERBALISM
 		public static string DevManager_NameTabDriveEmpty = GetLoc("DevManager_NameTabDriveEmpty"); // "drive empty"
 
 		////////////////////////////////////////////////////////////////////
-		// Telemetry/Planner UI : Comfort
+		// Telemetry/Planner UI: Comfort
 		////////////////////////////////////////////////////////////////////
 		public static string Comfort_firmground = GetLoc("Comfort_firmground"); // "firm ground"
 		public static string Comfort_exercise = GetLoc("Comfort_exercise"); // "exercise"
@@ -526,14 +528,14 @@ namespace KERBALISM
 		public static string Science_inoperable = GetLoc("Science_inoperable"); // "The experiment is now inoperable, resetting will require a <b>Scientist</b>"
 
 		////////////////////////////////////////////////////////////////////
-		// Telemetry/Planner UI : CONNECTION MANAGER
+		// Telemetry/Planner UI: CONNECTION MANAGER
 		////////////////////////////////////////////////////////////////////
 		public static string ConnManager_title = GetLoc("ConnManager_title"); // "CONNECTION MANAGER"
 		public static string ConnManager_CONTROLPATH = GetLoc("ConnManager_CONTROLPATH"); // "CONTROL PATH"
 		public static string ConnManager_noconnection = GetLoc("ConnManager_noconnection"); // "no connection"
 
 		////////////////////////////////////////////////////////////////////
-		// Telemetry/Planner UI : reliability / quality
+		// Telemetry/Planner UI: reliability / quality
 		////////////////////////////////////////////////////////////////////
 		public static string QualityManagement_title = GetLoc("QualityManagement_title"); // "Quality Management"
 		public static string QualityManagement_noqualityinfo = GetLoc("QualityManagement_noqualityinfo"); // "no quality info"
@@ -546,7 +548,7 @@ namespace KERBALISM
 		public static string QualityManagement_good = GetLoc("QualityManagement_good"); // "good"
 
 		////////////////////////////////////////////////////////////////////
-		// Monitor UI : file manager
+		// Monitor UI: file manager
 		////////////////////////////////////////////////////////////////////
 		public static ParamString FILEMANAGER_DataAvailable = new ParamString("FILEMANAGER_DataAvailable"); // "(<<1>> available)"
 		public static ParamString FILEMANAGER_SAMPLESMass = new ParamString("FILEMANAGER_SAMPLESMass"); // "SAMPLES <<1>>"
@@ -558,7 +560,7 @@ namespace KERBALISM
 		public static string FILEMANAGER_nofiles = GetLoc("FILEMANAGER_nofiles"); // "no files"
 		public static string FILEMANAGER_SAMPLESAvailable = GetLoc("FILEMANAGER_SAMPLESAvailable"); // "available"
 		public static string FILEMANAGER_nosamples = GetLoc("FILEMANAGER_nosamples"); // "no samples"
-		public static string FILEMANAGER_Transmitduration = GetLoc("FILEMANAGER_Transmitduration"); // "Transmit duration :"
+		public static string FILEMANAGER_Transmitduration = GetLoc("FILEMANAGER_Transmitduration"); // "Transmit duration:"
 		public static string FILEMANAGER_send = GetLoc("FILEMANAGER_send"); // "Flag the file for transmission to <b>DSN</b>"
 		public static string FILEMANAGER_Delete = GetLoc("FILEMANAGER_Delete"); // "Delete the file"
 		public static string FILEMANAGER_Warning_title = GetLoc("FILEMANAGER_Warning_title"); // "Warning!"
@@ -579,7 +581,7 @@ namespace KERBALISM
 		public static string Message_BREAKDOWN = GetLoc("Message_BREAKDOWN"); // "BREAKDOWN"
 
 		////////////////////////////////////////////////////////////////////
-		// Monitor : main telemetry panel UI
+		// Monitor: main telemetry panel UI
 		////////////////////////////////////////////////////////////////////
 		public static string TELEMETRY_title = GetLoc("TELEMETRY_title"); // "TELEMETRY"
 		public static string TELEMETRY_EVASUIT = GetLoc("TELEMETRY_EVASUIT"); // "EVA SUIT"
@@ -625,7 +627,7 @@ namespace KERBALISM
 		public static ParamString TimeoutMsg3 = new ParamString("TimeoutMsg3"); // "New tentative in <<1>> (s)"
 
 		////////////////////////////////////////////////////////////////////
-		// Monitor : vessel config UI
+		// Monitor: vessel config UI
 		////////////////////////////////////////////////////////////////////
 		public static string VESSELCONFIG_title = GetLoc("VESSELCONFIG_title"); // "VESSEL CONFIG"
 		public static string VESSELCONFIG_RENDERING = GetLoc("VESSELCONFIG_RENDERING"); // "RENDERING"
@@ -659,8 +661,8 @@ namespace KERBALISM
 		public static string SCIENCEARCHIVE_filter3 = GetLoc("SCIENCEARCHIVE_filter3"); // "filter by current vessel"
 		public static string SCIENCEARCHIVE_EXPERIMENTINFO = GetLoc("SCIENCEARCHIVE_EXPERIMENTINFO"); // "EXPERIMENT INFO"
 		public static string SCIENCEARCHIVE_STATUS = GetLoc("SCIENCEARCHIVE_STATUS"); // "STATUS"
-		public static string SCIENCEARCHIVE_onvessel = GetLoc("SCIENCEARCHIVE_onvessel"); // "on vessel :"
-		public static string SCIENCEARCHIVE_onpart = GetLoc("SCIENCEARCHIVE_onpart"); // "on part :"
+		public static string SCIENCEARCHIVE_onvessel = GetLoc("SCIENCEARCHIVE_onvessel"); // "on vessel:"
+		public static string SCIENCEARCHIVE_onpart = GetLoc("SCIENCEARCHIVE_onpart"); // "on part:"
 		public static string SCIENCEARCHIVE_showarchive = GetLoc("SCIENCEARCHIVE_showarchive"); // "show science archive"
 		public static string SCIENCEARCHIVE_showexperimentinfo = GetLoc("SCIENCEARCHIVE_showexperimentinfo"); // "show experiment info"
 		public static string SCIENCEARCHIVE_hideexperimentinfo = GetLoc("SCIENCEARCHIVE_hideexperimentinfo"); // "hide experiment info"
@@ -700,7 +702,7 @@ namespace KERBALISM
 		public static string SCIENCEARCHIVE_CREDITS = GetLoc("SCIENCEARCHIVE_CREDITS");// "CREDITS"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Emitter
+		// Module: Emitter
 		////////////////////////////////////////////////////////////////////
 		public static string Emitter_Action = GetLoc("Emitter_Action"); // "Toggle Active Shield"
 		public static string Emitter_EmitIonizing = GetLoc("Emitter_EmitIonizing"); // "Emit ionizing radiation"
@@ -710,13 +712,13 @@ namespace KERBALISM
 		public static string Emitter_none = GetLoc("Emitter_none"); // "none"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Deploy
+		// Module: Deploy
 		////////////////////////////////////////////////////////////////////
 		public static string Deploy_actualCost = GetLoc("Deploy_actualCost"); // "EC Usage"
 		public static string Deploy_isBroken = GetLoc("Deploy_isBroken"); // "Is broken"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Configure
+		// Module: Configure
 		////////////////////////////////////////////////////////////////////
 		public static string Module_Configure = GetLoc("Module_Configure"); // "Configure"
 		public static string Module_Configure_Slots = GetLoc("Module_Configure_Slots"); // "Slots"
@@ -729,7 +731,7 @@ namespace KERBALISM
 		public static string Module_cost = GetLoc("Module_cost"); // "cost"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Comfort
+		// Module: Comfort
 		////////////////////////////////////////////////////////////////////
 		public static string Module_Comfort = GetLoc("Module_Comfort"); // "Comfort"
 		public static string Module_Comfort_Summary1 = GetLoc("Module_Comfort_Summary1"); // "ideal"
@@ -739,7 +741,7 @@ namespace KERBALISM
 		public static string Module_Comfort_Summary5 = GetLoc("Module_Comfort_Summary5"); // "none"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Experiment
+		// Module: Experiment
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Module_Experiment_MultipleRunsMessage = new ParamString("Module_Experiment_MultipleRunsMessage"); // "Can't start <<1>> a second time on vessel <<2>>"
 		public static string Module_Experiment_Prepare = GetLoc("Module_Experiment_Prepare"); // "Prepare"
@@ -793,7 +795,7 @@ namespace KERBALISM
 		public static string Module_Experiment_Message9 = GetLoc("Module_Experiment_Message9"); // "Ready for the next bit of science"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Greenhouse
+		// Module: Greenhouse
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Greenhouse_msg_1 = new ParamString("Greenhouse_msg_1"); // "On <<1>> "
 		public static ParamString Greenhouse_msg_2 = new ParamString("Greenhouse_msg_2"); // "harvest produced <<1>>"
@@ -825,7 +827,7 @@ namespace KERBALISM
 		public static string Greenhouse_Byproducts = GetLoc("Greenhouse_Byproducts"); // "By-products"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Habitat
+		// Module: Habitat
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Habitat_postmsg = new ParamString("Habitat_postmsg"); // "Can't disable <b><<1>> habitat</b> while crew is inside"
 		public static string Habitat = GetLoc("Habitat"); // "Habitat"
@@ -851,7 +853,7 @@ namespace KERBALISM
 		public static string Habitat_Summary5 = GetLoc("Habitat_Summary5"); // "cramped"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : HardDrive
+		// Module: HardDrive
 		////////////////////////////////////////////////////////////////////
 		public static string HardDrive = GetLoc("HardDrive"); // "Hard Drive"
 		public static string HardDrive_StoreData = GetLoc("HardDrive_StoreData"); // "Store data"
@@ -869,7 +871,7 @@ namespace KERBALISM
 		public static string HardDrive_Capacityunlimited = GetLoc("HardDrive_Capacityunlimited"); // "unlimited"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : GravityRing
+		// Module: GravityRing
 		////////////////////////////////////////////////////////////////////
 		public static string GravityRing_Action = GetLoc("GravityRing_Action"); // "Deploy/Retract Ring"
 		public static string GravityRing_Toggle = GetLoc("GravityRing_Toggle"); // "Deploy"
@@ -879,7 +881,7 @@ namespace KERBALISM
 		public static string GravityRing_info2 = GetLoc("GravityRing_info2"); // "deployable"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Harvester
+		// Module: Harvester
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Harvester_generatedescription = new ParamString("Harvester_generatedescription"); // "Extract <<1>> from <<2>>"
 		public static string Harvester_Action = GetLoc("Harvester_Action"); // "Start/Stop Harvester"
@@ -906,7 +908,7 @@ namespace KERBALISM
 		public static string Harvester_info7 = GetLoc("Harvester_info7"); // "ec consumption"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : ScanSat
+		// Module: ScanSat
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Scansat_Scannerhalted_text = new ParamString("Scansat_Scannerhalted_text"); // "Scanner halted on <<1>>. No storage left on vessel."
 		public static ParamString Scansat_sensorresumed = new ParamString("Scansat_sensorresumed"); // "SCANsat sensor resumed operations on <<1>>"
@@ -914,7 +916,7 @@ namespace KERBALISM
 		public static string Scansat_Scannerhalted = GetLoc("Scansat_Scannerhalted"); // "Scanner halted"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Laboratory
+		// Module: Laboratory
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Laboratory_Analyzed = new ParamString("Laboratory_Analyzed"); // "Our laboratory on <<1>> analyzed <<2>>"
 		public static string Laboratory_Title = GetLoc("Laboratory_Title"); // "Laboratory"
@@ -936,7 +938,7 @@ namespace KERBALISM
 		public static string Laboratory_Nostorage = GetLoc("Laboratory_Nostorage"); // "No storage available"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : PassiveShield
+		// Module: PassiveShield
 		////////////////////////////////////////////////////////////////////
 		public static string PassiveShield_Sandbags = GetLoc("PassiveShield_Sandbags"); // "Sandbags"
 		public static string PassiveShield_fill = GetLoc("PassiveShield_fill"); // "fill"
@@ -946,13 +948,13 @@ namespace KERBALISM
 		public static string PassiveShield_MessagePost = GetLoc("PassiveShield_MessagePost"); // "I don't know how this works!"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : PlannerController
+		// Module: PlannerController
 		////////////////////////////////////////////////////////////////////
 		public static string PlannerController_yes = GetLoc("PlannerController_yes"); // "yes"
 		public static string PlannerController_no = GetLoc("PlannerController_no"); // "no"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : ProcessController
+		// Module: ProcessController
 		////////////////////////////////////////////////////////////////////
 		public static string ProcessController_Start_Stop = GetLoc("ProcessController_Start_Stop"); // "Start/Stop"
 		public static string ProcessController_broken = GetLoc("ProcessController_broken"); // "broken"
@@ -963,7 +965,7 @@ namespace KERBALISM
 		public static string ProcessController_Capacity = GetLoc("ProcessController_Capacity"); // "Process capacity: <<1>>"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Reliability
+		// Module: Reliability
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Reliability_Inspect = new ParamString("Reliability_Inspect"); // "Inspect <<1>>"
 		public static ParamString Reliability_Repair = new ParamString("Reliability_Repair"); // "Repair <<1>>"
@@ -1021,7 +1023,7 @@ namespace KERBALISM
 		public static string Reliability_info11 = GetLoc("Reliability_info11"); // "Extra mass"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Sensor
+		// Module: Sensor
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Sensor_insideatmosphere = new ParamString("Sensor_insideatmosphere"); // "inside <b>atmosphere</b>(<<1>>)"
 		public static string Sensor_info = GetLoc("Sensor_info"); // "Add telemetry readings to the part ui, and to the telemetry panel"
@@ -1044,7 +1046,7 @@ namespace KERBALISM
 		public static string Sensor_info2 = GetLoc("Sensor_info2"); // "On the other\nhand there seems to be plenty\nof useless positive graviolis around."
 
 		////////////////////////////////////////////////////////////////////
-		// Module : Sickbay
+		// Module: Sickbay
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Sickbay_cureEverybody = new ParamString("Sickbay_cureEverybody"); // "<<1>>: dismiss <<2>>" //<<2>> -> patientName
 		public static ParamString Sickbay_cureEverybody2 = new ParamString("Sickbay_cureEverybody2"); // "<<1>>: cure <<2>>"
@@ -1058,7 +1060,7 @@ namespace KERBALISM
 		public static ParamString Sickbay_info4 = new ParamString("Sickbay_info4"); // "<<1>> Kerbals"
 
 		////////////////////////////////////////////////////////////////////
-		// Module : SolarPanelFixer
+		// Module: SolarPanelFixer
 		////////////////////////////////////////////////////////////////////
 		public static ParamString SolarPanelFixer_occludedby = new ParamString("SolarPanelFixer_occludedby"); // "occluded by <<1>>"
 		public static string SolarPanelFixer_Solarpanel = GetLoc("SolarPanelFixer_Solarpanel"); // "Solar panel"
@@ -1082,10 +1084,10 @@ namespace KERBALISM
 		public static string SolarPanelFixer_failure = GetLoc("SolarPanelFixer_failure"); // "failure"
 		public static string SolarPanelFixer_invalidstate = GetLoc("SolarPanelFixer_invalidstate"); // "invalid state"
 		public static string SolarPanelFixer_Trackedstar = GetLoc("SolarPanelFixer_Trackedstar"); // "Tracked star"
-		public static string SolarPanelFixer_AutoTrack = GetLoc("SolarPanelFixer_AutoTrack"); // "[Auto] : "
+		public static string SolarPanelFixer_AutoTrack = GetLoc("SolarPanelFixer_AutoTrack"); // "[Auto]: "
 
 		////////////////////////////////////////////////////////////////////
-		// Class : Callbacks
+		// Class: Callbacks
 		////////////////////////////////////////////////////////////////////
 		public static ParamString CallBackMsg_EvaNoMP = new ParamString("CallBackMsg_EvaNoMP"); // "There isn't any <<1>> in the EVA suit"
 		public static string CallBackMsg_EvaNoMP2 = GetLoc("CallBackMsg_EvaNoMP2"); // "Don't let the ladder go!"
@@ -1093,7 +1095,7 @@ namespace KERBALISM
 		public static string CallBackMsg_PROGRESS2 = GetLoc("CallBackMsg_PROGRESS2"); // "Our scientists just made a breakthrough"
 
 		////////////////////////////////////////////////////////////////////
-		// Class : Preferences
+		// Class: Preferences
 		////////////////////////////////////////////////////////////////////
 		public static string Preferences_Reliability = GetLoc("Preferences_Reliability"); // "Reliability"
 		public static string HighlightMalfunctions = GetLoc("HighlightMalfunctions"); // "Highlight Malfunctions"
@@ -1183,7 +1185,7 @@ namespace KERBALISM
 		public static string Harvests = GetLoc("Harvests"); // "Harvests"
 		public static string Planner_Targetbody = GetLoc("Planner_Targetbody"); // "Target body"
 		public static string Planner_SunlightNominal = GetLoc("Planner_SunlightNominal"); // "In sunlight\n<b>Nominal</b> solar panel output"
-		public static string Planner_SunlightSimulated = GetLoc("Planner_SunlightSimulated"); // "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction : look at the shadows !</i>"
+		public static string Planner_SunlightSimulated = GetLoc("Planner_SunlightSimulated"); // "In sunlight\n<b>Estimated</b> solar panel output\n<i>Sunlight direction: look at the shadows !</i>"
 		public static string Planner_Shadow = GetLoc("Planner_Shadow"); // "In shadow"
 		public static string Planner_Targetsituation = GetLoc("Planner_Targetsituation"); // "Target situation"
 		public static string Planner_RenderQuote = GetLoc("Planner_RenderQuote"); // "In preparing for space, I have always found that\nplans are useless but planning is indispensable.\nWernher von Kerman"
@@ -1269,15 +1271,15 @@ namespace KERBALISM
 		public static string Statu_unknown = GetLoc("Statu_unknown"); // "unknown"
 		public static string Antenna_statu_unknown = GetLoc("Antenna_statu_unknown"); // "unknown"
 		public static string Experiment_on = GetLoc("Experiment_on"); // "on                        //on partinfo.title"
-		public static string Experiment_status = GetLoc("Experiment_status"); // "status :"
-		public static string Experiment_issue = GetLoc("Experiment_issue"); // "issue :"
-		public static string Experiment_sciencevalue = GetLoc("Experiment_sciencevalue"); // "science value :"
-		public static string Experiment_completion = GetLoc("Experiment_completion"); // "completion :"
+		public static string Experiment_status = GetLoc("Experiment_status"); // "status:"
+		public static string Experiment_issue = GetLoc("Experiment_issue"); // "issue:"
+		public static string Experiment_sciencevalue = GetLoc("Experiment_sciencevalue"); // "science value:"
+		public static string Experiment_completion = GetLoc("Experiment_completion"); // "completion:"
 		public static string SolarPanel_deployable = GetLoc("SolarPanel_deployable"); // "solar panel (deployable)"
 		public static string SolarPanel_nonretractable = GetLoc("SolarPanel_nonretractable"); // "solar panel (non retractable)"
 
 		////////////////////////////////////////////////////////////////////
-		// Class : Storm
+		// Class: Storm
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Storm_msg1 = new ParamString("Storm_msg1"); // "The coronal mass ejection hit <<1>> system"
 		public static ParamString Storm_msg2 = new ParamString("Storm_msg2"); // "Our observatories report a coronal mass ejection directed toward  <<1>> system"
@@ -1301,7 +1303,7 @@ namespace KERBALISM
 		public static string Experimentinfo_scannerarm = GetLoc("Experimentinfo_scannerarm"); // "Analyse with a scanner arm"
 		public static string Experimentinfo_smallRoc = GetLoc("Experimentinfo_smallRoc"); // "Collectable on EVA as a sample"
 		public static string Experimentinfo_smallRoc2 = GetLoc("Experimentinfo_smallRoc2"); // "Can't be collected on EVA"
-		public static ParamString Experimentinfo_smallRoc3 = new ParamString("Experimentinfo_smallRoc3"); // "Found on <<1>>'s :"
+		public static ParamString Experimentinfo_smallRoc3 = new ParamString("Experimentinfo_smallRoc3"); // "Found on <<1>>'s:"
 		public static string Experimentinfo_Bodiesallowed = GetLoc("Experimentinfo_Bodiesallowed");// "Bodies allowed:"
 		public static string Experimentinfo_Bodiesnotallowed = GetLoc("Experimentinfo_Bodiesnotallowed");// "Bodies not allowed:"
 		public static string Experimentinfo_BodyCondition1 = GetLoc("Experimentinfo_BodyCondition1");// "atmospheric"
@@ -1355,7 +1357,7 @@ namespace KERBALISM
 		////////////////////////////////////////////////////////////////////
 		//Science messages
 		public static string Scienctransmitted_title = GetLoc("Scienctransmitted_title"); // "transmitted"
-		public static string Nosciencegain = GetLoc("Nosciencegain"); // "no science gain : we already had this data"
+		public static string Nosciencegain = GetLoc("Nosciencegain"); // "no science gain: we already had this data"
 		public static string SciencresultText1 = GetLoc("SciencresultText1"); // "Our researchers will jump on it right now"
 		public static string SciencresultText2 = GetLoc("SciencresultText2"); // "This cause some excitement"
 		public static string SciencresultText3 = GetLoc("SciencresultText3"); // "These results are causing a brouhaha in R&D"
@@ -1472,5 +1474,21 @@ namespace KERBALISM
 		public static string DataTransmitter_ECTX = GetLoc("DataTransmitter_ECTX"); // "EC (transmitting)"
 		public static string DataTransmitter_Maxspeed = GetLoc("DataTransmitter_Maxspeed"); // "Max. speed"
 
+		// Process popup window
+		public static string ProcessPopup_NoStorage = GetLoc("ProcessPopup_NoStorage"); // "No storage"
+		public static string ProcessPopup_NameTitle = GetLoc("ProcessPopup_NameTitle"); // "Name"
+		public static string ProcessPopup_Capacity = GetLoc("ProcessPopup_Capacity"); // "Capacity"
+		public static string ProcessPopup_NameTooltip = GetLoc("ProcessPopup_NameTooltip"); // "Resource being consumed or produced"
+		public static string ProcessPopup_MaxRateTitle = GetLoc("ProcessPopup_MaxRateTitle"); // "Max. rate"
+		public static string ProcessPopup_MaxRateTooltip = GetLoc("ProcessPopup_MaxRateTooltip"); // "Max rate at current enabled capacity"
+		public static string ProcessPopup_StatusTitle = GetLoc("ProcessPopup_StatusTitle"); // "Status"
+		public static string ProcessPopup_StatusTooltip = GetLoc("ProcessPopup_StatusTooltip");  // "Current rate\n\"No storage\" means that the process can't\nrun because of insuficient storage capacity"
+		public static string ProcessPopup_DumpTitle = GetLoc("ProcessPopup_DumpTitle"); // "Dump"
+		public static string ProcessPopup_DumpTooltip = GetLoc("ProcessPopup_DumpTooltip"); // "Allow output to be dumped overboard\nif it cannot be stored"
+		public static string ProcessPopup_PARTS = GetLoc("ProcessPopup_PARTS"); // "PARTS"
+		public static string ProcessPopup_VesselCapacity = GetLoc("ProcessPopup_VesselCapacity"); // "Vessel capacity"
+		public static string ProcessPopup_EnabledCapacity = GetLoc("ProcessPopup_EnabledCapacity"); // "Enabled capacity"
+		public static string ProcessPopup_CapacityUsed = GetLoc("ProcessPopup_CapacityUsed"); // "Capacity used"
+		public static string ProcessPopup_TITLE = GetLoc("ProcessPopup_TITLE"); // "OUTPUTS / INPUTS"
 	}
 }

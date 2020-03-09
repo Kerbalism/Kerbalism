@@ -75,6 +75,10 @@ namespace KERBALISM
 			{
 				dumpable = new List<string>(outputs.Keys);
 			}
+			else if(dumpable.Count == 1 && dumpable[0].ToLower() == "none")
+			{
+				dumpable.Clear();
+			}
 
 			// defaultDumped default: no outputs are dumped by default
 			defaultDumped = new List<string>();
@@ -83,8 +87,12 @@ namespace KERBALISM
 			{
 				dumpedList = new List<string>(outputs.Keys);
 			}
-			// retain only default dumpable outputs that really are dumpable
-			foreach(string o in dumpedList)
+			else if (dumpedList.Count == 1 && dumpedList[0].ToLower() == "none")
+			{
+				dumpedList.Clear();
+			}
+			// retain only default dumpable outputs that actually are dumpable
+			foreach (string o in dumpedList)
 			{
 				if (dumpable.Contains(o))
 					defaultDumped.Add(o);

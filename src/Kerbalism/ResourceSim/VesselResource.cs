@@ -18,6 +18,9 @@ namespace KERBALISM
 		/// <summary> UI friendly name</summary>
 		public abstract string Title { get; }
 
+		/// <summary> Technical name</summary>
+		public abstract bool Visible { get; }
+
 		/// <summary> Amount of resource</summary>
 		public abstract double Amount { get; }
 
