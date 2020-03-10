@@ -103,18 +103,18 @@ namespace KERBALISM
 
 			p.AddContent("livingVolume", vd.HabitatInfo.livingVolume.ToString("0.00 m3"));
 			p.AddContent("volumePerCrew", vd.HabitatInfo.volumePerCrew.ToString("0.00 m3"));
-			p.AddContent("livingSpaceModifier", vd.HabitatInfo.livingSpaceModifier.ToString("F2"));
+			p.AddContent("livingSpaceModifier", vd.HabitatInfo.livingSpaceFactor.ToString("F2"));
 			p.AddContent("pressurizedSurface", vd.HabitatInfo.pressurizedSurface.ToString("0.00 m2"));
 			p.AddContent("pressurizedVolume", vd.HabitatInfo.pressurizedVolume.ToString("0.00 m3"));
 			p.AddContent("pressureAtm", vd.HabitatInfo.pressureAtm.ToString("0.00 atm"));
-			p.AddContent("pressureModifier", vd.HabitatInfo.pressureModifier.ToString("F2"));
+			p.AddContent("pressureModifier", vd.HabitatInfo.pressureFactor.ToString("F2"));
 
 			p.AddContent("shieldingSurface", vd.HabitatInfo.shieldingSurface.ToString("0.00 m2"));
 			p.AddContent("shieldingAmount", vd.HabitatInfo.shieldingAmount.ToString("F2"));
 			p.AddContent("shieldingModifier", vd.HabitatInfo.shieldingModifier.ToString("F2"));
 			p.AddContent("poisoningLevel", vd.HabitatInfo.poisoningLevel.ToString("F2"));
 
-			p.AddContent("comfortModifier", vd.HabitatInfo.comfortModifier.ToString("F2"), HabitatLib.ComfortTooltip(vd.HabitatInfo.comfortMask, vd.HabitatInfo.comfortModifier));
+			p.AddContent("comfortModifier", vd.HabitatInfo.comfortFactor.ToString("F2"), HabitatLib.ComfortTooltip(vd.HabitatInfo.comfortMask, vd.HabitatInfo.comfortFactor));
 
 
 			//p.AddContent("volume-debug", Lib.HumanReadableVolume(vd.Volume));

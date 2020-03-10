@@ -406,13 +406,13 @@ namespace KERBALISM
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.livingSpaceModifier;
+			return v.KerbalismData().HabitatInfo.livingSpaceFactor;
 		}
 
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.comfortModifier;
+			return v.KerbalismData().HabitatInfo.comfortFactor;
 		}
 
 		#endregion

@@ -1496,7 +1496,7 @@ namespace KERBALISM
 			{
 				specs.Add("");
 				specs.Add(Lib.Color("Gravity ring", Lib.Kolor.Cyan));
-				specs.Add("Comfort bonus", Settings.ComfortFirmGround.ToString("P0"));
+				specs.Add("Comfort bonus", (Settings.ComfortFirmGround + Settings.ComfortExercise).ToString("P0"));
 				specs.Add("Acceleration", Lib.Color(Lib.HumanReadableRate(accelerateECRate, "F3", ecAbbr), Lib.Kolor.NegRate));
 				specs.Add("Steady state", Lib.Color(Lib.HumanReadableRate(rotateECRate, "F3", ecAbbr), Lib.Kolor.NegRate));
 			}
@@ -1505,7 +1505,7 @@ namespace KERBALISM
 			{
 				specs.Add("");
 				specs.Add(Lib.Color("Comfort", Lib.Kolor.Cyan), ComfortCommaList(baseComfortsMask));
-				specs.Add("Bonus", GetComfortFactor(baseComfortsMask, false).ToString("P0"));
+				specs.Add("Bonus", GetComfortFactor(baseComfortsMask).ToString("P0"));
 			}
 
 			return specs;
@@ -1544,9 +1544,9 @@ namespace KERBALISM
 
 		public static double LToM3(double liters) => liters * 0.001;
 
-		public static double GetComfortFactor(int comfortMask, bool clamped = true)
+		public static double GetComfortFactor(int comfortMask)
 		{
-			double factor = clamped ? 0.1 : 0.0;
+			double factor = 0.0;
 
 			if (PreferencesComfort.Instance != null)
 			{

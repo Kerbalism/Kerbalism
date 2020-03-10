@@ -84,7 +84,7 @@ namespace KERBALISM
 			LifeSupportSurvivalRange = Lib.ConfigValue(cfg, "LifeSupportSurvivalRange", 5);
 
 			ComfortLivingSpace = Lib.ConfigValue(cfg, "ComfortLivingSpace", 20);
-			ComfortFirmGround = Lib.ConfigValue(cfg, "ComfortFirmGround", 0.1f);
+			ComfortFirmGround = Lib.ConfigValue(cfg, "ComfortFirmGround", 0.3f);
 			ComfortExercise = Lib.ConfigValue(cfg, "ComfortExercise", 0.2f);
 			ComfortNotAlone = Lib.ConfigValue(cfg, "ComfortNotAlone", 0.3f);
 			ComfortCallHome = Lib.ConfigValue(cfg, "ComfortCallHome", 0.2f);

@@ -327,10 +327,10 @@ namespace KERBALISM.Planner
 				Local.Planner_volumepercapita ,"<b>\t", Lib.HumanReadableVolume(vesselData.HabitatInfo.volumePerCrew), "</b>\n",//"volume per-capita:
 				Local.Planner_ideallivingspace ,"<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"//"ideal living space:
 			);
-			p.AddContent(Local.Planner_livingspace, HabitatLib.LivingSpaceFactorToString(vesselData.HabitatInfo.livingSpaceModifier), living_space_tooltip);//"living space"
+			p.AddContent(Local.Planner_livingspace, HabitatLib.LivingSpaceFactorToString(vesselData.HabitatInfo.livingSpaceFactor), living_space_tooltip);//"living space"
 
 
-			p.AddContent(Local.Planner_comfort, HabitatLib.ComfortSummary(vesselData.HabitatInfo.comfortModifier), HabitatLib.ComfortTooltip(vesselData.HabitatInfo.comfortMask, vesselData.HabitatInfo.comfortModifier));//"comfort"
+			p.AddContent(Local.Planner_comfort, HabitatLib.ComfortSummary(vesselData.HabitatInfo.comfortFactor), HabitatLib.ComfortTooltip(vesselData.HabitatInfo.comfortMask, vesselData.HabitatInfo.comfortFactor));//"comfort"
 
 
 			// render pressure data

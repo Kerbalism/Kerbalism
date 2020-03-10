@@ -79,6 +79,11 @@ namespace KERBALISM
 		// this threshold is also used to ignore light coming from distant/weak stars 
 		public virtual bool EnvInFullShadow  { get; }
 
+		private PreferencesReliability PrefReliability => PreferencesReliability.Instance;
+		private PreferencesScience PrefScience => PreferencesScience.Instance;
+		private PreferencesComfort PrefComfort => PreferencesComfort.Instance;
+		private PreferencesRadiation PrefRadiation => PreferencesRadiation.Instance;
+
 		public VesselModifierData()
 		{
 			ModifierContext = new ExpressionContext(this);

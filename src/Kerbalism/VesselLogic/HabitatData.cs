@@ -14,8 +14,8 @@ namespace KERBALISM
 		/// <summary> livingVolume (m3) per kerbal</summary>
 		public double volumePerCrew = 0.0;
 
-		/// <summary> [0.1 : 1.0] factor : living volume per kerbal normalized against the ideal living space as defined in settings</summary>
-		public double livingSpaceModifier = 0.0;
+		/// <summary> [0.0 : 1.0] factor : living volume per kerbal normalized against the ideal living space as defined in settings</summary>
+		public double livingSpaceFactor = 0.0;
 
 		/// <summary> surface (m2) of all pressurized habitats, enabled of not. Habitats using the outside air are ignored </summary>
 		public double pressurizedSurface = 0.0;
@@ -26,8 +26,8 @@ namespace KERBALISM
 		/// <summary> pressure (atm) of all pressurized habitats, enabled of not. Habitats using the outside air are ignored </summary>
 		public double pressureAtm = 0.0;
 
-		/// <summary> [1.0 ; Settings.PressureFactor] Settings.PressureFactor multiplied by amount of crew members not living with their helmets (pressurized hab / outside air) vs total crew count</summary>
-		public double pressureModifier = 0.0;
+		/// <summary> [0.0 ; 1.0] amount of crew members not living with their helmets (pressurized hab / outside air) vs total crew count</summary>
+		public double pressureFactor = 0.0;
 
 		/// <summary> [0.0 ; 1.0] % of CO2 in the air (averaged in case there is a mix of pressurized / outside air habitats)</summary>
 		public double poisoningLevel = 0.0;
@@ -44,15 +44,15 @@ namespace KERBALISM
 		/// <summary> bitmask of available comforts (see Comfort enum) : comforts in disabled or depressurized habs are ignored</summary>
 		public int comfortMask = 0;
 
-		/// <summary> [0.1 ; 1.0] factor : sum of all enabled comfort bonuses </summary>
-		public double comfortModifier = 0.0;
+		/// <summary> [0.0 ; 1.0] factor : sum of all enabled comfort bonuses</summary>
+		public double comfortFactor = 0.0;
 
 		public void Reset()
 		{
-			livingVolume = volumePerCrew = livingSpaceModifier
+			livingVolume = volumePerCrew = livingSpaceFactor
 				= pressurizedSurface = pressurizedVolume = pressureAtm
-				= pressureModifier = poisoningLevel = shieldingSurface
-				= shieldingAmount = shieldingModifier = comfortModifier
+				= pressureFactor = poisoningLevel = shieldingSurface
+				= shieldingAmount = shieldingModifier = comfortFactor
 				= 0.0;
 			comfortMask = 0;
 		}
@@ -382,7 +382,7 @@ namespace KERBALISM
 
 							info.comfortMask |= habitat.baseComfortsMask;
 							if (habitat.IsRotationNominal)
-								info.comfortMask |= (int)Comfort.firmGround;
+								info.comfortMask |= (int)Comfort.firmGround | (int)Comfort.exercice;
 
 							pressurizedPartsAtmoAmount += habitat.atmoAmount;
 							pressurizedPartsCrewCount += habitat.crewCount;
@@ -448,17 +448,22 @@ namespace KERBALISM
 			}
 
 			info.volumePerCrew = crewCount > 0 ? info.livingVolume / crewCount : 0.0;
-			info.livingSpaceModifier = Lib.Clamp(info.volumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+			info.livingSpaceFactor = Math.Min(info.volumePerCrew / PreferencesComfort.Instance.livingSpace, 1.0);
 			info.pressureAtm = info.pressurizedVolume > 0.0 ? pressurizedPartsAtmoAmount / info.pressurizedVolume : 0.0;
-			info.pressureModifier = Math.Max(1.0, Settings.PressureFactor * (crewCount > 0 ? 1.0 - ((double)pressurizedPartsCrewCount / (double)crewCount) : 1.0)); // 1 when fully pressurized, 10 (Settings.PressureFactor) when fully depressurizd
+
+			info.pressureFactor = crewCount > 0 ? ((double)pressurizedPartsCrewCount / (double)crewCount) : 0.0; // 0.0 when pressurized, 1.0 when depressurized
+
+
+			//info.pressureModifier = Settings.PressureFactor * pressurizedFactor;
+			//info.pressureModifier = Math.Max(1.0, Settings.PressureFactor * (crewCount > 0 ? 1.0 - ((double)pressurizedPartsCrewCount / (double)crewCount) : 1.0)); // 1 when fully pressurized, 10 (Settings.PressureFactor) when fully depressurizd
 			info.poisoningLevel = wasteConsideredPartsCount > 0 ? info.poisoningLevel / wasteConsideredPartsCount : 0.0;
 			info.shieldingModifier = info.shieldingSurface > 0.0 ? Radiation.ShieldingEfficiency(info.shieldingAmount / info.shieldingSurface) : 0.0;
 
-			if (landed) info.comfortMask |= (int)Comfort.firmGround;
+			if (landed) info.comfortMask |= (int)Comfort.firmGround | (int)Comfort.exercice;
 			if (crewCount > 1) info.comfortMask |= (int)Comfort.notAlone;
 			if (canTransmit) info.comfortMask |= (int)Comfort.callHome;
 
-			info.comfortModifier = HabitatLib.GetComfortFactor(info.comfortMask);
+			info.comfortFactor = HabitatLib.GetComfortFactor(info.comfortMask);
 		}
 
 	}
