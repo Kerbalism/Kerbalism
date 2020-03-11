@@ -2461,10 +2461,8 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static PartResource AddResource(Part p, string res_name, double amount, double capacity, bool incremental = false)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
 		{
-			Lib.Log("add resource " + res_name + " amount=" + amount + " capacity=" + capacity + " delta=" + incremental);
-
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -2477,8 +2475,6 @@ namespace KERBALISM
 			PartResource resource = p.Resources[resourceDefinition.name];
 			if (resource == null)
 			{
-				Lib.Log("existing part resource is null, creating new");
-
 				resource = new PartResource(p);
 				resource.SetInfo(resourceDefinition);
 				resource.maxAmount = capacity;
@@ -2502,33 +2498,14 @@ namespace KERBALISM
 			}
 			else
 			{
-				Lib.Log("have existing part resource, max amount = " + resource.maxAmount);
-
 				PartResource simulationResource = p.SimulationResources?[resourceDefinition.name];
 
-				if (incremental)
+				resource.maxAmount = capacity;
+				resource.amount = amount;
+				if (simulationResource != null)
 				{
-					Lib.Log("extending max amount by " + capacity);
-
-					resource.maxAmount += capacity;
-					resource.amount += amount;
-					if (simulationResource != null)
-					{
-						simulationResource.maxAmount += capacity;
-						simulationResource.amount += amount;
-					}
-				}
-				else
-				{
-					Lib.Log("setting max amount to " + capacity);
-
-					resource.maxAmount = capacity;
-					resource.amount = amount;
-					if (simulationResource != null)
-					{
-						simulationResource.maxAmount = capacity;
-						simulationResource.amount = amount;
-					}
+					simulationResource.maxAmount = capacity;
+					simulationResource.amount = amount;
 				}
 			}
 

@@ -6,7 +6,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
 using static KERBALISM.ExperimentRequirements;
-using static KERBALISM.Experiment;
+using static KERBALISM.ModuleKsmExperiment;
 using KERBALISM.KsmGui;
 using static KERBALISM.ScienceDB;
 using KSP.Localization;
@@ -18,7 +18,7 @@ namespace KERBALISM
 	{
 		// args
 		Vessel v;
-		Experiment moduleOrPrefab;
+		ModuleKsmExperiment moduleOrPrefab;
 		ProtoPartModuleSnapshot protoModule;
 
 		VesselData vd;
@@ -61,7 +61,7 @@ namespace KERBALISM
 		private static List<long> activePopups = new List<long>();
 		private long popupId;
 
-		public ExperimentPopup(Vessel v, Experiment moduleOrPrefab, uint partId, string partName, ProtoPartModuleSnapshot protoModule = null)
+		public ExperimentPopup(Vessel v, ModuleKsmExperiment moduleOrPrefab, uint partId, string partName, ProtoPartModuleSnapshot protoModule = null)
 		{
 			popupId = partId + moduleOrPrefab.experiment_id.GetHashCode();
 
@@ -97,7 +97,7 @@ namespace KERBALISM
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(window, expInfo.Title, default, 120);
-			topHeader.TextObject.SetTooltipText(Lib.BuildString(Local.SCIENCEARCHIVE_onvessel ," ", Lib.Bold(v.vesselName), "\n", Local.SCIENCEARCHIVE_onpart , " ", Lib.Bold(partName)));//"on vessel :"on part :
+			topHeader.TextObject.SetTooltipText(Lib.BuildString(Local.SCIENCEARCHIVE_onvessel, " ", Lib.Bold(v.vesselName), "\n", Local.SCIENCEARCHIVE_onpart, " ", Lib.Bold(partName)));//"on vessel :"on part :
 			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, Local.SCIENCEARCHIVE_showarchive);//"show science archive"
 			rndVisibilityButton.MoveAsFirstChild();
 			expInfoVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderInfo, ToggleExpInfo, Local.SCIENCEARCHIVE_showexperimentinfo);//"show experiment info"
@@ -116,7 +116,7 @@ namespace KERBALISM
 			expInfoHeader = new KsmGuiHeader(leftPanel, Local.SCIENCEARCHIVE_EXPERIMENTINFO);//"EXPERIMENT INFO"
 			expInfoBox = new KsmGuiTextBox(leftPanel, SpecsWithoutRequires(expInfo, moduleOrPrefab).Info());
 			expInfoBox.SetLayoutElement(false, true, 160);
-			
+
 			// right panel
 			KsmGuiVerticalLayout rightPanel = new KsmGuiVerticalLayout(panels, 5);
 			rightPanel.SetLayoutElement(false, true, -1, -1, 230);

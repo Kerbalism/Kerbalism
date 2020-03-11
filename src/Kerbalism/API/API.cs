@@ -428,7 +428,7 @@ namespace KERBALISM
 		/// <param name="title">origin of the resource consumer (shown in the UI)</param>
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));	
+			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		/// <summary> Produce a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
@@ -581,10 +581,10 @@ namespace KERBALISM
 			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
 			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
 
-			public void Notify(Vessel vessel, string experiment_id, Experiment.ExpStatus oldStatus, Experiment.ExpStatus newStatus)
+			public void Notify(Vessel vessel, string experiment_id, ModuleKsmExperiment.ExpStatus oldStatus, ModuleKsmExperiment.ExpStatus newStatus)
 			{
-				bool wasRunning = oldStatus == Experiment.ExpStatus.Forced || oldStatus == Experiment.ExpStatus.Running;
-				bool isRunning = newStatus == Experiment.ExpStatus.Forced || newStatus == Experiment.ExpStatus.Running;
+				bool wasRunning = oldStatus == ModuleKsmExperiment.ExpStatus.Forced || oldStatus == ModuleKsmExperiment.ExpStatus.Running;
+				bool isRunning = newStatus == ModuleKsmExperiment.ExpStatus.Forced || newStatus == ModuleKsmExperiment.ExpStatus.Running;
 				if (wasRunning == isRunning) return;
 				foreach (Action<Vessel, string, bool> receiver in receivers)
 				{
@@ -607,10 +607,10 @@ namespace KERBALISM
 
 			if (vessel.loaded)
 			{
-				foreach (Experiment e in vessel.FindPartModulesImplementing<Experiment>())
+				foreach (ModuleKsmExperiment e in vessel.FindPartModulesImplementing<ModuleKsmExperiment>())
 				{
 					if (e.enabled && e.experiment_id == experiment_id &&
-						(e.State == Experiment.RunningState.Running || e.State == Experiment.RunningState.Forced))
+						(e.State == ModuleKsmExperiment.RunningState.Running || e.State == ModuleKsmExperiment.RunningState.Forced))
 						return true;
 				}
 			}
@@ -635,11 +635,11 @@ namespace KERBALISM
 						// note: this must be done after ModulePrefab is called, so that indexes are right
 						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
 
-						if (m.moduleName == "Experiment"
-							&& ((Experiment)module_prefab).experiment_id == experiment_id)
+						if (m.moduleName == "ModuleKsmExperiment"
+							&& ((ModuleKsmExperiment)module_prefab).experiment_id == experiment_id)
 						{
-							var state = Lib.Proto.GetEnum(m, "expState", Experiment.RunningState.Stopped);
-							if (state == Experiment.RunningState.Running || state == Experiment.RunningState.Forced)
+							var state = Lib.Proto.GetEnum(m, "expState", ModuleKsmExperiment.RunningState.Stopped);
+							if (state == ModuleKsmExperiment.RunningState.Running || state == ModuleKsmExperiment.RunningState.Forced)
 								return true;
 						}
 					}
@@ -709,7 +709,7 @@ namespace KERBALISM
 			//This adds a connection info handler
 			public void Add(MethodInfo handler)
 			{
-				if(handler == null)
+				if (handler == null)
 				{
 					Lib.Log("Kerbalism CommInfo.Add called with null handler", Lib.LogLevel.Error);
 					return;

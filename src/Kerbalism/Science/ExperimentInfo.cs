@@ -84,7 +84,7 @@ namespace KERBALISM
 			IsROC = ExperimentId.StartsWith("ROCScience");
 
 			if (IsROC)
-				Title = "ROC: " + stockDef.experimentTitle;	// group ROC together in the science archive (sorted by Title)
+				Title = "ROC: " + stockDef.experimentTitle; // group ROC together in the science archive (sorted by Title)
 			else
 				Title = stockDef.experimentTitle;
 
@@ -238,7 +238,7 @@ namespace KERBALISM
 					Lib.Log($"Experiment `{ExperimentId}` define a IncludedExperiment `{expId}`, but that experiment doesn't exist", Lib.LogLevel.Warning);
 					continue;
 				}
-					
+
 				// early prevent duplicated entries
 				if (includedInfo.ExperimentId == ExperimentId || IncludedExperiments.Contains(includedInfo))
 					continue;
@@ -304,10 +304,10 @@ namespace KERBALISM
 
 				foreach (PartModule module in ap.partPrefab.Modules)
 				{
-					if (module is Experiment expModule)
+					if (module is ModuleKsmExperiment expModule)
 					{
-						// don't show configurable experiments
-						if (!expModule.isConfigurable && expModule.experiment_id == ExperimentId)
+						// don't show unconfigured experiments
+						if (expModule.experiment_id == ExperimentId)
 						{
 							expModule.ExpInfo = this;
 
@@ -329,11 +329,11 @@ namespace KERBALISM
 						if (stockExpModule.experimentID == ExperimentId)
 						{
 							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\n"+Local.Experimentinfo_Datasize +": ";//Data size
+							ModuleInfo += "\n" + Local.Experimentinfo_Datasize + ": ";//Data size
 							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 							if (stockExpModule.xmitDataScalar < Science.maxXmitDataScalarForSample)
 							{
-								ModuleInfo += "\n"+Local.Experimentinfo_generatesample;//Will generate a sample.
+								ModuleInfo += "\n" + Local.Experimentinfo_generatesample;//Will generate a sample.
 								ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
 								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 							}
@@ -365,9 +365,9 @@ namespace KERBALISM
 				if (ExperimentId == "asteroidSample")
 				{
 					ModuleInfo = Local.Experimentinfo_Asteroid;//"Asteroid samples can be taken by kerbals on EVA"
-					ModuleInfo += "\n"+Local.Experimentinfo_Samplesize +" ";//Sample size:
+					ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
 					ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-					ModuleInfo += "\n"+Local.Experimentinfo_Samplemass +" ";//Sample mass:
+					ModuleInfo += "\n" + Local.Experimentinfo_Samplemass + " ";//Sample mass:
 					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
 				}
 				else if (IsROC)
@@ -378,18 +378,18 @@ namespace KERBALISM
 					{
 						ModuleInfo = Lib.Color(rocDef.displayName, Lib.Kolor.Cyan, true);
 						ModuleInfo += "\n- " + Local.Experimentinfo_scannerarm;//Analyse with a scanner arm
-						ModuleInfo += "\n  "+Local.Experimentinfo_Datasize +": ";//Data size
+						ModuleInfo += "\n  " + Local.Experimentinfo_Datasize + ": ";//Data size
 						ModuleInfo += Lib.HumanReadableDataSize(DataSize);
 
 						if (rocDef.smallRoc)
 						{
 							ModuleInfo += "\n- " + Local.Experimentinfo_smallRoc;//Collectable on EVA as a sample"
-							ModuleInfo += "\n"+Local.Experimentinfo_Samplesize +" ";//Sample size:
+							ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
 							ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
 						}
 						else
 						{
-							ModuleInfo += "\n- "+Local.Experimentinfo_smallRoc2;//Can't be collected on EVA
+							ModuleInfo += "\n- " + Local.Experimentinfo_smallRoc2;//Can't be collected on EVA
 						}
 
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
@@ -423,7 +423,7 @@ namespace KERBALISM
 					{
 						foreach (VirtualBiome biome in VirtualBiomes)
 						{
-							result.Add(Lib.BuildString(situation.Title(), " (", biome.Title(),")"));
+							result.Add(Lib.BuildString(situation.Title(), " (", biome.Title(), ")"));
 						}
 					}
 					else

@@ -223,7 +223,7 @@ namespace KERBALISM
 					string id = string.Empty;
 					if (expDefNode.TryGetValue("id", ref id) && id == experimentId)
 					{
-						kerbalismExpNode = expDefNode.GetNode("KERBALISM_EXPERIMENT"); // return null if not found
+						kerbalismExpNode = expDefNode.GetNode("KERBALISM_EXPERIMENT"); // returns null if not found
 						break;
 					}
 				}
@@ -237,7 +237,10 @@ namespace KERBALISM
 
 				ExperimentInfo expInfo = new ExperimentInfo(stockDef, kerbalismExpNode);
 				if (!experiments.ContainsKey(experimentId))
+				{
+					Lib.LogDebug($"Adding {experimentId} to science DB");
 					experiments.Add(experimentId, expInfo);
+				}
 				if (!subjectByExpThenSituationId.ContainsKey(expInfo))
 					subjectByExpThenSituationId.Add(expInfo, new Dictionary<int, SubjectData>());
 
@@ -354,6 +357,7 @@ namespace KERBALISM
 				// TODO: this isn't ideal, if there are several modules with different values (ex : data rate, ec rate...), the archive info will use the first found one.
 				// Ideally we should revamp the whole handling of that (because it's a mess from the partmodule side too)
 				experimentInfo.CompileModuleInfos();
+				Lib.LogDebug($"Compiled info for {experimentInfo.ExperimentId}");
 			}
 
 			Lib.Log($"ScienceDB init done : {subjectCount} subjects found, total science points : {totalScience.ToString("F1")}");

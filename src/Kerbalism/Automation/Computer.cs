@@ -241,28 +241,28 @@ namespace KERBALISM
 				{
 					switch (m.moduleName)
 					{
-						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
-						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
+						case "Sickbay": device = new SickbayDevice(m as Sickbay); break;
+						case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
 						//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
-						case "Emitter":                      device = new EmitterDevice(m as Emitter);                           break;
-						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                       break;
-						case "Laboratory":                   device = new LaboratoryDevice(m as Laboratory);                     break;
-						case "Experiment":                   device = new ExperimentDevice(m as Experiment);                     break;
-						case "SolarPanelFixer":				 device = new PanelDevice(m as SolarPanelFixer);					 break;
-						case "ModuleGenerator":              device = new GeneratorDevice(m as ModuleGenerator);                 break;
-						case "ModuleResourceConverter":      device = new ConverterDevice(m as ModuleResourceConverter);         break;
-						case "ModuleKPBSConverter":          device = new ConverterDevice(m as ModuleResourceConverter);         break;
-						case "FissionReactor":               device = new ConverterDevice(m as ModuleResourceConverter);         break;
-						case "ModuleResourceHarvester":      device = new DrillDevice(m as ModuleResourceHarvester);             break;
-						case "ModuleLight":                  device = new LightDevice(m as ModuleLight);                         break;
-						case "ModuleColoredLensLight":       device = new LightDevice(m as ModuleLight);                         break;
-						case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight);                         break;
-						case "SCANsat":                      device = new ScannerDevice(m);                                      break;
-						case "ModuleSCANresourceScanner":    device = new ScannerDevice(m);                                      break;
+						case "Emitter": device = new EmitterDevice(m as Emitter); break;
+						case "Harvester": device = new HarvesterDevice(m as Harvester); break;
+						case "Laboratory": device = new LaboratoryDevice(m as Laboratory); break;
+						case "ModuleKsmExperiment": device = new ExperimentDevice(m as ModuleKsmExperiment); break;
+						case "SolarPanelFixer": device = new PanelDevice(m as SolarPanelFixer); break;
+						case "ModuleGenerator": device = new GeneratorDevice(m as ModuleGenerator); break;
+						case "ModuleResourceConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
+						case "ModuleKPBSConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
+						case "FissionReactor": device = new ConverterDevice(m as ModuleResourceConverter); break;
+						case "ModuleResourceHarvester": device = new DrillDevice(m as ModuleResourceHarvester); break;
+						case "ModuleLight": device = new LightDevice(m as ModuleLight); break;
+						case "ModuleColoredLensLight": device = new LightDevice(m as ModuleLight); break;
+						case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight); break;
+						case "SCANsat": device = new ScannerDevice(m); break;
+						case "ModuleSCANresourceScanner": device = new ScannerDevice(m); break;
 						case "ModuleDataTransmitter":
-						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter);           break;
+						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter); break;
 						case "ModuleRTAntenna":
-						case "ModuleRTAntennaPassive":       device = new AntennaRTDevice(m);                                    break;
+						case "ModuleRTAntennaPassive": device = new AntennaRTDevice(m); break;
 						default: continue;
 					}
 
@@ -303,28 +303,28 @@ namespace KERBALISM
 						// depending on module name
 						switch (m.moduleName)
 						{
-							case "Sickbay":                      device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m);                  break;
-							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
+							case "Sickbay": device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m); break;
+							case "Greenhouse": device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m); break;
 							//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
-							case "Emitter":                      device = new ProtoEmitterDevice(module_prefab as Emitter, p, m);                  break;
-							case "Harvester":                    device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m);              break;
-							case "Laboratory":                   device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m);            break;
-							case "Experiment":					 device = new ProtoExperimentDevice(module_prefab as Experiment, p, m, v);         break;
-							case "SolarPanelFixer":              device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m);            break;
-							case "ModuleGenerator":              device = new ProtoGeneratorDevice(module_prefab as ModuleGenerator, p, m);        break;
+							case "Emitter": device = new ProtoEmitterDevice(module_prefab as Emitter, p, m); break;
+							case "Harvester": device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m); break;
+							case "Laboratory": device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m); break;
+							case "ModuleKsmExperiment": device = new ProtoExperimentDevice(module_prefab as ModuleKsmExperiment, p, m, v); break;
+							case "SolarPanelFixer": device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m); break;
+							case "ModuleGenerator": device = new ProtoGeneratorDevice(module_prefab as ModuleGenerator, p, m); break;
 							case "ModuleResourceConverter":
 							case "ModuleKPBSConverter":
-							case "FissionReactor":               device = new ProtoConverterDevice(module_prefab as ModuleResourceConverter, p, m);break;
-							case "ModuleResourceHarvester":      device = new ProtoDrillDevice(module_prefab as ModuleResourceHarvester, p, m);    break;
-							case "ModuleLight": 
-							case "ModuleColoredLensLight": 
-							case "ModuleMultiPointSurfaceLight": device = new ProtoLightDevice(module_prefab as ModuleLight, p, m);                break;
-							case "SCANsat":                      device = new ProtoScannerDevice(module_prefab, p, m, v);                          break;
-							case "ModuleSCANresourceScanner":    device = new ProtoScannerDevice(module_prefab, p, m, v);                          break;
+							case "FissionReactor": device = new ProtoConverterDevice(module_prefab as ModuleResourceConverter, p, m); break;
+							case "ModuleResourceHarvester": device = new ProtoDrillDevice(module_prefab as ModuleResourceHarvester, p, m); break;
+							case "ModuleLight":
+							case "ModuleColoredLensLight":
+							case "ModuleMultiPointSurfaceLight": device = new ProtoLightDevice(module_prefab as ModuleLight, p, m); break;
+							case "SCANsat": device = new ProtoScannerDevice(module_prefab, p, m, v); break;
+							case "ModuleSCANresourceScanner": device = new ProtoScannerDevice(module_prefab, p, m, v); break;
 							case "ModuleDataTransmitter":
-							case "ModuleDataTransmitterFeedeable": device = new ProtoAntennaDevice(module_prefab as ModuleDataTransmitter, p, m);  break;
+							case "ModuleDataTransmitterFeedeable": device = new ProtoAntennaDevice(module_prefab as ModuleDataTransmitter, p, m); break;
 							case "ModuleRTAntenna":
-							case "ModuleRTAntennaPassive":       device = new ProtoAntennaRTDevice(module_prefab, p, m);                           break;
+							case "ModuleRTAntennaPassive": device = new ProtoAntennaRTDevice(module_prefab, p, m); break;
 							default: continue;
 						}
 
@@ -348,7 +348,7 @@ namespace KERBALISM
 
 			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
 
-			foreach(var process in vd.VesselProcesses.Processes)
+			foreach (var process in vd.VesselProcesses.Processes)
 				moduleDevices.Add(new VesselProcessDevice(v, vd, process));
 
 			Cache.SetVesselObjectsCache(v, "computer", moduleDevices);

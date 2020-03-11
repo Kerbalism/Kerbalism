@@ -7,6 +7,8 @@ namespace KERBALISM
 {
     public static class DB
     {
+        public static readonly Version LAST_SUPPORTED_VERSION = new Version(4, 0);
+
         public static void Load(ConfigNode node)
         {
             // get version (or use current one for new savegames)
@@ -16,7 +18,11 @@ namespace KERBALISM
             version = new Version(versionStr);
 
             // if this is an unsupported version, print warning
-            if (version <= new Version(1, 2)) Lib.Log("loading save from unsupported version " + version);
+            if (version < LAST_SUPPORTED_VERSION)
+            {
+                Lib.Log($"Loading save from unsupported version " + version, Lib.LogLevel.Warning);
+                return;
+            }
 
             // get unique id (or generate one for new savegames)
             uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
@@ -39,7 +45,7 @@ namespace KERBALISM
 			// flightstate will be null when first creating the game
 			if (HighLogic.CurrentGame.flightState != null)
 			{
-				ConfigNode vesselsNode = node.GetNode("vessels2");
+				ConfigNode vesselsNode = node.GetNode("vessels");
 				if (vesselsNode == null)
 					vesselsNode = new ConfigNode();
 				// HighLogic.CurrentGame.flightState.protoVessels is what is used by KSP to persist vessels
@@ -139,7 +145,7 @@ namespace KERBALISM
 			// only persist vessels that exists in KSP own vessel persistence
 			// this prevent creating junk data without going into the mess of using gameevents
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save.Vessels");
-			ConfigNode vesselsNode = node.AddNode("vessels2");
+			ConfigNode vesselsNode = node.AddNode("vessels");
 			foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
 			{
 				if (pv.vesselID == Guid.Empty)
