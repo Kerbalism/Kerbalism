@@ -26,7 +26,7 @@ namespace KERBALISM
 		// state vars
 		bool canInteract;
 		bool isProto;
-		ExperimentInfo expInfo;
+		ExperimentModuleDefinition moduleDefinition;
 		SubjectData subjectData;
 		ExpStatus status;
 		RunningState expState;
@@ -63,7 +63,7 @@ namespace KERBALISM
 
 		public ExperimentPopup(Vessel v, ModuleKsmExperiment moduleOrPrefab, uint partId, string partName, ProtoPartModuleSnapshot protoModule = null)
 		{
-			popupId = partId + moduleOrPrefab.experiment_id.GetHashCode();
+			popupId = partId + moduleOrPrefab.ExperimentID.GetHashCode();
 
 			if (activePopups.Contains(popupId))
 				return;
@@ -83,8 +83,8 @@ namespace KERBALISM
 			this.moduleOrPrefab = moduleOrPrefab;
 			this.v = v;
 			vd = v.KerbalismData();
-			expInfo = GetExperimentInfo(moduleOrPrefab.experiment_id);
-			isSample = expInfo.IsSample;
+			moduleDefinition = moduleOrPrefab.ModuleDefinition;
+			isSample = moduleDefinition.Info.IsSample;
 
 			// parse the module / protomodule data so we can use it right now
 			GetData();
@@ -96,7 +96,7 @@ namespace KERBALISM
 			window.SetUpdateAction(GetData);
 
 			// top header
-			KsmGuiHeader topHeader = new KsmGuiHeader(window, expInfo.Title, default, 120);
+			KsmGuiHeader topHeader = new KsmGuiHeader(window, moduleDefinition.Info.Title, default, 120);
 			topHeader.TextObject.SetTooltipText(Lib.BuildString(Local.SCIENCEARCHIVE_onvessel, " ", Lib.Bold(v.vesselName), "\n", Local.SCIENCEARCHIVE_onpart, " ", Lib.Bold(partName)));//"on vessel :"on part :
 			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, Local.SCIENCEARCHIVE_showarchive);//"show science archive"
 			rndVisibilityButton.MoveAsFirstChild();
@@ -114,7 +114,7 @@ namespace KERBALISM
 
 			// right panel : experiment info
 			expInfoHeader = new KsmGuiHeader(leftPanel, Local.SCIENCEARCHIVE_EXPERIMENTINFO);//"EXPERIMENT INFO"
-			expInfoBox = new KsmGuiTextBox(leftPanel, SpecsWithoutRequires(expInfo, moduleOrPrefab).Info());
+			expInfoBox = new KsmGuiTextBox(leftPanel, Specs(moduleOrPrefab.ModuleDefinition).Info());
 			expInfoBox.SetLayoutElement(false, true, 160);
 
 			// right panel
@@ -139,7 +139,7 @@ namespace KERBALISM
 			startStopButton.SetUpdateAction(UpdateStartStopButton);
 
 			// right panel : experiment requirements
-			if (moduleOrPrefab.Requirements.Requires.Length > 0)
+			if (moduleDefinition.Requirements.Requires.Length > 0)
 			{
 				new KsmGuiHeader(rightPanel, Local.SCIENCEARCHIVE_REQUIREMENTS);//"REQUIREMENTS"
 				requirementsBox = new KsmGuiTextBox(rightPanel, "_");
@@ -153,14 +153,14 @@ namespace KERBALISM
 		private void GetData()
 		{
 			canInteract = vd.Connection.linked || vd.CrewCount > 0;
+			moduleDefinition = moduleOrPrefab.ModuleDefinition;
 
 			if (isProto)
 			{
 				status = Lib.Proto.GetEnum(protoModule, "status", ExpStatus.Stopped);
 				expState = Lib.Proto.GetEnum(protoModule, "expState", RunningState.Stopped);
 				int situationId = Lib.Proto.GetInt(protoModule, "situationId", 0);
-				expInfo = ScienceDB.GetExperimentInfo(moduleOrPrefab.experiment_id);
-				subjectData = ScienceDB.GetSubjectData(expInfo, situationId);
+				subjectData = ScienceDB.GetSubjectData(moduleDefinition.Info, situationId);
 				issue = Lib.Proto.GetString(protoModule, "issue");
 				if (isSample) remainingSampleMass = Lib.Proto.GetDouble(protoModule, "remainingSampleMass", 0.0);
 			}
@@ -168,7 +168,6 @@ namespace KERBALISM
 			{
 				status = moduleOrPrefab.Status;
 				expState = moduleOrPrefab.State;
-				expInfo = moduleOrPrefab.ExpInfo;
 				subjectData = moduleOrPrefab.Subject;
 				issue = moduleOrPrefab.issue;
 				if (isSample) remainingSampleMass = moduleOrPrefab.remainingSampleMass;
@@ -177,16 +176,6 @@ namespace KERBALISM
 
 		private void StatusUpdate()
 		{
-			/*
-			state :<pos=20em><b><color=#FFD200>started</color></b>
-			status :<pos=20em><b><color=#FFD200>running</color></b>
-			samples :<pos=20em><b><color=#FFD200>1.5</color></b> (<b><color=#FFD200>20 kg</color></b>)
-			situation :<pos=20em><color=#FFD200><b>Duna Space High</b></color>
-			retrieved :<pos=20em><color=#FFD200>never</color> (<color=#FFD200><b>0 %</b></color>)
-			collected :<pos=20em><color=#6DCFF6><b>4.3</b></color> in RnD (<color=#6DCFF6><b>+2.1</b></color> in flight)
-			value :<pos=20em><color=#6DCFF6><b>50.0</b></color>
-			*/
-
 			sb.Length = 0;
 
 			sb.Append(Local.SCIENCEARCHIVE_state);//state
@@ -200,7 +189,7 @@ namespace KERBALISM
 			if (status == ExpStatus.Running)
 			{
 				sb.Append(", ");
-				sb.Append(RunningCountdown(expInfo, subjectData, moduleOrPrefab.data_rate, true));
+				sb.Append(RunningCountdown(moduleDefinition.Info, subjectData, moduleDefinition.DataRate, true));
 			}
 			else if (status == ExpStatus.Forced && subjectData != null)
 			{
@@ -210,12 +199,12 @@ namespace KERBALISM
 				sb.Append(Local.SCIENCEARCHIVE_collected);//collected
 			}
 
-			if (isSample && !moduleOrPrefab.sample_collecting)
+			if (isSample && !moduleDefinition.SampleCollecting)
 			{
 				sb.Append("\n");
 				sb.Append(Local.SCIENCEARCHIVE_samples);//samples
 				sb.Append(" :<pos=20em>");
-				sb.Append(Lib.Color((remainingSampleMass / expInfo.SampleMass).ToString("F1"), Lib.Kolor.Yellow, true));
+				sb.Append(Lib.Color((remainingSampleMass / moduleDefinition.Info.SampleMass).ToString("F1"), Lib.Kolor.Yellow, true));
 				sb.Append(" (");
 				sb.Append(Lib.Color(Lib.HumanReadableMass(remainingSampleMass), Lib.Kolor.Yellow, true));
 				sb.Append(")");
@@ -224,7 +213,7 @@ namespace KERBALISM
 			sb.Append("\n");
 			sb.Append(Local.SCIENCEARCHIVE_situation);//situation
 			sb.Append(" :<pos=20em>");
-			sb.Append(Lib.Color(vd.VesselSituations.GetExperimentSituation(expInfo).GetTitleForExperiment(expInfo), Lib.Kolor.Yellow, true));
+			sb.Append(Lib.Color(vd.VesselSituations.GetExperimentSituation(moduleDefinition.Info).GetTitleForExperiment(moduleDefinition.Info), Lib.Kolor.Yellow, true));
 
 			if (subjectData == null)
 			{
@@ -291,7 +280,7 @@ namespace KERBALISM
 			sb.Length = 0;
 
 			RequireResult[] reqs;
-			moduleOrPrefab.Requirements.TestRequirements(v, out reqs, true);
+			moduleDefinition.Requirements.TestRequirements(v, out reqs, true);
 
 			bool first = true;
 			foreach (RequireResult req in reqs)
@@ -362,7 +351,7 @@ namespace KERBALISM
 				if (rndArchiveHeader == null)
 				{
 					rndArchiveHeader = new KsmGuiHeader(window, Local.SCIENCEARCHIVE_title);//"SCIENCE ARCHIVE"
-					rndArchiveView = new ExperimentSubjectList(window, expInfo);
+					rndArchiveView = new ExperimentSubjectList(window, moduleDefinition.Info);
 					rndArchiveView.SetLayoutElement(true, false, 320, -1, -1, 250);
 				}
 				rndArchiveHeader.Enabled = true;

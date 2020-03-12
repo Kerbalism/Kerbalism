@@ -248,7 +248,7 @@ namespace KERBALISM
 
 					if (partModule is ModuleKsmExperiment experiment)
 					{
-						vesselExpInfos.Add(experiment.ExpInfo);
+						vesselExpInfos.Add(experiment.ModuleDefinition.Info);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{
@@ -311,54 +311,15 @@ namespace KERBALISM
 				if (!string.IsNullOrEmpty(availablePart.TechRequired) && !ResearchAndDevelopment.PartModelPurchased(availablePart))
 					continue;
 
-				List<ModuleKsmExperiment> configureResearchedExperiments = new List<ModuleKsmExperiment>();
-
-				foreach (PartModule partModule in availablePart.partPrefab.Modules)
-				{
-					if (partModule is Configure configure)
-					{
-						foreach (ConfigureSetup setup in configure.GetUnlockedSetups())
-						{
-							foreach (ConfigureModule configureModule in setup.modules)
-							{
-								if (configureModule.type == "ModuleKsmExperiment")
-								{
-									PartModule configuredModule = configure.Find_module(configureModule);
-									if (configuredModule != null && configuredModule is ModuleKsmExperiment configureExperiment)
-									{
-										configureResearchedExperiments.Add(configureExperiment);
-									}
-								}
-							}
-						}
-					}
-				}
-
 				foreach (PartModule partModule in availablePart.partPrefab.Modules)
 				{
 					if (partModule is ModuleKsmExperiment experiment)
 					{
-						if (researchedExpInfos.Contains(experiment.ExpInfo))
+						if (experiment.ModuleDefinition == null || researchedExpInfos.Contains(experiment.ModuleDefinition.Info))
 							continue;
 
-						bool isResearched = false;
-						if (configureResearchedExperiments.Count > 0)
-						{
-							if (configureResearchedExperiments.Contains(experiment))
-							{
-								isResearched = true;
-							}
-						}
-						else
-						{
-							isResearched = true;
-						}
-
-						if (isResearched && experiment.Requirements.TestProgressionRequirements())
-						{
-							researchedExpInfos.Add(experiment.ExpInfo);
-						}
-
+						if (experiment.ModuleDefinition.Requirements.TestProgressionRequirements())
+							researchedExpInfos.Add(experiment.ModuleDefinition.Info);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{

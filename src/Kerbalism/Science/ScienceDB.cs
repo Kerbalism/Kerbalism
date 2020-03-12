@@ -169,6 +169,10 @@ namespace KERBALISM
 		/// <summary> All ExperimentInfos </summary>
 		public static IEnumerable<ExperimentInfo> ExperimentInfos => experiments.Values;
 
+		/// <summary> All ExperimentModuleDefinitions, accessible by module definition name </summary>
+		private static readonly Dictionary<string, ExperimentModuleDefinition>
+			experimentModuleDefinitions = new Dictionary<string, ExperimentModuleDefinition>();
+
 		/// <summary>
 		/// For every ExperimentInfo, for every VesselSituation id, the corresponding SubjectData.
 		/// used to get the subject, or to test if a situation is available for a given experiment
@@ -240,6 +244,14 @@ namespace KERBALISM
 				{
 					Lib.LogDebug($"Adding {experimentId} to science DB");
 					experiments.Add(experimentId, expInfo);
+
+					foreach(var moduleDefinition in expInfo.ExperimentModuleDefinitions)
+					{
+						if (experimentModuleDefinitions.ContainsKey(moduleDefinition.Name))
+							Lib.Log($"KERBALISM_EXPERIMENT '{expInfo.ExperimentId}': duplicate MODULE_DEFINITION name '{moduleDefinition.Name}'", Lib.LogLevel.Error);
+						else
+							experimentModuleDefinitions.Add(moduleDefinition.Name, moduleDefinition);
+					}
 				}
 				if (!subjectByExpThenSituationId.ContainsKey(expInfo))
 					subjectByExpThenSituationId.Add(expInfo, new Dictionary<int, SubjectData>());
@@ -354,8 +366,6 @@ namespace KERBALISM
 				}
 
 				// Get the experiment description that will be shown in the science archive by calling GetInfo() on the first found partmodule using it
-				// TODO: this isn't ideal, if there are several modules with different values (ex : data rate, ec rate...), the archive info will use the first found one.
-				// Ideally we should revamp the whole handling of that (because it's a mess from the partmodule side too)
 				experimentInfo.CompileModuleInfos();
 				Lib.LogDebug($"Compiled info for {experimentInfo.ExperimentId}");
 			}
@@ -545,6 +555,15 @@ namespace KERBALISM
 				return null;
 
 			return expInfo;
+		}
+
+		public static ExperimentModuleDefinition GetExperimentModuleDefinition(string name)
+		{
+			ExperimentModuleDefinition moduleDefinition;
+			if (!experimentModuleDefinitions.TryGetValue(name, out moduleDefinition))
+				return null;
+
+			return moduleDefinition;
 		}
 
 		/// <summary> return the subject information for the given experiment and situation, or null if the situation isn't available. </summary>

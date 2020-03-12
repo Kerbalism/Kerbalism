@@ -14,7 +14,7 @@ namespace KERBALISM
 
 		public ExperimentDevice(ModuleKsmExperiment module) : base(module)
 		{
-			icon = new DeviceIcon(module.ExpInfo.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment window", () => new ExperimentPopup(module.vessel, module, PartId, PartName));
+			icon = new DeviceIcon(module.ModuleDefinition.Info.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment window", () => new ExperimentPopup(module.vessel, module, PartId, PartName));
 			sb = new StringBuilder();
 			OnUpdate();
 		}
@@ -24,21 +24,21 @@ namespace KERBALISM
 			scienceValue = ModuleKsmExperiment.ScienceValue(module.Subject);
 		}
 
-		public override string Name => module.experiment_id;
+		public override string Name => module.ExperimentID;
 
 		public override string DisplayName
 		{
 			get
 			{
 				sb.Length = 0;
-				sb.Append(Lib.EllipsisMiddle(module.ExpInfo.Title, 28));
+				sb.Append(Lib.EllipsisMiddle(module.ModuleDefinition.Info.Title, 28));
 				sb.Append(": ");
 				sb.Append(scienceValue);
 
 				if (module.Status == ModuleKsmExperiment.ExpStatus.Running)
 				{
 					sb.Append(" ");
-					sb.Append(ModuleKsmExperiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate));
+					sb.Append(ModuleKsmExperiment.RunningCountdown(module.ModuleDefinition.Info, module.Subject, module.ModuleDefinition.DataRate));
 				}
 				else if (module.Subject != null && module.Status == ModuleKsmExperiment.ExpStatus.Forced)
 				{
@@ -59,7 +59,7 @@ namespace KERBALISM
 				if (module.Subject != null)
 					sb.Append(module.Subject.FullTitle);
 				else
-					sb.Append(module.ExpInfo.Title);
+					sb.Append(module.ModuleDefinition.Info.Title);
 				sb.Append("\n");
 				sb.Append(Local.Experiment_on);//on
 				sb.Append(" ");
@@ -86,7 +86,7 @@ namespace KERBALISM
 					sb.Append("\n");
 					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
-					sb.Append(ModuleKsmExperiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, false));
+					sb.Append(ModuleKsmExperiment.RunningCountdown(module.ModuleDefinition.Info, module.Subject, module.ModuleDefinition.DataRate, false));
 				}
 				else if (module.Subject != null && module.Status == ModuleKsmExperiment.ExpStatus.Forced)
 				{
@@ -133,7 +133,7 @@ namespace KERBALISM
 			: base(prefab, protoPart, protoModule)
 		{
 			this.vessel = vessel;
-			expInfo = ScienceDB.GetExperimentInfo(prefab.experiment_id);
+			expInfo = ScienceDB.GetExperimentInfo(prefab.ExperimentID);
 			icon = new DeviceIcon(expInfo.SampleMass > 0f ? Textures.sample_scicolor : Textures.file_scicolor, "open experiment info", () => new ExperimentPopup(vessel, prefab, protoPart.flightID, prefab.part.partInfo.title, protoModule));
 			sb = new StringBuilder();
 
@@ -148,7 +148,7 @@ namespace KERBALISM
 			scienceValue = ModuleKsmExperiment.ScienceValue(subject);
 		}
 
-		public override string Name => prefab.experiment_id;
+		public override string Name => prefab.ExperimentID;
 
 		public override string DisplayName
 		{
@@ -162,7 +162,7 @@ namespace KERBALISM
 				if (status == ModuleKsmExperiment.ExpStatus.Running)
 				{
 					sb.Append(" ");
-					sb.Append(ModuleKsmExperiment.RunningCountdown(expInfo, subject, prefab.data_rate));
+					sb.Append(ModuleKsmExperiment.RunningCountdown(expInfo, subject, prefab.ModuleDefinition.DataRate));
 				}
 				else if (subject != null && status == ModuleKsmExperiment.ExpStatus.Forced)
 				{
@@ -210,7 +210,7 @@ namespace KERBALISM
 					sb.Append("\n");
 					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
-					sb.Append(ModuleKsmExperiment.RunningCountdown(expInfo, subject, prefab.data_rate, false));
+					sb.Append(ModuleKsmExperiment.RunningCountdown(expInfo, subject, prefab.ModuleDefinition.DataRate, false));
 				}
 				else if (subject != null && status == ModuleKsmExperiment.ExpStatus.Forced)
 				{

@@ -1,0 +1,398 @@
+// ============================================================================
+// ISRU drills
+// ============================================================================
+
+@PART[MiniDrill,RadialDrill]:FOR[Kerbalism]
+{
+  !MODULE[ModuleResourceHarvester] {}
+  !MODULE[ModuleOverheatDisplay] {}
+  !MODULE[ModuleCoreHeat] {}
+
+  // Crustal - - -
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_WaterExcavation_title//Water Excavation
+    type = 0
+    resource = Water
+    min_abundance = 0.01
+    // https://www.nasa.gov/sites/default/files/atoms/files/mars_ice_drilling_assessment_v6_for_public_release.pdf shows
+    // water harvesters from Ice at a rate of 50-400 L/day, as a middle ground we choose 65 L/day for the small harvester
+    // which when scaled by factor 5 for the big harvester becomes 325 L/day.
+    rate = 0.003 // 65 L/day / (6 hours/day * 3600 seconds/hour)
+    // This is the maximum abundance on a random planet/moon
+    // And the average on Duna poles, which are the only place where at the time writing higher than baseline water levels are modeled
+    // And lower than what is found on Kerbin and Laythe
+    abundance_rate = 0.1
+    ec_rate = 1.0
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_OreExcavation_title//Ore Excavation
+    type = 0
+    resource = Ore
+    min_abundance = 0.02
+    rate = 0.0025
+    ec_rate = 1.0
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_NitrogenExcavation_title//Nitrogen Excavation
+    type = 0
+    resource = Nitrogen
+    min_abundance = 0.02
+    rate = 0.0025
+    ec_rate = 1.0
+  }
+
+  MODULE
+  {
+    name = Configure
+    title = Drill
+    slots = 1
+
+    SETUP
+    {
+      name = Water Extraction
+      desc = #KERBALISM_WaterExcavation_desc//Extract <b>Water</b> from the surface.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Water
+      }
+
+      RESOURCE
+      {
+        name = Water
+        amount = 0
+        maxAmount = 50
+      }
+    }
+
+    SETUP
+    {
+      name = Ore Extraction
+      desc = #KERBALISM_OreExcavation_desc//Extract <b>Ore</b> from the surface.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Ore
+      }
+
+      RESOURCE
+      {
+        name = Ore
+        amount = 0
+        maxAmount = 50
+      }
+    }
+
+    SETUP
+    {
+      name = Nitrogen Extraction
+      desc = #KERBALISM_NitrogenExcavation_desc//Extract <b>Nitrogen</b> from the surface.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Nitrogen
+      }
+
+      RESOURCE
+      {
+        name = Nitrogen
+        amount = 0
+        maxAmount = 50
+      }
+    }
+  }
+
+  MODULE:NEEDS[FeatureReliability]
+  {
+    name = Reliability
+    type = Harvester
+    title = #KERBALISM_Harvester_title//Harvester
+    repair = Engineer
+    mtbf = 72576000
+    extra_cost = 1.0
+    extra_mass = 0.2
+  }
+}
+
+@PART[kerbalism-minipump,kerbalism-radialpump]:FOR[Kerbalism]
+{
+  !MODULE[ModuleResourceHarvester] {}
+  !MODULE[ModuleOverheatDisplay] {}
+  !MODULE[ModuleCoreHeat] {}
+  !MODULE[ModuleAsteroidDrill] {}
+
+  // Oceanic - - -
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_WaterPump_title//Water Pump
+    type = 1
+    resource = Water
+    min_abundance = 0.02
+    rate = 0.003
+    ec_rate = 1.0
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_NitrogenPump_title//Nitrogen Pump
+    type = 1
+    resource = Nitrogen
+    min_abundance = 0.02
+    rate = 0.0025
+    ec_rate = 1.0
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_AmmoniaPump_title//Ammonia Pump
+    type = 1
+    resource = Ammonia
+    min_abundance = 0.02
+    rate = 0.0025
+    ec_rate = 1.0
+  }
+
+  MODULE
+  {
+    name = Configure
+    title = Pump
+    slots = 1
+
+    SETUP
+    {
+      name = Water Extraction
+      desc = #KERBALISM_WaterExcavation_desc2//Extract <b>Water</b> from the ocean.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Water
+      }
+
+      RESOURCE
+      {
+        name = Water
+        amount = 0
+        maxAmount = 50
+      }
+    }
+
+    SETUP
+    {
+      name = Nitrogen Extraction
+      desc = #KERBALISM_NitrogenExcavation_desc2//Extract <b>Nitrogen</b> from the ocean.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Nitrogen
+      }
+
+      RESOURCE
+      {
+        name = Nitrogen
+        amount = 0
+        maxAmount = 50
+      }
+    }
+
+    SETUP
+    {
+      name = Ammonia Extraction
+      desc = #KERBALISM_AmmoniaExtraction_desc//Extract <b>Ammonia</b> from the ocean.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Ammonia
+      }
+
+      RESOURCE
+      {
+        name = Ammonia
+        amount = 0
+        maxAmount = 50
+      }
+    }
+  }
+
+  MODULE:NEEDS[FeatureReliability]
+  {
+    name = Reliability
+    type = Harvester
+    title = #KERBALISM_Harvester_title//Harvester
+    repair = Engineer
+    mtbf = 72576000
+    extra_cost = 1.0
+    extra_mass = 0.2
+  }
+}
+
+@PART[MiniDrill,kerbalism-minipump]:FOR[Kerbalism]
+{
+  @MODULE[Harvester],*
+  {
+    drill = ImpactTransform
+    length = 1.08
+  }
+}
+
+@PART[RadialDrill,kerbalism-radialpump]:FOR[Kerbalism]
+{
+  @MODULE[Harvester],*
+  {
+    drill = ImpactTransform
+    length = 5.42
+    @rate *= 5
+    @ec_rate *= 5
+  }
+}
+
+
+// ============================================================================
+// atmospheric harvester
+// the atmospheric experiment part is used as an atmospheric harvester
+// ============================================================================
+
+@PART[sensorAtmosphere]:FOR[Kerbalism]
+{
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_CO2Filter_title//CO2 Filter
+    type = 2
+    resource = CarbonDioxide
+    min_abundance = 0.0025
+    min_pressure = 4.0
+    rate = 0.2
+    ec_rate = 0.5
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_OxygenFilter_title//Oxygen Filter
+    type = 2
+    resource = Oxygen
+    min_abundance = 0.02
+    min_pressure = 5.0
+    rate = 0.25
+    ec_rate = 0.5
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_NitrogenFilter_title//Nitrogen Filter
+    type = 2
+    resource = Nitrogen
+    min_abundance = 0.01
+    min_pressure = 2.0
+    rate = 0.35
+    ec_rate = 0.5
+  }
+
+  MODULE
+  {
+    name = Harvester
+    title = #KERBALISM_AmmoniaFilter_title//Ammonia Filter
+    type = 2
+    resource = Ammonia
+    min_abundance = 0.01
+    min_pressure = 2.0
+    rate = 0.35
+    ec_rate = 0.5
+  }
+
+  MODULE
+  {
+    name = Configure
+    title = Atmospheric Filter
+    slots = 1
+
+    SETUP
+    {
+      name = CO2 Filter
+      desc = #KERBALISM_CO2Filter_desc//Extract <b>CO2</b> from the atmosphere.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = CarbonDioxide
+      }
+    }
+
+    SETUP
+    {
+      name = Oxygen Filter
+      desc = #KERBALISM_OxygenFilter_desc//Extract <b>Oxygen</b> from the atmosphere.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Oxygen
+      }
+    }
+
+    SETUP
+    {
+      name = Nitrogen Filter
+      desc = #KERBALISM_NitrogenFilter_desc//Extract <b>Nitrogen</b> from the atmosphere.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Nitrogen
+      }
+    }
+
+    SETUP
+    {
+      name = Ammonia Filter
+      desc = #KERBALISM_AmmoniaFilter_desc//Extract <b>Ammonia</b> from the atmosphere.
+
+      MODULE
+      {
+        type = Harvester
+        id_field = resource
+        id_value = Ammonia
+      }
+    }
+  }
+
+  MODULE:NEEDS[FeatureReliability]
+  {
+    name = Reliability
+    type = Harvester
+    title = #KERBALISM_Harvester_title//Harvester
+    repair = Engineer
+    mtbf = 72576000
+    extra_cost = 1.0
+    extra_mass = 0.5
+  }
+
+  @mass = 0.2
+}

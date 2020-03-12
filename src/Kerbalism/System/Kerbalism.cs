@@ -882,40 +882,10 @@ namespace KERBALISM
 				foreach (var subtype in subtypes)
 				{
 					var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
-					var experimentInfo = ScienceDB.GetExperimentInfo(subtypeName);
+					var moduleDefinition = ScienceDB.GetExperimentModuleDefinition(subtypeName);
 
-					string description = string.Empty;
-					if (experimentInfo != null)
-					{
-						var moduleModifiers = Lib.ReflectionValue<IList>(subtype, "moduleModifierInfos");
-						if(moduleModifiers == null || moduleModifiers.Count == 0)
-							description = ModuleKsmExperiment.SpecsWithoutRequires(experimentInfo, experiments[0]).Info();
-						else
-						{
-							var template = new ModuleKsmExperiment();
-							template.ExpInfo = experimentInfo;
-
-							// Fetch experiment specifics configurations from data node so we have them in the info
-							ConfigNode configNode = Lib.ReflectionValue<ConfigNode>(moduleModifiers[0], "dataNode");
-							if(configNode != null)
-							{
-								template.ec_rate = Lib.ConfigValue(configNode, "ec_rate", template.ec_rate);
-								template.data_rate = Lib.ConfigValue(configNode, "data_rate", template.data_rate);
-								template.sample_collecting = Lib.ConfigValue(configNode, "sample_collecting", template.sample_collecting);
-								template.sample_amount = Lib.ConfigValue(configNode, "sample_amount", template.sample_amount);
-								template.resources = Lib.ConfigValue(configNode, "resources", template.resources);
-								template.crew_operate = Lib.ConfigValue(configNode, "crew_operate", template.crew_operate);
-								template.crew_prepare = Lib.ConfigValue(configNode, "crew_prepare", template.crew_prepare);
-								template.crew_reset = Lib.ConfigValue(configNode, "crew_reset", template.crew_reset);
-								template.requires = Lib.ConfigValue(configNode, "requires", template.requires);
-							}
-
-							var requirements = new ExperimentRequirements(template.requires);
-							description = ModuleKsmExperiment.SpecsWithRequires(experimentInfo, template, requirements).Info();
-						}
-
-						subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
-					}
+					string description = ModuleKsmExperiment.Specs(moduleDefinition).Info();
+					subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
 				}
 			}
 		}

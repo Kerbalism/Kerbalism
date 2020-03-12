@@ -22,6 +22,9 @@ namespace KERBALISM
 		/// <summary> UI friendly name of the experiment </summary>
 		public string Title { get; private set; }
 
+		/// <summary> UI friendly name of the experiment </summary>
+		public string Description { get; private set; }
+
 		/// <summary> mass of a full sample </summary>
 		public double SampleMass { get; private set; }
 
@@ -70,12 +73,15 @@ namespace KERBALISM
 		/// <summary> List of experiments that will be collected automatically alongside this one</summary>
 		public List<ExperimentInfo> IncludedExperiments { get; private set; } = new List<ExperimentInfo>();
 
+		/// <summary> List of experiments that will be collected automatically alongside this one</summary>
+		public List<ExperimentModuleDefinition> ExperimentModuleDefinitions { get; private set; } = new List<ExperimentModuleDefinition>();
+
 		private string[] includedExperimentsId;
 
-		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode expInfoNode)
+		public ExperimentInfo(ScienceExperiment stockDef, ConfigNode kerbalismExperimentNode)
 		{
 			// if we have a custom "KERBALISM_EXPERIMENT" definition for the experiment, load it, else just use an empty node to avoid nullrefs
-			if (expInfoNode == null) expInfoNode = new ConfigNode();
+			if (kerbalismExperimentNode == null) kerbalismExperimentNode = new ConfigNode();
 
 			this.stockDef = stockDef;
 			ExperimentId = stockDef.id;
@@ -88,40 +94,63 @@ namespace KERBALISM
 			else
 				Title = stockDef.experimentTitle;
 
+			Description = Lib.ConfigValue(kerbalismExperimentNode, "Description", string.Empty);
+
 			// A new bool field was added in 1.7 for serenity : applyScienceScale
 			// if not specified, the default is `true`, which is the case for all non-serenity science defs
 			// serenity ground experiments and ROCs have applyScienceScale = false.
 			// for ground experiment, baseValue = science generated per hour
 			// for ROC experiments, it doesn't change anything because they are all configured with baseValue = scienceCap
-			if (this.stockDef.applyScienceScale)
-				DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
+
+			// Get the science points from the kerbalism node, and override the stock definition if it is set
+			// This is primarily for simplification of the experiment definition process
+			float SciencePoints = Lib.ConfigValue(kerbalismExperimentNode, "SciencePoints", 0f);
+			if (SciencePoints > 0)
+			{
+				if(this.stockDef.applyScienceScale) // non-serenity
+					this.stockDef.baseValue = this.stockDef.scienceCap = SciencePoints;
+				else
+					this.stockDef.scienceCap = SciencePoints;
+			}
+
+			// Get the desired data size from the kerbalism node, and adjust data scale if it is set
+			DataSize = Lib.ConfigValue(kerbalismExperimentNode, "DataSize", 0);
+			if(DataSize > 0)
+			{
+				if (this.stockDef.applyScienceScale)
+					this.stockDef.dataScale = (float)(DataSize / this.stockDef.baseValue);
+				else
+					this.stockDef.dataScale = (float)(DataSize / this.stockDef.scienceCap);
+			}
 			else
-				DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
+			{
+				if (this.stockDef.applyScienceScale)
+					DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
+				else
+					DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
+			}
+
+			// make sure we don't produce NaN values down the line because of odd/wrong configs
+			if (DataSize <= 0.0)
+			{
+				Lib.Log(ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!", Lib.LogLevel.Warning);
+				DataSize = 1.0;
+			}
 
 			// load the included experiments ids in a string array, we will populate the list after 
 			// all ExperimentInfos are created. (can't do it here as they may not exist yet)
-			includedExperimentsId = expInfoNode.GetValues("IncludeExperiment");
+			includedExperimentsId = kerbalismExperimentNode.GetValues("IncludeExperiment");
 
-			UnlockResourceSurvey = Lib.ConfigValue(expInfoNode, "UnlockResourceSurvey", false);
-			SampleMass = Lib.ConfigValue(expInfoNode, "SampleMass", 0.0);
+			UnlockResourceSurvey = Lib.ConfigValue(kerbalismExperimentNode, "UnlockResourceSurvey", false);
+			SampleMass = Lib.ConfigValue(kerbalismExperimentNode, "SampleMass", 0.0);
 			IsSample = SampleMass > 0.0;
 			if (IsSample)
-			{
-				// make sure we don't produce NaN values down the line because of odd/wrong configs
-				if (DataSize <= 0.0)
-				{
-					Lib.Log(ExperimentId + " has DataSize=" + DataSize + ", your configuration is broken!", Lib.LogLevel.Warning);
-					DataSize = 1.0;
-				}
 				MassPerMB = SampleMass / DataSize;
-			}
 			else
-			{
 				MassPerMB = 0.0;
-			}
 
 			// Patch stock science def restrictions as BodyAllowed/BodyNotAllowed restrictions
-			if (!(expInfoNode.HasValue("BodyAllowed") || expInfoNode.HasValue("BodyNotAllowed")))
+			if (!(kerbalismExperimentNode.HasValue("BodyAllowed") || kerbalismExperimentNode.HasValue("BodyNotAllowed")))
 			{
 				if (IsROC)
 				{
@@ -131,7 +160,7 @@ namespace KERBALISM
 					{
 						if (ExperimentId.IndexOf(body.name, StringComparison.OrdinalIgnoreCase) != -1)
 						{
-							expInfoNode.AddValue("BodyAllowed", body.name);
+							kerbalismExperimentNode.AddValue("BodyAllowed", body.name);
 							break;
 						}
 					}
@@ -139,14 +168,14 @@ namespace KERBALISM
 
 				// parse the stock atmosphere restrictions into our own
 				if (stockDef.requireAtmosphere)
-					expInfoNode.AddValue("BodyAllowed", "Atmospheric");
+					kerbalismExperimentNode.AddValue("BodyAllowed", "Atmospheric");
 				else if (stockDef.requireNoAtmosphere)
-					expInfoNode.AddValue("BodyNotAllowed", "Atmospheric");
+					kerbalismExperimentNode.AddValue("BodyNotAllowed", "Atmospheric");
 			}
 
-			ExpBodyConditions = new BodyConditions(expInfoNode);
+			ExpBodyConditions = new BodyConditions(kerbalismExperimentNode);
 
-			foreach (string virtualBiomeStr in expInfoNode.GetValues("VirtualBiome"))
+			foreach (string virtualBiomeStr in kerbalismExperimentNode.GetValues("VirtualBiome"))
 			{
 				if (Enum.IsDefined(typeof(VirtualBiome), virtualBiomeStr))
 				{
@@ -158,15 +187,15 @@ namespace KERBALISM
 				}
 			}
 
-			IgnoreBodyRestrictions = Lib.ConfigValue(expInfoNode, "IgnoreBodyRestrictions", false);
+			IgnoreBodyRestrictions = Lib.ConfigValue(kerbalismExperimentNode, "IgnoreBodyRestrictions", false);
 
 			uint situationMask = 0;
 			uint biomeMask = 0;
 			uint virtualBiomeMask = 0;
 			// if defined, override stock situation / biome mask
-			if (expInfoNode.HasValue("Situation"))
+			if (kerbalismExperimentNode.HasValue("Situation"))
 			{
-				foreach (string situation in expInfoNode.GetValues("Situation"))
+				foreach (string situation in kerbalismExperimentNode.GetValues("Situation"))
 				{
 					string[] sitAtBiome = situation.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries);
 					if (sitAtBiome.Length == 0 || sitAtBiome.Length > 2)
@@ -210,7 +239,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				HasDBSubjects = !Lib.ConfigValue(expInfoNode, "IsGeneratingSubjects", false);
+				HasDBSubjects = !Lib.ConfigValue(kerbalismExperimentNode, "IsGeneratingSubjects", false);
 			}
 
 			string error;
@@ -226,6 +255,15 @@ namespace KERBALISM
 			VirtualBiomeMask = virtualBiomeMask;
 			stockDef.situationMask = stockSituationMask;
 			stockDef.biomeMask = stockBiomeMask;
+
+			foreach(var moduleDefinition in kerbalismExperimentNode.GetNodes("MODULE_DEFINITION"))
+				ExperimentModuleDefinitions.Add(new ExperimentModuleDefinition(this, moduleDefinition));
+
+			if(ExperimentModuleDefinitions.Count == 0)
+			{
+				Lib.Log("Experiment definition `{0}` has no MODULE_DEFINITION, generating default entry", Lib.LogLevel.Error, ExperimentId);
+				ExperimentModuleDefinitions.Add(new ExperimentModuleDefinition(this));
+			}
 		}
 
 		public void ParseIncludedExperiments()
@@ -306,18 +344,21 @@ namespace KERBALISM
 				{
 					if (module is ModuleKsmExperiment expModule)
 					{
-						// don't show unconfigured experiments
-						if (expModule.experiment_id == ExperimentId)
-						{
-							expModule.ExpInfo = this;
+						if (string.IsNullOrEmpty(expModule.id))
+							continue;
 
-							// get module info for the ExperimentInfo, once
-							if (string.IsNullOrEmpty(ModuleInfo))
-							{
-								ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-								ModuleInfo += "\n";
-								ModuleInfo += expModule.GetInfo();
-							}
+						var moduleDefinition = ExperimentModuleDefinitions.Find(d => d.Name == expModule.id);
+						if (moduleDefinition == null)
+							continue;
+
+						expModule.ModuleDefinition = moduleDefinition;
+
+						// get module info for the ExperimentInfo, once
+						if (string.IsNullOrEmpty(ModuleInfo))
+						{
+							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
+							ModuleInfo += "\n";
+							ModuleInfo += expModule.GetInfo();
 						}
 					}
 
@@ -606,5 +647,82 @@ namespace KERBALISM
 			}
 		}
 	}
+
+	public sealed class ExperimentModuleDefinition
+	{
+		public ExperimentInfo Info { get; private set; }
+
+		public string Name { get; private set; }
+
+		/// <summary> Duration in seconds </summary>
+		public double Duration { get; private set; } = 60;
+
+		/// <summary> Data rate, automatically calculated from desired duration and experiments data size </summary>
+		public double DataRate { get; private set; }
+
+		/// <summary> EC requirement (units/second) </summary>
+		public double RequiredEC = 0.01;
+
+		/// <summary> the amount of samples this unit is shipped with </summary>
+		public double Samples { get; private set; } = 0.0;
+
+		/// <summary> If true, the experiment will generate mass out of nothing (surface samples) </summary>
+		public bool SampleCollecting { get; private set; } = false;
+
+		/// <summary> Operator crew. If set, crew has to be on vessel for the experiment to run </summary>
+		public CrewSpecs CrewOperate { get; private set; }
+
+		/// <summary> Experiment requirements </summary>
+		public ExperimentRequirements Requirements { get; private set; }
+
+		/// <summary> Resource requirements </summary>
+		public List<ObjectPair<string, double>> Resources { get; private set; }
+
+		public ExperimentModuleDefinition(ExperimentInfo experimentInfo)
+		{
+			Info = experimentInfo;
+			Name = experimentInfo.ExperimentId;
+			DataRate = Info.DataSize / Duration;
+		}
+
+		public ExperimentModuleDefinition(ExperimentInfo experimentInfo, ConfigNode moduleDefinition)
+		{
+			Info = experimentInfo;
+
+			Name = Lib.ConfigValue(moduleDefinition, "name", experimentInfo.ExperimentId);
+			Duration = Lib.ParseDuration(Lib.ConfigValue(moduleDefinition, "Duration", "60s"));
+			DataRate = Info.DataSize / Duration;
+			RequiredEC = Lib.ConfigValue(moduleDefinition, "RequiredEC", 0.0);
+			SampleCollecting = Lib.ConfigValue(moduleDefinition, "SampleCollecting", false);
+			Samples = Lib.ConfigValue(moduleDefinition, "Samples", SampleCollecting ? 0.0 : 1.0);
+			CrewOperate = new CrewSpecs(Lib.ConfigValue(moduleDefinition, "CrewOperate", string.Empty));
+			Requirements = new ExperimentRequirements(Lib.ConfigValue(moduleDefinition, "Requirements", string.Empty));
+			Resources = ParseResources(Lib.ConfigValue(moduleDefinition, "Resources", string.Empty));
+		}
+
+		private static readonly List<ObjectPair<string, double>> noResources = new List<ObjectPair<string, double>>();
+
+		internal static List<ObjectPair<string, double>> ParseResources(string resources, bool logErros = false)
+		{
+			if (string.IsNullOrEmpty(resources)) return noResources;
+
+			List<ObjectPair<string, double>> defs = new List<ObjectPair<string, double>>();
+			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
+
+			foreach (string s in Lib.Tokenize(resources, ','))
+			{
+				// definitions are Resource@rate
+				var p = Lib.Tokenize(s, '@');
+				if (p.Count != 2) continue;             // malformed definition
+				string res = p[0];
+				if (!reslib.Contains(res)) continue;    // unknown resource
+				double rate = double.Parse(p[1]);
+				if (res.Length < 1 || rate < double.Epsilon) continue;  // rate <= 0
+				defs.Add(new ObjectPair<string, double>(res, rate));
+			}
+			return defs;
+		}
+	}
+
 } // KERBALISM
 

@@ -206,13 +206,6 @@ namespace KERBALISM
 				}
 			}
 
-			var kerbalismExperiments = vessel.FindPartModulesImplementing<ModuleKsmExperiment>();
-			foreach (ModuleKsmExperiment m in kerbalismExperiments)
-			{
-				message |= m.Reset(false);
-			}
-
-
 			// inform the user
 			if (message) Message.Post(localized_cleaned);
 		}

@@ -609,7 +609,7 @@ namespace KERBALISM
 			{
 				foreach (ModuleKsmExperiment e in vessel.FindPartModulesImplementing<ModuleKsmExperiment>())
 				{
-					if (e.enabled && e.experiment_id == experiment_id &&
+					if (e.enabled && e.ExperimentID == experiment_id &&
 						(e.State == ModuleKsmExperiment.RunningState.Running || e.State == ModuleKsmExperiment.RunningState.Forced))
 						return true;
 				}
@@ -636,7 +636,7 @@ namespace KERBALISM
 						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
 
 						if (m.moduleName == "ModuleKsmExperiment"
-							&& ((ModuleKsmExperiment)module_prefab).experiment_id == experiment_id)
+							&& ((ModuleKsmExperiment)module_prefab).ExperimentID == experiment_id)
 						{
 							var state = Lib.Proto.GetEnum(m, "expState", ModuleKsmExperiment.RunningState.Stopped);
 							if (state == ModuleKsmExperiment.RunningState.Running || state == ModuleKsmExperiment.RunningState.Forced)

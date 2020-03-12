@@ -2943,18 +2943,6 @@ namespace KERBALISM
 				return (T)value;
 			else
 				return def_value;
-
-			/*
-			try
-			{
-				return cfg.HasValue( key ) ? (T) Convert.ChangeType( cfg.GetValue( key ), typeof( T ) ) : def_value;
-			}
-			catch (Exception e)
-			{
-				Lib.Log( "error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
-				return def_value;
-			}
-			*/
 		}
 
 		public static T ConfigEnum<T>(ConfigNode cfg, string key, T def_value)
@@ -3083,6 +3071,53 @@ namespace KERBALISM
 			}
 
 			return false;
+		}
+
+		/// <summary> Parse a duration "3y120d5h2m93s into seconds </summary>
+		public static double ParseDuration(string durationString)
+		{
+			double result = 0;
+
+			string str = durationString.ToLower();
+			int p = str.IndexOf('y');
+			if(p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * DaysInYear * HoursInDay * 3600;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('d');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * HoursInDay * 3600;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('h');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * 3600;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('m');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * 60;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('s');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p));
+				str = str.Substring(p + 1);
+			}
+
+			if (!string.IsNullOrEmpty(str))
+				result += double.Parse(str);
+
+			return result;
 		}
 		#endregion
 
