@@ -1,3 +1,4 @@
+using Flee.PublicTypes;
 using System;
 using System.Collections.Generic;
 
@@ -20,7 +21,6 @@ namespace KERBALISM
 			regeneration = Lib.ConfigValue(node, "regeneration", 0.002);
 			variance = Lib.ConfigValue(node, "variance", 0.0);
 			individuality = Lib.ConfigValue(node, "individuality", 0.0);
-			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			breakdown = Lib.ConfigValue(node, "breakdown", false);
 			lifetime = Lib.ConfigValue(node, "lifetime", false);
 			warning_threshold = Lib.ConfigValue(node, "warning_threshold", 0.33);
@@ -54,8 +54,35 @@ namespace KERBALISM
 				var output_density = Lib.GetDefinition(output).density;
 				ratio = Math.Min(input_density, output_density) > double.Epsilon ? input_density / output_density : 1.0;
 			}
+
+			string modifierString = Lib.ConfigValue(node, "modifier", string.Empty);
+			hasModifier = modifierString != string.Empty;
+			if (hasModifier)
+			{
+				try
+				{
+					modifier = modifierData.ModifierContext.CompileGeneric<double>(modifierString);
+				}
+				catch (Exception e)
+				{
+					Lib.Log($"Error parsing modifier for process {name} : '{modifierString}'\n{e}", Lib.LogLevel.Error);
+					hasModifier = false;
+				}
+			}
 		}
 
+		public double EvaluateModifier(VesselModifierData data)
+		{
+			if (hasModifier)
+			{
+				modifier.Owner = data;
+				return Lib.Clamp(modifier.Evaluate(), 0.0, double.MaxValue);
+			}
+			else
+			{
+				return 1.0;
+			}
+		}
 
 		public void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
@@ -69,7 +96,7 @@ namespace KERBALISM
 			uint variant = vd.EnvTemperature < Settings.LifeSupportSurvivalTemperature ? 0 : 1u;
 
 			// get product of all environment modifiers
-			double k = Modifiers.Evaluate(v, vd, resources, modifiers, null);
+			double k = EvaluateModifier(vd);
 
 			bool lifetime_enabled = PreferencesRadiation.Instance.lifetime;
 
@@ -253,7 +280,6 @@ namespace KERBALISM
 		public double regeneration;       // degeneration/second removed when modifiers evaluation == 0 and input resource is available
 		public double variance;           // variance for degeneration rate, unique per-kerbal and in range [1.0-x, 1.0+x]
 		public double individuality;      // variance for process rate, unique per-kerbal and in range [1.0-x, 1.0+x]
-		public List<string> modifiers;    // if specified, rates are influenced by the product of all environment modifiers
 		public bool breakdown;            // if true, trigger a breakdown instead of killing the kerbal
 		public double warning_threshold;  // threshold of degeneration used to show warning messages and yellow status color
 		public double danger_threshold;   // threshold of degeneration used to show danger messages and red status color
@@ -264,6 +290,10 @@ namespace KERBALISM
 		public string relax_message;      // .
 		public bool lifetime;             // does this value accumulate over the lifetime of a kerbal
 		public ResourceBroker broker;
+
+		public bool hasModifier;
+		private IGenericExpression<double> modifier;
+		private static VesselModifierData modifierData = new VesselModifierData();
 	}
 
 

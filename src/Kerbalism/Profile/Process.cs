@@ -1,3 +1,4 @@
+using Flee.PublicTypes;
 using System;
 using System.Collections.Generic;
 
@@ -11,12 +12,11 @@ namespace KERBALISM
 		public Process(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
+			resourceName = name + "Res";
 			title = Lib.ConfigValue(node, "title", string.Empty);
 			desc = Lib.ConfigValue(node, "desc", string.Empty);
 			canToggle = Lib.ConfigValue(node, "canToggle", true);
 			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Converter, title);
-			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
-			scalars = Lib.Tokenize(Lib.ConfigValue(node, "scalar", string.Empty), ',');
 
 			// check that name is specified
 			if (name.Length == 0) throw new Exception("skipping unnamed process");
@@ -75,6 +75,10 @@ namespace KERBALISM
 			{
 				dumpable = new List<string>(outputs.Keys);
 			}
+			else if(dumpable.Count == 1 && dumpable[0].ToLower() == "none")
+			{
+				dumpable.Clear();
+			}
 
 			// defaultDumped default: no outputs are dumped by default
 			defaultDumped = new List<string>();
@@ -83,18 +87,56 @@ namespace KERBALISM
 			{
 				dumpedList = new List<string>(outputs.Keys);
 			}
-			// retain only default dumpable outputs that really are dumpable
-			foreach(string o in dumpedList)
+			else if (dumpedList.Count == 1 && dumpedList[0].ToLower() == "none")
+			{
+				dumpedList.Clear();
+			}
+			// retain only default dumpable outputs that actually are dumpable
+			foreach (string o in dumpedList)
 			{
 				if (dumpable.Contains(o))
 					defaultDumped.Add(o);
 			}
+
+			string modifierString = Lib.ConfigValue(node, "modifier", string.Empty);
+			hasModifier = modifierString != string.Empty;
+			if (hasModifier)
+			{
+				try
+				{
+					modifier = modifierData.ModifierContext.CompileGeneric<double>(modifierString);
+				}
+				catch (Exception e)
+				{
+					Lib.Log($"Error parsing modifier for process {name} : '{modifierString}'\n{e}", Lib.LogLevel.Error);
+					hasModifier = false;
+				}
+			}
 		}
 
-		private void ExecuteRecipe(double k, VesselResHandler resources,  double elapsed_s, Recipe recipe, List<string> dump)
+		public double EvaluateModifier(VesselModifierData data)
 		{
+			if (hasModifier)
+			{
+				modifier.Owner = data;
+				return Lib.Clamp(modifier.Evaluate(), 0.0, double.MaxValue);
+			}
+			else
+			{
+				return 1.0;
+			}
+		}
+
+		public void Execute(VesselData vd, VesselResHandler resources, double elapsed_s, List<string> dump)
+		{
+			// get product of all environment modifiers
+			double k = EvaluateModifier(vd);
+
 			// only execute processes if necessary
-			if (Math.Abs(k) < double.Epsilon) return;
+			if (k == 0.0)
+				return;
+
+			Recipe recipe = new Recipe(broker);
 
 			foreach (var p in inputs)
 			{
@@ -109,21 +151,9 @@ namespace KERBALISM
 				// TODO this assumes that the cure modifies always put the resource first
 				// works: modifier = _SickbayRDU,zerog works
 				// fails: modifier = zerog,_SickbayRDU
-				recipe.AddCure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
+				recipe.AddCure(p.Key, p.Value * k * elapsed_s, resourceName);
 			}
 			resources.AddRecipe(recipe);
-		}
-
-		public void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s, double maxRate, List<string> dump)
-		{
-			// evaluate modifiers
-			// if a given PartModule has a larger than 1 capacity for a process, then the multiplication happens here
-			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
-			double k = Modifiers.Evaluate(v, vd, resources, modifiers, scalars);
-			k *= maxRate;
-
-			Recipe recipe = new Recipe(broker);
-			ExecuteRecipe(k, resources, elapsed_s, recipe, dump);
 		}
 
 		internal Specifics Specifics(double capacity)
@@ -131,10 +161,10 @@ namespace KERBALISM
 			Specifics specs = new Specifics();
 			foreach (KeyValuePair<string, double> pair in inputs)
 			{
-				if (!modifiers.Contains(pair.Key))
+				//if (!modifiers.Contains(pair.Key))
 					specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-				else
-					specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
+				//else
+				//specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 			}
 			foreach (KeyValuePair<string, double> pair in outputs)
 			{
@@ -144,17 +174,19 @@ namespace KERBALISM
 		}
 
 		public string name;                           // unique name for the process
+		public string resourceName;
 		public string title;                          // UI title
 		public string desc;                           // UI description (long text)
 		public bool canToggle;						  // defines if this process can be toggled
-		public List<string> modifiers;                // if specified, rates are influenced by the product of all environment modifiers
-		public List<string> scalars;                  // if specified, rates are influenced by the product of the total amounts of the available resources
 		public List<string> dumpable;				  // list of all outputs that can be dumped
 		public List<string> defaultDumped;		      // list of all outputs that are dumped by default
 		public Dictionary<string, double> inputs;     // input resources and rates
 		public Dictionary<string, double> outputs;    // output resources and rates
 		public Dictionary<string, double> cures;      // cures and rates
 		public ResourceBroker broker;
+		public bool hasModifier;
+		private IGenericExpression<double> modifier;
+		private static VesselModifierData modifierData = new VesselModifierData();
 	}
 
 } // KERBALISM

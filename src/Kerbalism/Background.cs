@@ -41,7 +41,7 @@ namespace KERBALISM
 			switch (module_name)
 			{
 				case "Reliability": return Module_type.Reliability;
-				case "Experiment": return Module_type.Experiment;
+				case "ModuleKsmExperiment": return Module_type.Experiment;
 				case "Greenhouse": return Module_type.Greenhouse;
 				case "GravityRing": return Module_type.GravityRing;
 				case "Harvester": return Module_type.Harvester;
@@ -91,10 +91,10 @@ namespace KERBALISM
 
 			foreach (var e in Background_PMs(v))
 			{
-				switch(e.type)
+				switch (e.type)
 				{
 					case Module_type.Reliability: Reliability.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Reliability, elapsed_s); break;
-					case Module_type.Experiment: (e.module_prefab as Experiment).BackgroundUpdate(v, vd, e.m, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
+					case Module_type.Experiment: (e.module_prefab as ModuleKsmExperiment).BackgroundUpdate(v, vd, e.m, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
 					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, elapsed_s); break;
@@ -204,9 +204,9 @@ namespace KERBALISM
 			ec.Produce(maxPower * elapsed_s, ResourceBroker.KSPIEGenerator);
 		}
 
-		static void ProcessCommand(VesselData vd, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command,  double elapsed_s)
+		static void ProcessCommand(VesselData vd, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleCommand command, double elapsed_s)
 		{
-			
+
 			bool hibernating = Lib.Proto.GetBool(m, "hibernation", false);
 			if (!hibernating)
 				vd.hasNonHibernatingCommandModules = true;

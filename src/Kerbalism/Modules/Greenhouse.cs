@@ -355,7 +355,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, EnvironmentAnalyzer environment, VesselAnalyzer vessel)
+		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
 		{
 			// skip disabled greenhouses
 			if (!active)
@@ -366,7 +366,7 @@ namespace KERBALISM
 			VesselResource res = resHandler.GetResource(crop_resource);
 
 			// calculate natural and artificial lighting
-			double natural = environment.solar_flux;
+			double natural = vesselData.solarFlux;
 			double artificial = Math.Max(light_tolerance - natural, 0.0);
 
 			// if lamps are on and artificial lighting is required
@@ -382,13 +382,13 @@ namespace KERBALISM
 			{
 				// WasteAtmosphere is primary combined input
 				if (WACO2 && input.name == "WasteAtmosphere")
-					recipe.AddInput(input.name, environment.breathable ? 0.0 : input.rate, "CarbonDioxide");
+					recipe.AddInput(input.name, vesselData.breathable ? 0.0 : input.rate, "CarbonDioxide");
 				// CarbonDioxide is secondary combined input
 				else if (WACO2 && input.name == "CarbonDioxide")
-					recipe.AddInput(input.name, environment.breathable ? 0.0 : input.rate, "");
+					recipe.AddInput(input.name, vesselData.breathable ? 0.0 : input.rate, "");
 				// if atmosphere is breathable disable WasteAtmosphere / CO2
 				else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere"))
-					recipe.AddInput(input.name, environment.breathable ? 0.0 : input.rate, "");
+					recipe.AddInput(input.name, vesselData.breathable ? 0.0 : input.rate, "");
 				else
 					recipe.AddInput(input.name, input.rate);
 			}
@@ -396,7 +396,7 @@ namespace KERBALISM
 			{
 				// if atmosphere is breathable disable Oxygen
 				if (output.name == "Oxygen")
-					recipe.AddOutput(output.name, environment.breathable ? 0.0 : output.rate, true);
+					recipe.AddOutput(output.name, vesselData.breathable ? 0.0 : output.rate, true);
 				else
 					recipe.AddOutput(output.name, output.rate, true);
 			}
@@ -404,8 +404,8 @@ namespace KERBALISM
 
 			// determine environment conditions
 			bool lighting = natural + artificial >= light_tolerance;
-			bool pressure = vessel.pressurized || pressure_tolerance <= double.Epsilon;
-			bool radiation = (environment.landed ? environment.surface_rad : environment.magnetopause_rad) * (1.0 - vessel.shielding) < radiation_tolerance;
+			bool pressure = vesselData.habitatData.pressureAtm > Settings.PressureThreshold || pressure_tolerance <= double.Epsilon;
+			bool radiation = (vesselData.landed ? vesselData.surfaceRad : vesselData.magnetopauseRad) * (1.0 - vesselData.habitatData.shieldingModifier) < radiation_tolerance;
 
 			// if all conditions apply
 			// note: we are assuming the inputs are satisfied, we can't really do otherwise here

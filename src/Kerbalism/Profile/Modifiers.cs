@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using KERBALISM.Planner;
 
-
+/*
 namespace KERBALISM
 {
 	public static class Modifiers
@@ -133,11 +133,11 @@ namespace KERBALISM
 						break;
 
 					case "temperature":
-						k *= env.temp_diff;
+						k *= env.tempDiff;
 						break;
 
 					case "radiation":
-						k *= Math.Max(Radiation.Nominal, (env.landed ? env.surface_rad : env.magnetopause_rad) + va.emitted);
+						k *= Math.Max(Radiation.Nominal, (env.landed ? env.surfaceRad : env.magnetopauseRad) + va.emitted);
 						break;
 
 					case "shielding":
@@ -169,7 +169,7 @@ namespace KERBALISM
 						break;
 
 					case "per_capita":
-						k /= (double)Math.Max(va.crew_count, 1);
+						k /= (double)Math.Max(va.crewCount, 1);
 						break;
 
 					default:
@@ -194,3 +194,4 @@ namespace KERBALISM
 
 
 } // KERBALISM
+*/

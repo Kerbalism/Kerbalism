@@ -35,10 +35,10 @@ namespace KERBALISM
 			// log version
 			Lib.Log("Version : " + Lib.KerbalismVersion + " - Build : " + Lib.KerbalismDevBuild);
 
-			if (LocalHelpers.GenerateEnglishLoc && Lib.IsDevBuild)
+			if (LocalHelpers.GenerateEnglishLoc)
 				LocalHelpers.GenerateLoc();
 
-			if (LocalHelpers.UpdateNonEnglishLoc && Lib.IsDevBuild)
+			if (LocalHelpers.UpdateNonEnglishLoc)
 				LocalHelpers.RegenerateNonEnglishLoc();
 
 			Lib.Log("Forcing KSP to load resources...");
@@ -52,7 +52,7 @@ namespace KERBALISM
 			foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs) { root = url.parent; break; }
 
 			// inject MM patches on-the-fly, so that profile/features can be queried with NEEDS[]
-			if (Features.Failures) Inject(root, "Kerbalism", "Reliability");
+			if (Features.Failures) Inject(root, "Kerbalism", "Failures");
 			if (Features.Science) Inject(root, "Kerbalism", "Science");
 			if (Features.Radiation) Inject(root, "Kerbalism", "Radiation");
 			if (Features.LifeSupport) Inject(root, "Kerbalism", "LifeSupport");
@@ -93,6 +93,9 @@ namespace KERBALISM
 
 		void SaveHabitatData()
 		{
+			if (ModuleKsmHabitat.habitatDatabase == null)
+				return;
+
 			ConfigNode fakeNode = new ConfigNode();
 
 			foreach (KeyValuePair<string, Lib.PartVolumeAndSurfaceInfo> habInfo in ModuleKsmHabitat.habitatDatabase)

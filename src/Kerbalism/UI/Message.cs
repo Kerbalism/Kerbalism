@@ -142,7 +142,7 @@ namespace KERBALISM
 
 
 		// add a message
-		public static void Post(Severity severity, string text, string subtext = "")
+		public static void Post(Severity severity, string text, string subtext = "", bool stopWarp = true)
 		{
 			// ignore the message if muted
 			if (instance.muted) return;
@@ -150,11 +150,25 @@ namespace KERBALISM
 			string title = "";
 			switch (severity)
 			{
-				case Severity.relax: title = Lib.BuildString(Lib.Color(Local.Message_RELAX, Lib.Kolor.Green, true), "\n"); break;//"RELAX"
-				case Severity.warning: title = Lib.BuildString(Lib.Color(Local.Message_WARNING, Lib.Kolor.Yellow, true), "\n"); Lib.StopWarp(); break; //"WARNING"
-				case Severity.danger: title = Lib.BuildString(Lib.Color(Local.Message_DANGER, Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; //"DANGER"
-				case Severity.fatality: title = Lib.BuildString(Lib.Color(Local.Message_FATALITY, Lib.Kolor.Red, true), "\n"); Lib.StopWarp(); break; //"FATALITY"
-				case Severity.breakdown: title = Lib.BuildString(Lib.Color(Local.Message_BREAKDOWN, Lib.Kolor.Orange, true), "\n"); Lib.StopWarp(); break; //"BREAKDOWN"
+				case Severity.relax:
+					title = Lib.BuildString(Lib.Color(Local.Message_RELAX, Lib.Kolor.Green, true), "\n");
+					break;
+				case Severity.warning:
+					title = Lib.BuildString(Lib.Color(Local.Message_WARNING, Lib.Kolor.Yellow, true), "\n");
+					if (stopWarp) Lib.StopWarp();
+					break;
+				case Severity.danger:
+					title = Lib.BuildString(Lib.Color(Local.Message_DANGER, Lib.Kolor.Red, true), "\n");
+					if (stopWarp) Lib.StopWarp();
+					break; 
+				case Severity.fatality:
+					title = Lib.BuildString(Lib.Color(Local.Message_FATALITY, Lib.Kolor.Red, true), "\n");
+					if (stopWarp) Lib.StopWarp();
+					break;
+				case Severity.breakdown:
+					title = Lib.BuildString(Lib.Color(Local.Message_BREAKDOWN, Lib.Kolor.Orange, true), "\n");
+					if (stopWarp) Lib.StopWarp();
+					break;
 			}
 
 			// concatenate messages posted at the same time and of same severity

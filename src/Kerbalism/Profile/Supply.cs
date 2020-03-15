@@ -7,79 +7,175 @@ namespace KERBALISM
 
 	public sealed class Supply
 	{
+		public enum SupplyState { Empty, BelowThreshold, AboveThreshold, Full }
+		public enum WarningMode { Disabled, OnEmpty, OnFull}
+
+		public string resource;         // name of resource
+		public double podCapacity;      // how much resource capacity to add to manned parts, per-kerbal
+		public bool podFill;            // if true, amount is set to capacity, zero otherwise
+		public double evaCapacity;      // how much resource capacity to add on eva
+		public double grantedOnRescue;  // how much resource to gift to rescue missions
+
+		public double levelThreshold;   // [0;1] resource level used to trigger low / fill messages
+
+		public WarningMode warningUIMode; // determine if/when yellow/red UI indicators are shown
+		public bool warnOnlyIfManned;   // if true, messages and UI warnings are not shown if there is nobody on board
+
+		// message shown when going below threshold
+		public string lowMessage;
+		public Severity lowSeverity;
+		public bool lowStopWarp;
+
+		// message shown when going above threshold
+		public string fillMessage;
+		public Severity fillSeverity;
+		public bool fillStopWarp;
+
+		// message shown when amount reach zero
+		public string emptyMessage;
+		public Severity emptySeverity;
+		public bool emptyStopWarp;
+
+		// message shown when amount reach capacity
+		public string fullMessage;
+		public Severity fullSeverity;
+		public bool fullStopWarp;
+
 		public Supply(ConfigNode node)
 		{
 			resource = Lib.ConfigValue(node, "resource", string.Empty);
-			on_pod = Lib.ConfigValue(node, "on_pod", 0.0);
-			on_eva = Lib.ConfigValue(node, "on_eva", 0.0);
-			on_rescue = Lib.ConfigValue(node, "on_rescue", Lib.ConfigValue(node, "on_resque", 0.0)); //< old typo, pre 1.1.9
-			empty = Lib.ConfigValue(node, "empty", false);
-
-			low_threshold = Lib.ConfigValue(node, "low_threshold", 0.15);
-			low_message = Lib.ConfigValue(node, "low_message", string.Empty);
-			empty_message = Lib.ConfigValue(node, "empty_message", string.Empty);
-			refill_message = Lib.ConfigValue(node, "refill_message", string.Empty);
-
-			if (low_message.Length > 0 && low_message[0] == '#') Lib.Log("Broken translation: " + low_message);
-			if (empty_message.Length > 0 && empty_message[0] == '#') Lib.Log("Broken translation: " + empty_message);
-			if (refill_message.Length > 0 && refill_message[0] == '#') Lib.Log("Broken translation: " + refill_message);
-
-			// check that resource is specified
-			if (resource.Length == 0) throw new Exception("skipping resource-less supply");
-
 			// check that resource exist
-			if (Lib.GetDefinition(resource) == null) throw new Exception("resource " + resource + " doesn't exist");
+			if (resource.Length == 0)
+				throw new Exception("skipping resource-less supply");
+			if (Lib.GetDefinition(resource) == null)
+				throw new Exception("resource " + resource + " doesn't exist");
+
+			podCapacity = Lib.ConfigValue(node, "podCapacity", 0.0);
+			podFill = Lib.ConfigValue(node, "podFill", true);
+			evaCapacity = Lib.ConfigValue(node, "evaCapacity", 0.0);
+			grantedOnRescue = Lib.ConfigValue(node, "grantedOnRescue", 0.0);
+
+			levelThreshold = Lib.ConfigValue(node, "levelThreshold", 0.15);
+
+			warningUIMode = Lib.ConfigEnum(node, "warningUIMode", WarningMode.OnEmpty);
+			warnOnlyIfManned = Lib.ConfigValue(node, "lowStopWarp", true);
+
+			lowMessage = Lib.ConfigValue(node, "lowMessage", string.Empty);
+			if (lowMessage.Length > 0 && lowMessage[0] == '#') Lib.Log("Broken translation: " + lowMessage);
+			lowSeverity = Lib.ConfigValue(node, "lowSeverity", Severity.warning);
+			lowStopWarp = Lib.ConfigValue(node, "lowStopWarp", false);
+
+			fillMessage = Lib.ConfigValue(node, "fillMessage", string.Empty);
+			if (fillMessage.Length > 0 && fillMessage[0] == '#') Lib.Log("Broken translation: " + fillMessage);
+			fillSeverity = Lib.ConfigValue(node, "fillSeverity", Severity.relax);
+			fillStopWarp = Lib.ConfigValue(node, "fillStopWarp", false);
+
+			emptyMessage = Lib.ConfigValue(node, "emptyMessage", string.Empty);
+			if (emptyMessage.Length > 0 && emptyMessage[0] == '#') Lib.Log("Broken translation: " + emptyMessage);
+			emptySeverity = Lib.ConfigValue(node, "emptySeverity", Severity.danger);
+			emptyStopWarp = Lib.ConfigValue(node, "emptyStopWarp", false);
+
+			fullMessage = Lib.ConfigValue(node, "fullMessage", string.Empty);
+			if (fullMessage.Length > 0 && fullMessage[0] == '#') Lib.Log("Broken translation: " + fullMessage);
+			fullSeverity = Lib.ConfigValue(node, "fullSeverity", Severity.danger);
+			fullStopWarp = Lib.ConfigValue(node, "fullStopWarp", false);
 		}
 
-
-		public void CheckMessages(Vessel v, VesselData vd, List<ProtoCrewMember> crew)
+		public static Dictionary<string, SupplyState> CreateStateDictionary(VesselResHandler resHandler)
 		{
-			// get resource handler
-			VesselResource res = vd.ResHandler.GetResource(resource);
+			Dictionary<string, SupplyState> supplies = new Dictionary<string, SupplyState>(Profile.supplies.Count);
 
-			// get data from db
-			SupplyData sd = vd.Supply(resource);
-
-			// message obey user config
-			bool show_msg = resource == "ElectricCharge" ? vd.cfg_ec : vd.cfg_supply;
-
-			// messages are shown only if there is some capacity and the vessel is manned
-			// special case: ElectricCharge related messages are shown for unmanned vessels too
-			if (res.Capacity > double.Epsilon && (crew.Count > 0 || resource == "ElectricCharge"))
+			foreach (Supply supply in Profile.supplies)
 			{
-				// manned/probe message variant
-				uint variant = crew.Count > 0 ? 0 : 1u;
+				double level = resHandler.GetResource(supply.resource).Level;
 
-				// manage messages
-				if (res.Level <= double.Epsilon && sd.message < 2)
+				if (level == 0.0)
+					supplies[supply.resource] = SupplyState.Empty;
+				else if (level == 1.0)
+					supplies[supply.resource] = SupplyState.Full;
+				else if (level < supply.levelThreshold)
+					supplies[supply.resource] = SupplyState.BelowThreshold;
+				else
+					supplies[supply.resource] = SupplyState.AboveThreshold;
+			}
+
+			return supplies;
+		}
+
+		public static void SendMessages(VesselData vd)
+		{
+			// execute all supplies
+			foreach (Supply supply in Profile.supplies)
+			{
+				bool notify = (supply.resource == "ElectricCharge" ? vd.cfg_ec : vd.cfg_supply)
+					&& (supply.warnOnlyIfManned ? vd.CrewCount > 1 : true);
+				double level = vd.ResHandler.GetResource(supply.resource).Level;
+
+				if (level == 0.0)
 				{
-					if (empty_message.Length > 0 && show_msg) Message.Post(Severity.danger, Lib.ExpandMsg(empty_message, v, null, variant));
-					sd.message = 2;
+					if (vd.supplies[supply.resource] == SupplyState.Empty)
+						continue;
+
+					vd.supplies[supply.resource] = SupplyState.Empty;
+
+					if (notify && supply.emptyMessage != string.Empty )
+					{
+						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+						Message.Post(supply.emptySeverity, Lib.ExpandMsg(supply.emptyMessage, vd.Vessel, null, variant), "", supply.fullStopWarp);
+					}
 				}
-				else if (res.Level < low_threshold && sd.message < 1)
+				else if (level == 1.0)
 				{
-					if (low_message.Length > 0 && show_msg) Message.Post(Severity.warning, Lib.ExpandMsg(low_message, v, null, variant));
-					sd.message = 1;
+					if (vd.supplies[supply.resource] == SupplyState.Full)
+						continue;
+
+					vd.supplies[supply.resource] = SupplyState.Full;
+
+					if (notify && supply.fullMessage != string.Empty)
+					{
+						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+						Message.Post(supply.fullSeverity, Lib.ExpandMsg(supply.fullMessage, vd.Vessel, null, variant), "", supply.fullStopWarp);
+					}
 				}
-				else if (res.Level > low_threshold && sd.message > 0)
+				else if (level < supply.levelThreshold)
 				{
-					if (refill_message.Length > 0 && show_msg) Message.Post(Severity.relax, Lib.ExpandMsg(refill_message, v, null, variant));
-					sd.message = 0;
+					if (vd.supplies[supply.resource] == SupplyState.BelowThreshold)
+						continue;
+
+					vd.supplies[supply.resource] = SupplyState.BelowThreshold;
+
+					if (notify && supply.lowMessage != string.Empty)
+					{
+						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+						Message.Post(supply.lowSeverity, Lib.ExpandMsg(supply.lowMessage, vd.Vessel, null, variant), "", supply.lowStopWarp);
+					}
+				}
+				else
+				{
+					if (vd.supplies[supply.resource] == SupplyState.AboveThreshold)
+						continue;
+
+					vd.supplies[supply.resource] = SupplyState.AboveThreshold;
+
+					if (notify && supply.fillMessage != string.Empty)
+					{
+						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+						Message.Post(supply.fillSeverity, Lib.ExpandMsg(supply.fillMessage, vd.Vessel, null, variant), "", supply.fillStopWarp);
+					}
 				}
 			}
 		}
 
-
 		public void SetupPod(AvailablePart p)
 		{
+			// do nothing if no resource on pod
+			if (podCapacity == 0.0) return;
+
 			// get prefab
 			Part prefab = p.partPrefab;
 
 			// avoid problems with some parts that don't have a resource container (like flags)
 			if (prefab.Resources == null) return;
-
-			// do nothing if no resource on pod
-			if (on_pod <= double.Epsilon) return;
 
 			// do nothing for EVA kerbals, that have now CrewCapacity
 			if (prefab.FindModuleImplementing<KerbalEVA>() != null) return;
@@ -91,30 +187,30 @@ namespace KERBALISM
 			if (prefab.FindModuleImplementing<ModuleCommand>() == null) return;
 
 			// calculate quantity
-			double quantity = on_pod * (double)prefab.CrewCapacity;
+			double quantity = podCapacity * (double)prefab.CrewCapacity;
 
 			// add the resource
-			Lib.AddResource(prefab, resource, empty ? 0.0 : quantity, quantity);
+			Lib.AddResource(prefab, resource, podFill ? quantity : 0.0, quantity);
 
 			// add resource cost
-			p.cost += (float)(Lib.GetDefinition(resource).unitCost * (empty ? 0.0 : quantity));
+			p.cost += (float)(Lib.GetDefinition(resource).unitCost * (podFill ? quantity : 0.0));
 		}
 
 
 		public void SetupEva(Part p)
 		{
 			// do nothing if no resource on eva
-			if (on_eva <= double.Epsilon) return;
+			if (evaCapacity == 0.0) return;
 
 			// create new resource capacity in the eva kerbal
-			Lib.AddResource(p, resource, 0.0, on_eva);
+			Lib.AddResource(p, resource, 0.0, evaCapacity);
 		}
 
 
 		public void SetupRescue(VesselData vd)
 		{
 			// do nothing if no resource on rescue
-			if (on_rescue <= double.Epsilon) return;
+			if (grantedOnRescue == 0.0) return;
 
 			// if the vessel has no capacity
 			if (vd.ResHandler.GetResource(resource).Capacity <= 0.0)
@@ -123,25 +219,16 @@ namespace KERBALISM
 				Part p = vd.Vessel.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);
 
 				// add capacity
-				Lib.AddResource(p, resource, 0.0, on_rescue);
+				Lib.AddResource(p, resource, 0.0, grantedOnRescue);
 			}
 
 			// add resource to the vessel
-			vd.ResHandler.Produce(resource, on_rescue, ResourceBroker.Generic);
+			vd.ResHandler.Produce(resource, grantedOnRescue, ResourceBroker.Generic);
 		}
 
 
 
-		public string resource;                           // name of resource
-		public double on_pod;                             // how much resource to add to manned parts, per-kerbal
-		public double on_eva;                             // how much resource to take on eva, if any
-		public double on_rescue;                          // how much resource to gift to rescue missions
-		public bool empty;                              // set initial amount to zero
 
-		public double low_threshold;                      // threshold of resource level used to show low messages and yellow status color
-		public string low_message;                        // messages shown on threshold crossings
-		public string empty_message;                      // .
-		public string refill_message;                     // .
 	}
 
 

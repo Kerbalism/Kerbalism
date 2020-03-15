@@ -549,7 +549,7 @@ namespace KERBALISM
 
 			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 			Supply supply = Profile.supplies.Find(k => k.resource == "ElectricCharge");
-			double low_threshold = supply != null ? supply.low_threshold : 0.15;
+			double low_threshold = supply != null ? supply.levelThreshold : 0.15;
 
 			string tooltip = Lib.BuildString
 			(
@@ -585,12 +585,26 @@ namespace KERBALISM
 						if (tooltips.Count == 0)
 							tooltips.Add(String.Format("<align=left /><b>{0,-18}\t" + Local.Monitor_level + "\t" + Local.Monitor_duration + "</b>", Local.Monitor_name));//level"duration"name"
 
-						tooltips.Add(Lib.Color(
-							String.Format("{0,-18}\t{1}\t{2}", supply.resource, Lib.HumanReadablePerc(res.Level), res.DepletionInfo),//"depleted"
-							res.Level <= 0.005 ? Lib.Kolor.Red : res.Level <= supply.low_threshold ? Lib.Kolor.Orange : Lib.Kolor.None
-						));
+						uint severity = 0u;
+						switch (supply.warningUIMode)
+						{
+							case Supply.WarningMode.Disabled:
+								tooltips.Add(String.Format("{0,-18}\t{1}", Lib.Ellipsis(res.Title, 15u), res.Level.ToString("P1")));
+								break;
+							case Supply.WarningMode.OnEmpty:
+								tooltips.Add(Lib.Color(
+									String.Format("{0,-18}\t{1}\t{2}", Lib.Ellipsis(res.Title, 15u), res.Level.ToString("P1"), res.DepletionInfo),//"depleted"
+									res.Level <= 0.005 ? Lib.Kolor.Red : res.Level <= supply.levelThreshold ? Lib.Kolor.Orange : Lib.Kolor.None));
+								severity = res.Level <= 0.005 ? 2u : res.Level <= supply.levelThreshold ? 1u : 0;
+								break;
+							case Supply.WarningMode.OnFull:
+								tooltips.Add(Lib.Color(
+									String.Format("{0,-18}\t{1}\t{2}", Lib.Ellipsis(res.Title, 15u), res.Level.ToString("P1"), "n/a"),
+									res.Level > 0.995 ? Lib.Kolor.Red : res.Level > supply.levelThreshold ? Lib.Kolor.Orange : Lib.Kolor.None));
+								severity = res.Level > 0.995 ? 2u : res.Level > supply.levelThreshold ? 1u : 0;
+								break;
+						}
 
-						uint severity = res.Level <= 0.005 ? 2u : res.Level <= supply.low_threshold ? 1u : 0;
 						max_severity = Math.Max(max_severity, severity);
 					}
 				}

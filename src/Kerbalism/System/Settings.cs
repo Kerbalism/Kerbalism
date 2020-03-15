@@ -33,8 +33,8 @@ namespace KERBALISM
 
 			// habitat & pressure 
 			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 100.0);
-			HabitatAtmoResource = Lib.ConfigValue(cfg, "HabitatAtmoResource", "Atmosphere");
-			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "WasteAtmosphere");
+			HabitatAtmoResource = Lib.ConfigValue(cfg, "HabitatAtmoResource", "KsmAtmosphere");
+			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "KsmWasteAtmosphere");
 			HabitatBreathableResource = Lib.ConfigValue(cfg, "HabitatBreathableResource", "Oxygen");
 			HabitatBreathableResourceRate = Lib.ConfigValue(cfg, "HabitatBreathableResourceRate", 0.00172379825);
 			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
@@ -84,7 +84,7 @@ namespace KERBALISM
 			LifeSupportSurvivalRange = Lib.ConfigValue(cfg, "LifeSupportSurvivalRange", 5);
 
 			ComfortLivingSpace = Lib.ConfigValue(cfg, "ComfortLivingSpace", 20);
-			ComfortFirmGround = Lib.ConfigValue(cfg, "ComfortFirmGround", 0.1f);
+			ComfortFirmGround = Lib.ConfigValue(cfg, "ComfortFirmGround", 0.3f);
 			ComfortExercise = Lib.ConfigValue(cfg, "ComfortExercise", 0.2f);
 			ComfortNotAlone = Lib.ConfigValue(cfg, "ComfortNotAlone", 0.3f);
 			ComfortCallHome = Lib.ConfigValue(cfg, "ComfortCallHome", 0.2f);

@@ -19,6 +19,9 @@ namespace KERBALISM
 		/// <summary> Shortcut to the resource definition "displayName" </summary>
 		public override string Title => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].displayName;
 
+		/// <summary> Shortcut to the resource definition "isVisible" </summary>
+		public override bool Visible => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].isVisible;
+
 		/// <summary> Shortcut to the resource definition "abbreviation" </summary>
 		public string Abbreviation => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].abbreviation;
 

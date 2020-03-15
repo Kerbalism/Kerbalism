@@ -1,3 +1,4 @@
+using Flee.PublicTypes;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,8 +6,8 @@ using static KERBALISM.HabitatData;
 
 namespace KERBALISM
 {
-    public class VesselData
-    {
+    public class VesselData : VesselModifierData
+	{
         // references
         public Guid VesselId { get; private set; }
         public Vessel Vessel { get; private set; }
@@ -27,18 +28,17 @@ namespace KERBALISM
         // time since last update
         private double secSinceLastEval;
 
-        #region non-evaluated non-persisted fields & properties
+		#region non-evaluated non-persisted fields & properties
 
-        /// <summary>
-        /// Resource handler for this vessel.
-        /// <para/> Note : this can be null, or not properly initialized while VesselData.IsSimulated is false.
-        /// <para/> Do not use it from PartModule.Start() / PartModule.OnStart(), and check VesselData.IsSimulated before using it from Update() / FixedUpdate()
-        /// </summary>
-        // This is unfortunate but cu
-        public VesselResHandler ResHandler { get; private set; }
+		/// <summary>
+		/// Resource handler for this vessel.
+		/// <para/> Note : this can be null, or not properly initialized while VesselData.IsSimulated is false.
+		/// <para/> Do not use it from PartModule.Start() / PartModule.OnStart(), and check VesselData.IsSimulated before using it from Update() / FixedUpdate()
+		/// </summary>
+		public override VesselResHandler ResHandler => resHandler; VesselResHandler resHandler;
 
-        /// <summary> comms handler for this vessel </summary>
-        public CommHandler CommHandler { get; private set; }
+		/// <summary> comms handler for this vessel </summary>
+		public CommHandler CommHandler { get; private set; }
 
         /// <summary> all part modules that have a ResourceUpdate method </summary>
         public List<ResourceUpdateDelegate> resourceUpdateDelegates = null;
@@ -73,7 +73,7 @@ namespace KERBALISM
         public bool msg_signal;       // message flag: link status
         public bool msg_belt;         // message flag: crossing radiation belt
         public StormData stormData;
-        private Dictionary<string, SupplyData> supplies; // supplies data
+        public Dictionary<string, Supply.SupplyState> supplies; // supplies data
         public List<uint> scansat_id; // used to remember scansat sensors that were disabled
         public double scienceTransmitted;
         public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
@@ -89,46 +89,46 @@ namespace KERBALISM
         public bool EnvIsAnalytic => isAnalytic; bool isAnalytic;
 
         /// <summary> [environment] true if inside ocean</summary>
-        public bool EnvUnderwater => underwater; bool underwater;
+        public override bool EnvUnderwater => underwater; bool underwater;
 
         /// <summary> [environment] true if on the surface of a body</summary>
-        public bool EnvLanded => landed; bool landed;
+        public override bool EnvLanded => landed; bool landed;
 
         /// <summary> current atmospheric pressure in atm</summary>
-        public double EnvStaticPressure => envStaticPressure; double envStaticPressure;
+        public override double EnvStaticPressure => envStaticPressure; double envStaticPressure;
 
         /// <summary> Is the vessel inside an atmosphere ?</summary>
-        public bool EnvInAtmosphere => inAtmosphere; bool inAtmosphere;
+        public override bool EnvInAtmosphere => inAtmosphere; bool inAtmosphere;
 
         /// <summary> Is the vessel inside a breatheable atmosphere ?</summary>
-        public bool EnvInOxygenAtmosphere => inOxygenAtmosphere; bool inOxygenAtmosphere;
+        public override bool EnvInOxygenAtmosphere => inOxygenAtmosphere; bool inOxygenAtmosphere;
 
         /// <summary> Is the vessel inside a breatheable atmosphere and at acceptable pressure conditions ?</summary>
-        public bool EnvInBreathableAtmosphere => inBreathableAtmosphere; bool inBreathableAtmosphere;
+        public override bool EnvInBreathableAtmosphere => inBreathableAtmosphere; bool inBreathableAtmosphere;
 
         /// <summary> [environment] true if in zero g</summary>
-        public bool EnvZeroG => zeroG; bool zeroG;
+        public override bool EnvZeroG => zeroG; bool zeroG;
 
         /// <summary> [environment] solar flux reflected from the nearest body</summary>
-        public double EnvAlbedoFlux => albedoFlux; double albedoFlux;
+        public override double EnvAlbedoFlux => albedoFlux; double albedoFlux;
 
         /// <summary> [environment] infrared radiative flux from the nearest body</summary>
-        public double EnvBodyFlux => bodyFlux; double bodyFlux;
+        public override double EnvBodyFlux => bodyFlux; double bodyFlux;
 
         /// <summary> [environment] total flux at vessel position</summary>
-        public double EnvTotalFlux => totalFlux; double totalFlux;
+        public override double EnvTotalFlux => totalFlux; double totalFlux;
 
         /// <summary> [environment] temperature ar vessel position</summary>
-        public double EnvTemperature => temperature; double temperature;
+        public override double EnvTemperature => temperature; double temperature;
 
         /// <summary> [environment] difference between environment temperature and survival temperature</summary>// 
-        public double EnvTempDiff => tempDiff; double tempDiff;
+        public override double EnvTempDiff => tempDiff; double tempDiff;
 
         /// <summary> [environment] radiation at vessel position</summary>
-        public double EnvRadiation => radiation; double radiation;
+        public override double EnvRadiation => radiation; double radiation;
 
         /// <summary> [environment] radiation effective for habitats/EVAs</summary>
-        public double EnvHabitatRadiation => shieldedRadiation; double shieldedRadiation;
+        public override double EnvHabitatRadiation => shieldedRadiation; double shieldedRadiation;
 
         /// <summary> [environment] true if vessel is inside a magnetopause (except the heliosphere)</summary>
         public bool EnvMagnetosphere => magnetosphere; bool magnetosphere;
@@ -155,7 +155,7 @@ namespace KERBALISM
         public bool EnvStorm => inStorm; bool inStorm;
 
         /// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>
-        public double EnvGammaTransparency => gammaTransparency; double gammaTransparency;
+        public override double EnvGammaTransparency => gammaTransparency; double gammaTransparency;
 
         /// <summary> [environment] gravitation gauge particles detected (joke)</summary>
         public double EnvGravioli => gravioli; double gravioli;
@@ -175,20 +175,20 @@ namespace KERBALISM
         /// <para/> zero when the vessel is in shadow while evaluation is non-analytic (low timewarp rates)
         /// <para/> in analytic evaluation, this include fractional sunlight factor
         /// </summary>
-        public double EnvSolarFluxTotal => solarFluxTotal; double solarFluxTotal;
+        public override double EnvSolarFluxTotal => solarFluxTotal; double solarFluxTotal;
 
         /// <summary> similar to solar flux total but doesn't account for atmo absorbtion nor occlusion</summary>
         private double rawSolarFluxTotal;
 
         /// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
-        public double EnvSunlightFactor => sunlightFactor; double sunlightFactor;
+        public override double EnvSunlightFactor => sunlightFactor; double sunlightFactor;
 
         /// <summary> [environment] true if the vessel is currently in sunlight, or at least half the time when in analytic mode</summary>
-        public bool EnvInSunlight => sunlightFactor > 0.49;
+        public override bool EnvInSunlight => sunlightFactor > 0.49;
 
         /// <summary> [environment] true if the vessel is currently in shadow, or least 90% of the time when in analytic mode</summary>
         // this threshold is also used to ignore light coming from distant/weak stars 
-        public bool EnvInFullShadow => sunlightFactor < 0.1;
+        public override bool EnvInFullShadow => sunlightFactor < 0.1;
 
         /// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
         public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
@@ -323,15 +323,15 @@ namespace KERBALISM
                 if (vd.sunlightFactor > 0.99) vd.sunlightFactor = 1.0;
             }
         }
-        #endregion
+		#endregion
 
-        #region evaluated vessel state information properties
+		#region evaluated vessel state information properties
 
-        /// <summary>number of crew on the vessel</summary>
-        public int CrewCount => crewCount; int crewCount;
+		/// <summary>number of crew on the vessel</summary>
+		public override int CrewCount => crewCount; int crewCount;
 
         /// <summary>crew capacity of the vessel</summary>
-        public int CrewCapacity => crewCapacity; int crewCapacity;
+        public override int CrewCapacity => crewCapacity; int crewCapacity;
 
         /// <summary>true if at least a component has malfunctioned or had a critical failure</summary>
         public bool Malfunction => malfunction; bool malfunction;
@@ -343,7 +343,7 @@ namespace KERBALISM
         public ConnectionInfo Connection => connection; ConnectionInfo connection;
 
         /// <summary>habitat info</summary>
-        public HabitatVesselData HabitatInfo => habitatInfo; HabitatVesselData habitatInfo;
+        public override HabitatVesselData HabitatInfo => habitatInfo; HabitatVesselData habitatInfo;
 
         /// <summary>vessel wide processes info</summary>
         public VesselProcesses VesselProcesses => vesselProcesses; VesselProcesses vesselProcesses;
@@ -650,16 +650,16 @@ namespace KERBALISM
             if (Vessel.loaded)
             {
                 Parts.Populate(Vessel);
-                ResHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
+				resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
             }
             else
             {
                 // vessels can be created unloaded, asteroids for example
                 Parts.Populate(Vessel.protoVessel);
-                ResHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
+				resHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
             }
 
-            SetPersistedFieldsDefaults(vessel.protoVessel);
+			SetPersistedFieldsDefaults(vessel.protoVessel);
             SetInstantiateDefaults(vessel.protoVessel);
 
             Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + Parts.Count);
@@ -672,7 +672,7 @@ namespace KERBALISM
         /// The Vessel reference will be acquired in the first fixedupdate
         /// </summary>
         public VesselData(ProtoVessel protoVessel, ConfigNode node)
-        {
+		{
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
             ExistsInFlight = false;
             IsSimulated = false;
@@ -681,9 +681,9 @@ namespace KERBALISM
 
             Parts = new PartDataCollection(this);
             Parts.Populate(protoVessel);
-            ResHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
+			resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
 
-            if (node == null)
+			if (node == null)
             {
                 SetPersistedFieldsDefaults(protoVessel);
                 Lib.LogDebug("VesselData ctor (created from protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
@@ -718,7 +718,6 @@ namespace KERBALISM
             isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
             stormData = new StormData(null);
             computer = new Computer(null);
-            supplies = new Dictionary<string, SupplyData>();
             scansat_id = new List<uint>();
             vesselProcesses = new VesselProcesses();
         }
@@ -733,7 +732,8 @@ namespace KERBALISM
             habitatInfo = new HabitatVesselData();
             connection = new ConnectionInfo();
             CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
-        }
+			supplies = Supply.CreateStateDictionary(resHandler);
+		}
 
         private void Load(ConfigNode node)
         {
@@ -759,12 +759,6 @@ namespace KERBALISM
             stormData = new StormData(node.GetNode("StormData"));
             computer = new Computer(node.GetNode("computer"));
 
-            supplies = new Dictionary<string, SupplyData>();
-            foreach (var supply_node in node.GetNode("supplies").GetNodes())
-            {
-                supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
-            }
-
             scansat_id = new List<uint>();
             foreach (string s in node.GetValues("scansat_id"))
             {
@@ -772,7 +766,7 @@ namespace KERBALISM
             }
 
 			VesselVirtualResource.Load(this, node);
-			vesselProcesses = new VesselProcesses(node.GetNode("processes"));
+			vesselProcesses = new VesselProcesses(this, node.GetNode("processes"));
             Parts.Load(node);
 			
         }
@@ -801,12 +795,6 @@ namespace KERBALISM
             stormData.Save(node.AddNode("StormData"));
             computer.Save(node.AddNode("computer"));
 
-            var supplies_node = node.AddNode("supplies");
-            foreach (var p in supplies)
-            {
-                p.Value.Save(supplies_node.AddNode(DB.To_safe_key(p.Key)));
-            }
-
             foreach (uint id in scansat_id)
             {
                 node.AddValue("scansat_id", id.ToString());
@@ -824,15 +812,6 @@ namespace KERBALISM
         }
 
         #endregion
-
-        public SupplyData Supply(string name)
-        {
-            if (!supplies.ContainsKey(name))
-            {
-                supplies.Add(name, new SupplyData());
-            }
-            return supplies[name];
-        }
 
         #region vessel state evaluation
         private void EvaluateStatus()
@@ -881,7 +860,7 @@ namespace KERBALISM
             }
 
             EvaluateHabitat(habitatInfo, habitats, connection.linked && connection.rate > 0.0, landed, crewCount, mainSun.Direction, Vessel.loaded);
-            vesselProcesses.Evaluate(partProcessDatas, ResHandler);
+            vesselProcesses.Evaluate(this, partProcessDatas, ResHandler);
 
             // data about greenhouses
             greenhouses = Greenhouse.Greenhouses(Vessel);

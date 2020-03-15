@@ -103,18 +103,18 @@ namespace KERBALISM
 
 			p.AddContent("livingVolume", vd.HabitatInfo.livingVolume.ToString("0.00 m3"));
 			p.AddContent("volumePerCrew", vd.HabitatInfo.volumePerCrew.ToString("0.00 m3"));
-			p.AddContent("livingSpaceModifier", vd.HabitatInfo.livingSpaceModifier.ToString("F2"));
+			p.AddContent("livingSpaceModifier", vd.HabitatInfo.livingSpaceFactor.ToString("F2"));
 			p.AddContent("pressurizedSurface", vd.HabitatInfo.pressurizedSurface.ToString("0.00 m2"));
 			p.AddContent("pressurizedVolume", vd.HabitatInfo.pressurizedVolume.ToString("0.00 m3"));
 			p.AddContent("pressureAtm", vd.HabitatInfo.pressureAtm.ToString("0.00 atm"));
-			p.AddContent("pressureModifier", vd.HabitatInfo.pressureModifier.ToString("F2"));
+			p.AddContent("pressureModifier", vd.HabitatInfo.pressureFactor.ToString("F2"));
 
 			p.AddContent("shieldingSurface", vd.HabitatInfo.shieldingSurface.ToString("0.00 m2"));
 			p.AddContent("shieldingAmount", vd.HabitatInfo.shieldingAmount.ToString("F2"));
 			p.AddContent("shieldingModifier", vd.HabitatInfo.shieldingModifier.ToString("F2"));
 			p.AddContent("poisoningLevel", vd.HabitatInfo.poisoningLevel.ToString("F2"));
 
-			p.AddContent("comfortModifier", vd.HabitatInfo.comfortModifier.ToString("F2"), HabitatLib.ComfortTooltip(vd.HabitatInfo.comfortMask, vd.HabitatInfo.comfortModifier));
+			p.AddContent("comfortModifier", vd.HabitatInfo.comfortFactor.ToString("F2"), HabitatLib.ComfortTooltip(vd.HabitatInfo.comfortMask, vd.HabitatInfo.comfortFactor));
 
 
 			//p.AddContent("volume-debug", Lib.HumanReadableVolume(vd.Volume));
@@ -182,39 +182,55 @@ namespace KERBALISM
 
 				sb.Length = 0;
 
-				if (res.AvailabilityFactor > 0.0 && res.AvailabilityFactor < 1.0)
+				switch (supply.warningUIMode)
 				{
-					sb.Append(Lib.Color(Local.Monitor_depleted, Lib.Kolor.Orange));
-					sb.Append(" - ");
-					sb.Append("satisfaction");
-					sb.Append(" ");
-					sb.Append(Lib.Color(res.AvailabilityFactor.ToString("P1"), Lib.Kolor.Orange));
-				}
-				else
-				{
-					double depletion = res.Depletion;
-					if (depletion > 3600.0 * Lib.HoursInDay * Lib.DaysInYear * 100.0) // more than 100 years = perpetual
-					{
-						sb.Append(Lib.Color(Local.Generic_PERPETUAL, Lib.Kolor.Green));
-					}
-					else if (depletion == 0.0)
-					{
-						sb.Append(Lib.Color(Local.Monitor_depleted, Lib.Kolor.Orange));
-					}
-					else
-					{
-						sb.Append("depletion in");
-						sb.Append(" ");
-						if (res.Level < supply.low_threshold)
-							sb.Append(Lib.Color(Lib.HumanReadableDuration(depletion), Lib.Kolor.Orange));
+					case Supply.WarningMode.Disabled:
+						sb.Append(Lib.HumanReadableStorage(res.Amount, res.Capacity));
+						sb.Append(" (");
+						sb.Append(res.Level.ToString("P1"));
+						sb.Append(")");
+						break;
+					case Supply.WarningMode.OnFull:
+						if (res.Level < supply.levelThreshold)
+							sb.Append(Lib.Color(res.Level.ToString("P2"), Lib.Kolor.Green));
 						else
-							sb.Append(Lib.Color(Lib.HumanReadableDuration(depletion), Lib.Kolor.Green));
-
-					}
+							sb.Append(Lib.Color(res.Level.ToString("P2"), Lib.Kolor.Orange));
+						break;
+					case Supply.WarningMode.OnEmpty:
+						if (res.AvailabilityFactor > 0.0 && res.AvailabilityFactor < 1.0)
+						{
+							sb.Append(Lib.Color(Local.Monitor_depleted, Lib.Kolor.Orange));
+							sb.Append(" - ");
+							sb.Append("satisfaction");
+							sb.Append(" ");
+							sb.Append(Lib.Color(res.AvailabilityFactor.ToString("P1"), Lib.Kolor.Orange));
+						}
+						else
+						{
+							double depletion = res.Depletion;
+							if (depletion > 3600.0 * Lib.HoursInDay * Lib.DaysInYear * 100.0) // more than 100 years = perpetual
+							{
+								sb.Append(Lib.Color(Local.Generic_PERPETUAL, Lib.Kolor.Green));
+							}
+							else if (depletion == 0.0)
+							{
+								sb.Append(Lib.Color(Local.Monitor_depleted, Lib.Kolor.Orange));
+							}
+							else
+							{
+								sb.Append("depletion in");
+								sb.Append(" ");
+								if (res.Level < supply.levelThreshold)
+									sb.Append(Lib.Color(Lib.HumanReadableDuration(depletion), Lib.Kolor.Orange));
+								else
+									sb.Append(Lib.Color(Lib.HumanReadableDuration(depletion), Lib.Kolor.Green));
+							}
+						}
+						break;
 				}
 
 				// finally, render resource supply
-				p.AddContent(Lib.SpacesOnCaps(res.Title), sb.ToString(), res.BrokersListTooltip());
+				p.AddContent(res.Title, sb.ToString(), res.BrokersListTooltip());
 				++supplies;
 			}
 		}

@@ -21,6 +21,8 @@ namespace KERBALISM
 
 		public override string Title => title; string title;
 
+		public override bool Visible => false;
+
 		/// <summary> Amount of virtual resource. This can be set directly if needed.</summary>
 		public override double Amount => amount; double amount;
 		public void SetAmount(double amount)

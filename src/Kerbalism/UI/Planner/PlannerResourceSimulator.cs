@@ -8,20 +8,33 @@ namespace KERBALISM.Planner
 {
 
 	///<summary> Planners simulator for resources contained, produced and consumed within the vessel </summary>
-	public class ResourceSimulator
+	public class PlannerResourceSimulator
 	{
-		public VesselResHandler handler;
+		private static VesselResHandler handler;
+		private static uint handlerId;
+
+		public static VesselResHandler Handler
+		{
+			get
+			{
+				if (handler == null || EditorLogic.fetch.ship.persistentId != handlerId)
+				{
+					handler = new VesselResHandler(null, VesselResHandler.VesselState.EditorStep);
+					handlerId = EditorLogic.fetch.ship.persistentId;
+				}
+
+				return handler;
+			}
+		}
 
 		/// <summary>
 		/// run simulator to get statistics a fraction of a second after the vessel would spawn
 		/// in the configured environment (celestial body, orbit height and presence of sunlight)
 		/// </summary>
-		public void Analyze(List<Part> parts, EnvironmentAnalyzer env, VesselAnalyzer va)
+		public void Analyze(List<Part> parts, PlannerVesselData vesselData)
 		{
-			handler = EditorResHandler.Handler;
-
 			// reset and re-find all resources amounts and capacities
-			handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorInit, 1.0);
+			Handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorInit, 1.0);
 
 			// reach steady state, so all initial resources like WasteAtmosphere are produced
 			// it is assumed that one cycle is needed to produce things that don't need inputs
@@ -31,39 +44,39 @@ namespace KERBALISM.Planner
 			for (int i = 0; i < 5; i++)
 			{
 				// do all produce/consume/recipe requests
-				RunSimulatorStep(parts, env, va);
+				RunSimulatorStep(parts, vesselData);
 				// process them
-				handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorStep, 1.0);
+				Handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorStep, 1.0);
 			}
 
 			// set back all resources amounts to the stored amounts
 			// this is for visualisation purposes, so the displayed values match the actual values
-			handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorFinalize, 1.0);
+			Handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorFinalize, 1.0);
 		}
 
 		/// <summary>run a single timestamp of the simulator</summary>
-		private void RunSimulatorStep(List<Part> parts, EnvironmentAnalyzer env, VesselAnalyzer va)
+		private void RunSimulatorStep(List<Part> parts, PlannerVesselData vesselData)
 		{
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
 				if (r.input.Length > 0 && r.rate > 0.0)
 				{
-					ExecuteRule(r, env, va);
+					ExecuteRule(r, vesselData.crewCount, r.EvaluateModifier(vesselData));
 				}
 			}
 
 			// process all processes
 			foreach (Process p in Profile.processes)
 			{
-				ExecuteProcess(p, env, va);
+				ExecuteProcess(p, p.EvaluateModifier(vesselData));
 			}
 
 			// process comms
 			// TODO : add a switch somewhere in the planner to select transmitting/not transmitting
-			handler.ElectricCharge.Consume(va.connection.ec_idle, ResourceBroker.CommsIdle);
-			if (va.connection.ec > 0.0)
-				handler.ElectricCharge.Consume(va.connection.ec - va.connection.ec_idle, ResourceBroker.CommsXmit);
+			handler.ElectricCharge.Consume(vesselData.connection.ec_idle, ResourceBroker.CommsIdle);
+			if (vesselData.connection.ec > 0.0)
+				handler.ElectricCharge.Consume(vesselData.connection.ec - vesselData.connection.ec_idle, ResourceBroker.CommsXmit);
 
 			// process all modules
 			foreach (Part p in parts)
@@ -87,9 +100,9 @@ namespace KERBALISM.Planner
 					{
 						case "ModuleCommand"               : Process_command(m as ModuleCommand); continue;
 						case "ModuleGenerator"             : Process_generator(m as ModuleGenerator, p); continue;
-						case "ModuleResourceConverter"     : Process_converter(m as ModuleResourceConverter, va); continue;
-						case "ModuleKPBSConverter"         : Process_converter(m as ModuleResourceConverter, va); continue;
-						case "ModuleResourceHarvester"     : Process_stockharvester(m as ModuleResourceHarvester, va); continue;
+						case "ModuleResourceConverter"     : Process_converter(m as ModuleResourceConverter, vesselData); continue;
+						case "ModuleKPBSConverter"         : Process_converter(m as ModuleResourceConverter, vesselData); continue;
+						case "ModuleResourceHarvester"     : Process_stockharvester(m as ModuleResourceHarvester, vesselData); continue;
 						case "ModuleScienceConverter"      : Process_stocklab(m as ModuleScienceConverter); continue;
 						case "ModuleActiveRadiator"        : Process_radiator(m as ModuleActiveRadiator); continue;
 						case "ModuleWheelMotor"            : Process_wheel_motor(m as ModuleWheelMotor); continue;
@@ -108,13 +121,13 @@ namespace KERBALISM.Planner
 
 					if (m is IPlannerModule ipm)
 					{
-						ipm.PlannerUpdate(handler, env, va);
+						ipm.PlannerUpdate(handler, vesselData);
 						continue;
 					}
 
 					if (PartModuleAPI.plannerModules.TryGetValue(m.GetType(), out Action<PartModule, CelestialBody, double, bool> apiUpdate))
 					{
-						apiUpdate(m, env.body, env.altitude, Planner.Sunlight != Planner.SunlightState.Shadow);
+						apiUpdate(m, vesselData.body, vesselData.altitude, vesselData.EnvInSunlight);
 						continue;
 					}
 				}
@@ -122,39 +135,34 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>execute a rule</summary>
-		public void ExecuteRule(Rule r, EnvironmentAnalyzer env, VesselAnalyzer va)
+		public void ExecuteRule(Rule r, int crewCount, double modifier)
 		{
-			// evaluate modifiers
-			double k = Modifiers.Evaluate(env, va, this, r.modifiers, null);
-
 			// deduce rate per-second
-			double rate = va.crew_count * r.rate;
+			double rate = crewCount * r.rate;
 
 			// prepare recipe
 			if (r.output.Length == 0)
 			{
-				handler.GetResource(r.input).Consume(rate * k, r.broker);
+				handler.GetResource(r.input).Consume(rate * modifier, r.broker);
 			}
 			else if (rate > double.Epsilon)
 			{
 				// - rules always dump excess overboard (because it is waste)
 				Recipe recipe = new Recipe(r.broker);
-				recipe.AddInput(r.input, rate * k);
-				recipe.AddOutput(r.output, rate * k * r.ratio, true);
+				recipe.AddInput(r.input, rate * modifier);
+				recipe.AddOutput(r.output, rate * modifier * r.ratio, true);
 				handler.AddRecipe(recipe);
 			}
 		}
 
 		/// <summary>execute a process</summary>
-		private void ExecuteProcess(Process pr, EnvironmentAnalyzer env, VesselAnalyzer va)
+		private void ExecuteProcess(Process pr, double modifier)
 		{
-			double k = Modifiers.Evaluate(env, va, this, pr.modifiers, pr.scalars);
-
 			// prepare recipe
 			Recipe recipe = new Recipe(pr.broker);
 			foreach (KeyValuePair<string, double> input in pr.inputs)
 			{
-				recipe.AddInput(input.Key, input.Value * k);
+				recipe.AddInput(input.Key, input.Value * modifier);
 			}
 			foreach (KeyValuePair<string, double> output in pr.outputs)
 			{
@@ -197,11 +205,11 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_converter(ModuleResourceConverter converter, VesselAnalyzer va)
+		void Process_converter(ModuleResourceConverter converter, PlannerVesselData va)
 		{
 			// calculate experience bonus
 			float exp_bonus = converter.UseSpecialistBonus
-			  ? converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.crew_engineer_maxlevel + 1)))
+			  ? converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.crewEngineerMaxlevel + 1)))
 			  : 1.0f;
 
 			// use part name as recipe name
@@ -222,11 +230,11 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_stockharvester(ModuleResourceHarvester harvester, VesselAnalyzer va)
+		void Process_stockharvester(ModuleResourceHarvester harvester, PlannerVesselData va)
 		{
 			// calculate experience bonus
 			float exp_bonus = harvester.UseSpecialistBonus
-			  ? harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.crew_engineer_maxlevel + 1)))
+			  ? harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.crewEngineerMaxlevel + 1)))
 			  : 1.0f;
 
 			// use part name as recipe name

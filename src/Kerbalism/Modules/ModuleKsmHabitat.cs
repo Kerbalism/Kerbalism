@@ -1,4 +1,5 @@
 ﻿using Harmony;
+using KERBALISM.Planner;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -32,7 +33,7 @@ namespace KERBALISM
 
 		// resources config
 		[KSPField] public string reclaimResource = "Nitrogen"; // Nitrogen
-		[KSPField] public string shieldingResource = "Shielding"; // KsmShielding
+		[KSPField] public string shieldingResource = "KsmShielding"; // KsmShielding
 
 		// animations config
 		[KSPField] public string deployAnim = string.Empty; // deploy / inflate animation, if any
@@ -266,7 +267,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = EditorResHandler.Handler;
+				vesselResHandler = PlannerResourceSimulator.Handler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;
@@ -1495,7 +1496,7 @@ namespace KERBALISM
 			{
 				specs.Add("");
 				specs.Add(Lib.Color("Gravity ring", Lib.Kolor.Cyan));
-				specs.Add("Comfort bonus", Settings.ComfortFirmGround.ToString("P0"));
+				specs.Add("Comfort bonus", (Settings.ComfortFirmGround + Settings.ComfortExercise).ToString("P0"));
 				specs.Add("Acceleration", Lib.Color(Lib.HumanReadableRate(accelerateECRate, "F3", ecAbbr), Lib.Kolor.NegRate));
 				specs.Add("Steady state", Lib.Color(Lib.HumanReadableRate(rotateECRate, "F3", ecAbbr), Lib.Kolor.NegRate));
 			}
@@ -1504,7 +1505,7 @@ namespace KERBALISM
 			{
 				specs.Add("");
 				specs.Add(Lib.Color("Comfort", Lib.Kolor.Cyan), ComfortCommaList(baseComfortsMask));
-				specs.Add("Bonus", GetComfortFactor(baseComfortsMask, false).ToString("P0"));
+				specs.Add("Bonus", GetComfortFactor(baseComfortsMask).ToString("P0"));
 			}
 
 			return specs;
@@ -1543,9 +1544,9 @@ namespace KERBALISM
 
 		public static double LToM3(double liters) => liters * 0.001;
 
-		public static double GetComfortFactor(int comfortMask, bool clamped = true)
+		public static double GetComfortFactor(int comfortMask)
 		{
-			double factor = clamped ? 0.1 : 0.0;
+			double factor = 0.0;
 
 			if (PreferencesComfort.Instance != null)
 			{

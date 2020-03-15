@@ -220,14 +220,21 @@ namespace KERBALISM
 			}
 			catch (Exception e)
 			{
-				string fatalError = "FATAL ERROR : Kerbalism save game load has failed :" + "\n" + e.ToString();
+				string fatalError = "FATAL ERROR: Kerbalism save game load has failed:\n" + e.ToString();
 				Lib.Log(fatalError, Lib.LogLevel.Error);
 				LoadFailedPopup(fatalError);
+				return;
 			}
 
-			// I'm smelling the hacky mess in here.
-			//Communications.NetworkInitialized = false;
-			//Communications.NetworkInitializing = false;
+			if(DB.version < DB.LAST_SUPPORTED_VERSION)
+			{
+				string fatalError = "OLD SAVE GAME: This is an old save game with Kerbalism " + DB.version;
+				fatalError += "\n\nCannot load save games from Kerbalism versions before " + DB.LAST_SUPPORTED_VERSION;
+				fatalError += "\n\nPlease use an older Kerbalism version or start a new game.";
+				Lib.Log(fatalError, Lib.LogLevel.Error);
+				FatalPopup(fatalError);
+				return;
+			}
 
 			// detect if this is a different savegame
 			if (DB.uid != savegame_uid)
@@ -263,6 +270,27 @@ namespace KERBALISM
 			popupMsg += error;
 
 			Lib.Popup("Kerbalism fatal error", popupMsg, 600f);
+		}
+
+		private void FatalPopup(string error)
+		{
+			PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f),
+				new Vector2(0.5f, 0.5f),
+				new MultiOptionDialog(
+					"Kerbalism Fatal Error",
+					$"Kerbalism has encountered a fatal error and will close KSP to protect your save game.\n\n{error}",
+					"Kerbalism - Fatal Error",
+					HighLogic.UISkin,
+					new Rect(0.5f, 0.5f, 500f, 60f),
+					new DialogGUIFlexibleSpace(),
+					new DialogGUIHorizontalLayout(
+						new DialogGUIFlexibleSpace(),
+						new DialogGUIButton("Quit", Application.Quit, 140.0f, 30.0f, true),
+						new DialogGUIFlexibleSpace()
+					)
+				),
+				true,
+				HighLogic.UISkin);
 		}
 
 		#endregion
@@ -365,14 +393,14 @@ namespace KERBALISM
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.ResourceAPI");
 					// part module resource updates
 					ResourceAPI.ResourceUpdate(v, vd, resources, elapsed_s);
-					UnityEngine.Profiling.Profiler.EndSample(); 
+					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
 					resources.ResourceUpdate(v, VesselResHandler.VesselState.Loaded, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
-					Profile.CheckSupplies(v, vd);
+					Supply.SendMessages(vd);
 
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
@@ -449,7 +477,7 @@ namespace KERBALISM
 				resources.ResourceUpdate(last_v.protoVessel, VesselResHandler.VesselState.Unloaded, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
-				Profile.CheckSupplies(last_v, last_vd);
+				Supply.SendMessages(last_vd);
 
 				// call automation scripts
 				last_vd.computer.Automate(last_v, last_vd, resources);
@@ -556,13 +584,13 @@ namespace KERBALISM
 			{
 				// check for CRP
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water"))
 				{
 					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}
 			}
 
-			if(requiredMods.Count > 0)
+			if (requiredMods.Count > 0)
 			{
 				msg += "<color=#FF4500>Required Mods not found:</color>\n";
 				foreach (var m in requiredMods) msg += "- " + m + "\n";
@@ -600,7 +628,7 @@ namespace KERBALISM
 		}
 	}
 
-	public sealed class MapCameraScript: MonoBehaviour
+	public sealed class MapCameraScript : MonoBehaviour
 	{
 		void OnPostRender()
 		{
@@ -678,7 +706,7 @@ namespace KERBALISM
 				{
 					rnd.node_description.text += Lib.BuildString("\n• <color=#00ffff>", label, "</color>");
 					i++;
-					if(i >= 5 && labels.Count > i + 1)
+					if (i >= 5 && labels.Count > i + 1)
 					{
 						rnd.node_description.text += Lib.BuildString("\n• <color=#00ffff>(+", (labels.Count - i).ToString(), " more)</color>");
 						break;
@@ -788,9 +816,9 @@ namespace KERBALISM
 						foreach (IConfigurable configurable in configurables)
 							configurable.ModuleIsConfigured();
 					}
-					// note that the experiment modules on the prefab gets initialized from the scienceDB init, which also do
+					// note that the experiment modules on the prefab gets initialized from the scienceDB init, which also does
 					// a LoadedPartsList loop to get the scienceDB module infos. So this has to be called after the scienceDB init.
-					else if (module is Experiment)
+					else if (module is ModuleKsmExperiment)
 					{
 						partNeedsInfoRecompile = true;
 					}
@@ -802,28 +830,7 @@ namespace KERBALISM
 					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
 					else if (module.moduleName == "ModuleB9PartSwitch")
 					{
-						var processControllers = ap.partPrefab.FindModulesImplementing<ModuleKsmProcessController>();
-						if (processControllers.Count == 0)
-							continue;
-
-						double capacity = processControllers[0].capacity;
-
-						var list = Lib.ReflectionValue<IList>(module, "subtypes");
-						if (list == null || list.Count == 0)
-							continue;
-
-						foreach (var subtype in list)
-						{
-							var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
-							var process = Profile.processes.Find(p => p.modifiers.Contains(subtypeName));
-
-							if (process != null)
-							{
-								var specifics = process.Specifics(capacity);
-								var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
-								subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
-							}
-						}
+						InjectB9DescriptionDetail(ap, module);
 					}
 				}
 
@@ -840,6 +847,45 @@ namespace KERBALISM
 					{
 						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
 					}
+				}
+			}
+		}
+
+		public static void InjectB9DescriptionDetail(AvailablePart ap, PartModule module)
+		{
+			var subtypes = Lib.ReflectionValue<IList>(module, "subtypes");
+			if (subtypes == null || subtypes.Count == 0)
+				return;
+
+			var processControllers = ap.partPrefab.FindModulesImplementing<ModuleKsmProcessController>();
+			if (processControllers.Count > 0)
+			{
+				double capacity = processControllers[0].capacity;
+
+				foreach (var subtype in subtypes)
+				{
+					var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
+					var process = Profile.processes.Find(p => p.name.Contains(subtypeName));
+
+					if (process != null)
+					{
+						var specifics = process.Specifics(capacity);
+						var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
+						subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
+					}
+				}
+			}
+
+			var experiments = ap.partPrefab.FindModulesImplementing<ModuleKsmExperiment>();
+			if (experiments.Count > 0)
+			{
+				foreach (var subtype in subtypes)
+				{
+					var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
+					var moduleDefinition = ScienceDB.GetExperimentModuleDefinition(subtypeName);
+
+					string description = ModuleKsmExperiment.Specs(moduleDefinition).Info();
+					subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
 				}
 			}
 		}
@@ -875,7 +921,7 @@ namespace KERBALISM
 					node = n;
 			}
 
-			if(node == null)
+			if (node == null)
 			{
 				Lib.Log($"{ap.partPrefab.partInfo.name}: part not found in tech tree, skipping auto assignment", Lib.LogLevel.Warning);
 				return;
@@ -883,14 +929,14 @@ namespace KERBALISM
 
 			// add up science cost from start node and all the parents
 			// (we ignore teh requirement to unlock multiple nodes before this one)
-			while(node.parents.Count > 0)
+			while (node.parents.Count > 0)
 			{
 				tier++;
 				node = node.parents[0];
 			}
 
 			// determine max science cost and max tier
-			while(maxNode.parents.Count > 0)
+			while (maxNode.parents.Count > 0)
 			{
 				maxTier++;
 				maxNode = maxNode.parents[0];
@@ -911,12 +957,12 @@ namespace KERBALISM
 			double dataCapacity = f * 3000;
 
 			dataCapacity = (int)(dataCapacity * 4) / 4.0; // set to a multiple of 0.25
-			if(dataCapacity > 2)
+			if (dataCapacity > 2)
 				dataCapacity = (int)(dataCapacity * 2) / 2; // set to a multiple of 0.5
 			if (dataCapacity > 5)
 				dataCapacity = (int)(dataCapacity); // set to a multiple of 1
 			if (dataCapacity > 25)
-				dataCapacity = (int)(dataCapacity/5) * 5; // set to a multiple of 5
+				dataCapacity = (int)(dataCapacity / 5) * 5; // set to a multiple of 5
 			if (dataCapacity > 250)
 				dataCapacity = (int)(dataCapacity / 25) * 25; // set to a multiple of 25
 			if (dataCapacity > 250)
