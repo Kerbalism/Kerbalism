@@ -157,6 +157,14 @@ namespace KERBALISM
 		{
 			Lib.LogDebug($"Starting id '{id}'");
 
+			if (string.IsNullOrEmpty(id))
+			{
+				Lib.LogDebug($"Disabling experiment without id on '{part.partInfo.name}'");
+				ReInit();
+				enabled = isEnabled = moduleIsEnabled = false;
+				return;
+			}
+
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
 			loopAnimator = new Animator(part, anim_loop, anim_loop_reverse);
@@ -192,7 +200,7 @@ namespace KERBALISM
 
 			if (ModuleDefinition == null)
 			{
-				Lib.Log($"No MODULE_DEFINITOIN found with name `{id}`, is your config broken?", Lib.LogLevel.Error);
+				Lib.Log($"No MODULE_DEFINITION found with name `{id}`, is your config broken?", Lib.LogLevel.Error);
 				enabled = isEnabled = moduleIsEnabled = false;
 				return;
 			}
