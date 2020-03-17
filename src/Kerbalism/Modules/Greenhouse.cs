@@ -355,7 +355,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			// skip disabled greenhouses
 			if (!active)
@@ -454,7 +454,7 @@ namespace KERBALISM
 			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
 
 			// record first harvest
-			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
+			if (!Lib.Landed(vessel)) DB.Landmarks.space_harvest = true;
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
@@ -478,7 +478,7 @@ namespace KERBALISM
 			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_3.Format(" <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
 
 			// record first harvest
-			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
+			if (!Lib.Landed(vessel)) DB.Landmarks.space_harvest = true;
 		}
 
 		// action groups

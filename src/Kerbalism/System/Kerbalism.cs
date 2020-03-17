@@ -77,7 +77,7 @@ namespace KERBALISM
 		public static bool WarpBlending => warp_blending > 2u;
 
 		// last savegame unique id
-		static int savegame_uid;
+		static Guid savegameGuid;
 
 		/// <summary> real time of last game loaded event </summary>
 		public static float gameLoadTime = 0.0f;
@@ -113,6 +113,7 @@ namespace KERBALISM
 		{
 			try
 			{
+				ModuleData.Init();
 				PartModuleAPI.Init();
 				Sim.Init();         // find suns (Kopernicus support)
 				Radiation.Init();   // create the radiation fields
@@ -230,7 +231,7 @@ namespace KERBALISM
 			//Communications.NetworkInitializing = false;
 
 			// detect if this is a different savegame
-			if (DB.uid != savegame_uid)
+			if (DB.Guid != savegameGuid)
 			{
 				// clear caches
 				Message.all_logs.Clear();
@@ -239,7 +240,7 @@ namespace KERBALISM
 				UI.Sync();
 
 				// remember savegame id
-				savegame_uid = DB.uid;
+				savegameGuid = DB.Guid;
 			}
 
 			Kerbalism.gameLoadTime = Time.time;
@@ -272,9 +273,9 @@ namespace KERBALISM
 		void FixedUpdate()
 		{
 			// remove control locks in any case
-			Misc.ClearLocks();
+ 			Misc.ClearLocks();
 
-			// do nothing if paused
+			// do nothing if paused (note : this is true in the editor)
 			if (Lib.IsPaused())
 				return;
 

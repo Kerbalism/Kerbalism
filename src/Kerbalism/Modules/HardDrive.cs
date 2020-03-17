@@ -115,7 +115,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					PartData pd = vessel.KerbalismData().Parts.Get(part.flightID);
+					PartData pd = vessel.KerbalismData().Parts[part.flightID];
 					if (pd.Drive == null)
 					{
 						drive = new Drive(part.partInfo.title, effectiveDataCapacity, effectiveSampleCapacity, !string.IsNullOrEmpty(experiment_id));

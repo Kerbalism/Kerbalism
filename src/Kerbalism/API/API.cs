@@ -69,7 +69,7 @@ namespace KERBALISM
 			{
 				if (rule.name.Contains("radiation"))
 				{
-					foreach (KerbalData kd in DB.Kerbals().Values)
+					foreach (KerbalData kd in DB.Kerbals.Values)
 					{
 						RuleData rd = kd.rules[rule.name];
 						rd.problem = Math.Max(rd.problem + amount, 0.0);
@@ -510,12 +510,12 @@ namespace KERBALISM
 
 		public static void PlannerConsumeResource(string resource_name, double quantity, string title)
 		{
-			PlannerResourceSimulator.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			VesselDataShip.Instance.ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerProduceResource(string resource_name, double quantity, string title)
 		{
-			PlannerResourceSimulator.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			VesselDataShip.Instance.ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerAddResourceRecipe(string[] resources, double[] rates, bool[] dump, string title)
@@ -530,22 +530,22 @@ namespace KERBALISM
 					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
 
-			PlannerResourceSimulator.Handler.AddRecipe(recipe);
+			VesselDataShip.Instance.ResHandler.AddRecipe(recipe);
 		}
 
 		public static double PlannerResourceAmount(string resource_name)
 		{
-			return PlannerResourceSimulator.Handler.GetResource(resource_name).Amount;
+			return VesselDataShip.Instance.ResHandler.GetResource(resource_name).Amount;
 		}
 
 		public static double PlannerResourceCapacity(string resource_name)
 		{
-			return PlannerResourceSimulator.Handler.GetResource(resource_name).Capacity;
+			return VesselDataShip.Instance.ResHandler.GetResource(resource_name).Capacity;
 		}
 
 		public static double PlannerResourceAvailability(string resource_name)
 		{
-			return PlannerResourceSimulator.Handler.GetResource(resource_name).AvailabilityFactor;
+			return VesselDataShip.Instance.ResHandler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		#endregion

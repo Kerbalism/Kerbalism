@@ -193,7 +193,7 @@ namespace KERBALISM
 				brokersResourceAmounts.Add(broker, -quantity);
 		}
 
-		public static void Load(VesselData vd, ConfigNode vesselDataNode)
+		public static void Load(VesselDataBase vd, ConfigNode vesselDataNode)
 		{
 			VesselResHandler resHandler = vd.ResHandler;
 			foreach (ConfigNode node in vesselDataNode.GetNodes("VirtualResource"))
@@ -209,14 +209,14 @@ namespace KERBALISM
 			}
 		}
 
-		public static void Save(VesselData vd, ConfigNode vesselDataNode)
+		public static void Save(VesselDataBase vd, ConfigNode vesselDataNode)
 		{
 			foreach (VesselVirtualResource vRes in vd.ResHandler.GetVirtualResources())
 			{
 				if (vRes.Amount == 0.0 && vRes.Capacity == 0.0)
 					continue;
 
-				ConfigNode vResNode = vesselDataNode.AddNode("VirtualResource");
+				ConfigNode vResNode = vesselDataNode.AddNode("VIRTUALRESOURCE");
 				vResNode.AddValue("Name", vRes.Name);
 				vResNode.AddValue("Title", vRes.Name);
 				vResNode.AddValue("Amount", vRes.Amount);

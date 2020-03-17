@@ -27,7 +27,7 @@ namespace KERBALISM
 			{
 				foreach (var file_node in node.GetNode("files").GetNodes())
 				{
-					string subject_id = DB.From_safe_key(file_node.name);
+					string subject_id = DB.FromSafeKey(file_node.name);
 					File file = File.Load(subject_id, file_node);
 					if (file != null)
 					{
@@ -41,23 +41,6 @@ namespace KERBALISM
 							file.subjectData.AddDataCollectedInFlight(file.size);
 						}
 					}
-					else
-					{
-						file = File.LoadOldFormat(subject_id, file_node);
-						if (file != null)
-						{
-							Lib.Log("Drive file load : converted '" + subject_id + "' to new format");
-							if(files.ContainsKey(file.subjectData))
-							{
-								Lib.Log("discarding duplicate converted subject " + file.subjectData, Lib.LogLevel.Warning);
-							}
-							else
-							{
-								files.Add(file.subjectData, file);
-								file.subjectData.AddDataCollectedInFlight(file.size);
-							}
-						}
-					}
 				}
 			}
 
@@ -67,24 +50,13 @@ namespace KERBALISM
 			{
 				foreach (var sample_node in node.GetNode("samples").GetNodes())
 				{
-					string subject_id = DB.From_safe_key(sample_node.name);
+					string subject_id = DB.FromSafeKey(sample_node.name);
 					Sample sample = Sample.Load(subject_id, sample_node);
 					if (sample != null)
 					{
 						samples.Add(sample.subjectData, sample);
 						sample.subjectData.AddDataCollectedInFlight(sample.size);
 					}
-					else
-					{
-						sample = Sample.LoadOldFormat(subject_id, sample_node);
-						if (sample != null)
-						{
-							Lib.Log("Drive sample load : converted '" + subject_id + "' to new format");
-							samples.Add(sample.subjectData, sample);
-							sample.subjectData.AddDataCollectedInFlight(sample.size);
-						}
-					}
-
 				}
 			}
 
@@ -110,14 +82,14 @@ namespace KERBALISM
 			var files_node = driveNode.AddNode("files");
 			foreach (File file in files.Values)
 			{
-				file.Save(files_node.AddNode(DB.To_safe_key(file.subjectData.Id)));
+				file.Save(files_node.AddNode(DB.ToSafeKey(file.subjectData.Id)));
 			}
 
 			// save science samples
 			var samples_node = driveNode.AddNode("samples");
 			foreach (Sample	sample in samples.Values)
 			{
-				sample.Save(samples_node.AddNode(DB.To_safe_key(sample.subjectData.Id)));
+				sample.Save(samples_node.AddNode(DB.ToSafeKey(sample.subjectData.Id)));
 			}
 
 			driveNode.AddValue("name", name);
@@ -542,7 +514,7 @@ namespace KERBALISM
 		/// <summary> delete all files/samples in the vessel drives</summary>
 		public static void DeleteDrivesData(Vessel vessel)
 		{
-			foreach (PartData partData in vessel.KerbalismData().Parts)
+			foreach (PartData partData in vessel.KerbalismData().PartList)
 			{
 				if (partData.Drive != null)
 				{
@@ -556,7 +528,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Drive.GetDrives");
 			List<Drive> drives = new List<Drive>();
 
-			foreach (PartData partData in vd.Parts)
+			foreach (PartData partData in vd.PartList)
 			{
 				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
 				{

@@ -649,7 +649,7 @@ namespace KERBALISM
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
 			Drive drive = null;
 			if (hdId != 0)
-				drive = vesselData.Parts.Get(hdId).Drive;
+				drive = vesselData.Parts[hdId].Drive;
 			else
 				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -675,7 +675,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (Running) resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Experiment);
 		}

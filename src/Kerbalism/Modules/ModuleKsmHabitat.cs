@@ -267,7 +267,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselResHandler = PlannerResourceSimulator.Handler;
+				vesselResHandler = VesselDataShip.Instance.ResHandler;
 			}
 
 			ecResInfo = vesselResHandler.ElectricCharge;
@@ -625,8 +625,7 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartSnapshot protoPart, ModuleKsmHabitat prefab, double elapsed_s)
 		{
-			PartData partData;
-			if (!vd.Parts.TryGet(protoPart.flightID, out partData))
+			if (!vd.Parts.TryGet(protoPart.flightID, out PartData partData))
 			{
 				Lib.Log($"PartData wasn't found for {protoPart.partName} with id {protoPart.flightID}", Lib.LogLevel.Error);
 				return;
@@ -1001,7 +1000,7 @@ namespace KERBALISM
 							ecFactor = 1.0;
 						}
 
-						double newAtmoAmount = atmoRes.Amount - (data.module.depressurizationSpeed * elapsed_s * ecFactor);
+						double newAtmoAmount = atmoRes.Amount - (data.module.depressurizationSpeed * elapsed_s);
 						newAtmoAmount = Math.Max(newAtmoAmount, 0.0);
 
 						// we only vent CO2 when the kerbals aren't yet in their helmets
@@ -1011,10 +1010,12 @@ namespace KERBALISM
 							wasteRes.Amount = Lib.Clamp(wasteRes.Amount, 0.0, wasteRes.Capacity);
 						}
 
-						// convert the atmosphere into the reclaimed resource if the pressure is above the pressure threshold defined in the module config 
+						// convert the atmosphere into the reclaimed resource :
+						// - if pressure is above the pressure threshold defined in the module config
+						// - scaled by EC availability
 						if (data.module.reclaimAtmosphereFactor > 0.0 && newAtmoAmount / atmoRes.Capacity >= 1.0 - data.module.reclaimAtmosphereFactor)
 						{
-							vd.ResHandler.Produce(data.module.reclaimResource, atmoRes.Amount - newAtmoAmount, ResourceBroker.Habitat);
+							vd.ResHandler.Produce(data.module.reclaimResource, (atmoRes.Amount - newAtmoAmount) * ecFactor, ResourceBroker.Habitat);
 						}
 
 						atmoRes.Amount = newAtmoAmount;

@@ -134,7 +134,7 @@ namespace KERBALISM
 				case VesselState.EditorStep:
 				case VesselState.EditorInit:
 				case VesselState.EditorFinalize:
-					SyncEditorPartResources(EditorLogic.fetch.ship.parts);
+					SyncEditorPartResources(EditorLogic.fetch?.ship.parts);
 					break;
 			}
 
@@ -317,6 +317,9 @@ namespace KERBALISM
 
 		private void SyncEditorPartResources(List<Part> parts)
 		{
+			if (parts == null)
+				return;
+
 			foreach (Part p in parts)
 			{
 				foreach (PartResource r in p.Resources)

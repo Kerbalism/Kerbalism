@@ -5,14 +5,58 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using KERBALISM.Planner;
+using static KERBALISM.Planner.Planner;
 
-namespace KERBALISM.Planner
+namespace KERBALISM
 {
-	public class PlannerVesselData : VesselModifierData
+	public class VesselDataShip : VesselDataBase
 	{
-		#region fields having a IVesselModifierData implementation
+		public static PartDataCollectionShip LoadedParts { get; private set; } = new PartDataCollectionShip();
 
-		public override VesselResHandler ResHandler => PlannerResourceSimulator.Handler;
+		private static VesselDataShip instance;
+
+		public static VesselDataShip Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					instance = new VesselDataShip();
+					LoadedParts.Clear();
+				}
+				return instance;
+			}
+
+			set => instance = value;
+		}
+
+		public VesselDataShip()
+		{
+			resHandler = new VesselResHandler(null, VesselResHandler.VesselState.EditorStep);
+		}
+
+		#region BASE PROPERTIES IMPLEMENTATION
+
+		// note : it may be possible (but not trivial) to keep a part list using the GameEvents.onEditorPartEvent,
+		// tracking PartAttached / PartDetached events, but for now this will do.
+		public override IEnumerable<PartData> PartList
+		{
+			get
+			{
+				List<PartData> shipParts = new List<PartData>(LoadedParts.Count);
+				foreach (PartData partData in LoadedParts)
+				{
+					if (partData.IsOnShip)
+					{
+						shipParts.Add(partData);
+					}
+				}
+				return shipParts;
+			}
+		}
+
+		public override VesselResHandler ResHandler => resHandler; VesselResHandler resHandler;
 
 		public override HabitatVesselData HabitatInfo => habitatData; public HabitatVesselData habitatData;
 
@@ -54,17 +98,17 @@ namespace KERBALISM.Planner
 
 		public override double EnvSunlightFactor => 1.0 - shadowTime;
 
-		public override bool EnvInSunlight => sunlightState != Planner.SunlightState.Shadow;
+		public override bool EnvInSunlight => sunlightState != SunlightState.Shadow;
 
-		public override bool EnvInFullShadow => sunlightState == Planner.SunlightState.Shadow;
+		public override bool EnvInFullShadow => sunlightState == SunlightState.Shadow;
 
 		#endregion
 
-		#region planner specific fields
+		#region PLANNER FIELDS
 
 		// environment
 		public CelestialBody body;                            // target body
-		public Planner.SunlightState sunlightState;
+		public SunlightState sunlightState;
 		public double altitude;                             // target altitude
 		public double minHomeDistance;                      // min distance from KSC
 		public double maxHomeDistance;                      // max distance from KSC
@@ -105,7 +149,9 @@ namespace KERBALISM.Planner
 
 		#endregion
 
-		public void Analyze(List<Part> parts, CelestialBody body, double altitudeMult, Planner.SunlightState sunlight)
+		#region PLANNER METHODS
+
+		public void Analyze(List<Part> parts, CelestialBody body, double altitudeMult, SunlightState sunlight)
 		{
 			AnalyzeEnvironment(body, altitudeMult, sunlight);
 			AnalyzeCrew(parts);
@@ -115,7 +161,7 @@ namespace KERBALISM.Planner
 			AnalyzeReliability(parts);
 		}
 
-		private void AnalyzeEnvironment(CelestialBody body, double altitudeMult, Planner.SunlightState sunlight)
+		private void AnalyzeEnvironment(CelestialBody body, double altitudeMult, SunlightState sunlight)
 		{
 			this.body = body;
 			CelestialBody mainSun;
@@ -124,9 +170,9 @@ namespace KERBALISM.Planner
 			altitude = body.Radius * altitudeMult;
 			landed = altitude <= double.Epsilon;
 			atmoFactor = Sim.AtmosphereFactor(body, 0.7071);
-			solarFlux = sunlight == Planner.SunlightState.Shadow ? 0.0 : solarFlux * (landed ? atmoFactor : 1.0);
+			solarFlux = sunlight == SunlightState.Shadow ? 0.0 : solarFlux * (landed ? atmoFactor : 1.0);
 			breathable = Sim.Breathable(body) && landed;
-			albedoFlux = sunlight == Planner.SunlightState.Shadow ? 0.0 : Sim.AlbedoFlux(body, body.position + sunDir * (body.Radius + altitude));
+			albedoFlux = sunlight == SunlightState.Shadow ? 0.0 : Sim.AlbedoFlux(body, body.position + sunDir * (body.Radius + altitude));
 			bodyFlux = Sim.BodyFlux(body, altitude);
 			totalFlux = solarFlux + albedoFlux + bodyFlux + Sim.BackgroundFlux();
 			temperature = !landed || !body.atmosphere ? Sim.BlackBodyTemperature(totalFlux) : body.GetTemperature(0.0);
@@ -365,5 +411,6 @@ namespace KERBALISM.Planner
 			highQuality /= Math.Max(components, 1u);
 		}
 
+		#endregion
 	}
 }

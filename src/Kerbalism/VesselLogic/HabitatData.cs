@@ -330,11 +330,11 @@ namespace KERBALISM
 			}
 		}
 
-		public static void SetFlightReferenceFromPart(Part part, HabitatData data) => part.vessel.KerbalismData().Parts.Get(part.flightID).Habitat = data;
+		public static void SetFlightReferenceFromPart(Part part, HabitatData data) => part.vessel.KerbalismData().Parts[part.flightID].Habitat = data;
 
-		public static HabitatData GetFlightReferenceFromPart(Part part) => part.vessel.KerbalismData().Parts.Get(part.flightID).Habitat;
+		public static HabitatData GetFlightReferenceFromPart(Part part) => part.vessel.KerbalismData().Parts[part.flightID].Habitat;
 
-		public static HabitatData GetFlightReferenceFromProtoPart(Vessel vessel, ProtoPartSnapshot part) => vessel.KerbalismData().Parts.Get(part.flightID).Habitat;
+		public static HabitatData GetFlightReferenceFromProtoPart(Vessel vessel, ProtoPartSnapshot part) => vessel.KerbalismData().Parts[part.flightID].Habitat;
 
 		public static void EvaluateHabitat(HabitatVesselData info, List<HabitatData> habitats, bool canTransmit, bool landed, int crewCount, Vector3d mainSunDrection, bool isLoadedVessel)
 		{

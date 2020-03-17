@@ -152,7 +152,7 @@ namespace KERBALISM
 				vd.ResHandler.ElectricCharge.Consume(ec_rate * elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (ec_rate > 0.0 && running)
 				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.GetOrCreate(title));

@@ -79,32 +79,6 @@ namespace KERBALISM
 			return sample;
 		}
 
-		// this is a fallback loading method for pre 3.1 / pre build 7212 files saved used the stock subject id
-		public static Sample LoadOldFormat(string stockSubjectId, ConfigNode node)
-		{
-			SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(stockSubjectId);
-
-			if (subjectData == null)
-				return null;
-
-			double size = Lib.ConfigValue(node, "size", 0.0);
-			if (double.IsNaN(size))
-			{
-				Lib.LogStack($"Sample has a NaN size on load : {subjectData.DebugStateInfo}", Lib.LogLevel.Error);
-				return null;
-			}
-
-			string resultText = Lib.ConfigValue(node, "resultText", "");
-			bool useStockCrediting = Lib.ConfigValue(node, "useStockCrediting", false);
-
-			Sample sample = new Sample(subjectData, size, useStockCrediting, resultText);
-
-			sample.analyze = Lib.ConfigValue(node, "analyze", false);
-			sample.mass = Lib.ConfigValue(node, "mass", 0.0);
-
-			return sample;
-		}
-
 		/// <summary>
 		/// Stores a science sample into the specified config node
 		/// </summary>

@@ -49,13 +49,13 @@ namespace KERBALISM
 			bool unlimitedData = false;
 			bool unlimitedSamples = false;
 
-			foreach (PartData partData in vd.Parts)
+			foreach (PartData partData in vd.PartList)
 			{
 				Drive drive = partData.Drive;
 				if (drive == null)
 					continue;
 
-				drives.Add(new ObjectPair<uint, Drive>(partData.FlightId, drive));
+				drives.Add(new ObjectPair<uint, Drive>(partData.flightId, drive));
 
 				if (!drive.is_private)
 				{

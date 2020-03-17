@@ -134,7 +134,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (running && simulated_abundance > min_abundance)
 			{

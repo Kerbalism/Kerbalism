@@ -174,7 +174,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (running)
 				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.Laboratory);
@@ -319,7 +319,7 @@ namespace KERBALISM
 					fileDrive.Send(subject.Id, true);
 
 				// record landmark event
-				if (!Lib.Landed(v)) DB.landmarks.space_analysis = true;
+				if (!Lib.Landed(v)) DB.Landmarks.space_analysis = true;
 			}
 
 			return Status.RUNNING;

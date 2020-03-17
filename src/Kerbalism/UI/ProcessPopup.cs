@@ -143,7 +143,7 @@ namespace KERBALISM
 			partListEnabled.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 230, 0);
 			partListEnabled.TopTransform.SetSizeDelta(60, 16);
 
-			foreach (PartData pd in vd.Parts)
+			foreach (PartData pd in vd.PartList)
 			{
 				if (pd.Processes == null)
 					continue;

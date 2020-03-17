@@ -141,10 +141,19 @@ namespace KERBALISM
 			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
-			//GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
+			GameEvents.onPartDestroyed.Add(OnEditorPartDestroyed);
 
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
+		}
+
+		private void OnEditorPartDestroyed(Part part)
+		{
+			if (!Lib.IsEditor())
+				return;
+
+			Lib.LogDebug($"Removing destroyed part: {part.persistentId} ({part.partInfo.title})");
+			VesselDataShip.LoadedParts.Remove(part);
 		}
 
 		private static bool crewAssignementRefreshWasJustFiredFromCrewChanged = false;
@@ -590,7 +599,7 @@ namespace KERBALISM
 				foreach (ProtoCrewMember c in Lib.CrewList(ov))
 					kerbals_alive.Add(c.name);
 			}
-			foreach (string key in DB.Kerbals().Keys)
+			foreach (string key in DB.Kerbals.Keys)
 			{
 				if (!kerbals_alive.Contains(key))
 					kerbals_dead.Add(key);

@@ -28,7 +28,7 @@ namespace KERBALISM
 		{
 			foreach (var pd in processes)
 			{
-				pd.Save(node.AddNode(DB.To_safe_key(pd.processName)));
+				pd.Save(node.AddNode(DB.ToSafeKey(pd.processName)));
 			}
 		}
 
@@ -217,10 +217,10 @@ namespace KERBALISM
 			node.AddValue("isBroken", isBroken);
 		}
 
-		public static void SetFlightReferenceFromPart(Part part, PartProcessData data) => part.vessel.KerbalismData().Parts.Get(part.flightID).Add(data);
+		public static void SetFlightReferenceFromPart(Part part, PartProcessData data) => part.vessel.KerbalismData().Parts[part.flightID].Add(data);
 
-		public static PartProcessData GetFlightReferenceFromPart(Part part, string id) => part.vessel.KerbalismData().Parts.Get(part.flightID).Processes?.Find(d => d.processId == id);
+		public static PartProcessData GetFlightReferenceFromPart(Part part, string id) => part.vessel.KerbalismData().Parts[part.flightID].Processes?.Find(d => d.processId == id);
 
-		public static PartProcessData GetFlightReferenceFromProtoPart(Vessel vessel, ProtoPartSnapshot part, string id) => vessel.KerbalismData().Parts.Get(part.flightID).Processes?.Find(d => d.processId == id);
+		public static PartProcessData GetFlightReferenceFromProtoPart(Vessel vessel, ProtoPartSnapshot part, string id) => vessel.KerbalismData().Parts[part.flightID].Processes?.Find(d => d.processId == id);
 	}
 }

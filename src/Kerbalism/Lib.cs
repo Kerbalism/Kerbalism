@@ -12,6 +12,7 @@ using KSP.UI.Screens;
 using KSP.UI;
 using KSP.UI.Screens.Flight;
 using System.Collections;
+using System.Linq.Expressions;
 
 namespace KERBALISM
 {
@@ -466,6 +467,7 @@ namespace KERBALISM
 		{
 			return (T)(m.GetType().GetMethod(call_name, flags, null, types, null).Invoke(m, parameters));
 		}
+
 		#endregion
 
 		#region STRING
@@ -1403,7 +1405,7 @@ namespace KERBALISM
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return cluster.IsPowered;
-			return ecRes.AvailabilityFactor > 0.1;
+			return ecRes.CriticalConsumptionSatisfied;
 		}
 
 		public static Guid VesselID(Vessel v)

@@ -768,7 +768,7 @@ namespace KERBALISM
 			double result = 0.0;
 			int enabledHabitatCount = 0;
 
-			foreach (PartData partData in vd.Parts)
+			foreach (PartData partData in vd.PartList)
 			{
 				if (partData.Habitat == null || !partData.Habitat.isEnabled)
 					continue;
@@ -833,7 +833,7 @@ namespace KERBALISM
 			if (Features.Radiation)
 			{
 				// we only show the warning for manned vessels, or for all vessels the first time its crossed
-				bool must_warn = vd.CrewCount > 0 || !DB.landmarks.belt_crossing;
+				bool must_warn = vd.CrewCount > 0 || !DB.Landmarks.belt_crossing;
 
 				// are we inside a belt
 				bool inside_belt = vd.EnvInnerBelt || vd.EnvOuterBelt;
@@ -851,10 +851,10 @@ namespace KERBALISM
 				}
 
 				// record first belt crossing
-				if (inside_belt) DB.landmarks.belt_crossing = true;
+				if (inside_belt) DB.Landmarks.belt_crossing = true;
 
 				// record first heliopause crossing
-				if (vd.EnvInterstellar) DB.landmarks.heliopause_crossing = true;
+				if (vd.EnvInterstellar) DB.Landmarks.heliopause_crossing = true;
 			}
 		}
 

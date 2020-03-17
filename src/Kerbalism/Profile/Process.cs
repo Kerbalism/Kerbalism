@@ -114,7 +114,7 @@ namespace KERBALISM
 			}
 		}
 
-		public double EvaluateModifier(VesselModifierData data)
+		public double EvaluateModifier(VesselDataBase data)
 		{
 			if (hasModifier)
 			{
@@ -186,7 +186,7 @@ namespace KERBALISM
 		public ResourceBroker broker;
 		public bool hasModifier;
 		private IGenericExpression<double> modifier;
-		private static VesselModifierData modifierData = new VesselModifierData();
+		private static VesselDataBase modifierData = new VesselDataBase();
 	}
 
 } // KERBALISM

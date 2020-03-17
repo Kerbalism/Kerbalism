@@ -5,10 +5,17 @@ using System.Text;
 
 namespace KERBALISM
 {
-	public class PartData : IEquatable<PartData>
+	public class PartData
 	{
-		public uint FlightId { get; private set; }
+		public uint flightId;
 		public AvailablePart PartInfo { get; private set; }
+		public string Title => PartInfo.title;
+		public Part LoadedPart { get; private set; }
+		public bool IsOnShip => !LoadedPart.frozen;
+
+		public override string ToString() => Title;
+
+		public List<ModuleData> modules = new List<ModuleData>();
 
 		public Drive Drive { get; set; }
 		public HabitatData Habitat { get; set; }
@@ -16,13 +23,15 @@ namespace KERBALISM
 
 		public PartData(Part part)
 		{
-			FlightId = part.flightID;
+			LoadedPart = part;
+			flightId = part.flightID;
 			PartInfo = part.partInfo;
+
 		}
 
 		public PartData(ProtoPartSnapshot protopart)
 		{
-			FlightId = protopart.flightID;
+			flightId = protopart.flightID;
 			PartInfo = protopart.partInfo;
 		}
 
@@ -31,8 +40,9 @@ namespace KERBALISM
 			if (Drive == null && Habitat == null && Processes == null)
 				return;
 
-			ConfigNode partNode = partCollectionNode.AddNode(FlightId.ToString());
-			partNode.AddValue("name", PartInfo.title); // isn't technically needed, this is for sfs editing / debugging purposes
+			ConfigNode partNode = partCollectionNode.AddNode(flightId.ToString());
+
+			partNode.AddValue("name", Title); // isn't technically needed, this is for sfs editing / debugging purposes
 
 			if (Drive != null)
 			{
@@ -51,7 +61,7 @@ namespace KERBALISM
 				ConfigNode processesNode = partNode.AddNode("processes");
 				foreach(var process in Processes)
 				{
-					process.Save(processesNode.AddNode(DB.To_safe_key(process.processName)));
+					process.Save(processesNode.AddNode(DB.ToSafeKey(process.processName)));
 				}
 			}
 		}
@@ -91,11 +101,5 @@ namespace KERBALISM
 			// TODO unregister all processes
 			if (Processes != null) { }
 		}
-
-		public override int GetHashCode() => FlightId.GetHashCode();
-
-		public bool Equals(PartData other) => other != null && other.FlightId == FlightId;
-
-		public override bool Equals(object obj) => obj is PartData other && Equals(other);
 	}
 }

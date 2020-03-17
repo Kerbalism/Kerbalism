@@ -5,6 +5,6 @@ namespace KERBALISM
 	public interface IPlannerModule
 	{
 		/// <summary> This will be called by Kerbalism in the editor (VAB/SPH), you can implement it to consume or produce resources</summary>
-		void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData);
+		void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData);
 	}
 }

@@ -34,7 +34,7 @@ namespace KERBALISM
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
 				// needed for part module info
-				partData = new PartProcessData(processName, capacity, id, running, broken);
+				//partData = new PartProcessData(processName, capacity, id, running, broken);
 				return;
 			}
 

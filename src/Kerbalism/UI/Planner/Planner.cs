@@ -101,6 +101,10 @@ namespace KERBALISM.Planner
 		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{
+			// get data objects references
+			vesselData = VesselDataShip.Instance;
+			resHandler = VesselDataShip.Instance.ResHandler;
+
 			// get vessel crew manifest
 			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
 			if (manifest == null)
@@ -141,7 +145,7 @@ namespace KERBALISM.Planner
 
 				// analyze using the settings from the panels user input
 				vesselData.Analyze(parts, FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
-				resourceSim.Analyze(parts, vesselData);
+				EditorResourceSimulator.Analyze(parts);
 
 				// add ec panel
 				AddSubPanelEC(panel);
@@ -149,7 +153,7 @@ namespace KERBALISM.Planner
 				// get vessel resources
 				panel_resource.Clear();
 				foreach (string res in supplies)
-					if (PlannerResourceSimulator.Handler.GetResource(res).Capacity > 0.0)
+					if (resHandler.GetResource(res).Capacity > 0.0)
 						panel_resource.Add(res);
 
 				// reset current panel if necessary
@@ -270,7 +274,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
-			VesselKSPResource res = PlannerResourceSimulator.Handler.ElectricCharge;
+			VesselKSPResource res = resHandler.ElectricCharge;
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -292,7 +296,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelResource(Panel p, string res_name)
 		{
 			// get simulated resource
-			VesselKSPResource res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(res_name);
+			VesselKSPResource res = (VesselKSPResource)resHandler.GetResource(res_name);
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -511,8 +515,8 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelHabitat(Panel p)
 		{
 
-			VesselKSPResource atmo_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(Settings.HabitatAtmoResource);
-			VesselKSPResource waste_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(Settings.HabitatWasteResource);
+			VesselKSPResource atmo_res = (VesselKSPResource)resHandler.GetResource(Settings.HabitatAtmoResource);
+			VesselKSPResource waste_res = (VesselKSPResource)resHandler.GetResource(Settings.HabitatWasteResource);
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.BrokersListTooltip();
@@ -577,9 +581,9 @@ namespace KERBALISM.Planner
 		private static GUIStyle quote_style;
 		private static GUIStyle icon_style;
 
-		// analyzers
-		private static PlannerResourceSimulator resourceSim = new PlannerResourceSimulator();
-		private static PlannerVesselData vesselData = new PlannerVesselData();
+		// data objects shortcuts
+		private static VesselDataShip vesselData;
+		private static VesselResHandler resHandler;
 
 		// panel arrays
 		private static List<string> supplies = new List<string>();

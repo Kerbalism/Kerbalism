@@ -41,8 +41,8 @@ namespace KERBALISM
 			if (LocalHelpers.UpdateNonEnglishLoc)
 				LocalHelpers.RegenerateNonEnglishLoc();
 
-			Lib.Log("Forcing KSP to load resources...");
-			PartResourceLibrary.Instance.LoadDefinitions();
+			//Lib.Log("Forcing KSP to load resources...");
+			//PartResourceLibrary.Instance.LoadDefinitions();
 
 			// detect features
 			Features.Parse();

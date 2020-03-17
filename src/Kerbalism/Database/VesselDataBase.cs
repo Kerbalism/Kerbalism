@@ -1,11 +1,21 @@
 ﻿using Flee.PublicTypes;
 using System;
+using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public class VesselModifierData
+	// note : this class should ideally be abstract, but we need 
+	// an instance of it to compile the Flee modifiers.
+	public class VesselDataBase
 	{
+		public const string NODENAME_VESSEL = "KERBALISMVESSEL";
+		public const string NODENAME_MODULE = "KERBALISMMODULE";
+
 		public ExpressionContext ModifierContext { get; private set; }
+
+		public virtual bool IsPersistent => true;
+
+		public virtual IEnumerable<PartData> PartList { get; }
 
 		public virtual VesselResHandler ResHandler { get; }
 
@@ -84,12 +94,95 @@ namespace KERBALISM
 		private PreferencesComfort PrefComfort => PreferencesComfort.Instance;
 		private PreferencesRadiation PrefRadiation => PreferencesRadiation.Instance;
 
-		public VesselModifierData()
+		public VesselDataBase()
 		{
 			ModifierContext = new ExpressionContext(this);
 			ModifierContext.Options.CaseSensitive = true;
 			ModifierContext.Options.ParseCulture = System.Globalization.CultureInfo.InvariantCulture;
 			ModifierContext.Imports.AddType(typeof(Math));
+		}
+
+		// put here the persistence that is common to VesselData and VesselDataShip to have
+		// it transfered when creating a vessel from a shipconstruct (ie, from editor to flight)
+		public void Load(ConfigNode vesselDataNode, bool isNewVessel)
+		{
+			VesselVirtualResource.Load(this, vesselDataNode);
+
+			if (!isNewVessel)
+			{
+				OnLoad(vesselDataNode);
+			}
+		}
+
+		public void Save(ConfigNode node)
+		{
+			if (!IsPersistent)
+				return;
+
+			ConfigNode vesselNode = new ConfigNode(NODENAME_VESSEL);
+			OnSave(vesselNode);
+			VesselVirtualResource.Save(this, vesselNode);
+			ModuleData.SaveModuleDatas(PartList, vesselNode);
+			node.AddNode(vesselNode);
+		}
+
+		// This is overridden in VesselData for vessel <> vessel persistence.
+		// It can't be used in VesselDataShip, as we don't call it when instantiating
+		// a vessel from a shipconstruct
+		protected virtual void OnLoad(ConfigNode node) { }
+		protected virtual void OnSave(ConfigNode node) { }
+
+		// LoadShipConstruct is a constructor for VesselDataShip, and is responsible for
+		// instantiating the PartData/ModuleData objects. This differs a lot from the flight
+		// VesselData objects instantiation / loading, so while the data structure is the same
+		// the handling is completely different. Ideally, we should use common methods but the
+		// hacky nature of forcing our data into the stock ShipConstruct persistence, as well
+		// as the difficulty of keeping our editor data synchronized severly limit the options.
+		private static Dictionary<int, ConfigNode> moduleDataNodes = new Dictionary<int, ConfigNode>();
+		public static void LoadShipConstruct(ShipConstruct ship, ConfigNode vesselDataNode, bool isNewShip)
+		{
+			Lib.LogDebug($"Loading VesselDataShip for shipconstruct {ship.shipName}");
+			moduleDataNodes.Clear();
+			if (vesselDataNode != null)
+			{
+				// we don't want to overwrite VesselData when loading a subassembly or when merging.
+				if (isNewShip)
+				{
+					VesselDataShip.Instance = new VesselDataShip();
+					VesselDataShip.Instance.Load(vesselDataNode, false);
+				}
+
+				// populate the dictionary of ModuleData nodes to load, to avoid doing a full loop
+				// on every node for each ModuleData
+				foreach (ConfigNode moduleNode in vesselDataNode.GetNode(NODENAME_MODULE).GetNodes())
+				{
+					int shipId = Lib.ConfigValue(moduleNode, ModuleData.VALUENAME_SHIPID, 0);
+					if (shipId != 0)
+						moduleDataNodes.Add(shipId, moduleNode);
+				}
+			}
+
+			// instantiate all PartData/ModuleData for the ship, loading ModuleData if available.
+			foreach (Part part in ship.parts)
+			{
+				PartData partData = new PartData(part);
+				VesselDataShip.LoadedParts.Add(partData);
+
+				for (int i = 0; i < part.Modules.Count; i++)
+				{
+					if (part.Modules[i] is KsmPartModule ksmPM)
+					{
+						if ( moduleDataNodes.TryGetValue(ksmPM.dataShipId, out ConfigNode moduleNode))
+						{
+							ModuleData.NewFromNode(ksmPM, partData, moduleNode);
+						}
+						else
+						{
+							ModuleData.New(ksmPM, partData, false);
+						}
+					}
+				}
+			}
 		}
 	}
 }
