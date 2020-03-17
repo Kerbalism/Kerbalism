@@ -339,7 +339,6 @@ namespace KERBALISM
 		public static string Brokers_Boiloff = GetLoc("Brokers_Boiloff"); // "boiloff"
 		public static string Brokers_Cryotank = GetLoc("Brokers_Cryotank"); // "cryo tank"
 		public static string Brokers_Greenhouse = GetLoc("Brokers_Greenhouse"); // "greenhouse"
-		public static string Brokers_Deploy = GetLoc("Brokers_Deploy"); // "deploy"
 		public static string Brokers_Experiment = GetLoc("Brokers_Experiment"); // "experiment"
 		public static string Brokers_Command = GetLoc("Brokers_Command"); // "command"
 		public static string Brokers_GravityRing = GetLoc("Brokers_GravityRing"); // "gravity ring"

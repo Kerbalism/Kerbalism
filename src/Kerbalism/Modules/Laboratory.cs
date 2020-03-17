@@ -7,16 +7,16 @@ using KERBALISM.Planner;
 namespace KERBALISM
 {
 
-	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IPlannerModule
+	public class Laboratory : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IPlannerModule
 	{
 		// config
-		[KSPField] public double ec_rate;						// ec consumed per-second
-		[KSPField] public double analysis_rate;					// analysis speed in Mb/s
-		[KSPField] public string researcher = string.Empty;		// required crew for analysis
-		[KSPField] public bool cleaner = true;					// can clean experiments
+		[KSPField] public double ec_rate;                       // ec consumed per-second
+		[KSPField] public double analysis_rate;                 // analysis speed in Mb/s
+		[KSPField] public string researcher = string.Empty;     // required crew for analysis
+		[KSPField] public bool cleaner = true;                  // can clean experiments
 
 		// persistence
-		[KSPField(isPersistant = true)] public bool running;	// true if the lab is active
+		[KSPField(isPersistant = true)] public bool running;    // true if the lab is active
 
 		// status enum
 		private enum Status
@@ -98,7 +98,8 @@ namespace KERBALISM
 					current_sample = NextSample(vessel);
 
 					double rate = analysis_rate;
-					if(researcher_cs) {
+					if (researcher_cs)
+					{
 						int bonus = researcher_cs.Bonus(part.protoModuleCrew);
 						double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
 						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
@@ -142,7 +143,8 @@ namespace KERBALISM
 				if (!background_researcher_cs || background_researcher_cs.Check(p.protoModuleCrew))
 				{
 					double rate = lab.analysis_rate;
-					if(background_researcher_cs) {
+					if (background_researcher_cs)
+					{
 						int bonus = background_researcher_cs.Bonus(p.protoModuleCrew);
 						double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
 						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
@@ -204,13 +206,6 @@ namespace KERBALISM
 				}
 			}
 
-			var kerbalismExperiments = vessel.FindPartModulesImplementing<Experiment>();
-			foreach (Experiment m in kerbalismExperiments)
-			{
-				message |= m.Reset(false);
-			}
-
-
 			// inform the user
 			if (message) Message.Post(localized_cleaned);
 		}
@@ -242,7 +237,7 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static SubjectData NextSample(Vessel v)
 		{
-			foreach(var drive in Drive.GetDrives(v, true))
+			foreach (var drive in Drive.GetDrives(v, true))
 			{
 				// for each sample
 				foreach (Sample sample in drive.samples.Values)
@@ -272,7 +267,7 @@ namespace KERBALISM
 			}
 
 			bool completed = false;
-			if(sample != null)
+			if (sample != null)
 			{
 				completed = amount > sample.size;
 				amount = Math.Min(amount, sample.size);
@@ -283,7 +278,7 @@ namespace KERBALISM
 			if (fileDrive == null)
 				return Status.NO_STORAGE;
 
-			if(sample != null)
+			if (sample != null)
 			{
 				bool recorded = fileDrive.Record_file(subject, amount, false);
 
@@ -307,7 +302,7 @@ namespace KERBALISM
 			// if the analysis is completed
 			if (completed)
 			{
-				if(!PreferencesScience.Instance.analyzeSamples)
+				if (!PreferencesScience.Instance.analyzeSamples)
 				{
 					// only inform the user if auto-analyze is turned off
 					// otherwise we could be spamming "Analysis complete" messages
@@ -327,18 +322,18 @@ namespace KERBALISM
 
 		private static void RestoreSampleMass(Vessel v, SubjectData filename, double restoredAmount)
 		{
-			if(v.loaded) // loaded vessel
+			if (v.loaded) // loaded vessel
 			{
-				foreach (var experiment in v.FindPartModulesImplementing<Experiment>())
+				foreach (var experiment in v.FindPartModulesImplementing<ModuleKsmExperiment>())
 				{
 					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, filename.ExpInfo.ExperimentId);
 				}
 			}
 			else // unloaded vessel
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Experiment"))
+				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "ModuleKsmExperiment"))
 				{
-					restoredAmount -= Experiment.RestoreSampleMass(restoredAmount, m, filename.ExpInfo.ExperimentId);
+					restoredAmount -= ModuleKsmExperiment.RestoreSampleMass(restoredAmount, m, filename.ExpInfo.ExperimentId);
 					if (restoredAmount < double.Epsilon) return;
 				}
 			}

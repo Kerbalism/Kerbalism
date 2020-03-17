@@ -14,6 +14,7 @@ namespace KERBALISM
 		private const string NODENAME_STORMS = "KERBALISMSTORMS";
 		private const string NODENAME_LANDMARKS = "KERBALISMLANDMARKS";
 		private const string NODENAME_GUI = "KERBALISMGUI";
+		public const Version LAST_SUPPORTED_VERSION = new Version(4, 0);
 
 		// savegame version
 		private static Version version;
@@ -47,7 +48,11 @@ namespace KERBALISM
             version = new Version(versionStr);
 
             // if this is an unsupported version, print warning
-            if (version <= new Version(1, 2)) Lib.Log("loading save from unsupported version " + version);
+            if (version < LAST_SUPPORTED_VERSION)
+            {
+                Lib.Log($"Loading save from unsupported version " + version, Lib.LogLevel.Warning);
+                return;
+            }
 
             // get unique id (or generate one for new savegames)
             uid = Lib.ConfigValue(node, VALUENAME_UID, Guid.NewGuid());

@@ -92,7 +92,7 @@ namespace KERBALISM
 			if (Kerbalism.SerenityEnabled)
 				ROCFilter = new KsmGuiToggle(experimentColumn, Local.SCIENCEARCHIVE_filter2, true, OnToggleROCFilter);//"filter ROCs"
 			vesselFilter = new KsmGuiToggle(experimentColumn, Local.SCIENCEARCHIVE_filter3, false, OnToggleVesselFilter);//"filter by current vessel"
-			
+
 			KsmGuiVerticalScrollView experimentsScrollView = new KsmGuiVerticalScrollView(experimentColumn, 0, 0, 0, 0, 0);
 			experimentsScrollView.SetLayoutElement(true, true, 160);
 			experimentsToggleList = new KsmGuiToggleList<ExpInfoAndSubjects>(experimentsScrollView, OnToggleExperiment);
@@ -224,7 +224,7 @@ namespace KERBALISM
 			}
 		}
 
-		
+
 		private void OnConfigure(Part part, Configure configureModule)
 		{
 			if (window.Enabled && vesselFilter.Enabled && vesselFilter.IsOn)
@@ -246,9 +246,9 @@ namespace KERBALISM
 					if (!partModule.enabled || !partModule.isEnabled)
 						continue;
 
-					if (partModule is Experiment experiment)
+					if (partModule is ModuleKsmExperiment experiment)
 					{
-						vesselExpInfos.Add(experiment.ExpInfo);
+						vesselExpInfos.Add(experiment.ModuleDefinition.Info);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{
@@ -311,54 +311,15 @@ namespace KERBALISM
 				if (!string.IsNullOrEmpty(availablePart.TechRequired) && !ResearchAndDevelopment.PartModelPurchased(availablePart))
 					continue;
 
-				List<Experiment> configureResearchedExperiments = new List<Experiment>();
-
 				foreach (PartModule partModule in availablePart.partPrefab.Modules)
 				{
-					if (partModule is Configure configure)
+					if (partModule is ModuleKsmExperiment experiment)
 					{
-						foreach (ConfigureSetup setup in configure.GetUnlockedSetups())
-						{
-							foreach (ConfigureModule configureModule in setup.modules)
-							{
-								if (configureModule.type == "Experiment")
-								{
-									PartModule configuredModule = configure.Find_module(configureModule);
-									if (configuredModule != null && configuredModule is Experiment configureExperiment)
-									{
-										configureResearchedExperiments.Add(configureExperiment);
-									}
-								}
-							}
-						}
-					}
-				}
-
-				foreach (PartModule partModule in availablePart.partPrefab.Modules)
-				{
-					if (partModule is Experiment experiment)
-					{
-						if (researchedExpInfos.Contains(experiment.ExpInfo))
+						if (experiment.ModuleDefinition == null || researchedExpInfos.Contains(experiment.ModuleDefinition.Info))
 							continue;
 
-						bool isResearched = false;
-						if (configureResearchedExperiments.Count > 0)
-						{
-							if (configureResearchedExperiments.Contains(experiment))
-							{
-								isResearched = true;
-							}
-						}
-						else
-						{
-							isResearched = true;
-						}
-
-						if (isResearched && experiment.Requirements.TestProgressionRequirements())
-						{
-							researchedExpInfos.Add(experiment.ExpInfo);
-						}
-						
+						if (experiment.ModuleDefinition.Requirements.TestProgressionRequirements())
+							researchedExpInfos.Add(experiment.ModuleDefinition.Info);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{

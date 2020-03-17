@@ -2463,10 +2463,8 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
-		public static PartResource AddResource(Part p, string res_name, double amount, double capacity, bool incremental = false)
+		public static PartResource AddResource(Part p, string res_name, double amount, double capacity)
 		{
-			Lib.Log("add resource " + res_name + " amount=" + amount + " capacity=" + capacity + " delta=" + incremental);
-
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
 			// if the resource is not known, log a warning and do nothing
 			if (!reslib.Contains(res_name))
@@ -2479,8 +2477,6 @@ namespace KERBALISM
 			PartResource resource = p.Resources[resourceDefinition.name];
 			if (resource == null)
 			{
-				Lib.Log("existing part resource is null, creating new");
-
 				resource = new PartResource(p);
 				resource.SetInfo(resourceDefinition);
 				resource.maxAmount = capacity;
@@ -2504,33 +2500,14 @@ namespace KERBALISM
 			}
 			else
 			{
-				Lib.Log("have existing part resource, max amount = " + resource.maxAmount);
-
 				PartResource simulationResource = p.SimulationResources?[resourceDefinition.name];
 
-				if (incremental)
+				resource.maxAmount = capacity;
+				resource.amount = amount;
+				if (simulationResource != null)
 				{
-					Lib.Log("extending max amount by " + capacity);
-
-					resource.maxAmount += capacity;
-					resource.amount += amount;
-					if (simulationResource != null)
-					{
-						simulationResource.maxAmount += capacity;
-						simulationResource.amount += amount;
-					}
-				}
-				else
-				{
-					Lib.Log("setting max amount to " + capacity);
-
-					resource.maxAmount = capacity;
-					resource.amount = amount;
-					if (simulationResource != null)
-					{
-						simulationResource.maxAmount = capacity;
-						simulationResource.amount = amount;
-					}
+					simulationResource.maxAmount = capacity;
+					simulationResource.amount = amount;
 				}
 			}
 
@@ -2968,18 +2945,6 @@ namespace KERBALISM
 				return (T)value;
 			else
 				return def_value;
-
-			/*
-			try
-			{
-				return cfg.HasValue( key ) ? (T) Convert.ChangeType( cfg.GetValue( key ), typeof( T ) ) : def_value;
-			}
-			catch (Exception e)
-			{
-				Lib.Log( "error while trying to parse '" + key + "' from " + cfg.name + " (" + e.Message + ")", Lib.LogLevel.Warning);
-				return def_value;
-			}
-			*/
 		}
 
 		public static T ConfigEnum<T>(ConfigNode cfg, string key, T def_value)
@@ -3108,6 +3073,53 @@ namespace KERBALISM
 			}
 
 			return false;
+		}
+
+		/// <summary> Parse a duration "3y120d5h2m93s into seconds </summary>
+		public static double ParseDuration(string durationString)
+		{
+			double result = 0;
+
+			string str = durationString.ToLower();
+			int p = str.IndexOf('y');
+			if(p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * DaysInYear * HoursInDay * 3600;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('d');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * HoursInDay * 3600;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('h');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * 3600;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('m');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p)) * 60;
+				str = str.Substring(p + 1);
+			}
+
+			p = str.IndexOf('s');
+			if (p > 0)
+			{
+				result += double.Parse(str.Substring(0, p));
+				str = str.Substring(p + 1);
+			}
+
+			if (!string.IsNullOrEmpty(str))
+				result += double.Parse(str);
+
+			return result;
 		}
 		#endregion
 
