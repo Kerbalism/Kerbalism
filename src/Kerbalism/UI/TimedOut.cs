@@ -11,7 +11,7 @@ namespace KERBALISM
 	{
 		public static bool Timeout(this Panel p, VesselData vd)
 		{
-			if (!vd.Connection.linked && vd.CrewCount == 0 && !vd.Vessel.isEVA)
+			if (vd.CrewCount == 0 && !vd.Connection.linked && !vd.Vessel.isEVA)
 			{ 
 				p.AddHeader(msg[((int)Time.realtimeSinceStartup) % msg.Length]);
 				return true;

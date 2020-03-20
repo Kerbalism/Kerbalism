@@ -57,7 +57,7 @@ namespace KERBALISM.CONTRACTS
 					 Features.Science                                             // science is enabled
 				  && lab != null                                                  // lab part is present
 				  && ResearchAndDevelopment.PartTechAvailable(lab)                // lab part is unlocked
-				  && !DB.landmarks.space_analysis;                                // never analyzed samples in space before
+				  && !DB.Landmarks.space_analysis;                                // never analyzed samples in space before
 			}
 			return meet_requirements;
 		}
@@ -80,7 +80,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override void OnUpdate()
 		{
-			if (DB.landmarks.space_analysis) SetComplete();
+			if (DB.Landmarks.space_analysis) SetComplete();
 		}
 	}
 

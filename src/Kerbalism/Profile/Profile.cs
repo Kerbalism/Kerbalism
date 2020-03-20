@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -8,6 +8,7 @@ namespace KERBALISM
 
 	public static class Profile
 	{
+		public static List<string> modifiersCompilationErrors = new List<string>();
 
 		// node parsing
 		private static void Nodeparse(ConfigNode profile_node)
@@ -73,6 +74,36 @@ namespace KERBALISM
 				{
 					Lib.Log("failed to load process\n" + e.ToString(), Lib.LogLevel.Warning);
 				}
+			}
+
+			if (modifiersCompilationErrors.Count > 0)
+			{
+				string errors = string.Empty;
+				foreach (string error in modifiersCompilationErrors)
+				{
+					errors = errors + "\n\n" + error;
+				}
+
+				PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f),
+					new Vector2(0.5f, 0.5f),
+					new MultiOptionDialog(
+						"Kerbalism profile modifiers compilation error",
+						"Some profile modifiers could not be compiled.\n"
+						 + "KSP will run but this can result in incorrect behaviour.\n\n"
+						 + "Please check your profile configuration (the following errors have been logged in KSP.log)"
+						 + errors,
+						"Kerbalism profile modifiers compilation error",
+						HighLogic.UISkin,
+						new Rect(0.5f, 0.5f, 500f, 60f),
+						new DialogGUIFlexibleSpace(),
+						new DialogGUIHorizontalLayout(
+							new DialogGUIFlexibleSpace(),
+							new DialogGUIButton("OK", null, 140.0f, 30.0f, true),
+							new DialogGUIFlexibleSpace()
+						)
+					),
+					true,
+					HighLogic.UISkin);
 			}
 		}
 
@@ -166,7 +197,10 @@ namespace KERBALISM
 				}
 			}
 
-			vd.VesselProcesses.Execute(vd, resources, elapsed_s);
+			foreach (Process process in processes)
+			{
+				process.Execute(vd, resources, elapsed_s);
+			}
 		}
 
 

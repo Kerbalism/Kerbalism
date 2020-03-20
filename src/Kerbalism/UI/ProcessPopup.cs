@@ -13,7 +13,7 @@ namespace KERBALISM
 	public class ProcessPopup
 	{
 		VesselData vd;
-		VesselProcessData processData;
+		VesselProcess vesselProcess;
 
 		// UI references
 		KsmGuiWindow window;
@@ -27,16 +27,16 @@ namespace KERBALISM
 		private static List<string> activePopups = new List<string>();
 		private string popupId;
 
-		public ProcessPopup(VesselProcessData processData, VesselData vd)
+		public ProcessPopup(VesselProcess vesselProcess, VesselData vd)
 		{
-			popupId = processData.processName;
+			popupId = vesselProcess.ProcessName;
 
 			if (activePopups.Contains(popupId))
 				return;
 
 			activePopups.Add(popupId);
 
-			this.processData = processData;
+			this.vesselProcess = vesselProcess;
 			this.vd = vd;
 
 			// create the window
@@ -46,7 +46,7 @@ namespace KERBALISM
 			//window.SetUpdateAction(GetData);
 
 			// top header
-			KsmGuiHeader topHeader = new KsmGuiHeader(window, processData.process.title, default, 120);
+			KsmGuiHeader topHeader = new KsmGuiHeader(window, vesselProcess.process.title, default, 120);
 			new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderClose, () => window.Close(), Local.SCIENCEARCHIVE_closebutton);//"close"
 
 			// content panel
@@ -59,7 +59,7 @@ namespace KERBALISM
 
 			KsmGuiHorizontalLayout buttons = new KsmGuiHorizontalLayout(content, 5);
 			capacitySlider = new KsmGuiSlider(buttons, 0f, 1f, false, OnCapacityTweak, null, 200);
-			capacitySlider.Value = (float)processData.maxSetting;
+			capacitySlider.Value = (float)vesselProcess.enabledFactor;
 			enableButton = new KsmGuiButton(buttons, Local.Generic_ENABLED, OnToggle);
 
 			new KsmGuiHeader(content, Local.ProcessPopup_TITLE);
@@ -81,7 +81,7 @@ namespace KERBALISM
 			KsmGuiText nominalHeaderText = new KsmGuiText(resListHeader,
 				Local.ProcessPopup_MaxRateTitle,
 				Local.ProcessPopup_MaxRateTooltip,
-				TextAlignmentOptions.Right);
+				TextAlignmentOptions.Left);
 			nominalHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			nominalHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 105, 0);
 			nominalHeaderText.TopTransform.SetSizeDelta(65, 16);
@@ -89,7 +89,7 @@ namespace KERBALISM
 			KsmGuiText statusHeaderText = new KsmGuiText(resListHeader,
 				Local.ProcessPopup_StatusTitle,
 				Local.ProcessPopup_StatusTooltip,
-				TextAlignmentOptions.Right);
+				TextAlignmentOptions.Left);
 			statusHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			statusHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 175, 0);
 			statusHeaderText.TopTransform.SetSizeDelta(80, 16);
@@ -97,25 +97,25 @@ namespace KERBALISM
 			KsmGuiText dumpHeaderText = new KsmGuiText(resListHeader,
 				Local.ProcessPopup_DumpTitle,
 				Local.ProcessPopup_DumpTooltip,
-				TextAlignmentOptions.Right);
+				TextAlignmentOptions.Center);
 			dumpHeaderText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 			dumpHeaderText.TextComponent.fontStyle = FontStyles.Bold;
 			dumpHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 250, 0);
 			dumpHeaderText.TopTransform.SetSizeDelta(40, 16);
 
-			foreach (KeyValuePair<string, double> output in processData.process.outputs)
+			foreach (KeyValuePair<string, double> output in vesselProcess.process.outputs)
 			{
 				VesselResource resource = vd.ResHandler.GetResource(output.Key);
-				if (!resource.Visible) // don't display invisible resources
-					continue;
+				//if (!resource.Visible) // don't display invisible resources
+				//	continue;
 				resources.Add(new ResourceEntry(resourceList, this, output, false));
 			}
 
-			foreach (KeyValuePair<string, double> input in processData.process.inputs)
+			foreach (KeyValuePair<string, double> input in vesselProcess.process.inputs)
 			{
 				VesselResource resource = vd.ResHandler.GetResource(input.Key);
-				if (!resource.Visible) // don't display invisible resources
-					continue;
+				//if (!resource.Visible) // don't display invisible resources
+				//	continue;
 				resources.Add(new ResourceEntry(resourceList, this, input, true));
 			}
 
@@ -143,17 +143,11 @@ namespace KERBALISM
 			partListEnabled.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 230, 0);
 			partListEnabled.TopTransform.SetSizeDelta(60, 16);
 
-			foreach (PartData pd in vd.Parts)
+			foreach (ProcessControllerData pcd in vd.Parts.AllModulesOfType<ProcessControllerData>())
 			{
-				if (pd.Processes == null)
-					continue;
-
-				foreach (PartProcessData ppd in pd.Processes)
+				if (pcd.processName == vesselProcess.ProcessName)
 				{
-					if (ppd.processName == processData.processName)
-					{
-						parts.Add(new PartEntry(partList, pd.PartInfo.title, ppd, vd));
-					}
+					parts.Add(new PartEntry(partList, pcd.partData.Title, pcd, vd));
 				}
 			}
 
@@ -166,28 +160,28 @@ namespace KERBALISM
 			StringBuilder sb = new StringBuilder();
 			sb.Append(Local.ProcessPopup_VesselCapacity); // "Vessel capacity"
 			sb.Append(" : ");
-			sb.Append(processData.totalCapacity.ToString("F1"));
+			sb.Append(vesselProcess.MaxCapacity.ToString("F1"));
 			sb.Append("\n");
 			sb.Append(Local.ProcessPopup_EnabledCapacity); // "Enabled capacity"
 			sb.Append(" : ");
-			sb.Append((processData.totalCapacity * processData.maxSetting).ToString("F1"));
+			sb.Append((vesselProcess.AvailableCapacity).ToString("F1"));
 			sb.Append("\n");
 			sb.Append(Local.ProcessPopup_CapacityUsed); // "Capacity used"
 			sb.Append(" : ");
 			sb.Append(resources[0].usage.ToString("P1"));
 			statusBox.Text = sb.ToString();
 
-			enableButton.Text = processData.enabled ? Local.Generic_ENABLED : Local.Generic_DISABLED;
+			enableButton.Text = vesselProcess.enabled ? Local.Generic_ENABLED : Local.Generic_DISABLED;
 		}
 
 		private void OnToggle()
 		{
-			processData.SetEnabled(!processData.enabled, null);
+			vesselProcess.enabled = !vesselProcess.enabled;
 		}
 
 		private void OnCapacityTweak(float capacity)
 		{
-			processData.SetMaxSetting(capacity, null);
+			vesselProcess.enabledFactor = capacity;
 		}
 
 		public class ResourceEntry : KsmGuiBase
@@ -212,8 +206,8 @@ namespace KERBALISM
 				resName = inputOrOutput.Key;
 				baseResRate = isInput ? -inputOrOutput.Value : inputOrOutput.Value;
 				resource = window.vd.ResHandler.GetResource(resName);
-				dump = window.processData.dumpedOutputs.Contains(resName);
-				dumpable = !isInput && window.processData.process.dumpable.Contains(resName);
+				dump = window.vesselProcess.dumpedOutputs.Contains(resName);
+				dumpable = !isInput && window.vesselProcess.process.dumpableOutputs.Contains(resName);
 
 				SetLayoutElement(true, false, -1, 16);
 				this.AddImageComponentWithColor(KsmGuiStyle.boxColor);
@@ -223,18 +217,18 @@ namespace KERBALISM
 				resNameText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 5, 0);
 				resNameText.TopTransform.SetSizeDelta(95, 16);
 
-				resRateText = new KsmGuiText(this, "", null, TextAlignmentOptions.Right);
+				resRateText = new KsmGuiText(this, "", null, TextAlignmentOptions.Left);
 				resRateText.TextComponent.color = Lib.KolorToColor(isInput ? Lib.Kolor.NegRate : Lib.Kolor.PosRate);
 				resRateText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 105, 0);
 				resRateText.TopTransform.SetSizeDelta(65, 16);
 
-				resStatusText = new KsmGuiText(this, "", null, TextAlignmentOptions.Right);
+				resStatusText = new KsmGuiText(this, "", null, TextAlignmentOptions.Left);
 				resStatusText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 175, 0);
 				resStatusText.TopTransform.SetSizeDelta(80, 16);
 
 				if (dumpable)
 				{
-					resDumpText = new KsmGuiTextButton(this, "", null, null, TextAlignmentOptions.Right);
+					resDumpText = new KsmGuiTextButton(this, "", null, null, TextAlignmentOptions.Center);
 					resDumpText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
 					resDumpText.TextComponent.fontStyle = FontStyles.Bold;
 					resDumpText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 250, 0);
@@ -246,7 +240,7 @@ namespace KERBALISM
 			private void Update()
 			{
 				resNameText.SetTooltipText(resource.BrokerListTooltipTMP());
-				usage = baseResRate * window.processData.maxSetting * window.processData.totalCapacity;
+				usage = baseResRate * window.vesselProcess.AvailableCapacity;
 				resRateText.Text = Lib.HumanReadableRate(usage, "F3", "", true);
 
 				if (isInput && resource.AvailabilityFactor == 0.0)
@@ -269,7 +263,7 @@ namespace KERBALISM
 					bool found = false;
 					foreach (ResourceBrokerRate brokerRate in resource.ResourceBrokers)
 					{
-						if (brokerRate.broker == window.processData.process.broker)
+						if (brokerRate.broker == window.vesselProcess.process.broker)
 						{
 							resStatusText.Text = Lib.HumanReadableRate(brokerRate.rate, "F3", "", true);
 							usage = brokerRate.rate / usage;
@@ -292,7 +286,7 @@ namespace KERBALISM
 
 				if (dumpable)
 				{
-					dump = window.processData.dumpedOutputs.Contains(resName);
+					dump = window.vesselProcess.dumpedOutputs.Contains(resName);
 					resDumpText.Text = dump ? Local.Generic_YES : Local.Generic_NO;
 				}
 
@@ -301,17 +295,17 @@ namespace KERBALISM
 			private void OnToggleDump()
 			{
 				bool removed = false;
-				for (int i = window.processData.dumpedOutputs.Count - 1; i >= 0; i--)
+				for (int i = window.vesselProcess.dumpedOutputs.Count - 1; i >= 0; i--)
 				{
-					if (window.processData.dumpedOutputs[i] == resName)
+					if (window.vesselProcess.dumpedOutputs[i] == resName)
 					{
 						removed = true;
-						window.processData.dumpedOutputs.RemoveAt(i);
+						window.vesselProcess.dumpedOutputs.RemoveAt(i);
 					}
 				}
 
 				if (!removed)
-					window.processData.dumpedOutputs.Add(resName);
+					window.vesselProcess.dumpedOutputs.Add(resName);
 			}
 		}
 
@@ -319,10 +313,10 @@ namespace KERBALISM
 		{
 			KsmGuiText resCapText;
 			KsmGuiTextButton resToggleText;
-			PartProcessData data;
+			ProcessControllerData data;
 			VesselData vd;
 
-			public PartEntry(KsmGuiBase parent, string partTitle, PartProcessData data, VesselData vd) : base(parent)
+			public PartEntry(KsmGuiBase parent, string partTitle, ProcessControllerData data, VesselData vd) : base(parent)
 			{
 				this.data = data;
 				this.vd = vd;

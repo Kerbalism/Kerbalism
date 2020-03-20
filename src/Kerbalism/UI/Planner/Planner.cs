@@ -101,6 +101,10 @@ namespace KERBALISM.Planner
 		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{
+			// get data objects references
+			vesselData = VesselDataShip.Instance;
+			resHandler = VesselDataShip.Instance.ResHandler;
+
 			// get vessel crew manifest
 			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
 			if (manifest == null)
@@ -141,7 +145,7 @@ namespace KERBALISM.Planner
 
 				// analyze using the settings from the panels user input
 				vesselData.Analyze(parts, FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
-				resourceSim.Analyze(parts, vesselData);
+				EditorResourceSimulator.Analyze(parts);
 
 				// add ec panel
 				AddSubPanelEC(panel);
@@ -149,7 +153,7 @@ namespace KERBALISM.Planner
 				// get vessel resources
 				panel_resource.Clear();
 				foreach (string res in supplies)
-					if (PlannerResourceSimulator.Handler.GetResource(res).Capacity > 0.0)
+					if (resHandler.GetResource(res).Capacity > 0.0)
 						panel_resource.Add(res);
 
 				// reset current panel if necessary
@@ -270,7 +274,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelEC(Panel p)
 		{
 			// get simulated resource
-			VesselKSPResource res = PlannerResourceSimulator.Handler.ElectricCharge;
+			VesselKSPResource res = resHandler.ElectricCharge;
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -292,7 +296,7 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelResource(Panel p, string res_name)
 		{
 			// get simulated resource
-			VesselKSPResource res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(res_name);
+			VesselKSPResource res = (VesselKSPResource)resHandler.GetResource(res_name);
 
 			// create tooltip
 			string tooltip = res.BrokersListTooltip();
@@ -324,20 +328,20 @@ namespace KERBALISM.Planner
 			// generate details tooltips
 			string living_space_tooltip = Lib.BuildString
 			(
-				Local.Planner_volumepercapita ,"<b>\t", Lib.HumanReadableVolume(vesselData.HabitatInfo.volumePerCrew), "</b>\n",//"volume per-capita:
+				Local.Planner_volumepercapita ,"<b>\t", Lib.HumanReadableVolume(vesselData.Habitat.volumePerCrew), "</b>\n",//"volume per-capita:
 				Local.Planner_ideallivingspace ,"<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"//"ideal living space:
 			);
-			p.AddContent(Local.Planner_livingspace, HabitatLib.LivingSpaceFactorToString(vesselData.HabitatInfo.livingSpaceFactor), living_space_tooltip);//"living space"
+			p.AddContent(Local.Planner_livingspace, HabitatLib.LivingSpaceFactorToString(vesselData.Habitat.livingSpaceFactor), living_space_tooltip);//"living space"
 
 
-			p.AddContent(Local.Planner_comfort, HabitatLib.ComfortSummary(vesselData.HabitatInfo.comfortFactor), HabitatLib.ComfortTooltip(vesselData.HabitatInfo.comfortMask, vesselData.HabitatInfo.comfortFactor));//"comfort"
+			p.AddContent(Local.Planner_comfort, HabitatLib.ComfortSummary(vesselData.Habitat.comfortFactor), HabitatLib.ComfortTooltip(vesselData.Habitat.comfortMask, vesselData.Habitat.comfortFactor));//"comfort"
 
 
 			// render pressure data
-			string pressure_tooltip = vesselData.HabitatInfo.pressureAtm == 1.0
+			string pressure_tooltip = vesselData.Habitat.pressureAtm == 1.0
 				? Local.Planner_analyzerpressurized1//"Free roaming in a pressurized environment is\nvastly superior to living in a suit."
 				: Local.Planner_analyzerpressurized2;//"Being forced inside a suit all the time greatly\nreduces the crews quality of life.\nThe worst part is the diaper."
-			p.AddContent(Local.Planner_pressurized, vesselData.HabitatInfo.pressureAtm == 1.0 ? Local.Planner_pressurized_yes : Local.Planner_pressurized_no, pressure_tooltip);//"pressurized""yes""no"
+			p.AddContent(Local.Planner_pressurized, vesselData.Habitat.pressureAtm == 1.0 ? Local.Planner_pressurized_yes : Local.Planner_pressurized_no, pressure_tooltip);//"pressurized""yes""no"
 
 			// render life estimate
 			p.AddContent(Local.Planner_lifeestimate, Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * rule.EvaluateModifier(vesselData))));//"duration"
@@ -398,7 +402,7 @@ namespace KERBALISM.Planner
 				p.AddContent(Local.Planner_emission, Lib.HumanReadableRadiation(vesselData.emitted), tooltip);//"emission"
 			else
 				p.AddContent(Local.Planner_activeshielding, Lib.HumanReadableRadiation(-vesselData.emitted), tooltip);//"active shielding"
-			p.AddContent(Local.Planner_shielding, Radiation.VesselShieldingToString(vesselData.HabitatInfo.shieldingSurface > 0.0 ? vesselData.HabitatInfo.shieldingAmount / vesselData.HabitatInfo.shieldingSurface : 0.0), tooltip);//"shielding"
+			p.AddContent(Local.Planner_shielding, Radiation.VesselShieldingToString(vesselData.Habitat.shieldingSurface > 0.0 ? vesselData.Habitat.shieldingAmount / vesselData.Habitat.shieldingSurface : 0.0), tooltip);//"shielding"
 		}
 
 		///<summary> Add reliability sub-panel, including tooltips </summary>
@@ -511,8 +515,8 @@ namespace KERBALISM.Planner
 		private static void AddSubPanelHabitat(Panel p)
 		{
 
-			VesselKSPResource atmo_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(Settings.HabitatAtmoResource);
-			VesselKSPResource waste_res = (VesselKSPResource)PlannerResourceSimulator.Handler.GetResource(Settings.HabitatWasteResource);
+			VesselKSPResource atmo_res = (VesselKSPResource)resHandler.GetResource(Settings.HabitatAtmoResource);
+			VesselKSPResource waste_res = (VesselKSPResource)resHandler.GetResource(Settings.HabitatWasteResource);
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.BrokersListTooltip();
@@ -543,8 +547,8 @@ namespace KERBALISM.Planner
 			p.AddSection(Local.Planner_HABITAT, string.Empty,//"HABITAT"
 				() => { p.Prev(ref environment_index, panel_environment.Count); updateRequested = true; },
 				() => { p.Next(ref environment_index, panel_environment.Count); updateRequested = true; });
-			p.AddContent(Local.Planner_volume, Lib.HumanReadableVolume(vesselData.HabitatInfo.livingVolume), Local.Planner_volume_tip);//"volume""volume of enabled habitats"
-			p.AddContent(Local.Planner_habitatssurface, Lib.HumanReadableSurface(vesselData.HabitatInfo.pressurizedSurface), Local.Planner_habitatssurface_tip);//"surface""surface of enabled habitats"
+			p.AddContent(Local.Planner_volume, Lib.HumanReadableVolume(vesselData.Habitat.livingVolume), Local.Planner_volume_tip);//"volume""volume of enabled habitats"
+			p.AddContent(Local.Planner_habitatssurface, Lib.HumanReadableSurface(vesselData.Habitat.pressurizedSurface), Local.Planner_habitatssurface_tip);//"surface""surface of enabled habitats"
 			p.AddContent(Local.Planner_scrubbing, waste_status, waste_tooltip);//"scrubbing"
 			p.AddContent(Local.Planner_pressurization, atmo_status, atmo_tooltip);//"pressurization"
 
@@ -577,9 +581,9 @@ namespace KERBALISM.Planner
 		private static GUIStyle quote_style;
 		private static GUIStyle icon_style;
 
-		// analyzers
-		private static PlannerResourceSimulator resourceSim = new PlannerResourceSimulator();
-		private static PlannerVesselData vesselData = new PlannerVesselData();
+		// data objects shortcuts
+		private static VesselDataShip vesselData;
+		private static VesselResHandler resHandler;
 
 		// panel arrays
 		private static List<string> supplies = new List<string>();

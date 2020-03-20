@@ -10,7 +10,7 @@ namespace KERBALISM
 		public static void Init()
 		{
 			vesselObjects = new Dictionary<Guid, Dictionary<string, object>>();
-			transmitBuffers = new Dictionary<Guid, Drive>();
+			transmitBuffers = new Dictionary<Guid, DriveData>();
 		}
 
 
@@ -53,16 +53,17 @@ namespace KERBALISM
 			Message.all_logs.Clear();
 		}
 
-		public static Drive TransmitBufferDrive(Vessel v)
+		public static DriveData TransmitBufferDrive(Vessel v)
 		{
 			Guid id = Lib.VesselID(v);
 
 			// get from the cache, if it exist
-			Drive drive;
+			DriveData drive;
 			if (transmitBuffers.TryGetValue(id, out drive))
 				return drive;
 			
-			drive = new Drive("transmitBuffer", 0, 0);
+			drive = new DriveData();
+			drive.OnInstantiate(null, null, null);
 			transmitBuffers.Add(id, drive);
 			return drive;
 		}
@@ -150,7 +151,7 @@ namespace KERBALISM
 		}
 
 		// caches
-		private static Dictionary<Guid, Drive> transmitBuffers;
+		private static Dictionary<Guid, DriveData> transmitBuffers;
 		private static Dictionary<Guid, Dictionary<string, System.Object>> vesselObjects;
 	}
 

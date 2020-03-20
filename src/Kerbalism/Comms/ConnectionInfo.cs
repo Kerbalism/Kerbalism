@@ -12,7 +12,7 @@ namespace KERBALISM
 		storm = 4           // cme storm blackout
 	}
 
-	public sealed class ConnectionInfo
+	public sealed class ConnectionInfo : IConnectionInfo
 	{
 		// Note : Do not change this class, it is used for the API handlers (as of 02-2020, RealAntenna is using it)
 		// That's also why it doesn't use the above enum directly
@@ -22,6 +22,14 @@ namespace KERBALISM
 			get => (LinkStatus)status;
 			set => status = (int)value;
 		}
+
+		public bool Linked => linked;
+
+		public double Ec => ec;
+
+		public double EcIdle => ec_idle;
+
+		public double DataRate => rate;
 
 		// ====================================================================
 		// VALUES SET BY KERBALISM (CommInfo API )

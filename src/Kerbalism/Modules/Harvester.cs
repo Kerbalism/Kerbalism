@@ -58,13 +58,13 @@ namespace KERBALISM
 		public void Update()
 		{
 			// in editor, merely update ui button label
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Local.Harvester_running : Local.Harvester_stopped);//"running""stopped"
 			}
 
 			// if in flight, and the stock planet resource system is online
-			if (Lib.IsFlight() && ResourceMap.Instance != null)
+			if (Lib.IsFlight && ResourceMap.Instance != null)
 			{
 				// sample abundance
 				double abundance = SampleAbundance(vessel, this);
@@ -117,7 +117,7 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor) return;
 
 			if (deployed && running && (issue.Length == 0))
 			{
@@ -134,7 +134,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (running && simulated_abundance > min_abundance)
 			{
@@ -155,7 +155,7 @@ namespace KERBALISM
 			running = !running;
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// return resource abundance at vessel position

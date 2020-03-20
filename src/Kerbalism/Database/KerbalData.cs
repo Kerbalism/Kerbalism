@@ -28,7 +28,7 @@ namespace KERBALISM
 
 			foreach (var rule_node in node.GetNode("rules").GetNodes())
 			{
-				rules.Add(DB.From_safe_key(rule_node.name), new RuleData(rule_node));
+				rules.Add(DB.FromSafeKey(rule_node.name), new RuleData(rule_node));
 			}
 		}
 
@@ -43,7 +43,7 @@ namespace KERBALISM
 			var rules_node = node.AddNode("rules");
 			foreach (var p in rules)
 			{
-				p.Value.Save(rules_node.AddNode(DB.To_safe_key(p.Key)));
+				p.Value.Save(rules_node.AddNode(DB.ToSafeKey(p.Key)));
 			}
 		}
 

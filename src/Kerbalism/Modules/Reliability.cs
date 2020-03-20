@@ -59,7 +59,7 @@ namespace KERBALISM
 #endif
 
 			// do nothing in the editors and when compiling parts
-			if (!Lib.IsFlight()) return;
+			if (!Lib.IsFlight) return;
 
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
@@ -199,7 +199,7 @@ namespace KERBALISM
 
 		public void Update()
 		{
-			if (Lib.IsFlight())
+			if (Lib.IsFlight)
 			{
 				// enforce state
 				// - required as things like Configure or AnimationGroup can re-enable broken modules
@@ -317,7 +317,7 @@ namespace KERBALISM
 		public void FixedUpdate()
 		{
 			// do nothing in the editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor) return;
 
 			var now = Planetarium.GetUniversalTime();
 
@@ -487,7 +487,7 @@ namespace KERBALISM
 			}
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// show a message with some hint on time to next failure

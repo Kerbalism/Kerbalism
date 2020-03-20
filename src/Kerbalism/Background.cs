@@ -32,7 +32,6 @@ namespace KERBALISM
 			KerbalismProcess,
 			SolarPanelFixer,
 			APIModule,
-			ModuleKsmHabitat,
 			IBackgroundModule
 		}
 
@@ -66,7 +65,6 @@ namespace KERBALISM
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
 				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
-				case "ModuleKsmHabitat": return Module_type.ModuleKsmHabitat;
 			}
 			return Module_type.Unknown;
 		}
@@ -112,11 +110,125 @@ namespace KERBALISM
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, resourceChangeRequests, elapsed_s); break;
-					case Module_type.ModuleKsmHabitat: ModuleKsmHabitat.BackgroundUpdate(v, vd, e.p, e.module_prefab as ModuleKsmHabitat, elapsed_s); break;
 					case Module_type.IBackgroundModule: ((IBackgroundModule)e.module_prefab).BackgroundUpdate(vd, e.p, e.m, elapsed_s); break;
 				}
 			}
 		}
+
+		private class ProtoPartModuleSnapshotData
+		{
+			public PartModule modulePrefab;
+			public Module_type type;
+
+			public ProtoPartModuleSnapshotData(PartModule modulePrefab, Module_type type)
+			{
+				this.modulePrefab = modulePrefab;
+				this.type = type;
+			}
+		}
+
+		private static Dictionary<ProtoPartModuleSnapshot, ProtoPartModuleSnapshotData> protomodules = new Dictionary<ProtoPartModuleSnapshot, ProtoPartModuleSnapshotData>();
+
+		private static void Update2(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)
+		{
+			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+			VesselResource ec = resources.ElectricCharge;
+
+			foreach (ProtoPartSnapshot pps in v.protoVessel.protoPartSnapshots)
+			{
+				int protoModulesCount = pps.modules.Count;
+				for (int i = 0; i < protoModulesCount; i++)
+				{
+					ProtoPartModuleSnapshot ppms = pps.modules[i];
+					if (!protomodules.TryGetValue(ppms, out ProtoPartModuleSnapshotData ppmsData))
+					{
+						PartModule prefab = null;
+						int prefabModulesCount = pps.partInfo.partPrefab.Modules.Count;
+
+						if (protoModulesCount == prefabModulesCount && pps.partInfo.partPrefab.Modules[i].moduleName == ppms.moduleName)
+						{
+							prefab = pps.partInfo.partPrefab.Modules[i];
+						}
+						else
+						{
+							int protoIndexInType = 0;
+							foreach (ProtoPartModuleSnapshot otherppms in pps.modules)
+							{
+								if (otherppms.moduleName == ppms.moduleName)
+								{
+									if (otherppms == ppms)
+										break;
+
+									protoIndexInType++;
+								}
+							}
+
+							int prefabIndexInType = 0;
+							foreach (PartModule pm in pps.partInfo.partPrefab.Modules)
+							{
+								if (pm.moduleName == ppms.moduleName)
+								{
+									if (prefabIndexInType == protoIndexInType)
+									{
+										prefab = pm;
+										break;
+									}
+									prefabIndexInType++;
+								}
+							}
+						}
+
+						if (prefab != null)
+						{
+							Module_type type = ModuleType(prefab.moduleName);
+							if (type == Module_type.Unknown)
+							{
+								if (prefab is IBackgroundModule)
+								{
+									type = Module_type.IBackgroundModule;
+								}
+								else
+								{
+									var backgroundDelegate = BackgroundDelegate.Instance(prefab);
+									if (backgroundDelegate != null)
+										type = Module_type.APIModule;
+								}
+							}
+							ppmsData = new ProtoPartModuleSnapshotData(prefab, type);
+							protomodules.Add(pps.modules[i], ppmsData);
+						}
+
+					}
+
+					// TODO : add the check for isEnabled, but only for modules we really want to process
+					// also, don't use Lib.Proto for that, use a faster version
+					switch (ppmsData.type)
+					{
+						case Module_type.Reliability: Reliability.BackgroundUpdate(v, pps, ppms, ppmsData.modulePrefab as Reliability, elapsed_s); break;
+						case Module_type.Experiment: (ppmsData.modulePrefab as ModuleKsmExperiment).BackgroundUpdate(v, vd, ppms, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
+						case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, ppms, ppmsData.modulePrefab as Greenhouse, vd, resources, elapsed_s); break;
+						case Module_type.Harvester: Harvester.BackgroundUpdate(v, ppms, ppmsData.modulePrefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
+						case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, pps, ppms, ppmsData.modulePrefab as Laboratory, elapsed_s); break;
+						case Module_type.Command: ProcessCommand(vd, pps, ppms, ppmsData.modulePrefab as ModuleCommand, elapsed_s); break;
+						case Module_type.Generator: ProcessGenerator(v, pps, ppms, ppmsData.modulePrefab as ModuleGenerator, resources, elapsed_s); break;
+						case Module_type.Converter: ProcessConverter(v, pps, ppms, ppmsData.modulePrefab as ModuleResourceConverter, resources, elapsed_s); break;
+						case Module_type.Drill: ProcessDrill(v, pps, ppms, ppmsData.modulePrefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
+						case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, pps, ppms, ppmsData.modulePrefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteroid harvester module
+						case Module_type.StockLab: ProcessStockLab(v, pps, ppms, ppmsData.modulePrefab as ModuleScienceConverter, ec, elapsed_s); break;
+						case Module_type.Light: ProcessLight(v, pps, ppms, ppmsData.modulePrefab as ModuleLight, ec, elapsed_s); break;
+						case Module_type.Scanner: KerbalismScansat.BackgroundUpdate(v, pps, ppms, ppmsData.modulePrefab as KerbalismScansat, ppmsData.modulePrefab.part, vd, ec, elapsed_s); break;
+						case Module_type.FissionGenerator: ProcessFissionGenerator(v, pps, ppms, ppmsData.modulePrefab, ec, elapsed_s); break;
+						case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, pps, ppms, ppmsData.modulePrefab, ec, elapsed_s); break;
+						case Module_type.CryoTank: ProcessCryoTank(v, vd, pps, ppms, ppmsData.modulePrefab, resources, elapsed_s); break;
+						case Module_type.FNGenerator: ProcessFNGenerator(v, pps, ppms, ppmsData.modulePrefab, ec, elapsed_s); break;
+						case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, ppms, ppmsData.modulePrefab as SolarPanelFixer, vd, ec, elapsed_s); break;
+						case Module_type.APIModule: ResourceAPI.BackgroundUpdate(v, pps, ppms, ppmsData.modulePrefab.part, ppmsData.modulePrefab, resources, resourceChangeRequests, elapsed_s); break;
+						case Module_type.IBackgroundModule: ((IBackgroundModule)ppmsData.modulePrefab).BackgroundUpdate(vd, pps, ppms, elapsed_s); break;
+					}
+				}
+			}
+		}
+
 
 		private static List<BackgroundPM> Background_PMs(Vessel v)
 		{
@@ -144,9 +256,6 @@ namespace KERBALISM
 				// for each module
 				foreach (ProtoPartModuleSnapshot m in p.modules)
 				{
-					// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
-					if (m.moduleName == "WarpFixer") MigrateWarpFixer(v, part_prefab, p, m);
-
 					// get the module prefab
 					// if the prefab doesn't contain this module, skip it
 					PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
@@ -606,54 +715,6 @@ namespace KERBALISM
 			// apply EC consumption
 			if (ecCost > 0.0)
 				ec.Consume(ecCost * elapsed_s, ResourceBroker.Cryotank);
-		}
-
-		// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
-		static void MigrateWarpFixer(Vessel v, Part prefab, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
-		{
-			ModuleDeployableSolarPanel panelModule = prefab.FindModuleImplementing<ModuleDeployableSolarPanel>();
-			ProtoPartModuleSnapshot protoPanelModule = p.modules.Find(pm => pm.moduleName == "ModuleDeployableSolarPanel");
-
-			if (panelModule == null || protoPanelModule == null)
-			{
-				Lib.Log("Vessel " + v.name + " has solar panels that can't be converted automatically following Kerbalism 3.1 update. Load it to fix the issue.");
-				return;
-			}
-
-			SolarPanelFixer.PanelState state = SolarPanelFixer.PanelState.Unknown;
-			string panelStateStr = Lib.Proto.GetString(protoPanelModule, "deployState");
-
-			if (!Enum.IsDefined(typeof(ModuleDeployablePart.DeployState), panelStateStr)) return;
-			ModuleDeployablePart.DeployState panelState = (ModuleDeployablePart.DeployState)Enum.Parse(typeof(ModuleDeployablePart.DeployState), panelStateStr);
-
-			if (panelState == ModuleDeployablePart.DeployState.BROKEN)
-				state = SolarPanelFixer.PanelState.Broken;
-			else if (!panelModule.isTracking)
-			{
-				state = SolarPanelFixer.PanelState.Static;
-			}
-			else
-			{
-				switch (panelState)
-				{
-					case ModuleDeployablePart.DeployState.EXTENDED:
-						if (!panelModule.retractable)
-							state = SolarPanelFixer.PanelState.ExtendedFixed;
-						else
-							state = SolarPanelFixer.PanelState.Extended;
-						break;
-					case ModuleDeployablePart.DeployState.RETRACTED: state = SolarPanelFixer.PanelState.Retracted; break;
-					case ModuleDeployablePart.DeployState.RETRACTING: state = SolarPanelFixer.PanelState.Retracting; break;
-					case ModuleDeployablePart.DeployState.EXTENDING: state = SolarPanelFixer.PanelState.Extending; break;
-					default: state = SolarPanelFixer.PanelState.Unknown; break;
-				}
-			}
-
-			m.moduleName = "SolarPanelFixer";
-			Lib.Proto.Set(m, "state", state);
-			Lib.Proto.Set(m, "persistentFactor", 0.75);
-			Lib.Proto.Set(m, "launchUT", Planetarium.GetUniversalTime());
-			Lib.Proto.Set(m, "nominalRate", panelModule.chargeRate);
 		}
 	}
 } // KERBALISM

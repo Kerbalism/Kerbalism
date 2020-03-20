@@ -65,13 +65,15 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log($"Error parsing modifier for process {name} : '{modifierString}'\n{e}", Lib.LogLevel.Error);
+					string error = $"Error parsing modifier for rule '{name}' :\n{modifierString}\n{e.Message}";
+					Profile.modifiersCompilationErrors.Add(error);
+					Lib.Log(error, Lib.LogLevel.Error);
 					hasModifier = false;
 				}
 			}
 		}
 
-		public double EvaluateModifier(VesselModifierData data)
+		public double EvaluateModifier(VesselDataBase data)
 		{
 			if (hasModifier)
 			{
@@ -293,7 +295,7 @@ namespace KERBALISM
 
 		public bool hasModifier;
 		private IGenericExpression<double> modifier;
-		private static VesselModifierData modifierData = new VesselModifierData();
+		private static VesselDataBase modifierData = new VesselDataBase();
 	}
 
 

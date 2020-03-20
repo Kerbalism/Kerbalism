@@ -41,8 +41,8 @@ namespace KERBALISM
 			if (LocalHelpers.UpdateNonEnglishLoc)
 				LocalHelpers.RegenerateNonEnglishLoc();
 
-			Lib.Log("Forcing KSP to load resources...");
-			PartResourceLibrary.Instance.LoadDefinitions();
+			//Lib.Log("Forcing KSP to load resources...");
+			//PartResourceLibrary.Instance.LoadDefinitions();
 
 			// detect features
 			Features.Parse();
@@ -61,6 +61,7 @@ namespace KERBALISM
 			// inject harmony patches
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			B9PSPatcher.Init(harmony);
 			var methods = harmony.GetPatchedMethods();
 
 			// register loading callbacks

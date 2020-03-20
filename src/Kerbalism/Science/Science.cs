@@ -44,11 +44,11 @@ namespace KERBALISM
 		{
 			public File file;
 			public double sciencePerMB; // caching this because it's slow to get
-			public Drive drive;
+			public DriveData drive;
 			public bool isInBuffer;
 			public File realDriveFile; // reference to the "real" file for files in the buffer drive
 
-			public XmitFile(File file, Drive drive, double sciencePerMB, bool isInBuffer, File realDriveFile = null)
+			public XmitFile(File file, DriveData drive, double sciencePerMB, bool isInBuffer, File realDriveFile = null)
 			{
 				this.file = file;
 				this.drive = drive;
@@ -90,7 +90,7 @@ namespace KERBALISM
 			// clear list of files transmitted
 			vd.filesTransmitted.Clear();
 
-			Drive transmitBufferDrive = Cache.TransmitBufferDrive(v);
+			DriveData transmitBufferDrive = Cache.TransmitBufferDrive(v);
 
 			// check connection
 			if (!vd.CommHandler.IsReady
@@ -99,13 +99,13 @@ namespace KERBALISM
 				|| !vd.deviceTransmit)
 			{
 				// reset all files transmit rate
-				foreach (Drive drive in Drive.GetDrives(vd, true))
+				foreach (DriveData drive in DriveData.GetDrives(vd, true))
 					foreach (File f in drive.files.Values)
 						f.transmitRate = 0.0;
 
 				// set transmit capacity to 0 and make sure there is nothing in it.
 				transmitBufferDrive.dataCapacity = 0.0;
-				transmitBufferDrive.DeleteDriveData();
+				transmitBufferDrive.DeleteAllData();
 
 				// do nothing else
 				return;
@@ -197,14 +197,14 @@ namespace KERBALISM
 			transmitBufferDrive.dataCapacity = vd.Connection.rate * elapsed_s * vd.ResHandler.ElectricCharge.AvailabilityFactor;
 		}
 
-		private static void GetFilesToTransmit(Vessel v, VesselData vd, Drive transmitBufferDrive)
+		private static void GetFilesToTransmit(Vessel v, VesselData vd, DriveData transmitBufferDrive)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
 
 			xmitFiles.Clear();
 			List<SubjectData> filesToRemove = new List<SubjectData>();
 
-			foreach (Drive drive in Drive.GetDrives(vd, true))
+			foreach (DriveData drive in DriveData.GetDrives(vd, true))
 			{
 				foreach (File f in drive.files.Values)
 				{

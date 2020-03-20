@@ -64,7 +64,7 @@ namespace KERBALISM
 	{
 		static void Postfix(ModuleCommand __instance, ref VesselControlState ___localVesselControlState, ref ModuleControlState ___moduleState)
 		{
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 				return;
 
 			VesselData vd = __instance.vessel.KerbalismData();

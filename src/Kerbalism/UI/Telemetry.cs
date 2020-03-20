@@ -101,20 +101,20 @@ namespace KERBALISM
 												  //if (Features.Radiation && v.isEVA) p.AddContent(Local.TELEMETRY_radiation, Lib.HumanReadableRadiation(vd.EnvHabitatRadiation));//"radiation"
 
 
-			p.AddContent("livingVolume", vd.HabitatInfo.livingVolume.ToString("0.00 m3"));
-			p.AddContent("volumePerCrew", vd.HabitatInfo.volumePerCrew.ToString("0.00 m3"));
-			p.AddContent("livingSpaceModifier", vd.HabitatInfo.livingSpaceFactor.ToString("F2"));
-			p.AddContent("pressurizedSurface", vd.HabitatInfo.pressurizedSurface.ToString("0.00 m2"));
-			p.AddContent("pressurizedVolume", vd.HabitatInfo.pressurizedVolume.ToString("0.00 m3"));
-			p.AddContent("pressureAtm", vd.HabitatInfo.pressureAtm.ToString("0.00 atm"));
-			p.AddContent("pressureModifier", vd.HabitatInfo.pressureFactor.ToString("F2"));
+			p.AddContent("livingVolume", vd.Habitat.livingVolume.ToString("0.00 m3"));
+			p.AddContent("volumePerCrew", vd.Habitat.volumePerCrew.ToString("0.00 m3"));
+			p.AddContent("livingSpaceModifier", vd.Habitat.livingSpaceFactor.ToString("F2"));
+			p.AddContent("pressurizedSurface", vd.Habitat.pressurizedSurface.ToString("0.00 m2"));
+			p.AddContent("pressurizedVolume", vd.Habitat.pressurizedVolume.ToString("0.00 m3"));
+			p.AddContent("pressureAtm", vd.Habitat.pressureAtm.ToString("0.00 atm"));
+			p.AddContent("pressureModifier", vd.Habitat.pressureFactor.ToString("F2"));
 
-			p.AddContent("shieldingSurface", vd.HabitatInfo.shieldingSurface.ToString("0.00 m2"));
-			p.AddContent("shieldingAmount", vd.HabitatInfo.shieldingAmount.ToString("F2"));
-			p.AddContent("shieldingModifier", vd.HabitatInfo.shieldingModifier.ToString("F2"));
-			p.AddContent("poisoningLevel", vd.HabitatInfo.poisoningLevel.ToString("F2"));
+			p.AddContent("shieldingSurface", vd.Habitat.shieldingSurface.ToString("0.00 m2"));
+			p.AddContent("shieldingAmount", vd.Habitat.shieldingAmount.ToString("F2"));
+			p.AddContent("shieldingModifier", vd.Habitat.shieldingModifier.ToString("F2"));
+			p.AddContent("poisoningLevel", vd.Habitat.poisoningLevel.ToString("F2"));
 
-			p.AddContent("comfortModifier", vd.HabitatInfo.comfortFactor.ToString("F2"), HabitatLib.ComfortTooltip(vd.HabitatInfo.comfortMask, vd.HabitatInfo.comfortFactor));
+			p.AddContent("comfortModifier", vd.Habitat.comfortFactor.ToString("F2"), HabitatLib.ComfortTooltip(vd.Habitat.comfortMask, vd.Habitat.comfortFactor));
 
 
 			//p.AddContent("volume-debug", Lib.HumanReadableVolume(vd.Volume));

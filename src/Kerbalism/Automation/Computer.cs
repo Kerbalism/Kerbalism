@@ -348,7 +348,7 @@ namespace KERBALISM
 
 			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
 
-			foreach (var process in vd.VesselProcesses.Processes)
+			foreach (var process in vd.VesselProcesses)
 				moduleDevices.Add(new VesselProcessDevice(v, vd, process));
 
 			Cache.SetVesselObjectsCache(v, "computer", moduleDevices);
