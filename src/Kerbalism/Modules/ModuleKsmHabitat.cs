@@ -10,7 +10,7 @@ using static KERBALISM.HabitatLib;
 
 namespace KERBALISM
 {
-	public sealed class ModuleKsmHabitat : PartModule, ISpecifics, IModuleInfo
+	public sealed class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
 		#region FIELDS / PROPERTIES
 		// general config
@@ -61,10 +61,6 @@ namespace KERBALISM
 		[KSPField] public bool hasShielding;
 		[KSPField] public int baseComfortsMask;
 
-		// internal state
-		private HabitatData data;
-		public HabitatData HabitatData => data;
-
 		// animation handlers
 		private Animator deployAnimator;
 		private Transformator rotateAnimator;
@@ -87,6 +83,7 @@ namespace KERBALISM
 		private BaseField pressureField;
 		private BaseField deployField;
 		private BaseField rotateField;
+		private float shieldingCost;
 
 		public PartResourceWrapper WasteRes => wasteRes;
 
@@ -228,29 +225,11 @@ namespace KERBALISM
 					Lib.AddResource(part, shieldingResource, 0.0, surface * maxShieldingFactor);
 				}
 			}
-			else
-			{
-				ConfigNode editorDataNode = node.GetNode("EditorHabitatData");
-
-				if (editorDataNode != null)
-					data = new HabitatData(editorDataNode);
-			}
 		}
-
-		// this is only for editor <--> editor and editor -> flight persistence
-		public override void OnSave(ConfigNode node)
-		{
-			if (Lib.IsEditor() && data != null)
-			{
-				ConfigNode habDataNode = node.AddNode("EditorHabitatData");
-				data.Save(habDataNode);
-			}
-		}
-
 
 		public override void OnStart(StartState state)
 		{
-			bool isFlight = Lib.IsFlight();
+			bool isFlight = Lib.IsFlight;
 
 			// setup animations / transformators
 			SetupAnimations();
@@ -258,7 +237,19 @@ namespace KERBALISM
 			// get references to stuff we need often
 			atmoRes = new LoadedPartResourceWrapper(part.Resources[Settings.HabitatAtmoResource]);
 			wasteRes = new LoadedPartResourceWrapper(part.Resources[Settings.HabitatWasteResource]);
-			shieldRes = hasShielding ? new LoadedPartResourceWrapper(part.Resources[shieldingResource]) : null;
+
+			if (hasShielding)
+			{
+				shieldRes = new LoadedPartResourceWrapper(part.Resources[shieldingResource]);
+				// note : we are using IPartCostModifier to add the shielding capacity cost because
+				// KSP evaluate part cost on part instantiation assuming all capacities are filled,
+				// so it substract the shielding cost to the config-defined part cost, and since
+				// we set set the amount to zero, this cause a lower or even negative final cost.
+				// note 2 : As of KSP 1.8 IPartCostModifier isn't applied when the first editor
+				// part is instantiated. It will fix itself at the first vessel modified event,
+				// so not really worth a fix.
+				shieldingCost = (float)(shieldRes.Capacity * PartResourceLibrary.Instance.GetDefinition(shieldingResource).unitCost);
+			}
 
 			if (isFlight)
 			{
@@ -279,96 +270,33 @@ namespace KERBALISM
 
 			reclaimResAbbr = PartResourceLibrary.Instance.GetDefinition(reclaimResource).abbreviation;
 
-			// get persistent data
-			// data will be restored from OnLoad (and therefore not null) only in the following cases :
-			// - Part created in the editor from a saved ship (not a freshly instantiated part from the part list)
-			// - Part created in flight from a just launched vessel
-			if (data == null)
-			{
-				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (rescue, KIS...)
-				if (isFlight)
-					data = HabitatData.GetFlightReferenceFromPart(part);
+			moduleData.updateHandler = new HabitatUpdateHandler(vessel, vd, this, moduleData, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, breathableResInfo, ecResInfo);
 
-				// if all other cases, this is newly instantiated part from prefab. Create the data object and put the default values.
-				if (data == null)
-				{
-					data = new HabitatData
-					{
-						crewCount = Lib.CrewCount(part),
-						baseVolume = volume,
-						baseSurface = surface,
-						baseComfortsMask = baseComfortsMask,
-						animState = isDeployable ? AnimState.Retracted : AnimState.Deployed,
-						isEnabled = !isDeployable
-					};
-
-					// part was created in flight (rescue, KIS...)
-					if (isFlight)
-					{
-						// set the VesselData / PartData reference
-						HabitatData.SetFlightReferenceFromPart(part, data);
-
-						// if part is manned (rescue vessel), force enabled and deployed
-						if (data.crewCount > 0)
-						{
-							data.animState = AnimState.Deployed;
-							data.isEnabled = true;
-						}
-
-						// don't pressurize (if it's a rescue, the player will likely go on EVA immediatly anyway)
-						data.pressureState = canPressurize ? PressureState.Depressurized : PressureState.AlwaysDepressurized;
-					}
-					// part was created in the editor : set pressurized state if available
-					else
-					{
-						if (!canPressurize)
-							data.pressureState = PressureState.AlwaysDepressurized;
-						if (isDeployable && !data.IsDeployed)
-							data.pressureState = PressureState.Depressurized;
-						else
-							data.pressureState = PressureState.Pressurized;
-					}
-				}
-			}
-			else if (isFlight)
-			{
-				HabitatData.SetFlightReferenceFromPart(part, data);
-			}
-
-			data.updateHandler = new HabitatUpdateHandler(vessel, vd, data, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, breathableResInfo, ecResInfo);
-
-			// acquire a reference to the partmodule
-			data.module = this;
-
-			// ensure proper initialization by calling the right event for the current state
-			if (!canPressurize)
-				data.pressureState = PressureState.AlwaysDepressurized;
-
-			switch (data.pressureState)
+			switch (moduleData.pressureState)
 			{
 				case PressureState.Pressurized:
-					data.updateHandler.PressurizingEndEvt(); break;
+					moduleData.updateHandler.PressurizingEndEvt(); break;
 				case PressureState.Pressurizing:
-					data.updateHandler.PressurizingStartEvt(); break;
+					moduleData.updateHandler.PressurizingStartEvt(); break;
 				case PressureState.DepressurizingAboveThreshold:
-					data.updateHandler.DepressurizingStartEvt(); break;
+					moduleData.updateHandler.DepressurizingStartEvt(); break;
 				case PressureState.DepressurizingBelowThreshold:
-					data.updateHandler.DepressurizingPassThresholdEvt(); break;
+					moduleData.updateHandler.DepressurizingPassThresholdEvt(); break;
 				case PressureState.Depressurized:
-					data.updateHandler.DepressurizingEndEvt(); break;
+					moduleData.updateHandler.DepressurizingEndEvt(); break;
 				case PressureState.Breatheable:
-					data.updateHandler.BreatheableStartEvt(); break;
+					moduleData.updateHandler.BreatheableStartEvt(); break;
 				case PressureState.AlwaysDepressurized:
-					data.updateHandler.AlwaysDepressurizedStartEvt(); break;
+					moduleData.updateHandler.AlwaysDepressurizedStartEvt(); break;
 			}
 
 			// setup animations state
 			if (isDeployable)
 			{
-				deployAnimator.Still(data.IsDeployed ? 1f : 0f);
+				deployAnimator.Still(moduleData.IsDeployed ? 1f : 0f);
 			}
 
-			if (isCentrifuge && data.IsRotationNominal)
+			if (isCentrifuge && moduleData.IsRotationNominal)
 			{
 				rotateAnimator.StartSpinInstantly();
 				counterweightAnimator.StartSpinInstantly();
@@ -377,10 +305,10 @@ namespace KERBALISM
 			// PAW setup
 
 			// synchronize PAW state with data state
-			habitatEnabled = data.isEnabled;
-			pressureEnabled = data.IsPressurized;
-			deployEnabled = data.IsDeployed;
-			rotationEnabled = data.IsRotationEnabled;
+			habitatEnabled = moduleData.isEnabled;
+			pressureEnabled = moduleData.IsPressurized;
+			deployEnabled = moduleData.IsDeployed;
+			rotationEnabled = moduleData.IsRotationEnabled;
 
 			// get BaseField references
 			mainInfoField = Fields["mainPAWInfo"];
@@ -423,13 +351,6 @@ namespace KERBALISM
 
 		}
 
-		public void OnDestroy()
-		{
-			// clear loaded module reference to avoid memory leaks
-			if (data != null)
-				data.module = null;
-		}
-
 		private void SetupAnimations()
 		{
 			deployAnimator = new Animator(part, deployAnim, deployAnimReverse);
@@ -449,23 +370,23 @@ namespace KERBALISM
 
 		#region UPDATE
 
-		private bool IsSecInfoVisible => data.pressureState != PressureState.AlwaysDepressurized && data.pressureState != PressureState.Breatheable;
-		private bool CanToggleHabitat => data.IsDeployed;
-		private bool CanTogglePressure => pressureField.guiActiveEditor = canPressurize && data.IsDeployed;
-		private bool CanToggleDeploy => isDeployable && data.IsRotationStopped && !(data.IsDeployed && !canRetract && !Lib.IsEditor());
-		private bool CanToggleRotate => isCentrifuge && data.IsDeployed;
+		private bool IsSecInfoVisible => moduleData.pressureState != PressureState.AlwaysDepressurized && moduleData.pressureState != PressureState.Breatheable;
+		private bool CanToggleHabitat => moduleData.IsDeployed;
+		private bool CanTogglePressure => pressureField.guiActiveEditor = canPressurize && moduleData.IsDeployed;
+		private bool CanToggleDeploy => isDeployable && moduleData.IsRotationStopped && !(moduleData.IsDeployed && !canRetract && !Lib.IsEditor);
+		private bool CanToggleRotate => isCentrifuge && moduleData.IsDeployed;
 
 		public void Update()
 		{
 			// TODO : Find a reliable way to have that f**** PAW correctly updated when we change guiActive...
-			switch (data.animState)
+			switch (moduleData.animState)
 			{
 				case AnimState.Accelerating:
 				case AnimState.Decelerating:
 				case AnimState.Rotating:
 				case AnimState.RotatingNotEnoughEC:
-					bool loosingSpeed = data.animState == AnimState.RotatingNotEnoughEC;
-					if (data.module.rotateECRate > 0.0 || data.module.accelerateECRate > 0.0)
+					bool loosingSpeed = moduleData.animState == AnimState.RotatingNotEnoughEC;
+					if (rotateECRate > 0.0 || accelerateECRate > 0.0)
 					{
 						rotateAnimator.Update(rotationEnabled, loosingSpeed, (float)ecResInfo.AvailabilityFactor);
 						counterweightAnimator.Update(rotationEnabled, loosingSpeed, (float)ecResInfo.AvailabilityFactor);
@@ -488,18 +409,18 @@ namespace KERBALISM
 			if (part.PartActionWindow == null)
 				return;
 
-			debugInfo = (data.isEnabled ? "Enabled - " : "Disabled - ") + data.pressureState.ToString() + " - " + data.animState.ToString();
+			debugInfo = (moduleData.isEnabled ? "Enabled - " : "Disabled - ") + moduleData.pressureState.ToString() + " - " + moduleData.animState.ToString();
 
 			double habPressure = atmoRes.Amount / atmoRes.Capacity;
 
 			mainPAWInfo = Lib.BuildString(
 				Lib.Color(habPressure > Settings.PressureThreshold, habPressure.ToString("0.00 atm"), Lib.Kolor.Green, Lib.Kolor.Orange),
 				volume.ToString(" (0.0 m3)"),
-				" Crew:", " ", data.crewCount.ToString(), "/", part.CrewCapacity.ToString());
+				" Crew:", " ", moduleData.crewCount.ToString(), "/", part.CrewCapacity.ToString());
 
 			if (IsSecInfoVisible)
 			{
-				switch (data.pressureState)
+				switch (moduleData.pressureState)
 				{
 					case PressureState.Pressurized:
 					case PressureState.DepressurizingAboveThreshold:
@@ -523,7 +444,7 @@ namespace KERBALISM
 			if (CanToggleDeploy)
 			{
 				string state = string.Empty;
-				switch (data.animState)
+				switch (moduleData.animState)
 				{
 					case AnimState.Retracted:
 						state = Lib.Color(deployWithPressure ? "deflated" : "retracted", Lib.Kolor.Yellow);
@@ -553,7 +474,7 @@ namespace KERBALISM
 			if (CanTogglePressure)
 			{
 				string state = string.Empty;
-				switch (data.pressureState)
+				switch (moduleData.pressureState)
 				{
 					case PressureState.Pressurized:
 						state = Lib.Color("pressurized", Lib.Kolor.Green);
@@ -583,26 +504,26 @@ namespace KERBALISM
 			{
 				string label = string.Empty;
 				string status = string.Empty;
-				switch (data.animState)
+				switch (moduleData.animState)
 				{
 					case AnimState.Deployed:
 						label = "Rotation";
 						status = Lib.Color("stopped", Lib.Kolor.Yellow);
 						break;
 					case AnimState.Accelerating:
-						label = Lib.BuildString("Rotation", " ", data.module.rotateAnimator.CurrentSpeed.ToString("F1"), "/", data.module.rotateAnimator.NominalSpeed.ToString("F1"), "°/s");
+						label = Lib.BuildString("Rotation", " ", rotateAnimator.CurrentSpeed.ToString("F1"), "/", rotateAnimator.NominalSpeed.ToString("F1"), "°/s");
 						status = Lib.Color("starting", Lib.Kolor.Yellow);
 						break;
 					case AnimState.Decelerating:
-						label = Lib.BuildString("Rotation", " ", data.module.rotateAnimator.CurrentSpeed.ToString("0.0°/s"));
+						label = Lib.BuildString("Rotation", " ", rotateAnimator.CurrentSpeed.ToString("0.0°/s"));
 						status = Lib.Color("stopping", Lib.Kolor.Yellow);
 						break;
 					case AnimState.Rotating:
-						label = Lib.BuildString("Rotation", " ", data.module.rotateAnimator.CurrentSpeed.ToString("0.0°/s"));
+						label = Lib.BuildString("Rotation", " ", rotateAnimator.CurrentSpeed.ToString("0.0°/s"));
 						status = Lib.Color("nominal", Lib.Kolor.Green);
 						break;
 					case AnimState.RotatingNotEnoughEC:
-						label = Lib.BuildString("Rotation", " ", data.module.rotateAnimator.CurrentSpeed.ToString("F1"), "/", data.module.rotateAnimator.NominalSpeed.ToString("F1"), "°/s");
+						label = Lib.BuildString("Rotation", " ", rotateAnimator.CurrentSpeed.ToString("F1"), "/", rotateAnimator.NominalSpeed.ToString("F1"), "°/s");
 						status = Lib.Color("missing EC", Lib.Kolor.Orange);
 						break;
 					case AnimState.Stuck:
@@ -620,29 +541,16 @@ namespace KERBALISM
 
 		private void FixedUpdate()
 		{
-			data.updateHandler.Update(Kerbalism.elapsed_s);
+			moduleData.updateHandler.Update(Kerbalism.elapsed_s);
 		}
 
-		public static void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartSnapshot protoPart, ModuleKsmHabitat prefab, double elapsed_s)
+		public void BackgroundUpdate(VesselData vd, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, double elapsed_s)
 		{
-			if (!vd.Parts.TryGet(protoPart.flightID, out PartData partData))
-			{
-				Lib.Log($"PartData wasn't found for {protoPart.partName} with id {protoPart.flightID}", Lib.LogLevel.Error);
+			if (!ModuleData.TryGetModuleData<ModuleKsmHabitat, HabitatData>(protoModule, out HabitatData habitatData))
 				return;
-			}
 
-			if (partData.Habitat == null)
+			if (habitatData.updateHandler == null || !habitatData.updateHandler.IsValid())
 			{
-				Lib.Log($"HabitatData wasn't found for {protoPart.partName} with id {protoPart.flightID}", Lib.LogLevel.Error);
-				return;
-			}
-
-			if (partData.Habitat.updateHandler == null || !partData.Habitat.updateHandler.IsValid())
-			{
-				HabitatData data = partData.Habitat;
-
-				data.module = prefab;
-
 				PartResourceWrapper atmoRes = null;
 				PartResourceWrapper wasteRes = null;
 				PartResourceWrapper shieldRes = null;
@@ -653,7 +561,7 @@ namespace KERBALISM
 						atmoRes = new ProtoPartResourceWrapper(protoResource);
 					else if (protoResource.resourceName == Settings.HabitatWasteResource)
 						wasteRes = new ProtoPartResourceWrapper(protoResource);
-					else if (protoResource.resourceName == data.module.shieldingResource)
+					else if (protoResource.resourceName == shieldingResource)
 						shieldRes = new ProtoPartResourceWrapper(protoResource);
 				}
 
@@ -672,10 +580,10 @@ namespace KERBALISM
 				else
 					breathableResInfo = null;
 
-				data.updateHandler = new HabitatUpdateHandler(v, vd, data, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, breathableResInfo, ecResInfo);
+				habitatData.updateHandler = new HabitatUpdateHandler(vd.Vessel, vd, this, habitatData, atmoRes, wasteRes, shieldRes, atmoResInfo, wasteResInfo, breathableResInfo, ecResInfo);
 			}
 
-			partData.Habitat.updateHandler.Update(elapsed_s);
+			habitatData.updateHandler.Update(elapsed_s);
 		}
 
 		#endregion
@@ -686,6 +594,7 @@ namespace KERBALISM
 			private Vessel vessel;
 			private VesselData vd;
 			private HabitatData data;
+			private ModuleKsmHabitat module;
 
 			private PartResourceWrapper atmoRes;
 			private PartResourceWrapper wasteRes;
@@ -699,13 +608,14 @@ namespace KERBALISM
 			bool isEditor;
 			bool isLoaded;
 
-			public HabitatUpdateHandler(Vessel vessel, VesselData vd, HabitatData data,
+			public HabitatUpdateHandler(Vessel vessel, VesselData vd, ModuleKsmHabitat module, HabitatData data,
 				PartResourceWrapper atmoRes, PartResourceWrapper wasteRes, PartResourceWrapper shieldRes,
 				VesselKSPResource atmoResInfo, VesselKSPResource wasteResInfo, VesselKSPResource breathableResInfo, VesselKSPResource ecResInfo)
 			{
 				this.vessel = vessel;
 				this.vd = vd;
 				this.data = data;
+				this.module = module;
 				this.atmoRes = atmoRes;
 				this.wasteRes = wasteRes;
 				this.shieldRes = shieldRes;
@@ -713,17 +623,17 @@ namespace KERBALISM
 				this.wasteResInfo = wasteResInfo;
 				this.ecResInfo = ecResInfo;
 				this.breathableResInfo = breathableResInfo;
-				isEditor = Lib.IsEditor();
+				isEditor = Lib.IsEditor;
 				isLoaded = (!isEditor && vessel.loaded) || isEditor;
 			}
 
-			public bool IsValid() => isEditor == Lib.IsEditor() && isLoaded == ((!isEditor && vessel.loaded) || isEditor);
+			public bool IsValid() => isEditor == Lib.IsEditor && isLoaded == ((!isEditor && vessel.loaded) || isEditor);
 
 			public void Update(double elapsed_s)
 			{
 				AnimationsUpdate(elapsed_s);
 				PressureUpdate(elapsed_s);
-				data.shieldingAmount = data.module.hasShielding ? shieldRes.Amount : 0.0;
+				data.shieldingAmount = module.hasShielding ? shieldRes.Amount : 0.0;
 			}
 
 			private void AnimationsUpdate(double elapsed_s)
@@ -734,30 +644,30 @@ namespace KERBALISM
 					switch (data.animState)
 					{
 						case AnimState.Deploying:
-							if (data.module.deployWithPressure)
+							if (module.deployWithPressure)
 								break;
 
-							if (data.module.deployAnimator.Playing)
+							if (module.deployAnimator.Playing)
 							{
-								if (!isEditor && data.module.deployECRate > 0.0)
+								if (!isEditor && module.deployECRate > 0.0)
 								{
-									ecResInfo.Consume(data.module.deployECRate * elapsed_s, ResourceBroker.Habitat);
-									data.module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
+									ecResInfo.Consume(module.deployECRate * elapsed_s, ResourceBroker.Habitat);
+									module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
 								}
 							}
 							else
 							{
 								data.animState = AnimState.Deployed;
-								TryToggleHabitat(data, true);
+								TryToggleHabitat(module, data, true);
 							}
 							break;
 						case AnimState.Retracting:
-							if (data.module.deployAnimator.Playing)
+							if (module.deployAnimator.Playing)
 							{
-								if (!isEditor && data.module.deployECRate > 0.0)
+								if (!isEditor && module.deployECRate > 0.0)
 								{
-									ecResInfo.Consume(data.module.deployECRate * elapsed_s, ResourceBroker.Habitat);
-									data.module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
+									ecResInfo.Consume(module.deployECRate * elapsed_s, ResourceBroker.Habitat);
+									module.deployAnimator.ChangeSpeed((float)ecResInfo.AvailabilityFactor);
 								}
 							}
 							else
@@ -766,55 +676,55 @@ namespace KERBALISM
 							}
 							break;
 						case AnimState.Accelerating:
-							if (data.module.rotateAnimator.IsSpinningNominal)
+							if (module.rotateAnimator.IsSpinningNominal)
 							{
-								if (!isEditor && data.module.rotateECRate > 0.0)
-									ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
+								if (!isEditor && module.rotateECRate > 0.0)
+									ecResInfo.Consume(module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
 								data.animState = AnimState.Rotating;
 							}
-							else if (data.module.rotateAnimator.IsStopped)
+							else if (module.rotateAnimator.IsStopped)
 							{
 								data.animState = AnimState.Stuck;
-								data.module.rotationEnabled = false;
+								module.rotationEnabled = false;
 							}
 							else
 							{
-								if (!isEditor && data.module.accelerateECRate > 0.0)
-									ecResInfo.Consume(data.module.accelerateECRate * elapsed_s, ResourceBroker.GravityRing);
+								if (!isEditor && module.accelerateECRate > 0.0)
+									ecResInfo.Consume(module.accelerateECRate * elapsed_s, ResourceBroker.GravityRing);
 							}
 							break;
 						case AnimState.Decelerating:
 
-							if (data.module.rotateAnimator.IsStopped)
+							if (module.rotateAnimator.IsStopped)
 							{
 								data.animState = AnimState.Deployed;
-								data.module.rotationEnabled = false;
+								module.rotationEnabled = false;
 							}
 
 							break;
 						case AnimState.Rotating:
-							if (data.module.rotateECRate > 0.0)
+							if (module.rotateECRate > 0.0)
 							{
-								ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
+								ecResInfo.Consume(module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
 								if (ecResInfo.AvailabilityFactor < 1.0)
 									data.animState = AnimState.RotatingNotEnoughEC;
 							}
 							break;
 						case AnimState.RotatingNotEnoughEC:
-							if (!isEditor && data.module.rotateECRate > 0.0)
+							if (!isEditor && module.rotateECRate > 0.0)
 							{
-								ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
+								ecResInfo.Consume(module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
 								if (ecResInfo.AvailabilityFactor == 1.0)
 								{
 									data.animState = AnimState.Accelerating;
 								}
-								else if (data.module.rotateAnimator.IsStopped)
+								else if (module.rotateAnimator.IsStopped)
 								{
 									data.animState = AnimState.Stuck;
-									data.module.rotationEnabled = false;
+									module.rotationEnabled = false;
 								}
 							}
 							break;
@@ -827,10 +737,10 @@ namespace KERBALISM
 						case AnimState.Deploying:
 						case AnimState.Retracting:
 							double deploySpeedFactor = 1.0;
-							if (data.module.deployECRate > 0.0)
+							if (module.deployECRate > 0.0)
 							{
 								double timeSpent = Math.Min(elapsed_s, data.animTimer);
-								ecResInfo.Consume(data.module.deployECRate * timeSpent, ResourceBroker.Habitat);
+								ecResInfo.Consume(module.deployECRate * timeSpent, ResourceBroker.Habitat);
 								deploySpeedFactor = ecResInfo.AvailabilityFactor;
 							}
 							data.animTimer -= elapsed_s * deploySpeedFactor;
@@ -843,18 +753,18 @@ namespace KERBALISM
 						case AnimState.Accelerating:
 
 							double accelSpeedFactor = 1.0;
-							if (data.module.accelerateECRate > 0.0)
+							if (module.accelerateECRate > 0.0)
 							{
 								double timeSpent = Math.Min(elapsed_s, data.animTimer);
-								ecResInfo.Consume((data.module.accelerateECRate + data.module.rotateECRate) * timeSpent, ResourceBroker.GravityRing);
+								ecResInfo.Consume((module.accelerateECRate + module.rotateECRate) * timeSpent, ResourceBroker.GravityRing);
 								accelSpeedFactor = ecResInfo.AvailabilityFactor;
 							}
 
-							//accelSpeedFactor -= Transformator.spinLosses / data.module.rotateAccelerationRate;
+							//accelSpeedFactor -= Transformator.spinLosses / module.rotateAccelerationRate;
 
 							data.animTimer -= elapsed_s * accelSpeedFactor;
 
-							if (data.animTimer > data.module.rotateAnimator.TimeNeededToStartOrStop)
+							if (data.animTimer > module.rotateAnimator.TimeNeededToStartOrStop)
 								data.animState = AnimState.Deployed;
 							else if (data.animTimer <= 0.0)
 								data.animState = AnimState.Rotating;
@@ -870,14 +780,14 @@ namespace KERBALISM
 							break;
 						case AnimState.Rotating:
 
-							if (data.module.rotateECRate > 0.0)
-								ecResInfo.Consume(data.module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
+							if (module.rotateECRate > 0.0)
+								ecResInfo.Consume(module.rotateECRate * elapsed_s, ResourceBroker.GravityRing);
 
 							if (ecResInfo.AvailabilityFactor < 1.0)
 							{
 								//double speedLost = Transformator.spinLosses * elapsed_s * ecResInfo.AvailabilityFactor;
 								double speedLost = elapsed_s * ecResInfo.AvailabilityFactor;
-								data.animTimer = data.module.rotateAnimator.TimeNeededToStartOrStop * Math.Min(speedLost / data.module.rotateSpinRate, 1.0);
+								data.animTimer = module.rotateAnimator.TimeNeededToStartOrStop * Math.Min(speedLost / module.rotateSpinRate, 1.0);
 								data.animState = AnimState.Accelerating;
 							}
 							break;
@@ -901,20 +811,23 @@ namespace KERBALISM
 
 						if (!isEditor && !vd.EnvInBreathableAtmosphere)
 						{
-							if (data.module.canPressurize)
+							if (module.canPressurize)
 								PressureDroppedEvt();
 							else
 								AlwaysDepressurizedStartEvt();
 							break;
 						}
 
-						// magic oxygen supply
+						// magic scrubbing and oxygen supply
 						if (breathableResInfo != null && data.crewCount > 0)
-							breathableResInfo.Produce(data.crewCount * Settings.HabitatBreathableResourceRate * elapsed_s, ResourceBroker.Environment);
-
-						// magic scrubbing
-						wasteRes.Amount = 0.0; 
-
+						{
+							double rate = data.crewCount * Settings.HabitatBreathableResourceRate * elapsed_s;
+							breathableResInfo.Produce(rate, ResourceBroker.Environment);
+							// note : we abuse the isCritical system here to make sure this consumption
+							// is prioritized over the consume calls from scrubbers.
+							wasteResInfo.Consume(rate, ResourceBroker.Environment, true);
+						}
+							
 						// equalize pressure with external pressure
 						atmoRes.Amount = Math.Min(vd.EnvStaticPressure * atmoRes.Capacity, atmoRes.Capacity);
 
@@ -932,6 +845,10 @@ namespace KERBALISM
 							{
 								atmoRes.Amount = Math.Min(vd.EnvStaticPressure * atmoRes.Capacity, atmoRes.Capacity);
 							}
+							else
+							{
+								atmoRes.Amount = 0.0;
+							}
 						}
 
 						break;
@@ -940,7 +857,7 @@ namespace KERBALISM
 
 						if (!isEditor)
 						{
-							if (data.module.isDeployable && data.module.deployWithPressure && !data.IsDeployed)
+							if (module.isDeployable && module.deployWithPressure && !data.IsDeployed)
 							{
 								break;
 							}
@@ -961,8 +878,8 @@ namespace KERBALISM
 						if (!isEditor)
 							atmoResInfo.equalizeMode = VesselKSPResource.EqualizeMode.Disabled;
 
-						if (vessel.loaded && data.module.deployWithPressure && data.animState == AnimState.Deploying)
-							data.module.deployAnimator.Still(Math.Min((float)(atmoRes.Amount / (atmoRes.Capacity * Settings.PressureThreshold)), 1f));
+						if (vessel.loaded && module.deployWithPressure && data.animState == AnimState.Deploying)
+							module.deployAnimator.Still(Math.Min((float)(atmoRes.Amount / (atmoRes.Capacity * Settings.PressureThreshold)), 1f));
 
 						// if pressure go back to the minimum habitable pressure, switch to pressurized state
 						if (atmoRes.Amount / atmoRes.Capacity > Settings.PressureThreshold)
@@ -989,18 +906,7 @@ namespace KERBALISM
 							DepressurizingPassThresholdEvt();
 						}
 
-						double ecFactor;
-						if (data.module.depressurizeECRate > 0.0)
-						{
-							ecResInfo.Consume(data.module.depressurizeECRate * elapsed_s, ResourceBroker.Habitat);
-							ecFactor = ecResInfo.AvailabilityFactor;
-						}
-						else
-						{
-							ecFactor = 1.0;
-						}
-
-						double newAtmoAmount = atmoRes.Amount - (data.module.depressurizationSpeed * elapsed_s);
+						double newAtmoAmount = atmoRes.Amount - (module.depressurizationSpeed * elapsed_s);
 						newAtmoAmount = Math.Max(newAtmoAmount, 0.0);
 
 						// we only vent CO2 when the kerbals aren't yet in their helmets
@@ -1012,10 +918,21 @@ namespace KERBALISM
 
 						// convert the atmosphere into the reclaimed resource :
 						// - if pressure is above the pressure threshold defined in the module config
-						// - scaled by EC availability
-						if (data.module.reclaimAtmosphereFactor > 0.0 && newAtmoAmount / atmoRes.Capacity >= 1.0 - data.module.reclaimAtmosphereFactor)
+						// - scaled by EC availability, if there is an EC rate defined
+						if (module.reclaimAtmosphereFactor > 0.0 && newAtmoAmount / atmoRes.Capacity >= 1.0 - module.reclaimAtmosphereFactor)
 						{
-							vd.ResHandler.Produce(data.module.reclaimResource, (atmoRes.Amount - newAtmoAmount) * ecFactor, ResourceBroker.Habitat);
+							double ecFactor;
+							if (module.depressurizeECRate > 0.0)
+							{
+								ecResInfo.Consume(module.depressurizeECRate * elapsed_s, ResourceBroker.Habitat);
+								ecFactor = ecResInfo.AvailabilityFactor;
+							}
+							else
+							{
+								ecFactor = 1.0;
+							}
+
+							vd.ResHandler.Produce(module.reclaimResource, (atmoRes.Amount - newAtmoAmount) * ecFactor, ResourceBroker.Habitat);
 						}
 
 						atmoRes.Amount = newAtmoAmount;
@@ -1050,7 +967,7 @@ namespace KERBALISM
 			{
 				atmoRes.FlowState = false;
 
-				wasteRes.Capacity = M3ToL(data.module.volume);
+				wasteRes.Capacity = M3ToL(module.volume);
 				wasteRes.FlowState = false;
 
 				OnHelmetStateChanged();
@@ -1087,7 +1004,7 @@ namespace KERBALISM
 
 			public void PressurizingEndEvt()
 			{
-				wasteRes.Capacity = M3ToL(data.module.volume);
+				wasteRes.Capacity = M3ToL(module.volume);
 				wasteRes.FlowState = true;
 				atmoRes.FlowState = true;
 
@@ -1095,21 +1012,21 @@ namespace KERBALISM
 				{
 					OnHelmetStateChanged();
 
-					if (data.module.deployWithPressure && data.animState == AnimState.Deploying)
+					if (module.deployWithPressure && data.animState == AnimState.Deploying)
 					{
 						if (vessel.loaded)
-							data.module.deployAnimator.Still(1f);
+							module.deployAnimator.Still(1f);
 
 						data.animState = AnimState.Deployed;
-						TryToggleHabitat(data, true);
+						TryToggleHabitat(module, data, true);
 					}
 				}
 				else
 				{
-					atmoRes.Amount = M3ToL(data.module.volume);
+					atmoRes.Amount = M3ToL(module.volume);
 
-					if (data.module.isDeployable && data.module.deployWithPressure && !data.IsDeployed)
-						data.module.deployAnimator.Play(false, false, data.module.OnDeployCallback, 5f);
+					if (module.isDeployable && module.deployWithPressure && !data.IsDeployed)
+						module.deployAnimator.Play(false, false, module.OnDeployCallback, 5f);
 				}
 
 				data.pressureState = PressureState.Pressurized;
@@ -1160,14 +1077,14 @@ namespace KERBALISM
 					wasteRes.FlowState = true;
 					data.pressureState = PressureState.Depressurized;
 
-					if (data.module.isDeployable && data.module.deployWithPressure && data.module.deployAnimator.NormalizedTime != 0f)
-						data.module.deployAnimator.Play(true, false, null, 5f);
+					if (module.isDeployable && module.deployWithPressure && module.deployAnimator.NormalizedTime != 0f)
+						module.deployAnimator.Play(true, false, null, 5f);
 				}
 				else
 				{
 					if (vd.EnvInBreathableAtmosphere)
 					{
-						wasteRes.Capacity = M3ToL(data.module.volume);
+						wasteRes.Capacity = M3ToL(module.volume);
 						wasteRes.FlowState = false;
 						data.pressureState = PressureState.Breatheable; // don't go to breathable start to avoid resetting the portraits, we already have locked flowstate anyway
 					}
@@ -1185,7 +1102,7 @@ namespace KERBALISM
 			// this works in conjunction with the SpawnCrew prefix patch that check if the part is pressurized or not on spawning the IVA.
 			private void OnHelmetStateChanged()
 			{
-				if (!isEditor && data.crewCount > 0 && vessel.isActiveVessel && data.module.part.internalModel != null)
+				if (!isEditor && data.crewCount > 0 && vessel.isActiveVessel && module.part.internalModel != null)
 					Lib.RefreshIVAAndPortraits();
 			}
 
@@ -1195,9 +1112,9 @@ namespace KERBALISM
 
 		#region ENABLE / DISABLE LOGIC & UI
 
-		private void OnToggleHabitat(object field) => TryToggleHabitat(data, true);
+		private void OnToggleHabitat(object field) => TryToggleHabitat(this, moduleData, true);
 
-		public static bool TryToggleHabitat(HabitatData data, bool isLoaded)
+		public static bool TryToggleHabitat(ModuleKsmHabitat module, HabitatData data, bool isLoaded)
 		{
 			if (data.isEnabled && data.crewCount > 0)
 			{
@@ -1207,26 +1124,26 @@ namespace KERBALISM
 					return false;
 				}
 
-				if (Lib.IsEditor())
+				if (Lib.IsEditor)
 				{
-					Lib.EditorClearPartCrew(data.module.part);
+					Lib.EditorClearPartCrew(module.part);
 				}
 				else
 				{
-					List<ProtoCrewMember> crewLeft = Lib.TryTransferCrewElsewhere(data.module.part, false);
+					List<ProtoCrewMember> crewLeft = Lib.TryTransferCrewElsewhere(module.part, false);
 
 					if (crewLeft.Count > 0)
 					{
 						string message = "Not enough crew capacity in the vessel to transfer those Kerbals :\n";
 						crewLeft.ForEach(a => message += a.displayName + "\n");
-						Message.Post($"Habitat in {data.module.part.partInfo.title} couldn't be disabled.", message);
+						Message.Post($"Habitat in {module.part.partInfo.title} couldn't be disabled.", message);
 						if (isLoaded)
-							data.module.habitatEnabled = true;
+							module.habitatEnabled = true;
 						return false;
 					}
 					else
 					{
-						Message.Post($"Habitat in {data.module.part.partInfo.title} has been disabled.", "Crew was transfered in the rest of the vessel");
+						Message.Post($"Habitat in {module.part.partInfo.title} has been disabled.", "Crew was transfered in the rest of the vessel");
 					}
 				}
 			}
@@ -1234,10 +1151,10 @@ namespace KERBALISM
 			if (data.isEnabled)
 			{
 				if (data.IsRotationEnabled)
-					ToggleRotate(data, isLoaded);
+					ToggleRotate(module, data, isLoaded);
 
 				if (isLoaded)
-					data.module.habitatEnabled = false;
+					module.habitatEnabled = false;
 
 				data.isEnabled = false;
 			}
@@ -1247,7 +1164,7 @@ namespace KERBALISM
 					return false;
 
 				if (isLoaded)
-					data.module.habitatEnabled = true;
+					module.habitatEnabled = true;
 
 				data.isEnabled = true;
 			}
@@ -1258,12 +1175,12 @@ namespace KERBALISM
 
 		#region ENABLE / DISABLE PRESSURE & UI
 
-		public void OnTogglePressure(object field) => TryTogglePressure(data, true);
+		public void OnTogglePressure(object field) => TryTogglePressure(this, moduleData, true);
 
 		/// <summary> try to deploy or retract the habitat. isLoaded must be set to true in the editor and for a loaded vessel, false for an unloaded vessel</summary>
-		public static bool TryTogglePressure(HabitatData data, bool isLoaded)
+		public static bool TryTogglePressure(ModuleKsmHabitat module, HabitatData data, bool isLoaded)
 		{
-			if (!data.module.canPressurize || !data.IsDeployed)
+			if (!module.canPressurize || !data.IsDeployed)
 			{
 				return false;
 			}
@@ -1274,7 +1191,7 @@ namespace KERBALISM
 				case PressureState.Pressurizing:
 					data.updateHandler.DepressurizingStartEvt();
 					if (isLoaded)
-						data.module.pressureEnabled = false;
+						module.pressureEnabled = false;
 					break;
 				case PressureState.Breatheable:
 				case PressureState.Depressurized:
@@ -1282,7 +1199,7 @@ namespace KERBALISM
 				case PressureState.DepressurizingBelowThreshold:
 					data.updateHandler.PressurizingStartEvt();
 					if (isLoaded)
-						data.module.pressureEnabled = true;
+						module.pressureEnabled = true;
 					break;
 			}
 
@@ -1295,59 +1212,59 @@ namespace KERBALISM
 
 		private void OnDeployCallback()
 		{
-			data.animState = AnimState.Deployed;
-			TryToggleHabitat(data, true);
+			moduleData.animState = AnimState.Deployed;
+			TryToggleHabitat(this, moduleData, true);
 		}
 
-		private void OnToggleDeploy(object field) => TryToggleDeploy(data, true);
+		private void OnToggleDeploy(object field) => TryToggleDeploy(this, moduleData, true);
 
 		/// <summary> try to deploy or retract the habitat. isLoaded must be set to true in the editor and for a loaded vessel, false for an unloaded vessel</summary>
-		public static bool TryToggleDeploy(HabitatData data, bool isLoaded)
+		public static bool TryToggleDeploy(ModuleKsmHabitat module, HabitatData data, bool isLoaded)
 		{
-			if (!data.module.isDeployable)
+			if (!module.isDeployable)
 			{
-				data.module.deployEnabled = false;
+				module.deployEnabled = false;
 				return false;
 			}
 
-			bool isEditor = Lib.IsEditor();
+			bool isEditor = Lib.IsEditor;
 
 			// retract
 			if (data.IsDeployed)
 			{
 				if (isEditor)
 				{
-					if (data.module.canPressurize && data.IsPressurized)
-						TryTogglePressure(data, isLoaded);
+					if (module.canPressurize && data.IsPressurized)
+						TryTogglePressure(module, data, isLoaded);
 
-					if (data.isEnabled && !TryToggleHabitat(data, isLoaded))
+					if (data.isEnabled && !TryToggleHabitat(module, data, isLoaded))
 					{
-						data.module.deployEnabled = true;
+						module.deployEnabled = true;
 						return false;
 					}
 				}
 				else
 				{
-					if (!data.module.canRetract)
+					if (!module.canRetract)
 					{
-						data.module.deployEnabled = false;
+						module.deployEnabled = false;
 						return false;
 					}
 
 					if (!data.IsFullyDepressurized)
 					{
-						Message.Post($"Can't retract \n{data.module.part.partInfo.title}", "It's still pressurized !");
+						Message.Post($"Can't retract \n{module.part.partInfo.title}", "It's still pressurized !");
 
 						if (isLoaded)
-							data.module.deployEnabled = true;
+							module.deployEnabled = true;
 
 						return false;
 					}
 
-					if (data.isEnabled && !TryToggleHabitat(data, isLoaded))
+					if (data.isEnabled && !TryToggleHabitat(module, data, isLoaded))
 					{
 						if (isLoaded)
-							data.module.deployEnabled = true;
+							module.deployEnabled = true;
 
 						return false;
 					}
@@ -1357,12 +1274,12 @@ namespace KERBALISM
 
 				if (isLoaded)
 				{
-					data.module.deployAnimator.Play(true, false, null, isEditor ? 5f : 1f);
-					data.module.deployEnabled = false;
+					module.deployAnimator.Play(true, false, null, isEditor ? 5f : 1f);
+					module.deployEnabled = false;
 				}
 				else
 				{
-					data.animTimer = data.module.deployAnimator.AnimDuration;
+					data.animTimer = module.deployAnimator.AnimDuration;
 				}
 			}
 			// deploy
@@ -1370,22 +1287,22 @@ namespace KERBALISM
 			{
 				data.animState = AnimState.Deploying;
 
-				if (data.module.deployWithPressure)
+				if (module.deployWithPressure)
 				{
 					data.updateHandler.PressurizingStartEvt();
 					if (isLoaded)
-						data.module.deployEnabled = true;
+						module.deployEnabled = true;
 				}
 				else
 				{
 					if (isLoaded)
 					{
-						data.module.deployAnimator.Play(false, false, null, isEditor ? 5f : 1f);
-						data.module.deployEnabled = true;
+						module.deployAnimator.Play(false, false, null, isEditor ? 5f : 1f);
+						module.deployEnabled = true;
 					}
 					else
 					{
-						data.animTimer = data.module.deployAnimator.AnimDuration;
+						data.animTimer = module.deployAnimator.AnimDuration;
 					}
 				}
 
@@ -1395,26 +1312,26 @@ namespace KERBALISM
 
 		}
 
-		private void OnToggleRotation(object field) => ToggleRotate(data, true);
+		private void OnToggleRotation(object field) => ToggleRotate(this, moduleData, true);
 
-		public static void ToggleRotate(HabitatData data, bool isLoaded)
+		public static void ToggleRotate(ModuleKsmHabitat module, HabitatData data, bool isLoaded)
 		{
-			bool isEditor = Lib.IsEditor();
+			bool isEditor = Lib.IsEditor;
 
 			if (data.IsRotationEnabled)
 			{
 				data.animState = AnimState.Decelerating;
 				if (!isLoaded)
 				{
-					data.animTimer = data.module.rotateAnimator.TimeNeededToStartOrStop;
+					data.animTimer = module.rotateAnimator.TimeNeededToStartOrStop;
 				}
 				else
 				{
-					data.module.rotationEnabled = false;
+					module.rotationEnabled = false;
 					if (isEditor)
 					{
-						data.module.rotateAnimator.StopSpinInstantly();
-						data.module.counterweightAnimator.StopSpinInstantly();
+						module.rotateAnimator.StopSpinInstantly();
+						module.counterweightAnimator.StopSpinInstantly();
 					}
 				}
 			}
@@ -1424,15 +1341,15 @@ namespace KERBALISM
 
 				if (!isLoaded)
 				{
-					data.animTimer = data.module.rotateAnimator.TimeNeededToStartOrStop;
+					data.animTimer = module.rotateAnimator.TimeNeededToStartOrStop;
 				}
 				else
 				{
-					data.module.rotationEnabled = true;
+					module.rotationEnabled = true;
 					if (isEditor)
 					{
-						data.module.rotateAnimator.StartSpinInstantly();
-						data.module.counterweightAnimator.StartSpinInstantly();
+						module.rotateAnimator.StartSpinInstantly();
+						module.counterweightAnimator.StartSpinInstantly();
 					}
 				}
 			}
@@ -1533,7 +1450,14 @@ namespace KERBALISM
 				volume > 0.0 ? "" : " (bounds)");
 		}
 
-#endregion
+		#endregion
+
+		#region PART COST INTERFACE
+
+		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;
+		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
+
+		#endregion
 
 	}
 

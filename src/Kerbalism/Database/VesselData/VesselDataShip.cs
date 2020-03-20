@@ -58,7 +58,7 @@ namespace KERBALISM
 
 		public override VesselResHandler ResHandler => resHandler; VesselResHandler resHandler;
 
-		public override HabitatVesselData HabitatInfo => habitatData; public HabitatVesselData habitatData;
+		public override IConnectionInfo ConnectionInfo => connection;
 
 		public override int CrewCount => crewCount; public int crewCount;
 
@@ -95,6 +95,9 @@ namespace KERBALISM
 		public override double EnvGammaTransparency => gammaTransparency; public double gammaTransparency;
 
 		public override double EnvSolarFluxTotal => solarFlux; public double solarFlux;
+
+		// create a sun direction according to the shadows direction in the VAB / SPH
+		public override Vector3d EnvMainSunDirection => EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
 
 		public override double EnvSunlightFactor => 1.0 - shadowTime;
 
@@ -156,7 +159,7 @@ namespace KERBALISM
 			AnalyzeEnvironment(body, altitudeMult, sunlight);
 			AnalyzeCrew(parts);
 			AnalyzeComms();
-			AnalyzeHabitat(parts);
+			ModuleDataUpdate();
 			AnalyzeRadiation(parts);
 			AnalyzeReliability(parts);
 		}
@@ -291,25 +294,6 @@ namespace KERBALISM
 			// if the user press ALT, the planner consider the vessel crewed at full capacity
 			if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
 				crewCount = crewCapacity;
-		}
-
-		private void AnalyzeHabitat(List<Part> parts)
-		{
-			List<HabitatData> habitats = new List<HabitatData>();
-			foreach (Part part in parts)
-			{
-				foreach (ModuleKsmHabitat habitat in part.Modules.GetModules<ModuleKsmHabitat>())
-				{
-					if (habitat.HabitatData != null)
-					{
-						habitats.Add(habitat.HabitatData);
-					}
-				}
-			}
-
-			habitatData = new HabitatVesselData();
-			bool canTransmit = connection.maxDsnDistance < connection.maxRange && connection.maxDistanceRate > 0.0;
-			HabitatData.EvaluateHabitat(habitatData, habitats, canTransmit, landed, crewCount, Vector3d.zero, false);
 		}
 
 		private void AnalyzeComms()

@@ -33,14 +33,14 @@ namespace KERBALISM
 	{
 		static void Prefix(Part __instance)
 		{
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				// PartData will already exist if created trough ShipConstruct.LoadShip()
 				if (VesselDataShip.LoadedParts.Contains(__instance))
 					return;
 
 				// otherwise, this is a newly instantiated part, create the partdata
-				PartData partData = new PartData(__instance);
+				PartData partData = new PartData(VesselDataShip.Instance, __instance);
 				VesselDataShip.LoadedParts.Add(partData);
 
 				// and create and link the ModuleData for every KsmPartModule
@@ -48,7 +48,7 @@ namespace KERBALISM
 				{
 					if (__instance.Modules[i] is KsmPartModule ksmPM)
 					{
-						ModuleData.New(ksmPM, partData, false);
+						ModuleData.New(ksmPM, i, partData, false);
 					}
 				}
 			}
@@ -58,7 +58,7 @@ namespace KERBALISM
 				{
 					if (__instance.Modules[i] is KsmPartModule ksmPM && ksmPM.ModuleData == null)
 					{
-						ModuleData.GetOrCreateFlightModuleData(ksmPM);
+						ModuleData.GetOrCreateFlightModuleData(ksmPM, i);
 					}
 				}
 			}
@@ -80,7 +80,10 @@ namespace KERBALISM
 		{
 			editorPreviousShipId = EditorLogic.fetch?.ship?.persistentId ?? 0u;
 
-			kerbalismDataNode = root?.nodes[0]?.GetNode(VesselDataBase.NODENAME_VESSEL);
+			if (root != null && root.CountNodes > 0)
+			{
+				kerbalismDataNode = root.nodes[0].GetNode(VesselDataBase.NODENAME_VESSEL);
+			}
 
 			if (kerbalismDataNode != null)
 			{

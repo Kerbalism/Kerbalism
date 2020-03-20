@@ -8,91 +8,13 @@ using System.Threading.Tasks;
 
 namespace KERBALISM
 {
-public class KsmModuleRadiationCoil : KsmPartModule<KsmModuleRadiationCoil, ModuleRadiationCoilData>
-{
-		[KSPField(guiActive = true, guiActiveEditor = true)]
-		[UI_FloatRange(scene = UI_Scene.All, minValue = 0f, maxValue = 100f, stepIncrement = 1f)]
-		public float coilPower;
-
-		public override void OnStart(StartState state)
-		{
-			coilPower = moduleData.coilPower;
-		}
-
-		public void Update()
-		{
-			moduleData.coilPower = coilPower;
-		}
-	}
-
-public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, ModuleRadiationCoilData>
-{
-	public float coilPower;
-
-	// this will be called by VesselData.Evaluate() (in flight, loaded or not)
-	public override void OnVesselDataUpdate(VesselData vd)
-	{
-		//vd.scienceTransmitted += coilPower;
-	}
-
-	// this will be called by VesselDataShip.Evaluate() (in the editor)
-	public override void OnEditorDataUpdate(VesselDataShip vd)
-	{
-		//vd.atmoFactor += coilPower;
-	}
-
-	public override void OnLoad(ConfigNode node)
-	{
-		coilPower = Lib.ConfigValue(node, "coilPower", 0f);
-	}
-
-	public override void OnSave(ConfigNode node)
-	{
-		node.AddValue("coilPower", coilPower);
-	}
-}
-
-	public abstract class KsmPartModule : PartModule
-	{
-		public const string VALUENAME_SHIPID = "dataShipId";
-		public const string VALUENAME_FLIGHTID = "dataFlightId";
-
-		[KSPField(isPersistant = true)]
-		public int dataShipId = 0;
-
-		[KSPField(isPersistant = true)]
-		public int dataFlightId = 0;
-
-		public abstract ModuleData ModuleData { get; set; }
-
-		public abstract Type ModuleDataType { get; }
-	}
-
-	public class KsmPartModule<TModule, TData> : KsmPartModule
-		where TModule : KsmPartModule<TModule, TData>
-		where TData : ModuleData<TModule, TData>
-	{
-		protected TData moduleData;
-
-		public override ModuleData ModuleData { get => moduleData; set => moduleData = (TData)value; }
-
-		public override Type ModuleDataType => typeof(TData);
-
-		public void OnDestroy()
-		{
-			// clear loaded module reference to avoid memory leaks
-			if (moduleData != null)
-				moduleData.partModule = null;
-		}
-	}
-
 	public abstract class ModuleData<TModule, TData> : ModuleData
 		where TModule : KsmPartModule<TModule, TData>
 		where TData : ModuleData<TModule, TData>
 	{
-		public TModule partModule;
+		public TModule loadedModule;
 
-		public override KsmPartModule PartModule { get => partModule; set => partModule = (TModule)value; }
+		public override KsmPartModule LoadedModule { get => loadedModule; set => loadedModule = (TModule)value; }
 	}
 
 
@@ -101,23 +23,69 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 		public const string VALUENAME_FLIGHTID = "flightId";
 		public const string VALUENAME_SHIPID = "shipId";
 
+		public bool moduleIsEnabled;
+
 		public int flightId;
 
 		public int shipId;
 
 		public PartData partData;
 
-		public abstract KsmPartModule PartModule { get; set; }
+		public abstract KsmPartModule LoadedModule { get; set; }
 
-		public virtual void OnVesselDataUpdate(VesselData vd) { }
+		public virtual void VesselDataUpdate(VesselDataBase vd)
+		{
+			if (!moduleIsEnabled)
+				return;
 
-		public virtual void OnEditorDataUpdate(VesselDataShip vd) { }
+			OnVesselDataUpdate(vd);
+		}
+
+		public virtual void Load(ConfigNode node)
+		{
+			moduleIsEnabled = Lib.ConfigValue(node, "moduleIsEnabled", true);
+
+			OnLoad(node);
+		}
+
+		public virtual void Save(ConfigNode node)
+		{
+			node.AddValue("moduleIsEnabled", moduleIsEnabled);
+
+			OnSave(node);
+		}
+
+
+		public virtual void Instantiate(KsmPartModule module, PartModule partModulePrefab)
+		{
+			moduleIsEnabled = module.isEnabled;
+
+			OnInstantiate(partModulePrefab, null, null);
+		}
+
+		public virtual void Instantiate(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, PartModule partModulePrefab)
+		{
+			moduleIsEnabled = Lib.Proto.GetBool(protoModule, "isEnabled", true);
+
+			OnInstantiate(partModulePrefab, protoModule, protoPart);
+		}
+
+		public void PartWillDie()
+		{
+			OnPartWillDie();
+			flightModuleDatas.Remove(flightId);
+		}
+
+
+		public virtual void OnVesselDataUpdate(VesselDataBase vd) { }
 
 		public virtual void OnLoad(ConfigNode node) { }
 
 		public virtual void OnSave(ConfigNode node) { }
 
-		public virtual void SetInstantiateDefaults() { }
+		public virtual void OnInstantiate(PartModule partModulePrefab, ProtoPartModuleSnapshot protoModule = null, ProtoPartSnapshot protoPart = null) { }
+
+		public virtual void OnPartWillDie() { }
 
 		/// <summary> for every ModuleData derived class name, the constructor delegate </summary>
 		private static Dictionary<string, Func<ModuleData>> activatorsByModuleData = new Dictionary<string, Func<ModuleData>>();
@@ -149,7 +117,7 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 
 				if (type.IsClass && !type.IsAbstract && ksmPartModuleBaseType.IsAssignableFrom(type))
 				{
-					Type moduleDataType = type.GetField("moduleData", BindingFlags.Instance | BindingFlags.NonPublic).FieldType;
+					Type moduleDataType = type.GetField("moduleData", BindingFlags.Instance | BindingFlags.Public).FieldType;
 
 					ksmModulesAndDataTypes.Add(moduleDataType.Name, type.Name);
 				}
@@ -159,6 +127,38 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 			{
 				activatorsByKsmPartModule.Add(ksmModulesAndDataTypes[activator.Key], activator.Value);
 			}
+		}
+
+		public static bool ExistsInFlight(int flightId) => flightModuleDatas.ContainsKey(flightId);
+
+		public static bool TryGetModuleData<TModule, TData>(int flightId, out TData moduleData)
+			where TModule : KsmPartModule<TModule, TData>
+			where TData : ModuleData<TModule, TData>
+		{
+			if (flightModuleDatas.TryGetValue(flightId, out ModuleData moduleDataBase))
+			{
+				moduleData = (TData)moduleDataBase;
+				return true;
+			}
+
+			moduleData = null;
+			return false;
+		}
+
+		public static bool TryGetModuleData<TModule, TData>(ProtoPartModuleSnapshot protoModule, out TData moduleData)
+			where TModule : KsmPartModule<TModule, TData>
+			where TData : ModuleData<TModule, TData>
+		{
+			int flightId = Lib.Proto.GetInt(protoModule, KsmPartModule.VALUENAME_FLIGHTID, 0);
+			
+			if (flightModuleDatas.TryGetValue(flightId, out ModuleData moduleDataBase))
+			{
+				moduleData = (TData)moduleDataBase;
+				return true;
+			}
+
+			moduleData = null;
+			return false;
 		}
 
 		public static bool IsKsmPartModule(ProtoPartModuleSnapshot protoModule)
@@ -172,13 +172,13 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 			flightModuleDatas.Clear();
 		}
 
-		public static void GetOrCreateFlightModuleData(KsmPartModule ksmPartModule)
+		public static void GetOrCreateFlightModuleData(KsmPartModule ksmPartModule, int moduleIndex)
 		{
 			if (flightModuleDatas.TryGetValue(ksmPartModule.dataFlightId, out ModuleData moduleData))
 			{
 				Lib.LogDebug($"Linking {ksmPartModule.GetType().Name} and it's ModuleData, flightId={ksmPartModule.dataFlightId}");
 				ksmPartModule.ModuleData = moduleData;
-				moduleData.PartModule = ksmPartModule;
+				moduleData.LoadedModule = ksmPartModule;
 			}
 			else
 			{
@@ -189,7 +189,7 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 				{
 					partData = partDatas.Add(ksmPartModule.part);
 				}
-				New(ksmPartModule, partData, true);
+				New(ksmPartModule, moduleIndex, partData, true);
 			}
 		}
 
@@ -211,10 +211,10 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 		{
 			int flightId = NewFlightId(moduleData);
 			moduleData.flightId = flightId;
-			moduleData.PartModule.dataFlightId = flightId;
+			moduleData.LoadedModule.dataFlightId = flightId;
 		}
 
-		public static void New(KsmPartModule module, PartData partData, bool inFlight)
+		public static void New(KsmPartModule module, int moduleIndex, PartData partData, bool inFlight)
 		{
 			ModuleData moduleData = activatorsByModuleData[module.ModuleDataType.Name].Invoke();
 
@@ -228,11 +228,12 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 
 			module.ModuleData = moduleData;
 			moduleData.partData = partData;
-			moduleData.PartModule = module;
+			moduleData.LoadedModule = module;
 			partData.modules.Add(moduleData);
-			moduleData.SetInstantiateDefaults();
 
-			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.PartModule.dataShipId} for part {partData.PartInfo.title}");
+			moduleData.Instantiate(module, partData.PartInfo.partPrefab.Modules[moduleIndex]);
+
+			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.PartInfo.title}");
 		}
 
 		public static void NewFromNode(KsmPartModule module, PartData partData, ConfigNode moduleDataNode)
@@ -249,15 +250,18 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 
 			module.ModuleData = moduleData;
 			moduleData.partData = partData;
-			moduleData.PartModule = module;
+			moduleData.LoadedModule = module;
 			partData.modules.Add(moduleData);
-			moduleData.OnLoad(moduleDataNode);
+			moduleData.Load(moduleDataNode);
 
-			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.PartModule.dataShipId} for part {partData.PartInfo.title}");
+			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.PartInfo.title}");
 		}
 
-		public static bool New(ProtoPartModuleSnapshot protoModule, PartData partData)
+		public static bool New(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, PartData partData)
 		{
+			if (!Lib.TryFindModulePrefab(protoPart, protoModule, out PartModule modulePrefab))
+				return false;
+
 			if (!activatorsByKsmPartModule.TryGetValue(protoModule.moduleName, out Func<ModuleData> activator))
 				return false;
 
@@ -269,7 +273,8 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 
 			moduleData.partData = partData;
 			partData.modules.Add(moduleData);
-			moduleData.SetInstantiateDefaults();
+
+			moduleData.Instantiate(protoPart, protoModule, modulePrefab);
 
 			Lib.LogDebug($"Instantiated new {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.PartInfo.title}");
 			return true;
@@ -295,7 +300,7 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 
 			moduleData.partData = partData;
 			partData.modules.Add(moduleData);
-			moduleData.OnLoad(moduleDataNode);
+			moduleData.Load(moduleDataNode);
 
 			Lib.LogDebug($"Instantiated from confignode : {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.PartInfo.title}");
 			return true;
@@ -325,7 +330,7 @@ public class ModuleRadiationCoilData : ModuleData<KsmModuleRadiationCoil, Module
 						continue;
 					}
 
-					moduleData.OnSave(moduleDataNode);
+					moduleData.Save(moduleDataNode);
 				}
 			}
 		}

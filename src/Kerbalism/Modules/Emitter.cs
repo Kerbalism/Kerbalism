@@ -76,7 +76,7 @@ namespace KERBALISM
 
 			List<ModuleKsmHabitat> habitats;
 
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				habitats = new List<ModuleKsmHabitat>();
 
@@ -168,7 +168,7 @@ namespace KERBALISM
 			active_anim.Play(running, false);
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 

@@ -33,7 +33,7 @@ namespace KERBALISM
 		public override void OnStart(StartState state)
 		{
 			if (Lib.DisableScenario(this)) return;
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor) return;
 
 			foreach(var module in part.Modules)
 			{
@@ -83,7 +83,7 @@ namespace KERBALISM
 
 					double size = expInfo.DataSize * coverage_delta / 100.0; // coverage is 0-100%
 					size += warp_buffer;
-					size = Drive.StoreFile(vessel, subject, size);
+					size = DriveData.StoreFile(vessel, subject, size);
 					if (size > double.Epsilon)
 					{
 						// we filled all drives up to the brim but were unable to store everything
@@ -229,11 +229,11 @@ namespace KERBALISM
 					if (size > double.Epsilon)
 					{
 						// store what we can
-						foreach (var d in Drive.GetDrives(vd))
+						foreach (var d in DriveData.GetDrives(vd))
 						{
 							var available = d.FileCapacityAvailable();
 							var chunk = Math.Min(size, available);
-							if (!d.Record_file(subject, chunk, true))
+							if (!d.RecordFile(subject, chunk, true))
 								break;
 							size -= chunk;
 

@@ -36,8 +36,6 @@ namespace KERBALISM
  			// time-out simulation
 			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
-			List<ObjectPair<uint, Drive>> drives = new List<ObjectPair<uint, Drive>>();
-
 			int filesCount = 0;
 			double usedDataCapacity = 0;
 			double totalDataCapacity = 0;
@@ -49,15 +47,9 @@ namespace KERBALISM
 			bool unlimitedData = false;
 			bool unlimitedSamples = false;
 
-			foreach (PartData partData in vd.PartList)
+			foreach (DriveData drive in vd.Parts.AllModulesOfType<DriveData>())
 			{
-				Drive drive = partData.Drive;
-				if (drive == null)
-					continue;
-
-				drives.Add(new ObjectPair<uint, Drive>(partData.flightId, drive));
-
-				if (!drive.is_private)
+				if (!drive.isPrivate)
 				{
 					usedDataCapacity += drive.FilesSize();
 					totalDataCapacity += drive.dataCapacity;
@@ -80,11 +72,11 @@ namespace KERBALISM
 				if (!unlimitedData) title += Local.FILEMANAGER_DataAvailable.Format(Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
 				p.AddSection(title);
 
-				foreach (var drive in drives)
+				foreach (var drive in vd.Parts.AllModulesOfType<DriveData>())
 				{
-					foreach (File file in drive.Value.files.Values)
+					foreach (File file in drive.files.Values)
 					{
-						Render_file(p, drive.Key, file, drive.Value, short_strings && Lib.IsFlight(), v);
+						Render_file(p, drive.partData.flightId, file, drive, short_strings && Lib.IsFlight, v);
 					}
 				}
 
@@ -97,11 +89,11 @@ namespace KERBALISM
 				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+ Local.FILEMANAGER_SAMPLESAvailable;//available
 				p.AddSection(title);
 
-				foreach (var drive in drives)
+				foreach (var drive in vd.Parts.AllModulesOfType<DriveData>())
 				{
-					foreach (Sample sample in drive.Value.samples.Values)
+					foreach (Sample sample in drive.samples.Values)
 					{
-						Render_sample(p, drive.Key, sample, drive.Value, short_strings && Lib.IsFlight());
+						Render_sample(p, drive.partData.flightId, sample, drive, short_strings && Lib.IsFlight);
 					}
 				}
 
@@ -109,7 +101,7 @@ namespace KERBALISM
 			}
 		}
 
-		static void Render_file(Panel p, uint partId, File file, Drive drive, bool short_strings, Vessel v)
+		static void Render_file(Panel p, uint partId, File file, DriveData drive, bool short_strings, Vessel v)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -162,13 +154,13 @@ namespace KERBALISM
 				{
 					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
 						Local.FILEMANAGER_DeleteConfirm.Format(file.subjectData.FullTitle),//Lib.BuildString(, "?"),//"Do you really want to delete <<1>>", 
-				        new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button1, () => drive.Delete_file(file.subjectData)),//"Delete it"
+				        new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button1, () => drive.DeleteFile(file.subjectData)),//"Delete it"
 						new DialogGUIButton(Local.FILEMANAGER_DeleteConfirm_button2, () => { }));//"Keep it"
 				}
 			);
 		}
 
-		static void Render_sample(Panel p, uint partId, Sample sample, Drive drive, bool short_strings)
+		static void Render_sample(Panel p, uint partId, Sample sample, DriveData drive, bool short_strings)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -196,7 +188,7 @@ namespace KERBALISM
 				{
 					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
 						Local.FILEMANAGER_DumpConfirm.Format(sample.subjectData.FullTitle),//"Do you really want to dump <<1>>?", 
-						new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button1, () => drive.Delete_sample(sample.subjectData)),//"Dump it"
+						new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button1, () => drive.DeleteSample(sample.subjectData)),//"Dump it"
 							  new DialogGUIButton(Local.FILEMANAGER_DumpConfirm_button2, () => { }));//"Keep it"
 				}
 			);

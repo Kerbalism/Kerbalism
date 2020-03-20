@@ -824,7 +824,7 @@ namespace KERBALISM
 						partNeedsInfoRecompile = true;
 					}
 					// auto balance hard drive capacity
-					else if (module is HardDrive hardDrive)
+					else if (module is ModuleKsmDrive hardDrive)
 					{
 						AutoAssignHardDriveCapacity(ap, hardDrive);
 					}
@@ -892,14 +892,14 @@ namespace KERBALISM
 		}
 
 		/// <summary> Auto-Assign hard drive storage capacity based on the parts position in the tech tree and part cost </summary>
-		public static void AutoAssignHardDriveCapacity(AvailablePart ap, HardDrive hardDrive)
+		public static void AutoAssignHardDriveCapacity(AvailablePart ap, ModuleKsmDrive hardDrive)
 		{
 			// don't touch drives assigned to an experiment
 			if (!string.IsNullOrEmpty(hardDrive.experiment_id))
 				return;
 
 			// no auto-assigning necessary
-			if (hardDrive.sampleCapacity != HardDrive.CAPACITY_AUTO && hardDrive.dataCapacity != HardDrive.CAPACITY_AUTO)
+			if (hardDrive.sampleCapacity != ModuleKsmDrive.CAPACITY_AUTO && hardDrive.dataCapacity != ModuleKsmDrive.CAPACITY_AUTO)
 				return;
 
 			// get cumulative science cost for this part
@@ -976,12 +976,12 @@ namespace KERBALISM
 			double sampleCapacity = tier / maxTier * 8;
 			sampleCapacity = Math.Max(sampleCapacity, 1); // 1 minimum
 
-			if (hardDrive.dataCapacity == HardDrive.CAPACITY_AUTO)
+			if (hardDrive.dataCapacity == ModuleKsmDrive.CAPACITY_AUTO)
 			{
 				hardDrive.dataCapacity = dataCapacity;
 				Lib.Log($"{ap.partPrefab.partInfo.name}: tier {tier}/{maxTier} part cost {ap.cost.ToString("F0")} data cap. {dataCapacity.ToString("F2")}", Lib.LogLevel.Message);
 			}
-			if (hardDrive.sampleCapacity == HardDrive.CAPACITY_AUTO)
+			if (hardDrive.sampleCapacity == ModuleKsmDrive.CAPACITY_AUTO)
 			{
 				hardDrive.sampleCapacity = (int)Math.Round(sampleCapacity);
 				Lib.Log($"{ap.partPrefab.partInfo.name}: tier {tier}/{maxTier} part cost {ap.cost.ToString("F0")} sample cap. {hardDrive.sampleCapacity}", Lib.LogLevel.Message);

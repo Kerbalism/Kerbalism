@@ -93,12 +93,12 @@ namespace KERBALISM
 			// set lamps emissive object
 			if (lamps_rdr != null)
 			{
-				float intensity = Lib.IsFlight() ? (active ? (float)(artificial / light_tolerance) : 0.0f) : (active ? 1.0f : 0.0f);
+				float intensity = Lib.IsFlight ? (active ? (float)(artificial / light_tolerance) : 0.0f) : (active ? 1.0f : 0.0f);
 				lamps_rdr.material.SetColor("_EmissiveColor", new Color(intensity, intensity, intensity, 1.0f));
 			}
 
 			// in flight
-			if (Lib.IsFlight())
+			if (Lib.IsFlight)
 			{
 				// still-play plants animation
 				if (plants_anim != null) plants_anim.Still((float)growth);
@@ -129,7 +129,7 @@ namespace KERBALISM
 		public void FixedUpdate()
 		{
 			// do nothing in the editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor) return;
 
 			// if enabled and not ready for harvest
 			if (active && growth < 0.99)
@@ -177,8 +177,8 @@ namespace KERBALISM
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= light_tolerance;
-				bool pressure = pressure_tolerance <= double.Epsilon || vd.HabitatInfo.pressureAtm >= pressure_tolerance;
-				bool radiation = radiation_tolerance <= double.Epsilon || (1.0 - vd.HabitatInfo.shieldingModifier) * vd.EnvHabitatRadiation < radiation_tolerance;
+				bool pressure = pressure_tolerance <= double.Epsilon || vd.Habitat.pressureAtm >= pressure_tolerance;
+				bool radiation = radiation_tolerance <= double.Epsilon || (1.0 - vd.Habitat.shieldingModifier) * vd.EnvHabitatRadiation < radiation_tolerance;
 
 				// determine input resources conditions
 				// - comparing against amounts in previous simulation step
@@ -286,8 +286,8 @@ namespace KERBALISM
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= g.light_tolerance;
-				bool pressure = g.pressure_tolerance <= 0 || vd.HabitatInfo.pressureAtm >= g.pressure_tolerance;
-				bool radiation = g.radiation_tolerance <= 0 || vd.EnvRadiation * (1.0 - vd.HabitatInfo.shieldingModifier) < g.radiation_tolerance;
+				bool pressure = g.pressure_tolerance <= 0 || vd.Habitat.pressureAtm >= g.pressure_tolerance;
+				bool radiation = g.radiation_tolerance <= 0 || vd.EnvRadiation * (1.0 - vd.Habitat.shieldingModifier) < g.radiation_tolerance;
 
 				// determine inputs conditions
 				// note: comparing against amounts in previous simulation step
@@ -404,8 +404,8 @@ namespace KERBALISM
 
 			// determine environment conditions
 			bool lighting = natural + artificial >= light_tolerance;
-			bool pressure = vesselData.habitatData.pressureAtm > Settings.PressureThreshold || pressure_tolerance <= double.Epsilon;
-			bool radiation = (vesselData.landed ? vesselData.surfaceRad : vesselData.magnetopauseRad) * (1.0 - vesselData.habitatData.shieldingModifier) < radiation_tolerance;
+			bool pressure = vesselData.Habitat.pressureAtm > Settings.PressureThreshold || pressure_tolerance <= double.Epsilon;
+			bool radiation = (vesselData.landed ? vesselData.surfaceRad : vesselData.magnetopauseRad) * (1.0 - vesselData.Habitat.shieldingModifier) < radiation_tolerance;
 
 			// if all conditions apply
 			// note: we are assuming the inputs are satisfied, we can't really do otherwise here
@@ -433,7 +433,7 @@ namespace KERBALISM
 			if (shutters_anim != null) shutters_anim.Play(deactivating ^ animBackwards, false);
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse

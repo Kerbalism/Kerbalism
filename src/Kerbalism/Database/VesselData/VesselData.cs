@@ -170,8 +170,10 @@ namespace KERBALISM
         /// <summary> [environment] Sun that send the highest nominal solar flux (in W/m²) at vessel position</summary>
         public SunInfo EnvMainSun => mainSun; SunInfo mainSun;
 
-        /// <summary> [environment] Angle of the main sun on the body surface at vessel position</summary>
-        public double EnvSunBodyAngle => sunBodyAngle; double sunBodyAngle;
+		public override Vector3d EnvMainSunDirection => mainSun.Direction;
+
+		/// <summary> [environment] Angle of the main sun on the body surface at vessel position</summary>
+		public double EnvSunBodyAngle => sunBodyAngle; double sunBodyAngle;
 
         /// <summary>
         ///  [environment] total solar flux from all stars at vessel position in W/m², include atmospheric absorption if inside an atmosphere (atmo_factor)
@@ -345,11 +347,7 @@ namespace KERBALISM
         /// <summary>connection info</summary>
         public ConnectionInfo Connection => connection; ConnectionInfo connection;
 
-        /// <summary>habitat info</summary>
-        public override HabitatVesselData HabitatInfo => habitatInfo; HabitatVesselData habitatInfo;
-
-        /// <summary>vessel wide processes info</summary>
-        public VesselProcesses VesselProcesses => vesselProcesses; VesselProcesses vesselProcesses;
+		public override IConnectionInfo ConnectionInfo => connection;
 
         /// <summary>some data about greenhouses</summary>
         public List<Greenhouse.Data> Greenhouses => greenhouses; List<Greenhouse.Data> greenhouses;
@@ -564,7 +562,7 @@ namespace KERBALISM
             VesselData newVD = newVessel.KerbalismData();
 
             // remove all partdata on the new vessel
-            newVD.Parts.Clear();
+            newVD.Parts.Clear(false);
 
             foreach (Part part in newVessel.Parts)
             {
@@ -622,7 +620,7 @@ namespace KERBALISM
         internal static void OnPartWillDie(Part part)
         {
             VesselData vd = part.vessel.KerbalismData();
-            vd.Parts[part.flightID].OnPartWillDie();
+            vd.Parts[part.flightID].PartWillDie();
             vd.Parts.Remove(part.flightID);
             vd.UpdateOnPartAddedOrRemoved();
             Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", Lib.LogLevel.Message, vd.Parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
@@ -640,7 +638,7 @@ namespace KERBALISM
 			Vessel = vessel;
 			VesselId = Vessel.id;
 
-			Parts = new PartDataCollectionVessel(shipPartDatas);
+			Parts = new PartDataCollectionVessel(this, shipPartDatas);
 			resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
 
 			Load(kerbalismDataNode, true);
@@ -662,13 +660,13 @@ namespace KERBALISM
 
             if (Vessel.loaded)
             {
-				Parts = new PartDataCollectionVessel(Vessel);
+				Parts = new PartDataCollectionVessel(this, Vessel);
 				resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
             }
             else
             {
 				// vessels can be created unloaded, asteroids for example
-				Parts = new PartDataCollectionVessel(Vessel.protoVessel, null);
+				Parts = new PartDataCollectionVessel(this, Vessel.protoVessel, null);
 				resHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
             }
 
@@ -696,7 +694,7 @@ namespace KERBALISM
 
 			if (vesselDataNode == null)
             {
-				Parts = new PartDataCollectionVessel(protoVessel, null);
+				Parts = new PartDataCollectionVessel(this, protoVessel, null);
 				resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
 				SetPersistedFieldsDefaults(protoVessel);
                 Lib.LogDebug("VesselData ctor (created from unsaved protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
@@ -704,7 +702,7 @@ namespace KERBALISM
             else
             {
                 Lib.LogDebug("VesselData ctor (loading from database) : id '" + VesselId + "' (" + protoVessel.vesselName + ")...");
-				Parts = new PartDataCollectionVessel(protoVessel, vesselDataNode);
+				Parts = new PartDataCollectionVessel(this, protoVessel, vesselDataNode);
 				resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
 				Load(vesselDataNode, false);
                 Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
@@ -734,14 +732,12 @@ namespace KERBALISM
             stormData = new StormData(null);
             computer = new Computer(null);
             scansat_id = new List<uint>();
-            vesselProcesses = new VesselProcesses();
         }
 
         private void SetInstantiateDefaults(ProtoVessel protoVessel)
         {
             filesTransmitted = new List<File>();
             vesselSituations = new VesselSituations(this);
-            habitatInfo = new HabitatVesselData();
             connection = new ConnectionInfo();
             CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 			supplies = Supply.CreateStateDictionary(resHandler);
@@ -776,9 +772,6 @@ namespace KERBALISM
             {
                 scansat_id.Add(Lib.Parse.ToUInt(s));
             }
-
-			VesselVirtualResource.Load(this, node);
-			vesselProcesses = new VesselProcesses(this, node.GetNode("processes"));
         }
 
 		protected override void OnSave(ConfigNode node)
@@ -809,8 +802,6 @@ namespace KERBALISM
             {
                 node.AddValue("scansat_id", id.ToString());
             }
-
-			VesselProcesses.Save(node.AddNode("processes"));
 
             if (Vessel != null)
                 Lib.LogDebug("VesselData saved for vessel " + Vessel.vesselName);
@@ -856,24 +847,12 @@ namespace KERBALISM
             if (Hibernating)
                 deviceTransmit = false;
 
-            // TODO : cache the lists
-            List<HabitatData> habitats = new List<HabitatData>();
-            List<PartProcessData> partProcessDatas = new List<PartProcessData>();
-            foreach (PartData partData in PartList)
-            {
-                if (partData.Habitat != null)
-                    habitats.Add(partData.Habitat);
-                if (partData.Processes != null)
-                    partProcessDatas.AddRange(partData.Processes);
-            }
+			ModuleDataUpdate();
 
-            EvaluateHabitat(habitatInfo, habitats, connection.linked && connection.rate > 0.0, landed, crewCount, mainSun.Direction, Vessel.loaded);
-            vesselProcesses.Evaluate(this, partProcessDatas, ResHandler);
+			// data about greenhouses
+			greenhouses = Greenhouse.Greenhouses(Vessel);
 
-            // data about greenhouses
-            greenhouses = Greenhouse.Greenhouses(Vessel);
-
-            Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
+            DriveData.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 
             // solar panels data
             if (Vessel.loaded)

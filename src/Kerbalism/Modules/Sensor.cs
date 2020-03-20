@@ -37,7 +37,7 @@ namespace KERBALISM
 		public void Update()
 		{
 			// in flight
-			if (Lib.IsFlight())
+			if (Lib.IsFlight)
 			{
 				// get info from cache
 				VesselData vd = vessel.KerbalismData();
@@ -117,7 +117,7 @@ namespace KERBALISM
 
 		private static double HabitatRadiation(VesselData vd)
 		{
-			return (1.0 - vd.HabitatInfo.shieldingModifier) * vd.EnvHabitatRadiation;
+			return (1.0 - vd.Habitat.shieldingModifier) * vd.EnvHabitatRadiation;
 		}
 
 		// get readings tooltip

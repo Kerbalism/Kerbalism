@@ -11,10 +11,10 @@ using KERBALISM.Planner;
 namespace KERBALISM
 {
 
-	public class ModuleKsmExperiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule
+	public class ModuleKsmExperiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, ISwitchable
 	{
 		/// <summary> name of the associated experiment module definition </summary>
-		[KSPField] public string id = string.Empty;
+		[KSPField(isPersistant = true)] public string id = string.Empty;
 
 		/// <summary> don't show UI when the experiment is unavailable </summary>
 		[KSPField] public bool hide_when_invalid = false;
@@ -39,7 +39,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public int situationId;
 		[KSPField(isPersistant = true)] public bool shrouded = false;
 		[KSPField(isPersistant = true)] public double remainingSampleMass = 0.0;
-		[KSPField(isPersistant = true)] public uint privateHdId = 0;
+		[KSPField(isPersistant = true)] public int privateHdId = 0;
 		[KSPField(isPersistant = true)] public bool firstStart = true;
 
 		/// <summary> never set this directly, use the "State" property </summary>
@@ -120,50 +120,26 @@ namespace KERBALISM
 
 		public override void OnLoad(ConfigNode node)
 		{
-			if (HighLogic.LoadedScene == GameScenes.LOADING)
-				return;
-
 			if (use_animation_group)
 				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+		}
 
-			base.OnLoad(node);
+		public void OnSwitchActivate()
+		{
+			Lib.LogDebug($"B9PS : activating {moduleName} with id '{id}'");
+			SetupModuleDefinition();
+		}
 
-			Lib.LogDebug($"Loading with id '{id}'");
-
-			if(string.IsNullOrEmpty(id))
-			{
-				ReInit();
-				enabled = isEnabled = moduleIsEnabled = false;
-			}
-			else
-			{
-				ReInit();
-				Start();
-			}
+		public void OnSwitchDeactivate()
+		{
+			Lib.LogDebug($"B9PS : deactivating {moduleName}");
+			enabled = isEnabled = moduleIsEnabled = false;
+			ModuleDefinition = null;
 		}
 
 		public override void OnStart(StartState state)
 		{
-			Start();
-		}
-
-		private void ReInit()
-		{
-			ModuleDefinition = null;
-			enabled = isEnabled = moduleIsEnabled = true;
-		}
-
-		private void Start()
-		{
 			Lib.LogDebug($"Starting id '{id}'");
-
-			if (string.IsNullOrEmpty(id))
-			{
-				Lib.LogDebug($"Disabling experiment without id on '{part.partInfo.name}'");
-				ReInit();
-				enabled = isEnabled = moduleIsEnabled = false;
-				return;
-			}
 
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
@@ -196,6 +172,20 @@ namespace KERBALISM
 			Events["ShowPopup"].externalToEVAOnly = true;
 			Events["ShowPopup"].requireFullControl = false;
 
+			SetupModuleDefinition();
+		}
+
+		private void SetupModuleDefinition()
+		{
+			Lib.LogDebug($"Setup with id '{id}'");
+
+			if (string.IsNullOrEmpty(id))
+			{
+				enabled = isEnabled = moduleIsEnabled = false;
+				ModuleDefinition = null;
+				return;
+			}
+
 			ModuleDefinition = ScienceDB.GetExperimentModuleDefinition(id);
 
 			if (ModuleDefinition == null)
@@ -205,14 +195,17 @@ namespace KERBALISM
 				return;
 			}
 
+			enabled = isEnabled = moduleIsEnabled = true;
+
 			Actions["StartAction"].guiName = Local.Generic_START + ": " + ModuleDefinition.Info.Title;
 			Actions["StopAction"].guiName = Local.Generic_STOP + ": " + ModuleDefinition.Info.Title;
 
-			if (Lib.IsFlight())
+			if (Lib.IsFlight)
 			{
-				foreach (var hd in part.FindModulesImplementing<HardDrive>())
+				foreach (DriveData drive in part.GetModuleDatasOfType<DriveData>())
 				{
-					if (hd.experiment_id == ExperimentID) privateHdId = part.flightID;
+					if (drive.loadedModule.experiment_id == ExperimentID)
+						privateHdId = drive.flightId;
 				}
 
 				if (firstStart)
@@ -225,6 +218,8 @@ namespace KERBALISM
 
 		private void FirstStart()
 		{
+			Lib.LogDebug($"First start with id '{id}'");
+
 			// initialize the remaining sample mass
 			// this needs to be done only once just after launch
 			if (!ModuleDefinition.SampleCollecting && ModuleDefinition.Info.SampleMass > 0.0 && remainingSampleMass == 0)
@@ -240,7 +235,7 @@ namespace KERBALISM
 
 		public virtual void Update()
 		{
-			if (Lib.IsEditor()) // in the editor just update the gui name
+			if (Lib.IsEditor) // in the editor just update the gui name
 			{
 				// update ui
 				Events["ToggleEvent"].guiName = Lib.StatusToggle(ModuleDefinition.Info.Title, StatusInfo(status, issue));
@@ -281,7 +276,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 
 			// basic sanity checks
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
@@ -345,9 +340,11 @@ namespace KERBALISM
 			}
 
 			RunningState expState = Lib.Proto.GetEnum(m, "expState", RunningState.Stopped);
-			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(ExperimentID); // from prefab
-			if (expInfo == null)
+			ExperimentModuleDefinition definition = ScienceDB.GetExperimentModuleDefinition(Lib.Proto.GetString(m, "id", string.Empty));
+			if (definition == null)
 				return;
+
+			ExperimentInfo expInfo = definition.Info;
 
 			if (!IsRunning(expState))
 			{
@@ -360,7 +357,7 @@ namespace KERBALISM
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
 			int situationId = Lib.Proto.GetInt(m, "situationId", 0);
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
-			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0u);
+			int privateHdId = Lib.Proto.GetInt(m, "privateHdId", 0);
 			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(m, "status", ExpStatus.Stopped);
 
 			string issue;
@@ -392,7 +389,7 @@ namespace KERBALISM
 		}
 
 		private static void RunningUpdate(
-			Vessel v, VesselData vd, Situation vs, ModuleKsmExperiment prefab, uint hdId, bool isShrouded,
+			Vessel v, VesselData vd, Situation vs, ModuleKsmExperiment prefab, int hdId, bool isShrouded,
 			ExperimentModuleDefinition moduleDefinition, RunningState expState, double elapsed_s,
 			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
 		{
@@ -476,14 +473,14 @@ namespace KERBALISM
 			else
 				chunkSize = chunkSizeMax;
 
-			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
+			DriveData drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
 				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
-			Drive bufferDrive = null;
+			DriveData bufferDrive = null;
 			double available;
 			if (!moduleDefinition.Info.IsSample)
 			{
@@ -545,21 +542,21 @@ namespace KERBALISM
 				if (bufferDrive != null)
 				{
 					double s = Math.Min(chunkSize, bufferDrive.FileCapacityAvailable());
-					bufferDrive.Record_file(subjectData, s, true);
+					bufferDrive.RecordFile(subjectData, s, true);
 
 					if (chunkSize > s) // only write to persisted drive if the data cannot be transmitted in this tick
-						drive.Record_file(subjectData, chunkSize - s, true);
+						drive.RecordFile(subjectData, chunkSize - s, true);
 					else if (!drive.files.ContainsKey(subjectData)) // if everything is transmitted, create an empty file so the player know what is happening
-						drive.Record_file(subjectData, 0.0, true);
+						drive.RecordFile(subjectData, 0.0, true);
 				}
 				else
 				{
-					drive.Record_file(subjectData, chunkSize, true);
+					drive.RecordFile(subjectData, chunkSize, true);
 				}
 			}
 			else
 			{
-				drive.Record_sample(subjectData, chunkSize, massDelta);
+				drive.RecordSample(subjectData, chunkSize, massDelta);
 			}
 
 			// consume resources
@@ -581,15 +578,14 @@ namespace KERBALISM
 			return vd.VesselSituations.GetExperimentSituation(ModuleDefinition.Info);
 		}
 
-		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
+		private static DriveData GetDrive(VesselData vesselData, int hdId, double chunkSize, SubjectData subjectData)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
-			Drive drive = null;
-			if (hdId != 0)
-				drive = vesselData.Parts[hdId].Drive;
-			else
-				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
+			DriveData drive;
+			if (hdId == 0 || !ModuleData.TryGetModuleData<ModuleKsmDrive, DriveData>(hdId, out drive))
+				drive = isFile ? DriveData.FileDrive(vesselData, chunkSize) : DriveData.SampleDrive(vesselData, chunkSize, subjectData);
+
 			UnityEngine.Profiling.Profiler.EndSample();
 			return drive;
 		}
@@ -627,7 +623,7 @@ namespace KERBALISM
 			if (State == RunningState.Broken)
 				return State;
 
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				if (Running)
 				{
@@ -659,7 +655,7 @@ namespace KERBALISM
 				return State;
 			}
 
-			if (Lib.IsFlight() && !vessel.IsControllable)
+			if (Lib.IsFlight && !vessel.IsControllable)
 				return State;
 
 			// nervous clicker? wait for it, goddamnit.

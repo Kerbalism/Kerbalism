@@ -61,6 +61,7 @@ namespace KERBALISM
 			// inject harmony patches
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			B9PSPatcher.Init(harmony);
 			var methods = harmony.GetPatchedMethods();
 
 			// register loading callbacks

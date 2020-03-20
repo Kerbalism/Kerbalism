@@ -14,10 +14,10 @@ namespace KERBALISM
 		private const string NODENAME_STORMS = "KERBALISMSTORMS";
 		private const string NODENAME_LANDMARKS = "KERBALISMLANDMARKS";
 		private const string NODENAME_GUI = "KERBALISMGUI";
-		public const Version LAST_SUPPORTED_VERSION = new Version(4, 0);
+		public static readonly Version LAST_SUPPORTED_VERSION = new Version(4, 0);
 
 		// savegame version
-		private static Version version;
+		public static Version version;
 		// savegame unique id
 		private static Guid uid;
 		// store data per-kerbal

@@ -22,7 +22,7 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				Events["Toggle"].active = toggle;
 			}
@@ -43,7 +43,7 @@ namespace KERBALISM
 			considered = !considered;
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 	}
 

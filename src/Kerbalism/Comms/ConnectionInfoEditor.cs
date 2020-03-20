@@ -3,8 +3,16 @@
 namespace KERBALISM
 {
 
-	public sealed class ConnectionInfoEditor
+	public sealed class ConnectionInfoEditor : IConnectionInfo
 	{
+		public bool Linked => maxRange >= maxDsnDistance;
+
+		public double Ec => ec;
+
+		public double EcIdle => ec_idle;
+
+		public double DataRate => maxDistanceRate;
+
 		// ====================================================================
 		// VALUES TO SET BY KERBALISM (API usage)
 		// ====================================================================

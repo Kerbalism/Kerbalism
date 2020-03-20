@@ -280,7 +280,7 @@ namespace KERBALISM
 			{
 				if (hoursInDay == -1.0)
 				{
-					if (FlightGlobals.ready || IsEditor())
+					if (FlightGlobals.ready || IsEditor)
 					{
 						var homeBody = FlightGlobals.GetHomeBody();
 						hoursInDay = Math.Round(homeBody.rotationPeriod / 3600, 0);
@@ -303,7 +303,7 @@ namespace KERBALISM
 			{
 				if (daysInYear == -1.0)
 				{
-					if (FlightGlobals.ready || IsEditor())
+					if (FlightGlobals.ready || IsEditor)
 					{
 						var homeBody = FlightGlobals.GetHomeBody();
 						daysInYear = Math.Floor(homeBody.orbit.period / (HoursInDay * 60.0 * 60.0));
@@ -1130,21 +1130,40 @@ namespace KERBALISM
 		#endregion
 
 		#region GAME LOGIC
-		///<summary>return true if the current scene is flight</summary>
-		public static bool IsFlight()
+
+		// note : HighLogic.LoadedSceneIsEditor / HighLogic.LoadedSceneIsFlight is sometimes
+		// set a bit latter than HighLogic.LoadedScene. Example : from PartModule.Update()
+		// in the editor, in case of an editor -> space center scene switch, for a single
+		// Update(), HighLogic.LoadedSceneIsEditor can sometimes return true while checking for
+		// HighLogic.LoadedScene will return SPACECENTER.
+
+		///<summary>return true in spacecenter, flight, and tracking station scenes</summary>
+		public static bool IsGameRunning
 		{
-			return HighLogic.LoadedSceneIsFlight;
+			get
+			{
+				switch (HighLogic.LoadedScene)
+				{
+					case GameScenes.SPACECENTER:
+					case GameScenes.FLIGHT:
+					case GameScenes.TRACKSTATION:
+						return true;
+					default:
+						return false;
+				}
+			}
 		}
 
+		///<summary>return true if the current scene is flight</summary>
+		public static bool IsFlight => HighLogic.LoadedScene == GameScenes.FLIGHT;
+
 		///<summary>return true if the current scene is editor</summary>
-		public static bool IsEditor()
-		{
-			return HighLogic.LoadedSceneIsEditor;
-		}
+		public static bool IsEditor => HighLogic.LoadedScene == GameScenes.EDITOR;
 
 		///<summary>return true if the current scene is not the main menu</summary>
 		public static bool IsGame()
 		{
+			
 			return HighLogic.LoadedSceneIsGame;
 		}
 
@@ -1517,7 +1536,7 @@ namespace KERBALISM
 		public static int CrewCount(Part part)
 		{
 			// outside of the editors, it is easy
-			if (IsFlight())
+			if (IsFlight)
 				return part.protoModuleCrew.Count;
 
 			// in the editor we need something more involved
@@ -1535,6 +1554,11 @@ namespace KERBALISM
 			}
 
 			return 0;
+		}
+
+		public static int CrewCount(ProtoPartSnapshot protoPart)
+		{
+			return protoPart.protoModuleCrew.Count;
 		}
 
 		///<summary>return true if a part is manned, even in the editor</summary>
@@ -1666,7 +1690,7 @@ namespace KERBALISM
 
 		public static void EnablePartIVA(Part part, bool enable)
 		{
-			if (IsFlight())
+			if (IsFlight)
 			{
 				if (part.vessel.isActiveVessel)
 				{
@@ -1688,12 +1712,12 @@ namespace KERBALISM
 		{
 			part.crewTransferAvailable = enable;
 
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 			}
-			else if (Lib.IsFlight())
+			else if (Lib.IsFlight)
 			{
 				GameEvents.onVesselWasModified.Fire(part.vessel);
 			}
@@ -1902,7 +1926,7 @@ namespace KERBALISM
 			public override int GetHashCode() => volume.GetHashCode() ^ surface.GetHashCode() ^ bounds.GetHashCode();
 		}
 
-		// As a general rule, at least one of the two mesh based methods will return very accurate results.
+		// As a general rule, at least one of the two mesh based methods will return accurate results.
 		// This is very dependent on how the model is done. Specifically, results will be inaccurate in the following cases : 
 		// - non closed meshes, larger holes = higher error
 		// - overlapping meshes. Obviously any intersection will cause the volume/surface to be higher
@@ -2394,6 +2418,71 @@ namespace KERBALISM
 			return false;
 		}
 
+		public static bool TryFindModulePrefab(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, out PartModule prefab)
+		{
+			prefab = null;
+			int protoModulesCount = protoPart.modules.Count;
+			int prefabModulesCount = protoPart.partInfo.partPrefab.Modules.Count;
+
+			for (int i = 0; i < protoModulesCount; i++)
+			{
+				if (protoPart.modules[i] != protoModule)
+					continue;
+
+				// if modules count match in the the prefab and in the protopart, and if module type name match, 
+				// we can assume that the module at the same index is the right prefab. This can return a false
+				// positive if there was multiple consecutive modules of the same type and the config has changed
+				// by removing one of these modules.
+				if (protoModulesCount == prefabModulesCount && protoPart.partInfo.partPrefab.Modules[i].moduleName == protoModule.moduleName)
+				{
+					prefab = protoPart.partInfo.partPrefab.Modules[i];
+					break;
+				}
+				// otherwise, we search all modules of that type name in both list, and assume that while the indexes have changed
+				// because a module was addded or removed in the part config, our module is still at same relative position within
+				// all modules of that type (in other words, if it was the nth module of that type, it still is)
+				else
+				{
+					int protoIndexInType = 0;
+					foreach (ProtoPartModuleSnapshot otherppms in protoPart.modules)
+					{
+						if (otherppms.moduleName == protoModule.moduleName)
+						{
+							if (otherppms == protoModule)
+								break;
+
+							protoIndexInType++;
+						}
+					}
+
+					int prefabIndexInType = 0;
+					foreach (PartModule pm in protoPart.partInfo.partPrefab.Modules)
+					{
+						if (pm.moduleName == protoModule.moduleName)
+						{
+							if (prefabIndexInType == protoIndexInType)
+							{
+								prefab = pm;
+								break;
+							}
+							prefabIndexInType++;
+						}
+					}
+
+					break;
+				}
+			}
+
+			if (prefab == null)
+			{
+				LogDebug($"PartModule prefab not found for {protoModule.moduleName} on {protoPart.partName}, has the part configuration changed ?");
+				return false;
+			}
+
+			return true;
+		}
+
+
 		///<summary>used by ModulePrefab function, to support multiple modules of the same type in a part</summary>
 		public sealed class Module_prefab_data
 		{
@@ -2700,7 +2789,7 @@ namespace KERBALISM
 			// our own science system
 			else
 			{
-				foreach (var drive in Drive.GetDrives(v, true))
+				foreach (var drive in DriveData.GetDrives(v, true))
 					if (drive.files.Count > 0) return true;
 				return false;
 			}
@@ -2747,7 +2836,7 @@ namespace KERBALISM
 			else
 			{
 				// select a file at random and remove it
-				foreach (var drive in Drive.GetDrives(v, true))
+				foreach (var drive in DriveData.GetDrives(v, true))
 				{
 					if (drive.files.Count > 0) //< it should always be the case
 					{

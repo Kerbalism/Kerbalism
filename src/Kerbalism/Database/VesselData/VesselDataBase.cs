@@ -11,7 +11,24 @@ namespace KERBALISM
 		public const string NODENAME_VESSEL = "KERBALISMVESSEL";
 		public const string NODENAME_MODULE = "KERBALISMMODULE";
 
+		#region BASE FIELDS/PROPERTIES
+
 		public ExpressionContext ModifierContext { get; private set; }
+
+		public VesselProcessCollection VesselProcesses => vesselProcesses; VesselProcessCollection vesselProcesses;
+
+		/// <summary>habitat info</summary>
+		public HabitatVesselData Habitat => habitatData; HabitatVesselData habitatData;
+
+		// the following is to provide Flee modifiers access, it isn't functionally needed otherwise
+		private PreferencesReliability PrefReliability => PreferencesReliability.Instance;
+		private PreferencesScience PrefScience => PreferencesScience.Instance;
+		private PreferencesComfort PrefComfort => PreferencesComfort.Instance;
+		private PreferencesRadiation PrefRadiation => PreferencesRadiation.Instance;
+
+		#endregion
+
+		#region VIRTUAL PROPERTIES
 
 		public virtual bool IsPersistent => true;
 
@@ -19,8 +36,7 @@ namespace KERBALISM
 
 		public virtual VesselResHandler ResHandler { get; }
 
-		/// <summary>habitat info</summary>
-		public virtual HabitatVesselData HabitatInfo { get; }
+		public virtual IConnectionInfo ConnectionInfo { get; }
 
 		/// <summary>number of crew on the vessel</summary>
 		public virtual int CrewCount { get; }
@@ -79,6 +95,8 @@ namespace KERBALISM
 		/// </summary>
 		public virtual double EnvSolarFluxTotal  { get; }
 
+		public virtual Vector3d EnvMainSunDirection { get; }
+
 		/// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
 		public virtual double EnvSunlightFactor  { get; }
 
@@ -89,10 +107,9 @@ namespace KERBALISM
 		// this threshold is also used to ignore light coming from distant/weak stars 
 		public virtual bool EnvInFullShadow  { get; }
 
-		private PreferencesReliability PrefReliability => PreferencesReliability.Instance;
-		private PreferencesScience PrefScience => PreferencesScience.Instance;
-		private PreferencesComfort PrefComfort => PreferencesComfort.Instance;
-		private PreferencesRadiation PrefRadiation => PreferencesRadiation.Instance;
+		#endregion
+
+		#region LIFECYCLE
 
 		public VesselDataBase()
 		{
@@ -100,13 +117,17 @@ namespace KERBALISM
 			ModifierContext.Options.CaseSensitive = true;
 			ModifierContext.Options.ParseCulture = System.Globalization.CultureInfo.InvariantCulture;
 			ModifierContext.Imports.AddType(typeof(Math));
+
+			vesselProcesses = new VesselProcessCollection();
+			habitatData = new HabitatVesselData();
 		}
 
 		// put here the persistence that is common to VesselData and VesselDataShip to have
 		// it transfered when creating a vessel from a shipconstruct (ie, from editor to flight)
 		public void Load(ConfigNode vesselDataNode, bool isNewVessel)
 		{
-			VesselVirtualResource.Load(this, vesselDataNode);
+			VesselVirtualResource.LoadAll(this, vesselDataNode);
+			VesselProcesses.Load(vesselDataNode);
 
 			if (!isNewVessel)
 			{
@@ -121,7 +142,8 @@ namespace KERBALISM
 
 			ConfigNode vesselNode = new ConfigNode(NODENAME_VESSEL);
 			OnSave(vesselNode);
-			VesselVirtualResource.Save(this, vesselNode);
+			VesselProcesses.Save(vesselNode);
+			VesselVirtualResource.SaveAll(this, vesselNode);
 			ModuleData.SaveModuleDatas(PartList, vesselNode);
 			node.AddNode(vesselNode);
 		}
@@ -165,7 +187,7 @@ namespace KERBALISM
 			// instantiate all PartData/ModuleData for the ship, loading ModuleData if available.
 			foreach (Part part in ship.parts)
 			{
-				PartData partData = new PartData(part);
+				PartData partData = new PartData(VesselDataShip.Instance, part);
 				VesselDataShip.LoadedParts.Add(partData);
 
 				for (int i = 0; i < part.Modules.Count; i++)
@@ -178,11 +200,33 @@ namespace KERBALISM
 						}
 						else
 						{
-							ModuleData.New(ksmPM, partData, false);
+							ModuleData.New(ksmPM, i, partData, false);
 						}
 					}
 				}
 			}
 		}
+
+		#endregion
+
+		#region EVALUATION
+
+		public void ModuleDataUpdate()
+		{
+			habitatData.ResetBeforeModulesUpdate(this);
+
+			foreach (PartData partData in PartList)
+			{
+				foreach (ModuleData moduleData in partData.modules)
+				{
+					moduleData.VesselDataUpdate(this);
+				}
+			}
+
+			habitatData.EvaluateAfterModuleUpdate(this);
+			vesselProcesses.EvaluateAfterModuleUpdate(this);
+		}
+
+		#endregion
 	}
 }

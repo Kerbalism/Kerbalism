@@ -138,8 +138,8 @@ namespace KERBALISM
 					case Require.RadiationMin          : TestReq((c, r) => c >= r, vd.EnvRadiation,             (double)Requires[i].value, results[i]); break;
 					case Require.RadiationMax          : TestReq((c, r) => c <= r, vd.EnvRadiation,             (double)Requires[i].value, results[i]); break;
 
-					case Require.VolumePerCrewMin      : TestReq((c, r) => c >= r, vd.HabitatInfo.volumePerCrew,(double)Requires[i].value, results[i]); break;
-					case Require.VolumePerCrewMax      : TestReq((c, r) => c <= r, vd.HabitatInfo.volumePerCrew,(double)Requires[i].value, results[i]); break;
+					case Require.VolumePerCrewMin      : TestReq((c, r) => c >= r, vd.Habitat.volumePerCrew,(double)Requires[i].value, results[i]); break;
+					case Require.VolumePerCrewMax      : TestReq((c, r) => c <= r, vd.Habitat.volumePerCrew,(double)Requires[i].value, results[i]); break;
 					case Require.SunAngleMin           : TestReq((c, r) => c >= r, vd.EnvSunBodyAngle,      (double)Requires[i].value, results[i]); break;
 					case Require.SunAngleMax           : TestReq((c, r) => c <= r, vd.EnvSunBodyAngle,      (double)Requires[i].value, results[i]); break;
 					case Require.SurfaceSpeedMin       : TestReq((c, r) => c >= r, v.srfSpeed,              (double)Requires[i].value, results[i]); break;

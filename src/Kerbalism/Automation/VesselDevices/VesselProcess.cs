@@ -9,9 +9,9 @@ namespace KERBALISM
 	public class VesselProcessDevice : VesselDevice
 	{
 		private readonly DeviceIcon icon;
-		private readonly VesselProcessData vesselProcess;
+		private readonly VesselProcess vesselProcess;
 
-		public VesselProcessDevice(Vessel v, VesselData vd, VesselProcessData process) : base(v, vd)
+		public VesselProcessDevice(Vessel v, VesselData vd, VesselProcess process) : base(v, vd)
 		{
 			vesselProcess = process;
 			icon = new DeviceIcon(Textures.wrench_white, "open process window", () => new ProcessPopup(vesselProcess, vd));
@@ -33,12 +33,12 @@ namespace KERBALISM
 
 		public override void Ctrl(bool value)
 		{
-			vesselProcess.SetEnabled(value, vesselData.ResHandler);
+			vesselProcess.enabled = value;
 		}
 
 		public override void Toggle()
 		{
-			Ctrl(!vesselProcess.enabled);
+			vesselProcess.enabled = !vesselProcess.enabled;
 		}
 	}
 }

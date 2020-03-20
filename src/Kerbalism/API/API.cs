@@ -373,46 +373,46 @@ namespace KERBALISM
 		public static double Volume(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.livingVolume;
+			return v.KerbalismData().Habitat.livingVolume;
 		}
 
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.shieldingSurface;
+			return v.KerbalismData().Habitat.shieldingSurface;
 		}
 
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.pressureAtm;
+			return v.KerbalismData().Habitat.pressureAtm;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.poisoningLevel;
+			return v.KerbalismData().Habitat.poisoningLevel;
 		}
 
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.shieldingModifier;
+			return v.KerbalismData().Habitat.shieldingModifier;
 		}
 
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.livingSpaceFactor;
+			return v.KerbalismData().Habitat.livingSpaceFactor;
 		}
 
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.comfortFactor;
+			return v.KerbalismData().Habitat.comfortFactor;
 		}
 
 		#endregion

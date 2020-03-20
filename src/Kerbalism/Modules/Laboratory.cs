@@ -59,7 +59,7 @@ namespace KERBALISM
 			Events["CleanExperiments"].guiName = Local.Laboratory_Clean;
 
 			// do nothing in the editors and when compiling parts
-			if (!Lib.IsFlight()) return;
+			if (!Lib.IsFlight) return;
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
@@ -70,7 +70,7 @@ namespace KERBALISM
 
 		public void Update()
 		{
-			if (Lib.IsFlight())
+			if (Lib.IsFlight)
 			{
 				// get status text
 				SetStatusText();
@@ -86,7 +86,7 @@ namespace KERBALISM
 		public void FixedUpdate()
 		{
 			// do nothing in the editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor) return;
 
 			// if enabled
 			if (running)
@@ -188,7 +188,7 @@ namespace KERBALISM
 			running = !running;
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_Laboratory_Clean", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Clean Lab""Science
@@ -237,7 +237,7 @@ namespace KERBALISM
 		// get next sample to analyze, return null if there isn't a sample
 		private static SubjectData NextSample(Vessel v)
 		{
-			foreach (var drive in Drive.GetDrives(v, true))
+			foreach (var drive in DriveData.GetDrives(v, true))
 			{
 				// for each sample
 				foreach (Sample sample in drive.samples.Values)
@@ -255,8 +255,8 @@ namespace KERBALISM
 		private static Status Analyze(Vessel v, SubjectData subject, double amount)
 		{
 			Sample sample = null;
-			Drive sampleDrive = null;
-			foreach (var d in Drive.GetDrives(v, true))
+			DriveData sampleDrive = null;
+			foreach (var d in DriveData.GetDrives(v, true))
 			{
 				if (d.samples.ContainsKey(subject) && d.samples[subject].analyze)
 				{
@@ -273,18 +273,18 @@ namespace KERBALISM
 				amount = Math.Min(amount, sample.size);
 			}
 
-			Drive fileDrive = Drive.FileDrive(v.KerbalismData(), amount);
+			DriveData fileDrive = DriveData.FileDrive(v.KerbalismData(), amount);
 
 			if (fileDrive == null)
 				return Status.NO_STORAGE;
 
 			if (sample != null)
 			{
-				bool recorded = fileDrive.Record_file(subject, amount, false);
+				bool recorded = fileDrive.RecordFile(subject, amount, false);
 
 				double massRemoved = 0.0;
 				if (recorded)
-					massRemoved = sampleDrive.Delete_sample(subject, amount);
+					massRemoved = sampleDrive.DeleteSample(subject, amount);
 				else
 				{
 					Message.Post(

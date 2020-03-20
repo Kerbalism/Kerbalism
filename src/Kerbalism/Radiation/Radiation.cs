@@ -726,7 +726,7 @@ namespace KERBALISM
 			habitat.sunRadiationOccluders.Clear();
 			hittedPartsCache.Clear();
 
-			Ray ray = new Ray(habitat.module.transform.position, mainSunDrection);
+			Ray ray = new Ray(habitat.loadedModule.transform.position, mainSunDrection);
 			int hitCount = Physics.RaycastNonAlloc(ray, sunRayHitsCache, 200f, partsLayerMask);
 
 			for (int i = 0; i < hitCount - 1; i++)
@@ -735,7 +735,7 @@ namespace KERBALISM
 				if (hit.transform != null) // && hit.transform.gameObject != null)
 				{
 					Part blockingPart = FlightGlobals.GetPartUpwardsCached(hit.transform.gameObject);
-					if (blockingPart == null || blockingPart == habitat.module.part)
+					if (blockingPart == null || blockingPart == habitat.loadedModule.part)
 						continue;
 
 					// avoid counting twice the same part (a part can have multiple colliders)
@@ -768,16 +768,16 @@ namespace KERBALISM
 			double result = 0.0;
 			int enabledHabitatCount = 0;
 
-			foreach (PartData partData in vd.PartList)
+			foreach (HabitatData habitaData in vd.Parts.AllModulesOfType<HabitatData>())
 			{
-				if (partData.Habitat == null || !partData.Habitat.isEnabled)
+				if (!habitaData.isEnabled)
 					continue;
 
 				enabledHabitatCount++;
 
 				double remainingRadiation = sunRadiation;
 
-				foreach (SunRadiationOccluder occluder in partData.Habitat.sunRadiationOccluders)
+				foreach (SunRadiationOccluder occluder in habitaData.sunRadiationOccluders)
 				{
 					// for a 500 keV gamma ray, halfing thickness for aluminium is 3.05cm. But...
 					// Solar energetic particles (SEP) are high-energy particles coming from the Sun.

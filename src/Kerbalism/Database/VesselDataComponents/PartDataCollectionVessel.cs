@@ -1,18 +1,83 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace KERBALISM
 {
+	public static class PartDataCollectionVesselExtensions
+	{
+		public static bool TryGetModuleDataOfType<T>(this Part part, out T moduleData) where T : ModuleData
+		{
+			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					moduleData = partData.modules[i] as T;
+					if (moduleData != null)
+						return true;
+				}
+			}
+
+			moduleData = null;
+			return false;
+		}
+
+		public static bool TryGetModuleDataOfType<T>(this ProtoPartSnapshot part, out T moduleData) where T : ModuleData
+		{
+			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					moduleData = partData.modules[i] as T;
+					if (moduleData != null)
+						return true;
+				}
+			}
+
+			moduleData = null;
+			return false;
+		}
+
+		public static IEnumerable<T> GetModuleDatasOfType<T>(this Part part) where T : ModuleData
+		{
+			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+				yield break;
+
+			for (int i = 0; i < partData.modules.Count; i++)
+			{
+				T moduleData = partData.modules[i] as T;
+				if (moduleData != null)
+					yield return moduleData;
+			}
+		}
+
+		public static IEnumerable<T> GetModuleDatasOfType<T>(this ProtoPartSnapshot part) where T : ModuleData
+		{
+			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+				yield break;
+
+			for (int i = 0; i < partData.modules.Count; i++)
+			{
+				T moduleData = partData.modules[i] as T;
+				if (moduleData != null)
+					yield return moduleData;
+			}
+		}
+	}
+
 	public class PartDataCollectionVessel : IEnumerable<PartData>
 	{
+		public static Dictionary<uint, PartData> allFlightPartDatas = new Dictionary<uint, PartData>();
 		private static Dictionary<int, ConfigNode> moduleDataNodes = new Dictionary<int, ConfigNode>();
 		private Dictionary<uint, PartData> partDictionary = new Dictionary<uint, PartData>();
 		private List<PartData> partList = new List<PartData>();
+		private VesselDataBase vesselData;
 
 
-		public PartDataCollectionVessel(PartDataCollectionShip shipPartData)
+		public PartDataCollectionVessel(VesselDataBase vesselData, PartDataCollectionShip shipPartData)
 		{
 			Lib.LogDebug($"Transferring PartData from ship to vessel for launch");
+			this.vesselData = vesselData;
 
 			foreach (PartData partData in shipPartData)
 			{
@@ -26,9 +91,10 @@ namespace KERBALISM
 			}
 		}
 
-		public PartDataCollectionVessel(Vessel vessel)
+		public PartDataCollectionVessel(VesselDataBase vesselData, Vessel vessel)
 		{
 			Lib.LogDebug($"Creating partdatas for new loaded vessel {vessel.vesselName}");
+			this.vesselData = vesselData;
 
 			foreach (Part part in vessel.parts)
 			{
@@ -38,15 +104,16 @@ namespace KERBALISM
 				{
 					if (part.Modules[i] is KsmPartModule ksmPM)
 					{
-						ModuleData.New(ksmPM, partData, true);
+						ModuleData.New(ksmPM, i, partData, true);
 					}
 				}
 			}
 				
 		}
-		public PartDataCollectionVessel(ProtoVessel protoVessel, ConfigNode vesselDataNode)
+		public PartDataCollectionVessel(VesselDataBase vesselData, ProtoVessel protoVessel, ConfigNode vesselDataNode)
 		{
 			Lib.LogDebug($"Loading partdatas for existing vessel {protoVessel.vesselName}");
+			this.vesselData = vesselData;
 
 			moduleDataNodes.Clear();
 
@@ -78,8 +145,36 @@ namespace KERBALISM
 						}
 						else
 						{
-							ModuleData.New(protoModule, partData);
+							ModuleData.New(protopart, protoModule, partData);
 						}
+					}
+				}
+			}
+		}
+
+		public IEnumerable<T> AllModulesOfType<T>() where T : ModuleData
+		{
+			foreach (PartData partData in partList)
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					if (partData.modules[i] is T moduleData)
+					{
+						yield return moduleData;
+					}
+				}
+			}
+		}
+
+		public IEnumerable<T> AllModulesOfType<T>(Predicate<T> predicate) where T : ModuleData
+		{
+			foreach (PartData partData in partList)
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					if (partData.modules[i] is T moduleData && predicate(moduleData))
+					{
+						yield return moduleData;
 					}
 				}
 			}
@@ -104,13 +199,14 @@ namespace KERBALISM
 				return;
 			}
 
+			allFlightPartDatas[partData.flightId] = partData;
 			partDictionary.Add(partData.flightId, partData);
 			partList.Add(partData);
 		}
 
 		public PartData Add(Part part)
 		{
-			uint id = Lib.IsEditor() ? part.persistentId : part.flightID;
+			uint id = part.flightID;
 
 			if (partDictionary.ContainsKey(id))
 			{
@@ -118,7 +214,8 @@ namespace KERBALISM
 				return null;
 			}
 
-			PartData pd = new PartData(part);
+			PartData pd = new PartData(vesselData, part);
+			allFlightPartDatas[id] = pd;
 			partDictionary.Add(id, pd);
 			partList.Add(pd);
 			return pd;
@@ -132,7 +229,8 @@ namespace KERBALISM
 				return null;
 			}
 
-			PartData pd = new PartData(protoPart);
+			PartData pd = new PartData(vesselData, protoPart);
+			allFlightPartDatas[protoPart.flightID] = pd;
 			partDictionary.Add(protoPart.flightID, pd);
 			partList.Add(pd);
 			return pd;
@@ -145,6 +243,8 @@ namespace KERBALISM
 				partDictionary.Remove(partdata.flightId);
 				partList.Remove(partData);
 			}
+
+			allFlightPartDatas.Remove(partdata.flightId);
 		}
 
 		public void Remove(uint flightID)
@@ -154,10 +254,17 @@ namespace KERBALISM
 				partDictionary.Remove(flightID);
 				partList.Remove(partData);
 			}
+
+			allFlightPartDatas.Remove(flightID);
 		}
 
-		public void Clear()
+		public void Clear(bool clearFromFlightDictionary)
 		{
+			foreach (PartData partData in partList)
+			{
+				allFlightPartDatas.Remove(partData.flightId);
+			}
+
 			partDictionary.Clear();
 			partList.Clear();
 		}
@@ -169,7 +276,7 @@ namespace KERBALISM
 				Add(partData);
 			}
 
-			other.Clear();
+			other.Clear(false);
 		}
 	}
 }

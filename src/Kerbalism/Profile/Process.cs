@@ -5,10 +5,24 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-
-
 	public sealed class Process
 	{
+
+		public string name;                           // unique name for the process
+		public string resourceName;
+		public string title;                          // UI title
+		public string desc;                           // UI description (long text)
+		public bool canToggle;                        // defines if this process can be toggled
+		public List<string> dumpableOutputs;                 // list of all outputs that can be dumped
+		public List<string> dumpedOutputsDefault;            // list of all outputs that are dumped by default
+		public Dictionary<string, double> inputs;     // input resources and rates
+		public Dictionary<string, double> outputs;    // output resources and rates
+		public Dictionary<string, double> cures;      // cures and rates
+		public ResourceBroker broker;
+		public bool hasModifier;
+		private IGenericExpression<double> modifier;
+		private static VesselDataBase modifierData = new VesselDataBase();
+
 		public Process(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
@@ -70,18 +84,18 @@ namespace KERBALISM
 			}
 
 			// dumpable default: all outputs are dumpable
-			dumpable = Lib.Tokenize(Lib.ConfigValue(node, "dumpable", "all"), ',');
-			if(dumpable.Count == 1 && dumpable[0].ToLower() == "all")
+			dumpableOutputs = Lib.Tokenize(Lib.ConfigValue(node, "dumpable", "all"), ',');
+			if(dumpableOutputs.Count == 1 && dumpableOutputs[0].ToLower() == "all")
 			{
-				dumpable = new List<string>(outputs.Keys);
+				dumpableOutputs = new List<string>(outputs.Keys);
 			}
-			else if(dumpable.Count == 1 && dumpable[0].ToLower() == "none")
+			else if(dumpableOutputs.Count == 1 && dumpableOutputs[0].ToLower() == "none")
 			{
-				dumpable.Clear();
+				dumpableOutputs.Clear();
 			}
 
 			// defaultDumped default: no outputs are dumped by default
-			defaultDumped = new List<string>();
+			dumpedOutputsDefault = new List<string>();
 			List<string> dumpedList = Lib.Tokenize(Lib.ConfigValue(node, "defaultDumped", ""), ',');
 			if (dumpedList.Count == 1 && dumpedList[0].ToLower() == "all")
 			{
@@ -94,8 +108,8 @@ namespace KERBALISM
 			// retain only default dumpable outputs that actually are dumpable
 			foreach (string o in dumpedList)
 			{
-				if (dumpable.Contains(o))
-					defaultDumped.Add(o);
+				if (dumpableOutputs.Contains(o))
+					dumpedOutputsDefault.Add(o);
 			}
 
 			string modifierString = Lib.ConfigValue(node, "modifier", string.Empty);
@@ -108,7 +122,9 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					Lib.Log($"Error parsing modifier for process {name} : '{modifierString}'\n{e}", Lib.LogLevel.Error);
+					string error = $"Error parsing modifier for process '{name}' :\n{modifierString}\n{e.Message}";
+					Profile.modifiersCompilationErrors.Add(error);
+					Lib.Log(error, Lib.LogLevel.Error);
 					hasModifier = false;
 				}
 			}
@@ -127,14 +143,24 @@ namespace KERBALISM
 			}
 		}
 
-		public void Execute(VesselData vd, VesselResHandler resources, double elapsed_s, List<string> dump)
+		public void Execute(VesselData vd, VesselResHandler resources, double elapsed_s)
 		{
 			// get product of all environment modifiers
 			double k = EvaluateModifier(vd);
 
 			// only execute processes if necessary
-			if (k == 0.0)
+			if (k <= 0.0)
 				return;
+
+			List<string> dump;
+			if (vd.VesselProcesses.TryGetProcessData(name, out VesselProcess vesselProcess))
+			{
+				dump = vesselProcess.dumpedOutputs;
+			}
+			else
+			{
+				dump = dumpedOutputsDefault;
+			}
 
 			Recipe recipe = new Recipe(broker);
 
@@ -172,21 +198,6 @@ namespace KERBALISM
 			}
 			return specs;
 		}
-
-		public string name;                           // unique name for the process
-		public string resourceName;
-		public string title;                          // UI title
-		public string desc;                           // UI description (long text)
-		public bool canToggle;						  // defines if this process can be toggled
-		public List<string> dumpable;				  // list of all outputs that can be dumped
-		public List<string> defaultDumped;		      // list of all outputs that are dumped by default
-		public Dictionary<string, double> inputs;     // input resources and rates
-		public Dictionary<string, double> outputs;    // output resources and rates
-		public Dictionary<string, double> cures;      // cures and rates
-		public ResourceBroker broker;
-		public bool hasModifier;
-		private IGenericExpression<double> modifier;
-		private static VesselDataBase modifierData = new VesselDataBase();
 	}
 
 } // KERBALISM
