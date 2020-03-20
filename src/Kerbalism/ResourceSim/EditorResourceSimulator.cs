@@ -160,9 +160,16 @@ namespace KERBALISM.Planner
 			}
 			foreach (KeyValuePair<string, double> output in pr.outputs)
 			{
-				// this used the dump specs from the static process definition, which is no longer available
-				// need to keep a list of ProcessData objects in the editor and get the dump settings from there
-				// TODO recipe.AddOutput(output.Key, output.Value * k, pr.dump.Check(output.Key));
+				bool dump;
+				if (vd.VesselProcesses.TryGetProcessData(output.Key, out VesselProcess vesselProcess))
+				{
+					dump = vesselProcess.dumpedOutputs.Contains(output.Key);
+				}
+				else
+				{
+					dump = pr.dumpedOutputsDefault.Contains(output.Key);
+				}
+				recipe.AddOutput(output.Key, output.Value * modifier, dump);
 			}
 			vd.ResHandler.AddRecipe(recipe);
 		}
