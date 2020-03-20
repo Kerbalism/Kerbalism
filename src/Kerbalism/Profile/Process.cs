@@ -17,7 +17,6 @@ namespace KERBALISM
 		public List<string> dumpedOutputsDefault;            // list of all outputs that are dumped by default
 		public Dictionary<string, double> inputs;     // input resources and rates
 		public Dictionary<string, double> outputs;    // output resources and rates
-		public Dictionary<string, double> cures;      // cures and rates
 		public ResourceBroker broker;
 		public bool hasModifier;
 		private IGenericExpression<double> modifier;
@@ -65,22 +64,6 @@ namespace KERBALISM
 
 				// record output
 				outputs[output_res] = output_rate;
-			}
-
-			cures = new Dictionary<string, double>();
-			foreach (string output in node.GetValues("cures"))
-			{
-				// get parameters
-				List<string> tok = Lib.Tokenize(output, '@');
-				if (tok.Count != 2) throw new Exception("malformed cure on process " + name);
-				string cure = tok[0];
-				double cure_rate = Lib.Parse.ToDouble(tok[1]);
-
-				// check that resource is specified
-				if (cure.Length == 0) throw new Exception("skipping resource-less process " + name);
-
-				// record cure
-				cures[cure] = cure_rate;
 			}
 
 			// dumpable default: all outputs are dumpable
@@ -171,13 +154,6 @@ namespace KERBALISM
 			foreach (var p in outputs)
 			{
 				recipe.AddOutput(p.Key, p.Value * k * elapsed_s, dump.Contains(p.Key));
-			}
-			foreach (var p in cures)
-			{
-				// TODO this assumes that the cure modifies always put the resource first
-				// works: modifier = _SickbayRDU,zerog works
-				// fails: modifier = zerog,_SickbayRDU
-				recipe.AddCure(p.Key, p.Value * k * elapsed_s, resourceName);
 			}
 			resources.AddRecipe(recipe);
 		}

@@ -1045,20 +1045,6 @@ namespace KERBALISM
 		public static string Sensor_info2 = GetLoc("Sensor_info2"); // "On the other\nhand there seems to be plenty\nof useless positive graviolis around."
 
 		////////////////////////////////////////////////////////////////////
-		// Module: Sickbay
-		////////////////////////////////////////////////////////////////////
-		public static ParamString Sickbay_cureEverybody = new ParamString("Sickbay_cureEverybody"); // "<<1>>: dismiss <<2>>" //<<2>> -> patientName
-		public static ParamString Sickbay_cureEverybody2 = new ParamString("Sickbay_cureEverybody2"); // "<<1>>: cure <<2>>"
-		public static string Sickbay_cure = GetLoc("Sickbay_cure"); // "cure"
-		public static string Sickbay_Start_Stop = GetLoc("Sickbay_Start_Stop"); // "Start/Stop"
-		public static string Sickbay_running = GetLoc("Sickbay_running"); // "running"
-		public static string Sickbay_stopped = GetLoc("Sickbay_stopped"); // "stopped"
-		public static string Sickbay_info1 = GetLoc("Sickbay_info1"); // "Cures"
-		public static string Sickbay_info2 = GetLoc("Sickbay_info2"); // "All kerbals in part"
-		public static string Sickbay_info3 = GetLoc("Sickbay_info3"); // "Capacity"
-		public static ParamString Sickbay_info4 = new ParamString("Sickbay_info4"); // "<<1>> Kerbals"
-
-		////////////////////////////////////////////////////////////////////
 		// Module: SolarPanelFixer
 		////////////////////////////////////////////////////////////////////
 		public static ParamString SolarPanelFixer_occludedby = new ParamString("SolarPanelFixer_occludedby"); // "occluded by <<1>>"

@@ -241,7 +241,6 @@ namespace KERBALISM
 				{
 					switch (m.moduleName)
 					{
-						case "Sickbay": device = new SickbayDevice(m as Sickbay); break;
 						case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
 						//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
 						case "Emitter": device = new EmitterDevice(m as Emitter); break;
@@ -303,7 +302,6 @@ namespace KERBALISM
 						// depending on module name
 						switch (m.moduleName)
 						{
-							case "Sickbay": device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m); break;
 							case "Greenhouse": device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m); break;
 							//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
 							case "Emitter": device = new ProtoEmitterDevice(module_prefab as Emitter, p, m); break;

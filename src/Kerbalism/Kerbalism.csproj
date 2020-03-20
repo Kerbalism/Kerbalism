@@ -296,8 +296,6 @@
     <Compile Include="Utility\Specifics.cs" />
     <Compile Include="Utility\Transformator.cs" />
     <Compile Include="System\Preferences.cs" />
-    <Compile Include="Modules\Sickbay.cs" />
-    <Compile Include="Automation\Devices\Sickbay.cs" />
     <Compile Include="Modules\KerbalismScansat.cs" />
     <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
     <Compile Include="Utility\Serenity.cs" />

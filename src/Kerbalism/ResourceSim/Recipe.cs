@@ -18,7 +18,6 @@ namespace KERBALISM
 	// Their purpose would be to give the ability to scale the non-resource output of a pure consumer.
 	// Example : to scale antenna data rate by EC availability, define an "antennaOutput" virtual resource and a recipe that convert EC to antennaOutput
 	// then check "antennaOutput" availability to scale the amount of data sent
-	// This would also allow removing the "Cures" thing.
 
 	// TODO : (yup another one) : in 95% of cases, the same recipes are recreated every update, with only a modification of the Entry.quantity field.
 	// It would make a lot of sense to move Entry from a struct to a class and to make Recipe users keep the Recipe/Entry references, then just adjust the Entry.quantity.
@@ -51,7 +50,6 @@ namespace KERBALISM
 
 		private List<Entry> inputs;   // set of input resources
 		private List<Entry> outputs;  // set of output resources
-		private List<Entry> cures;    // set of cures
 		private double left;     // what proportion of the recipe is left to execute
 
 		private ResourceBroker broker;
@@ -60,7 +58,6 @@ namespace KERBALISM
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
-			this.cures = new List<Entry>();
 			this.left = 1.0;
 			this.broker = broker;
 		}
@@ -89,15 +86,6 @@ namespace KERBALISM
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
 				outputs.Add(new Entry(resource_name, quantity, dump));
-			}
-		}
-
-		/// <summary>add a cure to the recipe</summary>
-		public void AddCure(string cure, double quantity, string resource_name)
-		{
-			if (quantity > double.Epsilon) //< avoid division by zero
-			{
-				cures.Add(new Entry(cure, quantity, true, resource_name));
 			}
 		}
 
@@ -218,30 +206,6 @@ namespace KERBALISM
 				Entry e = outputs[i];
 				VesselResource res = resources.GetResource(e.name);
 				res.Produce(e.quantity * worst_io, broker);
-			}
-
-			// produce cures
-			if (v != null)
-			{
-				for (int i = 0; i < cures.Count; ++i)
-				{
-					Entry entry = cures[i];
-					List<RuleData> curingRules = new List<RuleData>();
-					foreach (ProtoCrewMember crew in v.GetVesselCrew())
-					{
-						KerbalData kd = DB.Kerbal(crew.name);
-						if (kd.sickbay.IndexOf(entry.combined + ",", StringComparison.Ordinal) >= 0)
-						{
-							curingRules.Add(kd.Rule(entry.name));
-						}
-					}
-
-					foreach (RuleData rd in curingRules)
-					{
-						rd.problem -= entry.quantity * worst_io / curingRules.Count;
-						rd.problem = Math.Max(rd.problem, 0);
-					}
-				}
 			}
 
 			// update amount left to execute
