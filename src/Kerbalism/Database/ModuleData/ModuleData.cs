@@ -231,9 +231,9 @@ namespace KERBALISM
 			moduleData.LoadedModule = module;
 			partData.modules.Add(moduleData);
 
-			moduleData.Instantiate(module, partData.PartInfo.partPrefab.Modules[moduleIndex]);
+			moduleData.Instantiate(module, partData.PartPrefab.Modules[moduleIndex]);
 
-			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.PartInfo.title}");
+			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.Title}");
 		}
 
 		public static void NewFromNode(KsmPartModule module, PartData partData, ConfigNode moduleDataNode)
@@ -254,7 +254,7 @@ namespace KERBALISM
 			partData.modules.Add(moduleData);
 			moduleData.Load(moduleDataNode);
 
-			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.PartInfo.title}");
+			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.Title}");
 		}
 
 		public static bool New(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, PartData partData)
@@ -276,7 +276,7 @@ namespace KERBALISM
 
 			moduleData.Instantiate(protoPart, protoModule, modulePrefab);
 
-			Lib.LogDebug($"Instantiated new {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.PartInfo.title}");
+			Lib.LogDebug($"Instantiated new {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.Title}");
 			return true;
 		}
 
@@ -302,7 +302,7 @@ namespace KERBALISM
 			partData.modules.Add(moduleData);
 			moduleData.Load(moduleDataNode);
 
-			Lib.LogDebug($"Instantiated from confignode : {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.PartInfo.title}");
+			Lib.LogDebug($"Instantiated from confignode : {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.Title}");
 			return true;
 		}
 
@@ -314,7 +314,7 @@ namespace KERBALISM
 			{
 				foreach (ModuleData moduleData in partData.modules)
 				{
-					ConfigNode moduleDataNode = topNode.AddNode(Lib.BuildString(partData.PartInfo.name, "@", moduleData.GetType().Name));
+					ConfigNode moduleDataNode = topNode.AddNode(Lib.BuildString(partData.Name, "@", moduleData.GetType().Name));
 
 					if (moduleData.flightId != 0)
 					{

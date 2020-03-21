@@ -213,7 +213,7 @@ namespace KERBALISM
 			VesselData vd;
 			if (!vessels.TryGetValue(vessel.id, out vd))
 			{
-				Lib.LogDebugStack($"Vessel {vessel.vesselName} was created in flight, creating VesselData");
+				Lib.LogDebugStack($"Vessel {vessel.vesselName} was created in flight, creating VesselData", Lib.LogLevel.Warning);
 				vd = new VesselData(vessel);
 				vessels.Add(vessel.id, vd);
 			}

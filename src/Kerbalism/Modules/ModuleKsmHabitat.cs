@@ -210,25 +210,26 @@ namespace KERBALISM
 				if (isDeployable && deployWithPressure)
 					canRetract = false; // inflatables can't be retracted
 
-				// precalculate shielding cost and add resources
-				double volumeLiters = M3ToL(volume);
-				double currentVolumeLiters = canPressurize ? volumeLiters : 0.0;
-				Lib.AddResource(part, Settings.HabitatAtmoResource, currentVolumeLiters, volumeLiters);
-				Lib.AddResource(part, Settings.HabitatWasteResource, 0.0, volumeLiters);
-
 				// adjust depressurization speed if not specified
 				if (depressurizationSpeed < 0.0)
 					depressurizationSpeed = 10.0 * Math.Sqrt(volume);
-
-				if (hasShielding)
-				{
-					Lib.AddResource(part, shieldingResource, 0.0, surface * maxShieldingFactor);
-				}
 			}
 		}
 
 		public override void OnStart(StartState state)
 		{
+			double volumeLiters = M3ToL(volume);
+			double currentVolumeLiters = canPressurize ? volumeLiters : 0.0;
+
+			if (!part.Resources.Contains(Settings.HabitatAtmoResource))
+				Lib.AddResource(part, Settings.HabitatAtmoResource, volume, volumeLiters);
+
+			if (!part.Resources.Contains(Settings.HabitatWasteResource))
+				Lib.AddResource(part, Settings.HabitatWasteResource, 0.0, volumeLiters);
+
+			if (hasShielding && !part.Resources.Contains(shieldingResource))
+				Lib.AddResource(part, shieldingResource, 0.0, surface * maxShieldingFactor);
+
 			bool isFlight = Lib.IsFlight;
 
 			// setup animations / transformators
