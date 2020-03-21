@@ -50,18 +50,25 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (moduleDefinition != null)
-					return moduleDefinition;
+				if (_moduleDefinition != null)
+					return _moduleDefinition;
+
+				// if we have no module defintion set, we're probably dealing with a prefab that belongs
+				// to a configurable experiment on an unloaded vessel. do not set the module definition
+				// member variable on that instance, because other parts with the same prefab might
+				// have different configurations.
+
 				if(!string.IsNullOrEmpty(id))
-					SetupModuleDefinition();
-				return moduleDefinition;
+					return ScienceDB.GetExperimentModuleDefinition(id);
+
+				return null;
 			}
 			set
 			{
-				moduleDefinition = value;
+				_moduleDefinition = value;
 			}
 		}
-		private ExperimentModuleDefinition moduleDefinition;
+		private ExperimentModuleDefinition _moduleDefinition;
 
 		private Situation situation;
 		public SubjectData Subject => subject; private SubjectData subject;
@@ -201,13 +208,13 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(id))
 			{
 				enabled = isEnabled = moduleIsEnabled = false;
-				moduleDefinition = null;
+				_moduleDefinition = null;
 				return;
 			}
 
-			moduleDefinition = ScienceDB.GetExperimentModuleDefinition(id);
+			_moduleDefinition = ScienceDB.GetExperimentModuleDefinition(id);
 
-			if (moduleDefinition == null)
+			if (_moduleDefinition == null)
 			{
 				Lib.Log($"No MODULE_DEFINITION found with name `{id}`, is your config broken?", Lib.LogLevel.Error);
 				enabled = isEnabled = moduleIsEnabled = false;
