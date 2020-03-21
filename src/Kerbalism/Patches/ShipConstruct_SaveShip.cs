@@ -79,6 +79,7 @@ namespace KERBALISM
 		static void Prefix(ConfigNode root)
 		{
 			editorPreviousShipId = EditorLogic.fetch?.ship?.persistentId ?? 0u;
+			kerbalismDataNode = null;
 
 			if (root != null && root.CountNodes > 0)
 			{
@@ -131,6 +132,7 @@ namespace KERBALISM
 			bool isNewShip = editorPreviousShipId == 0 || editorNewShipId == 0 || editorPreviousShipId != editorNewShipId;
 
 			VesselDataBase.LoadShipConstruct(__instance, kerbalismDataNode, isNewShip);
+			kerbalismDataNode = null;
 
 		}
 	}
