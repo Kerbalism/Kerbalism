@@ -76,7 +76,10 @@ namespace KERBALISM
 				expState = value;
 
 				var newStatus = GetStatus(value, Subject, issue);
-				API.OnExperimentStateChanged.Notify(vessel, ExperimentID, status, newStatus);
+
+				if (Lib.IsFlight)
+					API.OnExperimentStateChanged.Notify(vessel, ExperimentID, status, newStatus);
+				
 				status = newStatus;
 			}
 		}
@@ -235,7 +238,7 @@ namespace KERBALISM
 
 		public virtual void Update()
 		{
-			if (Lib.IsEditor) // in the editor just update the gui name
+			if (Lib.IsEditor || vessel == null) // in the editor just update the gui name
 			{
 				// update ui
 				Events["ToggleEvent"].guiName = Lib.StatusToggle(ModuleDefinition.Info.Title, StatusInfo(status, issue));
