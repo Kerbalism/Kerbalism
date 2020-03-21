@@ -46,7 +46,23 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
 		[KSPField(isPersistant = true)] private ExpStatus status = ExpStatus.Stopped;
 
-		public ExperimentModuleDefinition ModuleDefinition { get; set; }
+		public ExperimentModuleDefinition ModuleDefinition
+		{
+			get
+			{
+				if (moduleDefinition != null)
+					return moduleDefinition;
+				if(!string.IsNullOrEmpty(id))
+					SetupModuleDefinition();
+				return moduleDefinition;
+			}
+			set
+			{
+				moduleDefinition = value;
+			}
+		}
+		private ExperimentModuleDefinition moduleDefinition;
+
 		private Situation situation;
 		public SubjectData Subject => subject; private SubjectData subject;
 
@@ -185,13 +201,13 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(id))
 			{
 				enabled = isEnabled = moduleIsEnabled = false;
-				ModuleDefinition = null;
+				moduleDefinition = null;
 				return;
 			}
 
-			ModuleDefinition = ScienceDB.GetExperimentModuleDefinition(id);
+			moduleDefinition = ScienceDB.GetExperimentModuleDefinition(id);
 
-			if (ModuleDefinition == null)
+			if (moduleDefinition == null)
 			{
 				Lib.Log($"No MODULE_DEFINITION found with name `{id}`, is your config broken?", Lib.LogLevel.Error);
 				enabled = isEnabled = moduleIsEnabled = false;
