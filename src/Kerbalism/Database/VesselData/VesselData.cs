@@ -554,15 +554,22 @@ namespace KERBALISM
         }
 
         /// <summary> Called by GameEvents.onVesselsUndocking, just after 2 vessels have undocked </summary>
+		
         internal static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
         {
             Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", Lib.LogLevel.Message, newVessel.vesselName, oldVessel.vesselName);
 
             VesselData oldVD = oldVessel.KerbalismData();
-            VesselData newVD = newVessel.KerbalismData();
 
-            // remove all partdata on the new vessel
-            newVD.Parts.Clear(false);
+
+			VesselData newVD = newVessel.KerbalismData();
+
+			// TODO : This probably not work and seems to cause bad issues. When a RUD happens, it's likely this is called
+			// multiple times consecutively for the same new vessel. We need to have a TryGet on DB.vessels to check if the vessel already exists
+			// or not.
+			// And anyway this will likely cause the issue that instantiating a new vesseldata trough the extension method will instantiate new
+			// moduledatas, reaffecting new flightids in the process.
+			newVD.Parts.Clear(false);
 
             foreach (Part part in newVessel.Parts)
             {
@@ -619,6 +626,8 @@ namespace KERBALISM
 
         internal static void OnPartWillDie(Part part)
         {
+			// TODO : this likely cause an issue when, following a RUD, a part that was detached from the main vessel
+			// by creating the vesseldata for a vessel that will cease to exist immediatly
             VesselData vd = part.vessel.KerbalismData();
             vd.Parts[part.flightID].PartWillDie();
             vd.Parts.Remove(part.flightID);
