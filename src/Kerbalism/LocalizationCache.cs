@@ -1433,6 +1433,8 @@ namespace KERBALISM
 		public static string ExperimentReq_MissionControlLevelMax = GetLoc("ExperimentReq_MissionControlLevelMax"); // "Mission Control max level "
 		public static string ExperimentReq_AdministrationLevelMin = GetLoc("ExperimentReq_AdministrationLevelMin"); // "Administration min level "
 		public static string ExperimentReq_AdministrationLevelMax = GetLoc("ExperimentReq_AdministrationLevelMax"); // "Administration max level "
+		public static string ExperimentReq_RndFacilityLevelMin = GetLoc("ExperimentReq_RndFacilityLevelMin"); // "Research Facility min level "
+		public static string ExperimentReq_RndFacilityLevelMax = GetLoc("ExperimentReq_RndFacilityLevelMax"); // "Research Facility max level "
 		public static string ExperimentReq_Part = GetLoc("ExperimentReq_Part"); // "Need part "
 		public static string ExperimentReq_Module = GetLoc("ExperimentReq_Module"); // "Need module "
 

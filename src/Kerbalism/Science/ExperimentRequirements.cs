@@ -77,6 +77,8 @@ namespace KERBALISM
 			MissionControlLevelMax,
 			AdministrationLevelMin,
 			AdministrationLevelMax,
+			RndFacilityLevelMin,
+			RndFacilityLevelMax,
 		}
 
 		public class RequireDef
@@ -176,6 +178,8 @@ namespace KERBALISM
 					case Require.MissionControlLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.MissionControl),   (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMin  : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
+					case Require.RndFacilityLevelMin     : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
+					case Require.RndFacilityLevelMax     : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
 
 					case Require.Shadow         : TestReq(() => vd.EnvInFullShadow,                                                                                  results[i]); break; 
 					case Require.Sunlight       : TestReq(() => vd.EnvInSunlight,                                                                                    results[i]); break; 
@@ -222,6 +226,8 @@ namespace KERBALISM
 					case Require.MissionControlLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.MissionControl), (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration), (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration), (int)Requires[i].value, results[i]); break;
+					case Require.RndFacilityLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
+					case Require.RndFacilityLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
 
 					default: results[i].isValid = true; break;
 				}
@@ -336,6 +342,8 @@ namespace KERBALISM
 				case Require.MissionControlLevelMax:
 				case Require.AdministrationLevelMin:
 				case Require.AdministrationLevelMax:
+				case Require.RndFacilityLevelMin:
+				case Require.RndFacilityLevelMax:
 					return new RequireDef(req, int.Parse(value));
 				default:
 					return new RequireDef(req, value);
@@ -447,6 +455,8 @@ namespace KERBALISM
 				case Require.MissionControlLevelMax:
 				case Require.AdministrationLevelMin:
 				case Require.AdministrationLevelMax:
+				case Require.RndFacilityLevelMin:
+				case Require.RndFacilityLevelMax:
 					return ((int)reqValue).ToString();
 				default:
 					return string.Empty;
@@ -504,6 +514,8 @@ namespace KERBALISM
 				case Require.MissionControlLevelMax:   return Local.ExperimentReq_MissionControlLevelMax;//"Mission Control max level "
 				case Require.AdministrationLevelMin:   return Local.ExperimentReq_AdministrationLevelMin;//"Administration min level "
 				case Require.AdministrationLevelMax:   return Local.ExperimentReq_AdministrationLevelMax;//"Administration max level "
+				case Require.RndFacilityLevelMin:      return Local.ExperimentReq_RndFacilityLevelMin; // "Research Facility min level "
+				case Require.RndFacilityLevelMax:      return Local.ExperimentReq_RndFacilityLevelMax; // "Research Facility max level "
 				case Require.Part:                     return Local.ExperimentReq_Part;//"Need part "
 				case Require.Module:                   return Local.ExperimentReq_Module;//"Need module "
 
