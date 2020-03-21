@@ -261,7 +261,7 @@ namespace KERBALISM
 
 			if(ExperimentModuleDefinitions.Count == 0)
 			{
-				Lib.Log("Experiment definition `{0}` has no MODULE_DEFINITION, generating default entry", Lib.LogLevel.Error, ExperimentId);
+				Lib.Log($"Experiment definition `{ExperimentId}` has no MODULE_DEFINITION, generating default entry");
 				ExperimentModuleDefinitions.Add(new ExperimentModuleDefinition(this));
 			}
 		}

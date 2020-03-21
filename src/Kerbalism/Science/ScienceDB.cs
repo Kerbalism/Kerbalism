@@ -431,7 +431,7 @@ namespace KERBALISM
 			{
 				foreach (var subjectNode in node.GetNode("subjectData").GetNodes())
 				{
-					string integerSubjectId = DB.From_safe_key(subjectNode.name);
+					string integerSubjectId = DB.FromSafeKey(subjectNode.name);
 					SubjectData subjectData = GetSubjectData(integerSubjectId);
 					if (subjectData != null)
 						subjectData.Load(subjectNode);
@@ -500,7 +500,7 @@ namespace KERBALISM
 			var subjectsNode = node.AddNode("subjectData");
 			foreach (SubjectData subject in persistedSubjects)
 			{
-				subject.Save(subjectsNode.AddNode(DB.To_safe_key(subject.Id)));
+				subject.Save(subjectsNode.AddNode(DB.ToSafeKey(subject.Id)));
 			}
 		}
 
@@ -559,11 +559,10 @@ namespace KERBALISM
 
 		public static ExperimentModuleDefinition GetExperimentModuleDefinition(string name)
 		{
-			ExperimentModuleDefinition moduleDefinition;
-			if (!experimentModuleDefinitions.TryGetValue(name, out moduleDefinition))
-				return null;
+			if (!string.IsNullOrEmpty(name) && experimentModuleDefinitions.TryGetValue(name, out ExperimentModuleDefinition moduleDefinition))
+				return moduleDefinition;
 
-			return moduleDefinition;
+			return null;
 		}
 
 		/// <summary> return the subject information for the given experiment and situation, or null if the situation isn't available. </summary>

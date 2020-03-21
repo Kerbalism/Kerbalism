@@ -72,7 +72,7 @@ namespace KERBALISM
 		public abstract void Produce(double quantity, ResourceBroker broker = null);
 
 		/// <summary>estimate time until depletion</summary>
-		public double Depletion => Rate >= -1e-10 ? double.PositiveInfinity : Amount / -Rate;
+		public double Depletion => Amount <= 1e-10 ? 0.0 : Rate >= -1e-10 ? double.PositiveInfinity : Amount / -Rate;
 
 		public string DepletionInfo => Amount <= 1e-10 ? Local.Monitor_depleted : Lib.HumanReadableDuration(Depletion);
 

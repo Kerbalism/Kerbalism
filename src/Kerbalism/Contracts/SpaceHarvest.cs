@@ -57,7 +57,7 @@ namespace KERBALISM.CONTRACTS
 					 greenhouse != null                                           // greenhouse part is present
 				  && greenhouse.tags.Contains("_kerbalism")                       // greenhouse part is enabled
 				  && ResearchAndDevelopment.PartTechAvailable(greenhouse)         // greenhouse part unlocked
-				  && !DB.landmarks.space_harvest;                                 // greenhouse never harvested in space before
+				  && !DB.Landmarks.space_harvest;                                 // greenhouse never harvested in space before
 			}
 			return meet_requirements;
 		}
@@ -80,7 +80,7 @@ namespace KERBALISM.CONTRACTS
 
 		protected override void OnUpdate()
 		{
-			if (DB.landmarks.space_harvest) SetComplete();
+			if (DB.Landmarks.space_harvest) SetComplete();
 		}
 	}
 

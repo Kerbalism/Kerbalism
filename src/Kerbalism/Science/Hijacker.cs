@@ -58,9 +58,9 @@ namespace KERBALISM
 				}
 				else
 				{
-					Drive drive = Drive.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
+					DriveData drive = DriveData.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
 					if (drive != null)
-						recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
+						recorded = drive.RecordSample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 				}
 
 				if (recorded)
@@ -100,12 +100,12 @@ namespace KERBALISM
 		{
 			double remaining = data.dataAmount;
 
-			foreach(var drive in Drive.GetDrives(meta.vessel.KerbalismData(), false))
+			foreach(var drive in DriveData.GetDrives(meta.vessel.KerbalismData(), false))
 			{
 				var size = Math.Min(remaining, drive.FileCapacityAvailable());
 				if(size > 0)
 				{
-					drive.Record_file(meta.subjectData, size, true, true);
+					drive.RecordFile(meta.subjectData, size, true, true);
 					remaining -= size;
 				}
 			}
@@ -207,9 +207,9 @@ namespace KERBALISM
 			}
 			else
 			{
-				Drive drive = Drive.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
+				DriveData drive = DriveData.SampleDrive(meta.vessel.KerbalismData(), data.dataAmount, meta.subjectData);
 				if (drive != null)
-					recorded = drive.Record_sample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
+					recorded = drive.RecordSample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
 			}
 
 			if (recorded)
@@ -217,7 +217,7 @@ namespace KERBALISM
 				// flag for sending if specified
 				if (!meta.is_sample && send)
 				{
-					foreach(var d in Drive.GetDrives(meta.vessel))
+					foreach(var d in DriveData.GetDrives(meta.vessel))
 						d.Send(data.subjectID, true);
 				}
 

@@ -19,7 +19,7 @@ namespace KERBALISM
 
 		public static void Sync()
 		{
-			window.Position(DB.ui.win_left, DB.ui.win_top);
+			window.Position(DB.UiData.win_left, DB.UiData.win_top);
 		}
 
 		public static void Update(bool show_window)
@@ -29,10 +29,10 @@ namespace KERBALISM
 			{
 				// as a special case, the first time the user enter
 				// map-view/tracking-station we open the body info window
-				if (MapView.MapIsEnabled && !DB.ui.map_viewed)
+				if (MapView.MapIsEnabled && !DB.UiData.map_viewed)
 				{
 					Open(BodyInfo.Body_info);
-					DB.ui.map_viewed = true;
+					DB.UiData.map_viewed = true;
 				}
 
 				// update subsystems
@@ -40,8 +40,8 @@ namespace KERBALISM
 				window.Update();
 
 				// remember main window position
-				DB.ui.win_left = window.Left();
-				DB.ui.win_top = window.Top();
+				DB.UiData.win_left = window.Left();
+				DB.UiData.win_top = window.Top();
 			}
 
 			// re-enable camera mouse scrolling, as some of the on_gui functions can

@@ -15,7 +15,7 @@ namespace KERBALISM
 		{
 			Vessel v = vd.Vessel;
 
-			if (v == null || v.connection == null)
+			if (v == null || v.connection == null || !connection.powered)
 			{
 				connection.linked = false;
 				connection.Status = LinkStatus.no_link;

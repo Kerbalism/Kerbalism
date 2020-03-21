@@ -141,10 +141,26 @@ namespace KERBALISM
 			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
-			//GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
+			GameEvents.onPartDestroyed.Add(OnEditorPartDestroyed);
+
+			GameEvents.onVesselRecoveryProcessingComplete.Add(OnVesselRecoveryProcessingComplete);
 
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
+		}
+
+		private void OnVesselRecoveryProcessingComplete(ProtoVessel pv, MissionRecoveryDialog dialog, float recoveryFactor)
+		{
+			VesselRecovery_OnVesselRecovered.OnVesselRecoveryProcessingComplete(dialog);
+		}
+
+		private void OnEditorPartDestroyed(Part part)
+		{
+			if (!Lib.IsEditor)
+				return;
+
+			Lib.LogDebug($"Removing destroyed part: {part.persistentId} ({part.partInfo.title})");
+			VesselDataShip.LoadedParts.Remove(part);
 		}
 
 		private static bool crewAssignementRefreshWasJustFiredFromCrewChanged = false;
@@ -175,10 +191,10 @@ namespace KERBALISM
 
 				ModuleKsmHabitat habitat = EditorLogic.fetch.ship.parts.Find(p => p.craftID == partManifest.PartID)?.FindModuleImplementing<ModuleKsmHabitat>();
 
-				if (habitat == null || habitat.HabitatData == null)
+				if (habitat == null || habitat.moduleData == null)
 					continue;
 
-				HabitatData habData = habitat.HabitatData;
+				HabitatData habData = habitat.moduleData;
 
 				if (!habData.isEnabled)
 				{
@@ -223,15 +239,12 @@ namespace KERBALISM
 		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
 		{
 			bool canBoard = false;
-			if (targetPart != null && targetPart.vessel.KerbalismData().Parts.TryGet(targetPart.flightID, out PartData partData))
+			if (targetPart != null && targetPart.TryGetModuleDataOfType(out HabitatData habitatData))
 			{
-				if (partData.Habitat != null)
-				{
-					canBoard =
-						partData.Habitat.pressureState == HabitatData.PressureState.Depressurized
-						|| partData.Habitat.pressureState == HabitatData.PressureState.AlwaysDepressurized
-						|| partData.Habitat.pressureState == HabitatData.PressureState.Breatheable;
-				}
+				canBoard =
+					habitatData.pressureState == HabitatData.PressureState.Depressurized
+					|| habitatData.pressureState == HabitatData.PressureState.AlwaysDepressurized
+					|| habitatData.pressureState == HabitatData.PressureState.Breatheable;
 			}
 
 			if (!canBoard)
@@ -243,15 +256,12 @@ namespace KERBALISM
 		private void AttemptEVA(ProtoCrewMember crew, Part sourcePart, Transform hatchTransform)
 		{
 			FlightEVA.fetch.overrideEVA = true;
-			if (sourcePart != null && sourcePart.vessel.KerbalismData().Parts.TryGet(sourcePart.flightID, out PartData fromPartData))
+			if (sourcePart != null && sourcePart.TryGetModuleDataOfType(out HabitatData habitatData))
 			{
-				if (fromPartData.Habitat != null)
-				{
 					FlightEVA.fetch.overrideEVA =
-						!(fromPartData.Habitat.pressureState == HabitatData.PressureState.Depressurized
-						|| fromPartData.Habitat.pressureState == HabitatData.PressureState.AlwaysDepressurized
-						|| fromPartData.Habitat.pressureState == HabitatData.PressureState.Breatheable);
-				}
+						!(habitatData.pressureState == HabitatData.PressureState.Depressurized
+						|| habitatData.pressureState == HabitatData.PressureState.AlwaysDepressurized
+						|| habitatData.pressureState == HabitatData.PressureState.Breatheable);
 			}
 
 			if (FlightEVA.fetch.overrideEVA)
@@ -264,27 +274,21 @@ namespace KERBALISM
 		private void CrewTransferSelected(CrewTransfer.CrewTransferData data)
 		{
 			bool sourceIsPressurized = false;
-			if (data.sourcePart != null && data.sourcePart.vessel.KerbalismData().Parts.TryGet(data.sourcePart.flightID, out PartData fromPartData))
+			if (data.sourcePart != null && data.sourcePart.TryGetModuleDataOfType(out HabitatData sourceHabitatData))
 			{
-				if (fromPartData.Habitat != null)
-				{
-					sourceIsPressurized = fromPartData.Habitat.pressureState == HabitatData.PressureState.Pressurized;
-				}
+				sourceIsPressurized = sourceHabitatData.pressureState == HabitatData.PressureState.Pressurized;
 			}
 
 			bool targetIsEnabled = false;
 			bool targetIsPressurized = false;
-			if (data.destPart != null && data.destPart.vessel.KerbalismData().Parts.TryGet(data.destPart.flightID, out PartData toPartdata))
+			if (data.destPart != null && data.destPart.TryGetModuleDataOfType(out HabitatData destHabitatData))
 			{
-				if (toPartdata.Habitat != null)
-				{
-					// if hab isn't enabled, try to enable it. We do that because otherwise you can 
-					// brick your vessel by not being able to transfer back people in control parts.
-					if (toPartdata.Habitat.isEnabled || ModuleKsmHabitat.TryToggleHabitat(toPartdata.Habitat, data.destPart.vessel.loaded))
-						targetIsEnabled = true;
+				// if hab isn't enabled, try to enable it. We do that because otherwise you can 
+				// brick your vessel by not being able to transfer back people in control parts.
+				if (destHabitatData.isEnabled || ModuleKsmHabitat.TryToggleHabitat(destHabitatData.loadedModule, destHabitatData, data.destPart.vessel.loaded))
+					targetIsEnabled = true;
 
-					targetIsPressurized = toPartdata.Habitat.pressureState == HabitatData.PressureState.Pressurized; 
-				}
+				targetIsPressurized = destHabitatData.pressureState == HabitatData.PressureState.Pressurized; 
 			}
 
 			if (!targetIsEnabled)
@@ -316,62 +320,54 @@ namespace KERBALISM
 
 			double wasteTransferred = 0.0;
 
-			if (data.from != null && data.from.vessel.KerbalismData().Parts.TryGet(data.from.flightID, out PartData fromPartData))
+			if (data.from != null && data.from.TryGetModuleDataOfType(out HabitatData fromHabitatData))
 			{
 				
-				if (fromPartData.Habitat != null)
+				int newCrewCount = Lib.CrewCount(data.from);
+				if (fromHabitatData.crewCount - newCrewCount != 1)
 				{
-					HabitatData fromHabitat = fromPartData.Habitat;
-					int newCrewCount = Lib.CrewCount(data.from);
-					if (fromHabitat.crewCount - newCrewCount != 1)
-					{
-						Lib.LogStack($"From part {data.from.partInfo.title} : crew count old={fromHabitat.crewCount}, new={newCrewCount}, HabitatData is desynchronized !", Lib.LogLevel.Error);
-					}
-
-					switch (fromHabitat.pressureState)
-					{
-						case HabitatData.PressureState.AlwaysDepressurized:
-						case HabitatData.PressureState.Depressurized:
-						case HabitatData.PressureState.Pressurizing:
-						case HabitatData.PressureState.DepressurizingBelowThreshold:
-
-							PartResourceWrapper wasteRes = fromHabitat.module.WasteRes;
-							wasteTransferred = fromHabitat.crewCount > 0 ? wasteRes.Amount / fromHabitat.crewCount : 0.0;
-							wasteRes.Amount = newCrewCount > 0 ? wasteRes.Amount - wasteTransferred : 0.0;
-							wasteRes.Capacity = newCrewCount * Settings.PressureSuitVolume;
-							break;
-					}
-
-					fromPartData.Habitat.crewCount = newCrewCount;
+					Lib.LogStack($"From part {data.from.partInfo.title} : crew count old={fromHabitatData.crewCount}, new={newCrewCount}, HabitatData is desynchronized !", Lib.LogLevel.Error);
 				}
+
+				switch (fromHabitatData.pressureState)
+				{
+					case HabitatData.PressureState.AlwaysDepressurized:
+					case HabitatData.PressureState.Depressurized:
+					case HabitatData.PressureState.Pressurizing:
+					case HabitatData.PressureState.DepressurizingBelowThreshold:
+
+						PartResourceWrapper wasteRes = fromHabitatData.loadedModule.WasteRes;
+						wasteTransferred = fromHabitatData.crewCount > 0 ? wasteRes.Amount / fromHabitatData.crewCount : 0.0;
+						wasteRes.Amount = newCrewCount > 0 ? wasteRes.Amount - wasteTransferred : 0.0;
+						wasteRes.Capacity = newCrewCount * Settings.PressureSuitVolume;
+						break;
+				}
+
+				fromHabitatData.crewCount = newCrewCount;
 			}
 
 			// TODO : this is called when going from a vessel to EVA, but the EVA modules OnStart() isn't yet called.
 			// in fact this will trigger the EVA VesselData creation. So this can't be relied upon for that case.
-			if (data.to != null && data.to.vessel.KerbalismData().Parts.TryGet(data.to.flightID, out PartData toPartData))
+			if (data.to != null && data.from.TryGetModuleDataOfType(out HabitatData toHabitatData))
 			{
-				if (toPartData.Habitat != null)
+				toHabitatData.crewCount = Lib.CrewCount(data.to);
+
+				PartResourceWrapper wasteRes = toHabitatData.loadedModule.WasteRes;
+
+				switch (toHabitatData.pressureState)
 				{
-					HabitatData toHabitat = toPartData.Habitat;
-					toHabitat.crewCount = Lib.CrewCount(data.to);
+					case HabitatData.PressureState.AlwaysDepressurized:
+					case HabitatData.PressureState.Depressurized:
+					case HabitatData.PressureState.Pressurizing:
+					case HabitatData.PressureState.DepressurizingBelowThreshold:
 
-					PartResourceWrapper wasteRes = toHabitat.module.WasteRes;
+						wasteRes.Capacity = toHabitatData.crewCount * Settings.PressureSuitVolume;
+						break;
+				}
 
-					switch (toHabitat.pressureState)
-					{
-						case HabitatData.PressureState.AlwaysDepressurized:
-						case HabitatData.PressureState.Depressurized:
-						case HabitatData.PressureState.Pressurizing:
-						case HabitatData.PressureState.DepressurizingBelowThreshold:
-
-							wasteRes.Capacity = toHabitat.crewCount * Settings.PressureSuitVolume;
-							break;
-					}
-
-					if (wasteTransferred > 0.0)
-					{
-						wasteRes.Amount = Math.Min(wasteRes.Amount + wasteTransferred, wasteRes.Capacity);
-					}
+				if (wasteTransferred > 0.0)
+				{
+					wasteRes.Amount = Math.Min(wasteRes.Amount + wasteTransferred, wasteRes.Capacity);
 				}
 			}
 		}
@@ -399,7 +395,7 @@ namespace KERBALISM
 		public void OnPartWillDie(Part p)
 		{
 			// do nothing in the editor
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 				return;
 
 			// remove part from vesseldata
@@ -518,7 +514,7 @@ namespace KERBALISM
 			}
 
 			// merge drives data
-			Drive.Transfer(data.from.vessel, data.to.vessel, true);
+			DriveData.Transfer(data.from.vessel, data.to.vessel, true);
 
 			// forget EVA vessel data
 			Cache.PurgeVesselCaches(data.from.vessel);
@@ -569,7 +565,7 @@ namespace KERBALISM
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (pv.vesselRef != null && !pv.vesselRef.loaded)
-				Drive.DeleteDrivesData(pv.vesselRef);
+				DriveData.DeleteDrivesData(pv.vesselRef);
 		}
 
 		void VesselCreated(Vessel v)
@@ -590,7 +586,7 @@ namespace KERBALISM
 				foreach (ProtoCrewMember c in Lib.CrewList(ov))
 					kerbals_alive.Add(c.name);
 			}
-			foreach (string key in DB.Kerbals().Keys)
+			foreach (string key in DB.Kerbals.Keys)
 			{
 				if (!kerbals_alive.Contains(key))
 					kerbals_dead.Add(key);
@@ -606,7 +602,7 @@ namespace KERBALISM
 
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (!v.loaded)
-				Drive.DeleteDrivesData(v);
+				DriveData.DeleteDrivesData(v);
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)

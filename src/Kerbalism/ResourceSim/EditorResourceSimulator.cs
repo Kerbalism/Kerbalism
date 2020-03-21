@@ -8,33 +8,23 @@ namespace KERBALISM.Planner
 {
 
 	///<summary> Planners simulator for resources contained, produced and consumed within the vessel </summary>
-	public class PlannerResourceSimulator
+	public static class EditorResourceSimulator
 	{
+		// shortcuts
+		private static VesselDataShip vd;
 		private static VesselResHandler handler;
-		private static uint handlerId;
-
-		public static VesselResHandler Handler
-		{
-			get
-			{
-				if (handler == null || EditorLogic.fetch.ship.persistentId != handlerId)
-				{
-					handler = new VesselResHandler(null, VesselResHandler.VesselState.EditorStep);
-					handlerId = EditorLogic.fetch.ship.persistentId;
-				}
-
-				return handler;
-			}
-		}
 
 		/// <summary>
 		/// run simulator to get statistics a fraction of a second after the vessel would spawn
 		/// in the configured environment (celestial body, orbit height and presence of sunlight)
 		/// </summary>
-		public void Analyze(List<Part> parts, PlannerVesselData vesselData)
+		public static void Analyze(List<Part> parts)
 		{
+			vd = VesselDataShip.Instance;
+			handler = vd.ResHandler;
+
 			// reset and re-find all resources amounts and capacities
-			Handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorInit, 1.0);
+			handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorInit, 1.0);
 
 			// reach steady state, so all initial resources like WasteAtmosphere are produced
 			// it is assumed that one cycle is needed to produce things that don't need inputs
@@ -44,39 +34,39 @@ namespace KERBALISM.Planner
 			for (int i = 0; i < 5; i++)
 			{
 				// do all produce/consume/recipe requests
-				RunSimulatorStep(parts, vesselData);
+				RunSimulatorStep(parts);
 				// process them
-				Handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorStep, 1.0);
+				handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorStep, 1.0);
 			}
 
 			// set back all resources amounts to the stored amounts
-			// this is for visualisation purposes, so the displayed values match the actual values
-			Handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorFinalize, 1.0);
+			// this is for visualisation purposes, so the displayed amounts match the current values and not the resul of the simulation
+			handler.ResourceUpdate(null, VesselResHandler.VesselState.EditorFinalize, 1.0);
 		}
 
 		/// <summary>run a single timestamp of the simulator</summary>
-		private void RunSimulatorStep(List<Part> parts, PlannerVesselData vesselData)
+		private static void RunSimulatorStep(List<Part> parts)
 		{
 			// process all rules
 			foreach (Rule r in Profile.rules)
 			{
 				if (r.input.Length > 0 && r.rate > 0.0)
 				{
-					ExecuteRule(r, vesselData.crewCount, r.EvaluateModifier(vesselData));
+					ExecuteRule(r);
 				}
 			}
 
 			// process all processes
 			foreach (Process p in Profile.processes)
 			{
-				ExecuteProcess(p, p.EvaluateModifier(vesselData));
+				ExecuteProcess(p);
 			}
 
 			// process comms
 			// TODO : add a switch somewhere in the planner to select transmitting/not transmitting
-			handler.ElectricCharge.Consume(vesselData.connection.ec_idle, ResourceBroker.CommsIdle);
-			if (vesselData.connection.ec > 0.0)
-				handler.ElectricCharge.Consume(vesselData.connection.ec - vesselData.connection.ec_idle, ResourceBroker.CommsXmit);
+			handler.ElectricCharge.Consume(vd.connection.ec_idle, ResourceBroker.CommsIdle);
+			if (vd.connection.ec > 0.0)
+				handler.ElectricCharge.Consume(vd.connection.ec - vd.connection.ec_idle, ResourceBroker.CommsXmit);
 
 			// process all modules
 			foreach (Part p in parts)
@@ -92,53 +82,55 @@ namespace KERBALISM.Planner
 				foreach (PartModule m in p.Modules)
 				{
 					// skip disabled modules
-					// rationale: the Selector disable non-selected modules in this way
 					if (!m.isEnabled)
 						continue;
 
 					switch (m.moduleName)
 					{
-						case "ModuleCommand"               : Process_command(m as ModuleCommand); continue;
-						case "ModuleGenerator"             : Process_generator(m as ModuleGenerator, p); continue;
-						case "ModuleResourceConverter"     : Process_converter(m as ModuleResourceConverter, vesselData); continue;
-						case "ModuleKPBSConverter"         : Process_converter(m as ModuleResourceConverter, vesselData); continue;
-						case "ModuleResourceHarvester"     : Process_stockharvester(m as ModuleResourceHarvester, vesselData); continue;
-						case "ModuleScienceConverter"      : Process_stocklab(m as ModuleScienceConverter); continue;
-						case "ModuleActiveRadiator"        : Process_radiator(m as ModuleActiveRadiator); continue;
-						case "ModuleWheelMotor"            : Process_wheel_motor(m as ModuleWheelMotor); continue;
-						case "ModuleWheelMotorSteering"    : Process_wheel_steering(m as ModuleWheelMotorSteering); continue;
-						case "ModuleLight"                 : Process_light(m as ModuleLight); continue;
-						case "ModuleColoredLensLight"      : Process_light(m as ModuleLight); continue;
-						case "ModuleMultiPointSurfaceLight": Process_light(m as ModuleLight); continue;
-						case "KerbalismScansat"            : Process_scanner(m as KerbalismScansat); continue;
-						case "ModuleRadioisotopeGenerator" : Process_radioisotope_generator(p, m); continue;
-						case "ModuleCryoTank"              : Process_cryotank(p, m); continue;
-						case "ModuleEngines"               : Process_engines(m as ModuleEngines); continue;
-						case "ModuleEnginesFX"             : Process_enginesfx(m as ModuleEnginesFX); continue;
-						case "ModuleRCS"                   : Process_rcs(m as ModuleRCS); continue;
-						case "ModuleRCSFX"                 : Process_rcsfx(m as ModuleRCSFX); continue;
+						case "ModuleCommand"               : ProcessCommand(m as ModuleCommand); continue;
+						case "ModuleGenerator"             : ProcessGenerator(m as ModuleGenerator, p); continue;
+						case "ModuleResourceConverter"     : ProcessConverter(m as ModuleResourceConverter); continue;
+						case "ModuleKPBSConverter"         : ProcessConverter(m as ModuleResourceConverter); continue;
+						case "ModuleResourceHarvester"     : ProcessStockharvester(m as ModuleResourceHarvester); continue;
+						case "ModuleScienceConverter"      : ProcessStocklab(m as ModuleScienceConverter); continue;
+						case "ModuleActiveRadiator"        : ProcessRadiator(m as ModuleActiveRadiator); continue;
+						case "ModuleWheelMotor"            : ProcessWheelMotor(m as ModuleWheelMotor); continue;
+						case "ModuleWheelMotorSteering"    : ProcessWheelSteering(m as ModuleWheelMotorSteering); continue;
+						case "ModuleLight"                 : ProcessLight(m as ModuleLight); continue;
+						case "ModuleColoredLensLight"      : ProcessLight(m as ModuleLight); continue;
+						case "ModuleMultiPointSurfaceLight": ProcessLight(m as ModuleLight); continue;
+						case "KerbalismScansat"            : ProcessScanner(m as KerbalismScansat); continue;
+						case "ModuleRadioisotopeGenerator" : ProcessRTG(p, m); continue;
+						case "ModuleCryoTank"              : ProcessCryotank(p, m); continue;
+						case "ModuleEngines"               : ProcessEngines(m as ModuleEngines); continue;
+						case "ModuleEnginesFX"             : ProcessEnginesFX(m as ModuleEnginesFX); continue;
+						case "ModuleRCS"                   : ProcessRCS(m as ModuleRCS); continue;
+						case "ModuleRCSFX"                 : ProcessRCSFX(m as ModuleRCSFX); continue;
 					}
 
 					if (m is IPlannerModule ipm)
 					{
-						ipm.PlannerUpdate(handler, vesselData);
+						ipm.PlannerUpdate(vd.ResHandler, vd);
 						continue;
 					}
 
 					if (PartModuleAPI.plannerModules.TryGetValue(m.GetType(), out Action<PartModule, CelestialBody, double, bool> apiUpdate))
 					{
-						apiUpdate(m, vesselData.body, vesselData.altitude, vesselData.EnvInSunlight);
+						apiUpdate(m, vd.body, vd.altitude, vd.EnvInSunlight);
 						continue;
 					}
 				}
 			}
 		}
 
+		#region RULE/PROCESS HANDLERS
+
 		/// <summary>execute a rule</summary>
-		public void ExecuteRule(Rule r, int crewCount, double modifier)
+		private static void ExecuteRule(Rule r)
 		{
 			// deduce rate per-second
-			double rate = crewCount * r.rate;
+			double rate = vd.crewCount * r.rate;
+			double modifier = r.EvaluateModifier(vd);
 
 			// prepare recipe
 			if (r.output.Length == 0)
@@ -156,8 +148,10 @@ namespace KERBALISM.Planner
 		}
 
 		/// <summary>execute a process</summary>
-		private void ExecuteProcess(Process pr, double modifier)
+		private static void ExecuteProcess(Process pr)
 		{
+			double modifier = pr.EvaluateModifier(vd);
+
 			// prepare recipe
 			Recipe recipe = new Recipe(pr.broker);
 			foreach (KeyValuePair<string, double> input in pr.inputs)
@@ -166,14 +160,25 @@ namespace KERBALISM.Planner
 			}
 			foreach (KeyValuePair<string, double> output in pr.outputs)
 			{
-				// this used the dump specs from the static process definition, which is no longer available
-				// need to keep a list of ProcessData objects in the editor and get the dump settings from there
-				// TODO recipe.AddOutput(output.Key, output.Value * k, pr.dump.Check(output.Key));
+				bool dump;
+				if (vd.VesselProcesses.TryGetProcessData(output.Key, out VesselProcess vesselProcess))
+				{
+					dump = vesselProcess.dumpedOutputs.Contains(output.Key);
+				}
+				else
+				{
+					dump = pr.dumpedOutputsDefault.Contains(output.Key);
+				}
+				recipe.AddOutput(output.Key, output.Value * modifier, dump);
 			}
-			handler.AddRecipe(recipe);
+			vd.ResHandler.AddRecipe(recipe);
 		}
 
-		void Process_command(ModuleCommand command)
+		#endregion
+
+		#region PARTMODULE HANDLERS
+
+		private static void ProcessCommand(ModuleCommand command)
 		{
 			if (command.hibernationMultiplier == 0.0)
 				return;
@@ -190,7 +195,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		void Process_generator(ModuleGenerator generator, Part p)
+		private static void ProcessGenerator(ModuleGenerator generator, Part p)
 		{
 			Recipe recipe = new Recipe(ResourceBroker.GetOrCreate(p.partInfo.title));
 			foreach (ModuleResource res in generator.resHandler.inputResources)
@@ -204,12 +209,11 @@ namespace KERBALISM.Planner
 			handler.AddRecipe(recipe);
 		}
 
-
-		void Process_converter(ModuleResourceConverter converter, PlannerVesselData va)
+		private static void ProcessConverter(ModuleResourceConverter converter)
 		{
 			// calculate experience bonus
 			float exp_bonus = converter.UseSpecialistBonus
-			  ? converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (va.crewEngineerMaxlevel + 1)))
+			  ? converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (vd.crewEngineerMaxlevel + 1)))
 			  : 1.0f;
 
 			// use part name as recipe name
@@ -229,12 +233,11 @@ namespace KERBALISM.Planner
 			handler.AddRecipe(recipe);
 		}
 
-
-		void Process_stockharvester(ModuleResourceHarvester harvester, PlannerVesselData va)
+		private static void ProcessStockharvester(ModuleResourceHarvester harvester)
 		{
 			// calculate experience bonus
 			float exp_bonus = harvester.UseSpecialistBonus
-			  ? harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (va.crewEngineerMaxlevel + 1)))
+			  ? harvester.EfficiencyBonus * (harvester.SpecialistBonusBase + (harvester.SpecialistEfficiencyFactor * (vd.crewEngineerMaxlevel + 1)))
 			  : 1.0f;
 
 			// use part name as recipe name
@@ -251,14 +254,12 @@ namespace KERBALISM.Planner
 			handler.AddRecipe(recipe);
 		}
 
-
-		void Process_stocklab(ModuleScienceConverter lab)
+		private static void ProcessStocklab(ModuleScienceConverter lab)
 		{
 			handler.ElectricCharge.Consume(lab.powerRequirement, ResourceBroker.ScienceLab);
 		}
 
-
-		void Process_radiator(ModuleActiveRadiator radiator)
+		private static void ProcessRadiator(ModuleActiveRadiator radiator)
 		{
 			// note: IsCooling is not valid in the editor, for deployable radiators,
 			// we will have to check if the related deploy module is deployed
@@ -269,8 +270,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-
-		void Process_wheel_motor(ModuleWheelMotor motor)
+		private static void ProcessWheelMotor(ModuleWheelMotor motor)
 		{
 			foreach (ModuleResource res in motor.resHandler.inputResources)
 			{
@@ -278,8 +278,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-
-		void Process_wheel_steering(ModuleWheelMotorSteering steering)
+		private static void ProcessWheelSteering(ModuleWheelMotorSteering steering)
 		{
 			foreach (ModuleResource res in steering.resHandler.inputResources)
 			{
@@ -288,7 +287,7 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_light(ModuleLight light)
+		private static void ProcessLight(ModuleLight light)
 		{
 			if (light.useResources && light.isOn)
 			{
@@ -297,21 +296,19 @@ namespace KERBALISM.Planner
 		}
 
 
-		void Process_scanner(KerbalismScansat m)
+		private static void ProcessScanner(KerbalismScansat m)
 		{
 			handler.ElectricCharge.Consume(m.ec_rate, ResourceBroker.Scanner);
 		}
 
-
-		void Process_radioisotope_generator(Part p, PartModule m)
+		private static void ProcessRTG(Part p, PartModule m)
 		{
 			double max_rate = Lib.ReflectionValue<float>(m, "BasePower");
 
 			handler.ElectricCharge.Produce(max_rate, ResourceBroker.RTG);
 		}
 
-
-		void Process_cryotank(Part p, PartModule m)
+		private static void ProcessCryotank(Part p, PartModule m)
 		{
 			// is cooling available
 			bool available = Lib.ReflectionValue<bool>(m, "CoolingEnabled");
@@ -365,7 +362,7 @@ namespace KERBALISM.Planner
 			handler.ElectricCharge.Consume(total_cost, ResourceBroker.Cryotank);
 		}
 
-		void Process_engines(ModuleEngines me)
+		private static void ProcessEngines(ModuleEngines me)
 		{
 			// calculate thrust fuel flow
 			double thrust_flow = me.maxFuelFlow * 1e3 * me.thrustPercentage;
@@ -385,7 +382,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		void Process_enginesfx(ModuleEnginesFX mefx)
+		private static void ProcessEnginesFX(ModuleEnginesFX mefx)
 		{
 			// calculate thrust fuel flow
 			double thrust_flow = mefx.maxFuelFlow * 1e3 * mefx.thrustPercentage;
@@ -405,7 +402,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		void Process_rcs(ModuleRCS mr)
+		private static void ProcessRCS(ModuleRCS mr)
 		{
 			// calculate thrust fuel flow
 			double thrust_flow = mr.maxFuelFlow * 1e3 * mr.thrustPercentage * mr.thrusterPower;
@@ -425,7 +422,7 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		void Process_rcsfx(ModuleRCSFX mrfx)
+		private static void ProcessRCSFX(ModuleRCSFX mrfx)
 		{
 			// calculate thrust fuel flow
 			double thrust_flow = mrfx.maxFuelFlow * 1e3 * mrfx.thrustPercentage * mrfx.thrusterPower;
@@ -444,7 +441,7 @@ namespace KERBALISM.Planner
 				}
 			}
 		}
+
+		#endregion
 	}
-
-
 } // KERBALISM

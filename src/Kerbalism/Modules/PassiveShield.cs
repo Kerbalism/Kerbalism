@@ -49,7 +49,7 @@ namespace KERBALISM
 			if(toggle)
 			{
 				Events["Toggle"].guiActiveUnfocused = require_eva;
-				Events["Toggle"].guiActive = !require_eva || Lib.IsEditor();
+				Events["Toggle"].guiActive = !require_eva || Lib.IsEditor;
 			}
 
 			// deal with non-toggable
@@ -77,7 +77,7 @@ namespace KERBALISM
 		public void FixedUpdate()
 		{
 			// do nothing else in the editor
-			if (Lib.IsEditor()) return;
+			if (Lib.IsEditor) return;
 
 			// allow sandbag filling only when landed
 			bool allowDeploy = vessel.Landed || !require_landed;
@@ -95,7 +95,7 @@ namespace KERBALISM
 			vd.ResHandler.ElectricCharge.Consume(ec_rate * elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (deployed && ec_rate > 0)
 				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.GetOrCreate(title));
@@ -104,7 +104,7 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
 		public void Toggle()
 		{
-			if (Lib.IsFlight())
+			if (Lib.IsFlight)
 			{
 
 				// disable for dead eva kerbals
@@ -131,7 +131,7 @@ namespace KERBALISM
 			deploy_anim.Play(!deployed, false);
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 		// action groups

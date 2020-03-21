@@ -81,7 +81,7 @@ namespace KERBALISM
 				return;
 
 			// update planner/monitor content
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				Planner.Planner.Update();
 			}
@@ -118,8 +118,8 @@ namespace KERBALISM
 				bool is_at_top = ApplicationLauncher.Instance.IsPositionedAtTop;
 
 				// get window size
-				float width = Lib.IsEditor() ? Planner.Planner.Width() : monitor.Width();
-				float height = Lib.IsEditor() ? Planner.Planner.Height() : monitor.Height();
+				float width = Lib.IsEditor ? Planner.Planner.Width() : monitor.Width();
+				float height = Lib.IsEditor ? Planner.Planner.Height() : monitor.Height();
 
 				// calculate window position
 				float left = screen_width - width;
@@ -131,7 +131,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					left -= !Lib.IsEditor() ? at_bottom_offset_x : at_bottom_editor_offset_x;
+					left -= !Lib.IsEditor ? at_bottom_offset_x : at_bottom_editor_offset_x;
 					top -= at_bottom_offset_y;
 				}
 
@@ -145,7 +145,7 @@ namespace KERBALISM
 				GUILayout.Space(Styles.ScaleFloat(10.0f));
 
 				// draw planner in the editors, monitor everywhere else
-				if (!Lib.IsEditor())
+				if (!Lib.IsEditor)
 					monitor.Render();
 				else
 					Planner.Planner.Render();

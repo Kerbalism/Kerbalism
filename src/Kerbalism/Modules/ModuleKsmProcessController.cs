@@ -8,24 +8,19 @@ namespace KERBALISM
 	/// <summary>
 	/// Replacement for ProcessController
 	/// </summary>
-	public class ModuleKsmProcessController: PartModule, IModuleInfo, IAnimatedModule, ISpecifics
+	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, ISpecifics, ISwitchable
 	{
-		// configuration values that are set by module configuration in the editor must be persitant
-
-		[KSPField(isPersistant = true)] public string processName = string.Empty;
-		[KSPField(isPersistant = true)] public double capacity = 1.0;
-		[KSPField(isPersistant = true)] public string id = string.Empty;
-
+		[KSPField] public string processName = string.Empty;
+		[KSPField] public double capacity = 1.0;
+		[KSPField] public string id = string.Empty;       // this is only for identifying the module with B9PS on parts that have multiple process controllers for the same process
 		[KSPField] public string uiGroup = null;          // display name of the UI group
 
-		[KSPField(isPersistant = true)]
+		[KSPField]
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool running;
 
 		// internal state
-		public PartProcessData ProcessData => partData; PartProcessData partData;
-		private bool broken = false;
-
+		public bool broken = false;
 		private BaseField runningField;
 
 		// parsing configs at prefab compilation
@@ -33,154 +28,94 @@ namespace KERBALISM
 		{
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
-				// needed for part module info
-				partData = new PartProcessData(processName, capacity, id, running, broken);
-				return;
+				ProcessControllerData prefabData = new ProcessControllerData();
+				prefabData.OnInstantiate(this, null, null);
+				moduleData = prefabData;
 			}
-
-			if (Lib.IsFlight() && string.IsNullOrEmpty(processName))
-			{
-				Lib.LogDebug($"Loaded in flight without process, disabling");
-				enabled = false;
-				isEnabled = false;
-			}
-
-			// data will be restored from OnLoad only in the following cases:
-			// - Part created in the editor from a saved ship (not a freshly instantiated part from the part list)
-			// - Part created in flight from a just launched vessel
-			ConfigNode editorDataNode = node.GetNode("EditorProcessData");
-			if (editorDataNode != null)
-				partData = new PartProcessData(editorDataNode);
-
-			// we might be restarted after a configuration change
-			if (Lib.IsEditor())
-				StartInternal();
 		}
 
-		// this is only for editor <--> editor and editor -> flight persistence
-		public override void OnSave(ConfigNode node)
+		public void OnSwitchActivate()
 		{
-			if (Lib.IsEditor() && partData != null)
-			{
-				ConfigNode processDataNode = node.AddNode("EditorProcessData");
-				partData.Save(processDataNode);
-			}
+			Lib.LogDebug($"B9PS : activating {moduleName} with id '{id}'");
+			Setup();
+		}
+
+		public void OnSwitchDeactivate()
+		{
+			Lib.LogDebug($"B9PS : deactivating {moduleName}");
+			enabled = isEnabled = moduleIsEnabled = false;
+			moduleData.moduleIsEnabled = false;
 		}
 
 		public override void OnStart(StartState state)
 		{
-			if (string.IsNullOrEmpty(id))
-			{
-				// auto-assign ID
-				id = part.name + "." + part.Modules.IndexOf(this);
-				Lib.Log($"ProcessController `{processName}` on {part.name} without id. Auto-assigning `{id}`, but you really should set a unique id in your configuration", Lib.LogLevel.Warning);
-			}
-
-			StartInternal();
-		}
-
-		/// <summary>  start the module. must be idempotent: expect to be called several times </summary>
-		private void StartInternal()
-		{
-			Lib.LogDebug($"ProcessController {id} on {part.name} starting with process '{processName}'");
-
-			if (string.IsNullOrEmpty(processName))
-			{
-				Lib.LogDebug($"No process, disabling module");
-				isEnabled = false;
-				enabled = false;
-				return;
-			}
-
-			bool isFlight = Lib.IsFlight();
-
-			// make sure part data is valid (if we have it), we might be restarting with a different configuration
-			if(partData != null && partData.processName != processName)
-			{
-				Lib.LogDebug($"Restarting with different process '{processName}' (was '{partData.processName}'), discarding old part data");
-				partData = null;
-			}
-
-			// get persistent data
-			if (partData == null)
-			{
-				// in flight, we should have the data stored in VesselData > PartData, unless the part was created in flight (rescue, KIS...)
-				if (isFlight)
-					partData = PartProcessData.GetFlightReferenceFromPart(part, id);
-
-				// if all other cases, this is a newly instantiated part from prefab. Create the data object and set default values.
-				if (partData == null)
-				{
-					Lib.LogDebug($"Instantiating new part data with processName '{processName}'");
-					partData = new PartProcessData(processName, capacity, id, running, broken);
-
-					if(!string.IsNullOrEmpty(processName) && partData.process == null)
-					{
-						Lib.Log($"Invalid process '{processName}' in ModuleKsmProcessController id {id} for part {part.partName}", Lib.LogLevel.Error);
-						isEnabled = false;
-						enabled = false;
-						return;
-					}
-
-					// part was created in flight (rescue, KIS...)
-					if (isFlight)
-					{
-						// set the VesselData / PartData reference
-						PartProcessData.SetFlightReferenceFromPart(part, partData);
-					}
-				}
-			}
-			else if (isFlight)
-			{
-				PartProcessData.SetFlightReferenceFromPart(part, partData);
-			}
-
-			partData.module = this;
-
-			// PAW setup
-			running = partData.process != null && partData.isRunning;
-
 			runningField = Fields["running"];
-			runningField.OnValueModified += (field) => Toggle(partData, true);
-			runningField.guiActive = runningField.guiActiveEditor = partData.process != null && partData.process.canToggle;
-			runningField.guiName = partData.process?.title;
+			runningField.OnValueModified += (field) => Toggle(moduleData, true);
 
 			((UI_Toggle)runningField.uiControlFlight).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
 			((UI_Toggle)runningField.uiControlFlight).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
 			((UI_Toggle)runningField.uiControlEditor).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
 			((UI_Toggle)runningField.uiControlEditor).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
 
+			Setup();
+		}
+
+		/// <summary>  start the module. must be idempotent: expect to be called several times </summary>
+		private void Setup()
+		{
+			Lib.LogDebug($"ProcessController on {part.name} starting with process '{processName}'");
+
+			if (string.IsNullOrEmpty(processName))
+			{
+				Lib.LogDebug($"No process, disabling module");
+				enabled = isEnabled = moduleIsEnabled = false;
+				moduleData.moduleIsEnabled = false;
+				return;
+			}
+
+			enabled = isEnabled = moduleIsEnabled = true;
+			moduleData.moduleIsEnabled = true;
+
+			// make sure part data is valid (if we have it), we might be restarting with a different configuration
+			if (moduleData.processName != processName || moduleData.processCapacity != capacity)
+			{
+				Lib.LogDebug($"Restarting with different process '{processName}' (was '{moduleData.processName}'), discarding old part data");
+				moduleData.OnInstantiate(this, null, null);
+			}
+
+			// PAW setup
+			running = moduleData.Process != null && moduleData.isRunning;
+			runningField.guiActive = runningField.guiActiveEditor = moduleData.Process != null && moduleData.Process.canToggle;
+			runningField.guiName = moduleData.Process.title;
+
 			if (uiGroup != null)
 				runningField.group = new BasePAWGroup(uiGroup, uiGroup, false);
 		}
 
-		public void OnDestroy()
+		public static void Toggle(ProcessControllerData processData, bool isLoaded)
 		{
-			// clear loaded module reference to avoid memory leaks
-			if (partData != null)
-				partData.module = null;
-		}
-
-		public static void Toggle(PartProcessData partData, bool isLoaded)
-		{
-			if (partData.isBroken)
+			if (processData.isBroken)
 				return;
 
-			partData.isRunning = !partData.isRunning;
+			processData.isRunning = !processData.isRunning;
 	
 			if (isLoaded)
-				partData.module.running = partData.isRunning;
+			{
+				processData.loadedModule.running = processData.isRunning;
 
-			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+				// refresh VAB/SPH ui
+				if (Lib.IsEditor)
+					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			}
 		}
 
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (string.IsNullOrEmpty(processName) || partData == null || partData.process == null)
+			if (string.IsNullOrEmpty(processName))
 				return string.Empty;
-			return Specs().Info(partData.process.desc);
+
+			return Specs().Info(moduleData.Process.desc);
 		}
 
 		public bool IsRunning() {
@@ -190,15 +125,15 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
-			Process process = Profile.processes.Find(k => k.name == processName);
+			Process process = moduleData.Process; //Profile.processes.Find(k => k.name == processName);
 			if (process == null)
 				return new Specifics();
 			return process.Specifics(capacity);
 		}
 
 		// module info support
-		public string GetModuleTitle() { return partData?.process?.title; }
-		public override string GetModuleDisplayName() { return partData?.process?.title; }
+		public string GetModuleTitle() { return "Process controller"; }
+		public override string GetModuleDisplayName() { return "Process controller"; }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

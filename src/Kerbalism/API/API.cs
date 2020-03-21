@@ -69,7 +69,7 @@ namespace KERBALISM
 			{
 				if (rule.name.Contains("radiation"))
 				{
-					foreach (KerbalData kd in DB.Kerbals().Values)
+					foreach (KerbalData kd in DB.Kerbals.Values)
 					{
 						RuleData rd = kd.rules[rule.name];
 						rd.problem = Math.Max(rd.problem + amount, 0.0);
@@ -373,46 +373,46 @@ namespace KERBALISM
 		public static double Volume(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.livingVolume;
+			return v.KerbalismData().Habitat.livingVolume;
 		}
 
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.shieldingSurface;
+			return v.KerbalismData().Habitat.shieldingSurface;
 		}
 
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.pressureAtm;
+			return v.KerbalismData().Habitat.pressureAtm;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
 			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().HabitatInfo.poisoningLevel;
+			return v.KerbalismData().Habitat.poisoningLevel;
 		}
 
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.shieldingModifier;
+			return v.KerbalismData().Habitat.shieldingModifier;
 		}
 
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.livingSpaceFactor;
+			return v.KerbalismData().Habitat.livingSpaceFactor;
 		}
 
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			return v.KerbalismData().HabitatInfo.comfortFactor;
+			return v.KerbalismData().Habitat.comfortFactor;
 		}
 
 		#endregion
@@ -510,12 +510,12 @@ namespace KERBALISM
 
 		public static void PlannerConsumeResource(string resource_name, double quantity, string title)
 		{
-			PlannerResourceSimulator.Handler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			VesselDataShip.Instance.ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerProduceResource(string resource_name, double quantity, string title)
 		{
-			PlannerResourceSimulator.Handler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			VesselDataShip.Instance.ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		public static void PlannerAddResourceRecipe(string[] resources, double[] rates, bool[] dump, string title)
@@ -530,22 +530,22 @@ namespace KERBALISM
 					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
 
-			PlannerResourceSimulator.Handler.AddRecipe(recipe);
+			VesselDataShip.Instance.ResHandler.AddRecipe(recipe);
 		}
 
 		public static double PlannerResourceAmount(string resource_name)
 		{
-			return PlannerResourceSimulator.Handler.GetResource(resource_name).Amount;
+			return VesselDataShip.Instance.ResHandler.GetResource(resource_name).Amount;
 		}
 
 		public static double PlannerResourceCapacity(string resource_name)
 		{
-			return PlannerResourceSimulator.Handler.GetResource(resource_name).Capacity;
+			return VesselDataShip.Instance.ResHandler.GetResource(resource_name).Capacity;
 		}
 
 		public static double PlannerResourceAvailability(string resource_name)
 		{
-			return PlannerResourceSimulator.Handler.GetResource(resource_name).AvailabilityFactor;
+			return VesselDataShip.Instance.ResHandler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		#endregion

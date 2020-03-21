@@ -56,7 +56,7 @@ namespace KERBALISM.CONTRACTS
 				meet_requirements =
 				  Profile.rules.Count > 0                                             // some rule is specified
 				  && progress != null && progress.celestialBodyHome.orbit.IsComplete  // first orbit completed
-				  && !DB.landmarks.manned_orbit;                                      // contract never completed
+				  && !DB.Landmarks.manned_orbit;                                      // contract never completed
 			}
 			return meet_requirements;
 		}
@@ -89,7 +89,7 @@ namespace KERBALISM.CONTRACTS
 				if (manned && in_orbit && for_30days)
 				{
 					SetComplete();
-					DB.landmarks.manned_orbit = true; //< remember that contract was completed
+					DB.Landmarks.manned_orbit = true; //< remember that contract was completed
 					break;
 				}
 			}

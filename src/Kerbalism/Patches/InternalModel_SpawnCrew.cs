@@ -9,13 +9,10 @@ namespace KERBALISM
 		static bool Prefix(InternalModel __instance)
 		{
 
-			if (!__instance.part.vessel.KerbalismData().Parts.TryGet(__instance.part.flightID, out PartData pd))
+			if (!__instance.part.TryGetModuleDataOfType(out HabitatData habitatData))
 				return true;
 
-			if (pd.Habitat == null)
-				return true;
-
-			bool requireSuit = pd.Habitat.RequireSuit;
+			bool requireSuit = habitatData.RequireSuit;
 
 			foreach (InternalSeat internalSeat in __instance.seats)
 			{

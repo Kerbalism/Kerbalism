@@ -726,7 +726,7 @@ namespace KERBALISM
 			habitat.sunRadiationOccluders.Clear();
 			hittedPartsCache.Clear();
 
-			Ray ray = new Ray(habitat.module.transform.position, mainSunDrection);
+			Ray ray = new Ray(habitat.loadedModule.transform.position, mainSunDrection);
 			int hitCount = Physics.RaycastNonAlloc(ray, sunRayHitsCache, 200f, partsLayerMask);
 
 			for (int i = 0; i < hitCount - 1; i++)
@@ -735,7 +735,7 @@ namespace KERBALISM
 				if (hit.transform != null) // && hit.transform.gameObject != null)
 				{
 					Part blockingPart = FlightGlobals.GetPartUpwardsCached(hit.transform.gameObject);
-					if (blockingPart == null || blockingPart == habitat.module.part)
+					if (blockingPart == null || blockingPart == habitat.loadedModule.part)
 						continue;
 
 					// avoid counting twice the same part (a part can have multiple colliders)
@@ -768,16 +768,16 @@ namespace KERBALISM
 			double result = 0.0;
 			int enabledHabitatCount = 0;
 
-			foreach (PartData partData in vd.Parts)
+			foreach (HabitatData habitaData in vd.Parts.AllModulesOfType<HabitatData>())
 			{
-				if (partData.Habitat == null || !partData.Habitat.isEnabled)
+				if (!habitaData.isEnabled)
 					continue;
 
 				enabledHabitatCount++;
 
 				double remainingRadiation = sunRadiation;
 
-				foreach (SunRadiationOccluder occluder in partData.Habitat.sunRadiationOccluders)
+				foreach (SunRadiationOccluder occluder in habitaData.sunRadiationOccluders)
 				{
 					// for a 500 keV gamma ray, halfing thickness for aluminium is 3.05cm. But...
 					// Solar energetic particles (SEP) are high-energy particles coming from the Sun.
@@ -833,7 +833,7 @@ namespace KERBALISM
 			if (Features.Radiation)
 			{
 				// we only show the warning for manned vessels, or for all vessels the first time its crossed
-				bool must_warn = vd.CrewCount > 0 || !DB.landmarks.belt_crossing;
+				bool must_warn = vd.CrewCount > 0 || !DB.Landmarks.belt_crossing;
 
 				// are we inside a belt
 				bool inside_belt = vd.EnvInnerBelt || vd.EnvOuterBelt;
@@ -851,10 +851,10 @@ namespace KERBALISM
 				}
 
 				// record first belt crossing
-				if (inside_belt) DB.landmarks.belt_crossing = true;
+				if (inside_belt) DB.Landmarks.belt_crossing = true;
 
 				// record first heliopause crossing
-				if (vd.EnvInterstellar) DB.landmarks.heliopause_crossing = true;
+				if (vd.EnvInterstellar) DB.Landmarks.heliopause_crossing = true;
 			}
 		}
 

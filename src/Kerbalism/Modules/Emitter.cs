@@ -76,7 +76,7 @@ namespace KERBALISM
 
 			List<ModuleKsmHabitat> habitats;
 
-			if (Lib.IsEditor())
+			if (Lib.IsEditor)
 			{
 				habitats = new List<ModuleKsmHabitat>();
 
@@ -152,7 +152,7 @@ namespace KERBALISM
 				vd.ResHandler.ElectricCharge.Consume(ec_rate * elapsed_s, ResourceBroker.GetOrCreate(title));
 		}
 
-		public void PlannerUpdate(VesselResHandler resHandler, PlannerVesselData vesselData)
+		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
 			if (ec_rate > 0.0 && running)
 				resHandler.ElectricCharge.Consume(ec_rate, ResourceBroker.GetOrCreate(title));
@@ -168,7 +168,7 @@ namespace KERBALISM
 			active_anim.Play(running, false);
 
 			// refresh VAB/SPH ui
-			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			if (Lib.IsEditor) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
 
