@@ -230,6 +230,13 @@ namespace KERBALISM
 			if (hasShielding && !part.Resources.Contains(shieldingResource))
 				Lib.AddResource(part, shieldingResource, 0.0, surface * maxShieldingFactor);
 
+			// This should not be needed, but there are specific cases when launching a new vessel
+			// where the normal check will be triggered at a time were the part crew isn't initialized.
+			// And there might other cases were the crew count becomes desynchronized, so additional safety
+			// Note : another solution would be to update it continously from FixedUpdate/BackgroundUpdate
+			// but that might cause issues with the crew transfer callbacks. On the otehr hand it would be safer
+			moduleData.crewCount = Lib.CrewCount(part);
+
 			bool isFlight = Lib.IsFlight;
 
 			// setup animations / transformators

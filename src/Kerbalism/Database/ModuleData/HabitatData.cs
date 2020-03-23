@@ -266,7 +266,8 @@ namespace KERBALISM
 					isEnabled = true;
 				}
 
-				// don't pressurize (if it's a rescue, the player will likely go on EVA immediatly anyway)
+				// don't pressurize. if it's a rescue, the player will likely go on EVA immediatly anyway, and in a case of a
+				// part that was created in flight, it doesn't make sense to have it pre-pressurized.
 				pressureState = modulePrefab.canPressurize ? PressureState.Depressurized : PressureState.AlwaysDepressurized;
 			}
 		}
