@@ -24,9 +24,11 @@ namespace KERBALISM
 	//      If moduledatas were found in the confignode, they have been loaded, otherwise new ones have been created
 	//      In any case, flightIds have been populated.
 	//      The Part and its PartModule also have their OnLoad called, so the flightIds are there too
-	//      What only remains to do is to set the actual cross-references for the KsmPartModule to their ModuleData
+	//      What only remains to do is to set the actual cross-references between the KsmPartModule and its ModuleData,
+	//      by using the flightIds.
 	//   B. A (loaded) vessel has been loaded, but the ModuleData for one or more of its KsmPartModule can't be found.
-	//      This can happen if the part configuration has been modified.
+	//      This can happen if the part configuration has been modified
+	//   To manage those two cases, we use a get-or-create operation.
 	[HarmonyPatch(typeof(Part))]
 	[HarmonyPatch("Start")]
 	class Part_Start
@@ -36,19 +38,25 @@ namespace KERBALISM
 			if (Lib.IsEditor)
 			{
 				// PartData will already exist if created trough ShipConstruct.LoadShip()
-				if (VesselDataShip.LoadedParts.Contains(__instance))
-					return;
+				// Also, ShipConstruct.SaveShip() can be called before Part.Start(), if that happen
+				// we will already have instantiatied everything from there because we can't afford
+				// to skip the moduledata shipId affectation.
+				// In all other cases, this is a newly instantiated part, create the partdata/moduledata
+				if (!VesselDataShip.LoadedParts.TryGet(__instance, out PartDataShip partData))
+				{
+					partData = new PartDataShip(VesselDataShip.Instance, __instance);
+					VesselDataShip.LoadedParts.Add(partData);
+				}
 
-				// otherwise, this is a newly instantiated part, create the partdata
-				PartData partData = new PartData(VesselDataShip.Instance, __instance);
-				VesselDataShip.LoadedParts.Add(partData);
-
-				// and create and link the ModuleData for every KsmPartModule
+				// create and link the ModuleData for every KsmPartModule
 				for (int i = 0; i < __instance.Modules.Count; i++)
 				{
 					if (__instance.Modules[i] is KsmPartModule ksmPM)
 					{
-						ModuleData.New(ksmPM, i, partData, false);
+						if (ksmPM.ModuleData == null) 
+						{
+							ModuleData.New(ksmPM, i, partData, false);
+						}
 					}
 				}
 			}
@@ -166,15 +174,22 @@ namespace KERBALISM
 				{
 					if (part.Modules[i] is KsmPartModule ksmPM)
 					{
+						// What happens here is that ShipConstruct.SaveShip is called to create the "auto-saved ship" 
+						// in the editor just after the first part is instantiated when you pick it up from the part list
+						// This happens before Part.Start(), meaning we won't have instantated the ModuleData yet.
 						if (ksmPM.ModuleData == null)
 						{
-							// note : what happens here is that ShipConstruct.SaveShip is called to create the "auto-saved ship" 
-							// in the editor just after the first part is instantiatiated when you pick it up from the part list
-							// This happens before Part.Start(), meaning we won't have instantated the ModuleData yet.
-							// It doesn't seem to have any consequence, since ShipConstruct.SaveShip will be called again latter
-							// in all cases. I'm not sure why KSP does that super-early call.
-							Lib.Log($"ModuleData for {ksmPM.GetType().Name} not found, skipping shipId affectation...");
-							continue;
+							Lib.LogDebug($"{ksmPM.GetType().Name} wasn't found, instantiating...");
+
+							// This could in the above loop, but since this only happen in unfrequent corner cases,
+							// having it here avoid doing t
+							if (!VesselDataShip.LoadedParts.TryGet(part, out PartDataShip partData))
+							{
+								partData = new PartDataShip(VesselDataShip.Instance, part);
+								VesselDataShip.LoadedParts.Add(partData);
+							}
+
+							ModuleData.New(ksmPM, i, partData, false);
 						}
 
 						int shipId;
@@ -210,7 +225,7 @@ namespace KERBALISM
 	// - Call ShipConstruct.LoadShip() to create the parts
 	// - Call ShipConstruct.SaveShip() (probably for the purpose of reverting to launch)
 	// - Call ShipConstruction.AssembleForLaunch() to create the Vessel, and assign those parts to it.
-	// Since we are patching ShipConstruct.LoadShip(), that mean all our PartData/ModuleData has been loaded.
+	// Since we are patching ShipConstruct.LoadShip(), that mean all our PartData/ModuleData have been loaded.
 	// Note that all of this happens after Kerbalism.OnLoad(), this is important because we need the global
 	// dictionary of ModuleData flightIds to be populated so we can check the uniqueness of the flightIds
 	// we are about to create for this new vessel.

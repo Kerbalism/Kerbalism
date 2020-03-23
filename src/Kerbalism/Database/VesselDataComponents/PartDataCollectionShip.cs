@@ -21,7 +21,7 @@ namespace KERBALISM
 		public PartDataShip this[PartDataShip data] => partDictionary[data.LoadedPart.GetInstanceID()];
 		public bool Contains(PartDataShip data) => partDictionary.ContainsKey(data.LoadedPart.GetInstanceID());
 		public bool Contains(Part part) => partDictionary.ContainsKey(part.GetInstanceID());
-		public bool TryGet(int instanceID, out PartDataShip pd) => partDictionary.TryGetValue(instanceID, out pd);
+		public bool TryGet(Part part, out PartDataShip pd) => partDictionary.TryGetValue(part.GetInstanceID(), out pd);
 
 		public IEnumerable<int> AllInstanceIDs => partDictionary.Keys;
 

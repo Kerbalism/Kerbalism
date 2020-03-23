@@ -77,16 +77,16 @@ namespace KERBALISM
 			enabled = isEnabled = moduleIsEnabled = true;
 			moduleData.moduleIsEnabled = true;
 
-			// make sure part data is valid (if we have it), we might be restarting with a different configuration
+			// we might be restarting with a different configuration
 			if (moduleData.processName != processName || moduleData.processCapacity != capacity)
 			{
-				Lib.LogDebug($"Restarting with different process '{processName}' (was '{moduleData.processName}'), discarding old part data");
-				moduleData.OnFirstInstantiate(null, null);
+				Lib.LogDebug($"Switching to process '{processName}' from '{moduleData.processName}'");
+				moduleData.Setup(processName, capacity);
 			}
 
 			// PAW setup
-			running = moduleData.Process != null && moduleData.isRunning;
-			runningField.guiActive = runningField.guiActiveEditor = moduleData.Process != null && moduleData.Process.canToggle;
+			running = moduleData.isRunning;
+			runningField.guiActive = runningField.guiActiveEditor = moduleData.Process.canToggle;
 			runningField.guiName = moduleData.Process.title;
 
 			if (uiGroup != null)

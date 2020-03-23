@@ -22,6 +22,13 @@ namespace KERBALISM
 			Process = Profile.processes.Find(p => p.name == processName);
 		}
 
+		public void Setup(string processName, double processCapacity)
+		{
+			this.processName = processName;
+			this.processCapacity = processCapacity;
+			Process = Profile.processes.Find(p => p.name == processName);
+		}
+
 		public override void OnLoad(ConfigNode node)
 		{
 			processName = Lib.ConfigValue(node, "processName", "");

@@ -243,6 +243,8 @@ namespace KERBALISM
 			}
 		}
 
+		private static bool ignoreNextBoardAttemptDriveCheck = false;
+
 		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
 		{
 			bool canBoard = false;
@@ -255,9 +257,59 @@ namespace KERBALISM
 			}
 
 			if (!canBoard)
+			{
 				Message.Post($"Can't board {Lib.Bold(targetPart.partInfo.title)}", "Depressurize it first !");
+				ignoreNextBoardAttemptDriveCheck = false;
+				return canBoard;
+			}
 
-			return canBoard;
+			if (!ignoreNextBoardAttemptDriveCheck)
+			{
+				double filesSize = 0.0;
+				double fileCapacity = 0.0;
+				int samplesSize = 0;
+				int samplesCapacity = 0;
+
+				foreach (DriveData drive in DriveData.GetDrives(instance.vessel))
+				{
+					filesSize += drive.FilesSize();
+					samplesSize += drive.SamplesSize();
+				}
+
+				foreach (DriveData drive in DriveData.GetDrives(targetPart.vessel))
+				{
+					fileCapacity += drive.FileCapacityAvailable();
+					samplesCapacity += (int)drive.SampleCapacityAvailable();
+				}
+
+				if (filesSize > fileCapacity || samplesSize > samplesCapacity)
+				{
+					canBoard = false;
+
+					DialogGUIButton cancel = new DialogGUIButton("#autoLOC_116009", delegate { }); // autoLOC_116009 : cancel
+					Callback proceedCallback = delegate { ignoreNextBoardAttemptDriveCheck = true; instance.BoardPart(targetPart); }; // ignore this check on the method next call
+					DialogGUIButton proceed = new DialogGUIButton("#autoLOC_116008", proceedCallback); // autoLOC_116008 : Board Anyway\n(Dump Experiments)
+
+					string message = Lib.BuildString(
+						string.Format("The vessel {0} doesn't have enough space to store all the experiments carried by {1}", targetPart.vessel.vesselName, instance.vessel.vesselName),
+						"\n\n",
+						"Files on EVA", " : ", Lib.HumanReadableDataSize(filesSize), " - ", "Storage capacity", " : ", Lib.HumanReadableDataSize(fileCapacity), "\n",
+						"Samples on EVA", " : ", Lib.HumanReadableSampleSize(samplesSize), " - ", "Storage capacity", " : ", Lib.HumanReadableSampleSize(samplesCapacity), "\n\n",
+						"If you proceed, some experiment results will be lost");
+
+					PopupDialog.SpawnPopupDialog(
+						new Vector2(0.5f, 0.5f),
+						new Vector2(0.5f, 0.5f),
+						new MultiOptionDialog("StoreExperimentsIssue", message, Localizer.Format("#autoLOC_116007"), HighLogic.UISkin, proceed, cancel), // autoLOC_116007 : Cannot store Experiments
+						false,
+						HighLogic.UISkin);
+
+					return false;
+				}
+			}
+
+			ignoreNextBoardAttemptDriveCheck = false;
+			return true;
 		}
 
 		private void AttemptEVA(ProtoCrewMember crew, Part sourcePart, Transform hatchTransform)
