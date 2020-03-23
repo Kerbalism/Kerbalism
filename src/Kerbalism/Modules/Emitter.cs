@@ -143,7 +143,10 @@ namespace KERBALISM
 				radiation_impact_calculated = CalculateRadiationImpact();
 
 			if (ec_rate > 0.0 && running)
-				vessel.KerbalismData().ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.GetOrCreate(title));
+			{
+				vessel.TryGetVesselData(out VesselData vd);
+				vd.ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.GetOrCreate(title));
+			}
 		}
 
 		public void BackgroundUpdate(VesselData vd, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, double elapsed_s)
@@ -207,7 +210,7 @@ namespace KERBALISM
 
 			foreach (Vessel n in FlightGlobals.VesselsLoaded)
 			{
-				var vd = n.KerbalismData();
+				n.TryGetVesselData(out VesselData vd);
 				if (!vd.IsSimulated) continue;
 
 				foreach (var emitter in Lib.FindModules<Emitter>(n))
@@ -231,7 +234,8 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			VesselKSPResource ec = v.KerbalismData().ResHandler.ElectricCharge;
+			v.TryGetVesselData(out VesselData vd);
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 
 			double tot = 0.0;
 			if (v.loaded)

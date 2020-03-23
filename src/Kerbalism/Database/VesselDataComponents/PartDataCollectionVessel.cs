@@ -73,7 +73,6 @@ namespace KERBALISM
 		private List<PartData> partList = new List<PartData>();
 		private VesselDataBase vesselData;
 
-
 		public PartDataCollectionVessel(VesselDataBase vesselData, PartDataCollectionShip shipPartData)
 		{
 			Lib.LogDebug($"Transferring PartData from ship to vessel for launch");
@@ -82,6 +81,7 @@ namespace KERBALISM
 			foreach (PartData partData in shipPartData)
 			{
 				partData.flightId = partData.LoadedPart.flightID;
+				partData.vesselData = vesselData;
 				Add(partData);
 
 				foreach (ModuleData moduleData in partData.modules)
@@ -141,7 +141,7 @@ namespace KERBALISM
 
 						if (modulesNode != null && flightId != 0 && moduleDataNodes.TryGetValue(flightId, out ConfigNode moduleNode))
 						{
-							ModuleData.NewFromNode(protoModule, partData, moduleNode, flightId);
+							ModuleData.NewFromNode(protopart, protoModule, partData, moduleNode, flightId);
 						}
 						else
 						{

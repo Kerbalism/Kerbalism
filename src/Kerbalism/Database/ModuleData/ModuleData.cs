@@ -14,7 +14,24 @@ namespace KERBALISM
 	{
 		public TModule loadedModule;
 
-		public override KsmPartModule LoadedModule { get => loadedModule; set => loadedModule = (TModule)value; }
+		public override KsmPartModule LoadedModuleBase => loadedModule;
+
+		public TModule modulePrefab;
+
+		public override KsmPartModule PrefabModuleBase => modulePrefab;
+
+		public VesselDataBase VesselData => partData.vesselData;
+
+		public bool IsLoaded => loadedModule != null;
+
+		public override void SetPartModuleReferences(PartModule prefab, KsmPartModule loadedModule)
+		{
+			modulePrefab = (TModule)prefab;
+			if (loadedModule != null)
+			{
+				this.loadedModule = (TModule)loadedModule;
+			}
+		}
 	}
 
 
@@ -31,7 +48,11 @@ namespace KERBALISM
 
 		public PartData partData;
 
-		public abstract KsmPartModule LoadedModule { get; set; }
+		public abstract KsmPartModule LoadedModuleBase { get; }
+
+		public abstract KsmPartModule PrefabModuleBase { get; }
+
+		public abstract void SetPartModuleReferences(PartModule prefab, KsmPartModule loadedModule);
 
 		public virtual void VesselDataUpdate(VesselDataBase vd)
 		{
@@ -56,18 +77,18 @@ namespace KERBALISM
 		}
 
 
-		public virtual void Instantiate(KsmPartModule module, PartModule partModulePrefab)
+		public virtual void FirstInstantiate(KsmPartModule module)
 		{
 			moduleIsEnabled = module.isEnabled;
 
-			OnInstantiate(partModulePrefab, null, null);
+			OnFirstInstantiate(null, null);
 		}
 
-		public virtual void Instantiate(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, PartModule partModulePrefab)
+		public virtual void FirstInstantiate(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 		{
 			moduleIsEnabled = Lib.Proto.GetBool(protoModule, "isEnabled", true);
 
-			OnInstantiate(partModulePrefab, protoModule, protoPart);
+			OnFirstInstantiate(protoModule, protoPart);
 		}
 
 		public void PartWillDie()
@@ -83,7 +104,14 @@ namespace KERBALISM
 
 		public virtual void OnSave(ConfigNode node) { }
 
-		public virtual void OnInstantiate(PartModule partModulePrefab, ProtoPartModuleSnapshot protoModule = null, ProtoPartSnapshot protoPart = null) { }
+		/// <summary>
+		/// Called when the PartData is instantiated for the first time.
+		/// Override it to initialize the persisted fields according to the prefab configuration.
+		/// This will usually be called in the editor, but it can also happen in flight (ex : EVA kerbals, KIS added part...), or even on an unloaded vessel (rescue missions, asteroids...)
+		/// </summary>
+		/// <param name="protoModule">Only available if the part was created unloaded (rescue, asteroids...)</param>
+		/// <param name="protoPart">Only available if the part was created unloaded (rescue, asteroids...)</param>
+		public virtual void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule = null, ProtoPartSnapshot protoPart = null) { }
 
 		public virtual void OnPartWillDie() { }
 
@@ -93,7 +121,7 @@ namespace KERBALISM
 		/// <summary> for every KsmPartModule derived class name, the corresponding ModuleData constructor delegate </summary>
 		private static Dictionary<string, Func<ModuleData>> activatorsByKsmPartModule = new Dictionary<string, Func<ModuleData>>();
 
-		/// <summary> dictionary of all moduleDatas game-wide, keys are unique</summary>
+		/// <summary> dictionary of all moduleDatas game-wide, by flightId</summary>
 		private static Dictionary<int, ModuleData> flightModuleDatas = new Dictionary<int, ModuleData>();
 
 		/// <summary>
@@ -178,16 +206,20 @@ namespace KERBALISM
 			{
 				Lib.LogDebug($"Linking {ksmPartModule.GetType().Name} and it's ModuleData, flightId={ksmPartModule.dataFlightId}");
 				ksmPartModule.ModuleData = moduleData;
-				moduleData.LoadedModule = ksmPartModule;
+				moduleData.SetPartModuleReferences((KsmPartModule)moduleData.partData.PartPrefab.Modules[moduleIndex], ksmPartModule);
 			}
 			else
 			{
-				Lib.LogDebugStack($"Flight Moduledata for {ksmPartModule.GetType().Name} hasn't been found after load, instatiating a new one");
-				PartDataCollectionVessel partDatas = ksmPartModule.vessel.KerbalismData().Parts;
-				PartData partData;
-				if (!partDatas.TryGet(ksmPartModule.part.flightID, out partData))
+				Lib.LogDebug($"Flight Moduledata for {ksmPartModule.GetType().Name} hasn't been found after load, instatiating a new one");
+				if (!ksmPartModule.vessel.TryGetVesselData(out VesselData vd))
 				{
-					partData = partDatas.Add(ksmPartModule.part);
+					Lib.LogDebugStack($"VesselData doesn't exists for vessel {ksmPartModule.vessel.vesselName}, can't instantiate ModuleData !", Lib.LogLevel.Error);
+					return;
+				}
+
+				if (!vd.Parts.TryGet(ksmPartModule.part.flightID, out PartData partData))
+				{
+					partData = vd.Parts.Add(ksmPartModule.part);
 				}
 				New(ksmPartModule, moduleIndex, partData, true);
 			}
@@ -211,7 +243,7 @@ namespace KERBALISM
 		{
 			int flightId = NewFlightId(moduleData);
 			moduleData.flightId = flightId;
-			moduleData.LoadedModule.dataFlightId = flightId;
+			moduleData.LoadedModuleBase.dataFlightId = flightId;
 		}
 
 		public static void New(KsmPartModule module, int moduleIndex, PartData partData, bool inFlight)
@@ -228,15 +260,15 @@ namespace KERBALISM
 
 			module.ModuleData = moduleData;
 			moduleData.partData = partData;
-			moduleData.LoadedModule = module;
+			moduleData.SetPartModuleReferences(partData.PartPrefab.Modules[moduleIndex], module);
 			partData.modules.Add(moduleData);
 
-			moduleData.Instantiate(module, partData.PartPrefab.Modules[moduleIndex]);
+			moduleData.FirstInstantiate(module);
 
-			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.Title}");
+			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModuleBase.dataShipId} for part {partData.Title}");
 		}
 
-		public static void NewFromNode(KsmPartModule module, PartData partData, ConfigNode moduleDataNode)
+		public static void NewFromNode(KsmPartModule module, int moduleIndex, PartData partData, ConfigNode moduleDataNode)
 		{
 			ModuleData moduleData = activatorsByModuleData[module.ModuleDataType.Name].Invoke();
 
@@ -250,11 +282,11 @@ namespace KERBALISM
 
 			module.ModuleData = moduleData;
 			moduleData.partData = partData;
-			moduleData.LoadedModule = module;
+			moduleData.SetPartModuleReferences(partData.PartPrefab.Modules[moduleIndex], module);
 			partData.modules.Add(moduleData);
 			moduleData.Load(moduleDataNode);
 
-			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModule.dataShipId} for part {partData.Title}");
+			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModuleBase.dataShipId} for part {partData.Title}");
 		}
 
 		public static bool New(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, PartData partData)
@@ -272,16 +304,20 @@ namespace KERBALISM
 			Lib.Proto.Set(protoModule, VALUENAME_FLIGHTID, flightId);
 
 			moduleData.partData = partData;
+			moduleData.SetPartModuleReferences(modulePrefab, null);
 			partData.modules.Add(moduleData);
 
-			moduleData.Instantiate(protoPart, protoModule, modulePrefab);
+			moduleData.FirstInstantiate(protoPart, protoModule);
 
 			Lib.LogDebug($"Instantiated new {moduleData.GetType().Name} (unloaded), flightId={flightId} for PartData {partData.Title}");
 			return true;
 		}
 
-		public static bool NewFromNode(ProtoPartModuleSnapshot protoModule, PartData partData, ConfigNode moduleDataNode, int flightId = 0)
+		public static bool NewFromNode(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, PartData partData, ConfigNode moduleDataNode, int flightId = 0)
 		{
+			if (!Lib.TryFindModulePrefab(protoPart, protoModule, out PartModule modulePrefab))
+				return false;
+
 			if (!activatorsByKsmPartModule.TryGetValue(protoModule.moduleName, out Func<ModuleData> activator))
 				return false;
 
@@ -297,8 +333,8 @@ namespace KERBALISM
 
 			flightModuleDatas.Add(flightId, moduleData);
 			moduleData.flightId = flightId;
-
 			moduleData.partData = partData;
+			moduleData.SetPartModuleReferences(modulePrefab, null);
 			partData.modules.Add(moduleData);
 			moduleData.Load(moduleDataNode);
 

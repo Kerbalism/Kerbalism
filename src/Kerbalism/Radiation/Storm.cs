@@ -200,13 +200,13 @@ namespace KERBALISM
                 if (Lib.GetParentPlanet(v.mainBody) == body)
                 {
                     // get info from the cache
-                    VesselData vd = v.KerbalismData();
+                    v.TryGetVesselData(out VesselData vd);
 
                     // skip invalid vessels
                     if (!vd.IsSimulated) continue;
 
                     // obey message config
-                    if (!v.KerbalismData().cfg_storm) continue;
+                    if (!vd.cfg_storm) continue;
 
                     // body is relevant
                     return true;
@@ -236,14 +236,16 @@ namespace KERBALISM
         /// <summary>return true if a storm is incoming</summary>
         public static bool Incoming(Vessel v)
         {
-            var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+			v.TryGetVesselData(out VesselData vd);
+			var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 1 && bd.display_warning;
         }
 
         /// <summary>return true if a storm is in progress</summary>
         public static bool InProgress(Vessel v)
         {
-            var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+			v.TryGetVesselData(out VesselData vd);
+			var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 2;
         }
     }

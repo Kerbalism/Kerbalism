@@ -14,7 +14,7 @@ namespace KERBALISM
 			// if vessel doesn't exist anymore, leave the panel empty
 			if (v == null) return;
 
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;

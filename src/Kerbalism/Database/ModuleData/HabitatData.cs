@@ -233,26 +233,25 @@ namespace KERBALISM
 
 		#region LIFECYCLE
 
-		public override void OnInstantiate(PartModule partModulePrefab, ProtoPartModuleSnapshot protoModule = null, ProtoPartSnapshot protoPart = null)
+		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule = null, ProtoPartSnapshot protoPart = null)
 		{
 			if (loadedModule != null)
 				crewCount = Lib.CrewCount(loadedModule.part);
 			else
 				crewCount = Lib.CrewCount(protoPart);
 
-			ModuleKsmHabitat habPrefab = (ModuleKsmHabitat)partModulePrefab;
-			baseVolume = habPrefab.volume;
-			baseSurface = habPrefab.surface;
-			baseComfortsMask = habPrefab.baseComfortsMask;
-			animState = habPrefab.isDeployable ? AnimState.Retracted : AnimState.Deployed;
-			isEnabled = !habPrefab.isDeployable;
+			baseVolume = modulePrefab.volume;
+			baseSurface = modulePrefab.surface;
+			baseComfortsMask = modulePrefab.baseComfortsMask;
+			animState = modulePrefab.isDeployable ? AnimState.Retracted : AnimState.Deployed;
+			isEnabled = !modulePrefab.isDeployable;
 
 			
 			if (Lib.IsEditor)
 			{
-				if (!habPrefab.canPressurize)
+				if (!modulePrefab.canPressurize)
 					pressureState = PressureState.AlwaysDepressurized;
-				else if (habPrefab.isDeployable && !IsDeployed)
+				else if (modulePrefab.isDeployable && !IsDeployed)
 					pressureState = PressureState.Depressurized;
 				else
 					pressureState = PressureState.Pressurized;
@@ -268,7 +267,7 @@ namespace KERBALISM
 				}
 
 				// don't pressurize (if it's a rescue, the player will likely go on EVA immediatly anyway)
-				pressureState = habPrefab.canPressurize ? PressureState.Depressurized : PressureState.AlwaysDepressurized;
+				pressureState = modulePrefab.canPressurize ? PressureState.Depressurized : PressureState.AlwaysDepressurized;
 			}
 		}
 

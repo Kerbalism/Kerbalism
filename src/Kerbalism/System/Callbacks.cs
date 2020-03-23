@@ -146,7 +146,14 @@ namespace KERBALISM
 			GameEvents.onVesselRecoveryProcessingComplete.Add(OnVesselRecoveryProcessingComplete);
 
 			// add editor events
-			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
+			GameEvents.onEditorShipModified.Add(OnEditorShipModified);
+		}
+
+		
+		private void OnEditorShipModified(ShipConstruct data)
+		{
+			ModuleKsmExperiment.CheckEditorExperimentMultipleRun();
+			Planner.Planner.EditorShipModifiedEvent(data);
 		}
 
 		private void OnVesselRecoveryProcessingComplete(ProtoVessel pv, MissionRecoveryDialog dialog, float recoveryFactor)
@@ -430,60 +437,57 @@ namespace KERBALISM
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
-			OnVesselModified(data.from.vessel);
-			OnVesselModified(data.to.vessel);
-
-			// get total crew in the origin vessel
-			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
-
-			// get vessel resources handler
-			VesselData vd = data.from.vessel.KerbalismData();
-
 			// setup supply resources capacity in the eva kerbal
+			// This has to be before the vesseldata creation, so the reshandler is 
+			// initialized with the correct capacities
 			Profile.SetupEva(data.to);
 
-			String prop_name = Lib.EvaPropellantName();
-
-			// for each resource in the kerbal
-			for (int i = 0; i < data.to.Resources.Count; ++i)
+			// get vessel data
+			if (!data.to.vessel.TryGetVesselDataNoError(out VesselData evaVD))
 			{
-				// get the resource
-				PartResource res = data.to.Resources[i];
-
-				// eva prop is handled differently
-				if (res.resourceName == prop_name)
-				{
-					continue;
-				}
-
-				double quantity = Math.Min(vd.ResHandler.GetResource(res.resourceName).Amount / tot_crew, res.maxAmount);
-				// remove resource from vessel
-				quantity = data.from.RequestResource(res.resourceName, quantity);
-
-				// add resource to eva kerbal
-				data.to.RequestResource(res.resourceName, -quantity);
+				Lib.LogDebug($"Creating VesselData for EVA Kerbal : {data.to.vessel.vesselName}");
+				evaVD = new VesselData(data.to.vessel);
+				DB.AddNewVesselData(evaVD);
 			}
 
-			// take as much of the propellant as possible. just imagine: there are 1.3 units left, and 12 occupants
-			// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
-			// and have to get from one end of the station to the other with just 0.1 units in the tank...
-			// nope.
-			double evaPropQuantity = data.from.RequestResource(prop_name, Lib.EvaPropellantCapacity());
+			data.from.vessel.TryGetVesselData(out VesselData vesselVD);
 
-			// We can't just add the monoprop here, because that doesn't always work. It might be related
-			// to the fact that stock KSP wants to add 5 units of monoprop to new EVAs. Instead of fighting KSP here,
-			// we just let it do it's thing and set our amount later in EVA.cs - which seems to work just fine.
-			// don't put that into Cache.VesselInfo because that can be deleted before we get there
-			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
+			// total crew of the origin vessel plus the EVAing kerbal
+			double totalCrew = Lib.CrewCount(data.from.vessel) + 1.0;
 
-			// Airlock loss
-			vd.ResHandler.Consume("Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
+			string evaPropellant = Lib.EvaPropellantName();
 
-			// show warning if there is little or no EVA propellant in the suit
-			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
+			// for each resource in the kerbal
+			foreach (PartResource partRes in data.to.Resources)
 			{
-				Message.Post(Severity.danger,
-					Local.CallBackMsg_EvaNoMP.Format("<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
+				// get the resource
+				VesselResource evaRes = evaVD.ResHandler.GetResource(partRes.resourceName);
+				VesselResource vesselRes = vesselVD.ResHandler.GetResource(partRes.resourceName);
+
+				// clamp request by how much is available
+				double amountTransferred = Math.Min(evaRes.Capacity, Math.Max(vesselRes.Amount + vesselRes.Deferred, 0.0));
+
+				// special handling for EVA propellant
+				if (evaRes.Name == evaPropellant)
+				{
+					if (amountTransferred <= 0.05 && !Lib.Landed(data.from.vessel))
+					{
+						Message.Post(Severity.danger,
+							Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropellant + "</b>"), Local.CallBackMsg_EvaNoMP2);
+						// "There isn't any <<1>> in the EVA suit", "Don't let the ladder go!"
+					}
+				}
+				// for all ressources but propellant, only take this kerbal "share"
+				else
+				{
+					amountTransferred /= totalCrew;
+				}
+
+				// remove resource from vessel
+				vesselRes.Consume(amountTransferred);
+
+				// add resource to eva kerbal
+				evaRes.Produce(amountTransferred);
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
@@ -491,7 +495,9 @@ namespace KERBALISM
 			EVA.HeadLamps(kerbal, false);
 
 			// execute script
-			vd.computer.Execute(data.from.vessel, ScriptType.eva_out);
+			evaVD.computer.Execute(data.from.vessel, ScriptType.eva_out);
+
+			OnVesselModified(data.from.vessel);
 		}
 
 
@@ -524,7 +530,8 @@ namespace KERBALISM
 			this.OnVesselModified(data.to.vessel);
 
 			// execute script
-			data.to.vessel.KerbalismData().computer.Execute(data.to.vessel, ScriptType.eva_in);
+			data.to.vessel.TryGetVesselData(out VesselData vd);
+			vd.computer.Execute(data.to.vessel, ScriptType.eva_in);
 		}
 
 		void VesselRecovered(ProtoVessel pv, bool b)

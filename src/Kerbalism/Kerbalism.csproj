@@ -154,6 +154,7 @@
     <Compile Include="Contracts\SpaceAnalysis.cs" />
     <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
+    <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
     <Compile Include="Database\VesselDataComponents\PartDataCollectionShip.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
@@ -165,7 +166,7 @@
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
-    <Compile Include="Patches\ShipConstruct_SaveShip.cs" />
+    <Compile Include="Patches\ShipConstruct.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
     <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />

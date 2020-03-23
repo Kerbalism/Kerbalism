@@ -19,7 +19,7 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get data
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;
@@ -96,7 +96,7 @@ namespace KERBALISM
 				// get script
 				ScriptType script_type = (ScriptType)script_index;
 				string script_name = Name().ToUpper();
-				Script script = v.KerbalismData().computer.Get(script_type);
+				Script script = vd.computer.Get(script_type);
 
 				// draw section title and desc
 				p.AddSection

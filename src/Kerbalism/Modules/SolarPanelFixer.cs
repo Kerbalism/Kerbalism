@@ -223,7 +223,7 @@ namespace KERBALISM
 				return;
 
 			// get vessel data
-			VesselData vd = vessel.KerbalismData();
+			vessel.TryGetVesselData(out VesselData vd);
 
 			// do nothing if vessel is invalid
 			if (!vd.IsSimulated) return;
@@ -358,7 +358,7 @@ namespace KERBALISM
 			}
 
 			// get vessel data from cache
-			VesselData vd = vessel.KerbalismData();
+			vessel.TryGetVesselData(out VesselData vd);
 
 			// do nothing if vessel is invalid
 			if (!vd.IsSimulated)

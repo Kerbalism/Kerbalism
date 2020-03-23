@@ -29,7 +29,8 @@ namespace KERBALISM
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
 				ProcessControllerData prefabData = new ProcessControllerData();
-				prefabData.OnInstantiate(this, null, null);
+				prefabData.SetPartModuleReferences(this, this);
+				prefabData.OnFirstInstantiate(null, null);
 				moduleData = prefabData;
 			}
 		}
@@ -80,7 +81,7 @@ namespace KERBALISM
 			if (moduleData.processName != processName || moduleData.processCapacity != capacity)
 			{
 				Lib.LogDebug($"Restarting with different process '{processName}' (was '{moduleData.processName}'), discarding old part data");
-				moduleData.OnInstantiate(this, null, null);
+				moduleData.OnFirstInstantiate(null, null);
 			}
 
 			// PAW setup

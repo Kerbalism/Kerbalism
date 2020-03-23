@@ -337,7 +337,12 @@ namespace KERBALISM
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel data
-				VesselData vd = v.KerbalismData();
+				if (!v.TryGetVesselDataNoError(out VesselData vd))
+				{
+					Lib.LogDebug($"Creating VesselData for new vessel {v.vesselName}");
+					vd = new VesselData(v);
+					DB.AddNewVesselData(vd);
+				}
 
 				// update the vessel data validity
 				vd.Update(v);
@@ -1015,7 +1020,7 @@ namespace KERBALISM
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null) return;
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 			if (!vd.IsSimulated) return;
 
 			// call scripts with 1-5 key
@@ -1110,7 +1115,8 @@ namespace KERBALISM
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
-				res = v.KerbalismData().ResHandler.GetResource(supply.resource);
+				v.TryGetVesselData(out VesselData vd);
+				res = vd.ResHandler.GetResource(supply.resource);
 			}
 
 			// compile list of events with condition satisfied

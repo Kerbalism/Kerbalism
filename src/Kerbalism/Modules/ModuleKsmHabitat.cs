@@ -67,7 +67,7 @@ namespace KERBALISM
 		private Transformator counterweightAnimator;
 
 		// caching frequently used things
-		private VesselData vd;
+		private VesselDataBase vd;
 		private PartResourceWrapper atmoRes;
 		private PartResourceWrapper wasteRes;
 		private PartResourceWrapper shieldRes;
@@ -254,11 +254,13 @@ namespace KERBALISM
 
 			if (isFlight)
 			{
-				vd = vessel.KerbalismData();
+				vessel.TryGetVesselData(out VesselData flightVD);
+				vd = flightVD;
 				vesselResHandler = vd.ResHandler;
 			}
 			else
 			{
+				vd = VesselDataShip.Instance;
 				vesselResHandler = VesselDataShip.Instance.ResHandler;
 			}
 
@@ -593,7 +595,7 @@ namespace KERBALISM
 		public class HabitatUpdateHandler
 		{
 			private Vessel vessel;
-			private VesselData vd;
+			private VesselDataBase vd;
 			private HabitatData data;
 			private ModuleKsmHabitat module;
 
@@ -609,7 +611,7 @@ namespace KERBALISM
 			bool isEditor;
 			bool isLoaded;
 
-			public HabitatUpdateHandler(Vessel vessel, VesselData vd, ModuleKsmHabitat module, HabitatData data,
+			public HabitatUpdateHandler(Vessel vessel, VesselDataBase vd, ModuleKsmHabitat module, HabitatData data,
 				PartResourceWrapper atmoRes, PartResourceWrapper wasteRes, PartResourceWrapper shieldRes,
 				VesselKSPResource atmoResInfo, VesselKSPResource wasteResInfo, VesselKSPResource breathableResInfo, VesselKSPResource ecResInfo)
 			{

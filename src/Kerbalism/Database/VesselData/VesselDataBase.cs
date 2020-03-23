@@ -30,6 +30,8 @@ namespace KERBALISM
 
 		#region VIRTUAL PROPERTIES
 
+		public virtual string VesselName => string.Empty;
+
 		public virtual bool IsPersistent => true;
 
 		public virtual IEnumerable<PartData> PartList { get; }
@@ -196,7 +198,7 @@ namespace KERBALISM
 					{
 						if ( moduleDataNodes.TryGetValue(ksmPM.dataShipId, out ConfigNode moduleNode))
 						{
-							ModuleData.NewFromNode(ksmPM, partData, moduleNode);
+							ModuleData.NewFromNode(ksmPM, i, partData, moduleNode);
 						}
 						else
 						{

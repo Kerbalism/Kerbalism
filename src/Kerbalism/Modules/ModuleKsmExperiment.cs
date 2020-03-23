@@ -1,166 +1,92 @@
 using System;
 using System.Collections.Generic;
 using Experience;
+using System.Linq;
 using UnityEngine;
 using KSP.Localization;
 using System.Collections;
 using static KERBALISM.ExperimentRequirements;
-using System.Linq;
+using static KERBALISM.ExperimentData;
 using KERBALISM.Planner;
 
 namespace KERBALISM
 {
 
-	public class ModuleKsmExperiment : PartModule, ISpecifics, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, ISwitchable
+
+	public class ModuleKsmExperiment : KsmPartModule<ModuleKsmExperiment, ExperimentData>, ISpecifics, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, IBackgroundModule, ISwitchable
 	{
+		#region FIELDS
+
 		/// <summary> name of the associated experiment module definition </summary>
-		[KSPField(isPersistant = true)] public string id = string.Empty;
+		[KSPField] public string id = string.Empty;
 
 		/// <summary> don't show UI when the experiment is unavailable </summary>
 		[KSPField] public bool hide_when_invalid = false;
 
-		/// <summary> if true, deploy/retract animations will managed by the first found ModuleAnimationGroup </summary>
-		[KSPField] public bool use_animation_group = false;
-		[KSPField] public string retractedDragCube = "Retracted";
-		[KSPField] public string deployedDragCube = "Deployed";
-
 		/// <summary> if true, the experiment can run when shrouded (in bay or fairing) </summary>
 		[KSPField] public bool allow_shrouded = true;
 
-		// animations
+		// animations definition
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
 		[KSPField] public bool anim_deploy_reverse = false;
 
 		[KSPField] public string anim_loop = string.Empty; // loop animation
 		[KSPField] public bool anim_loop_reverse = false;
 
-		// persistence
-		[KSPField(isPersistant = true)] public string issue = string.Empty;
-		[KSPField(isPersistant = true)] public int situationId;
-		[KSPField(isPersistant = true)] public bool shrouded = false;
-		[KSPField(isPersistant = true)] public double remainingSampleMass = 0.0;
-		[KSPField(isPersistant = true)] public int privateHdId = 0;
-		[KSPField(isPersistant = true)] public bool firstStart = true;
+		/// <summary>
+		/// if true, deploy/retract animations will managed by the first (by index) found ModuleAnimationGroup
+		/// Note that using an animation group is incompatible with using a loop animation
+		/// </summary>
+		[KSPField] public bool use_animation_group = false;
 
-		/// <summary> never set this directly, use the "State" property </summary>
-		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
-		[KSPField(isPersistant = true)] private ExpStatus status = ExpStatus.Stopped;
+		// optional : custom drag cubes definitions
+		[KSPField] public string retractedDragCube = "Retracted";
+		[KSPField] public string deployedDragCube = "Deployed";
 
-		public ExperimentModuleDefinition ModuleDefinition
-		{
-			get
-			{
-				if (_moduleDefinition != null)
-					return _moduleDefinition;
-
-				// if we have no module defintion set, we're probably dealing with a prefab that belongs
-				// to a configurable experiment on an unloaded vessel. do not set the module definition
-				// member variable on that instance, because other parts with the same prefab might
-				// have different configurations.
-
-				if(!string.IsNullOrEmpty(id))
-					return ScienceDB.GetExperimentModuleDefinition(id);
-
-				return null;
-			}
-			set
-			{
-				_moduleDefinition = value;
-			}
-		}
-		private ExperimentModuleDefinition _moduleDefinition;
-
-		private Situation situation;
-		public SubjectData Subject => subject; private SubjectData subject;
-
-		// animations
-		internal Animator deployAnimator;
-		internal Animator loopAnimator;
-		public ModuleAnimationGroup AnimationGroup { get; private set; }
-
-		public string ExperimentID
-		{
-			get
-			{
-				return ModuleDefinition.Info.ExperimentId;				
-			}
-		}
-
-		#region state/status
-
-		public enum ExpStatus { Stopped, Running, Forced, Waiting, Issue, Broken }
-		public enum RunningState { Stopped, Running, Forced, Broken }
-
-		public RunningState State
-		{
-			get => expState;
-			set
-			{
-				expState = value;
-
-				var newStatus = GetStatus(value, Subject, issue);
-
-				if (Lib.IsFlight)
-					API.OnExperimentStateChanged.Notify(vessel, ExperimentID, status, newStatus);
-				
-				status = newStatus;
-			}
-		}
-
-		public ExpStatus Status => status;
-
-		public static ExpStatus GetStatus(RunningState state, SubjectData subject, string issue)
-		{
-			switch (state)
-			{
-				case RunningState.Broken:
-					return ExpStatus.Broken;
-				case RunningState.Stopped:
-					return ExpStatus.Stopped;
-				case RunningState.Running:
-					if (issue.Length > 0) return ExpStatus.Issue;
-					if (subject == null || subject.ScienceRemainingToCollect <= 0.0) return ExpStatus.Waiting;
-					return ExpStatus.Running;
-				case RunningState.Forced:
-					if (issue.Length > 0) return ExpStatus.Issue;
-					return ExpStatus.Forced;
-				default:
-					return ExpStatus.Stopped;
-			}
-		}
-
-		public static bool IsRunning(ExpStatus status)
-			=> status == ExpStatus.Running || status == ExpStatus.Forced || status == ExpStatus.Waiting || status == ExpStatus.Issue;
-		public static bool IsRunning(RunningState state)
-			=> state == RunningState.Running || state == RunningState.Forced;
-		public bool Running
-			=> IsRunning(expState);
-		public static bool IsBroken(RunningState state)
-			=> state == RunningState.Broken;
-		public bool Broken
-			=> IsBroken(State);
+		// animation handlers
+		private Animator deployAnimator;
+		private Animator loopAnimator;
+		private ModuleAnimationGroup animationGroup;
 
 		#endregion
 
-		#region init / parsing
+		#region LIFECYCLE
 
 		public override void OnLoad(ConfigNode node)
 		{
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				ExperimentData prefabData = new ExperimentData();
+				prefabData.SetPartModuleReferences(this, this);
+				prefabData.OnFirstInstantiate(null, null);
+				moduleData = prefabData;
+			}
+
 			if (use_animation_group)
-				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+				animationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
 		}
 
 		public void OnSwitchActivate()
 		{
 			Lib.LogDebug($"B9PS : activating {moduleName} with id '{id}'");
-			SetupModuleDefinition();
+
+			if (moduleData.SetupDefinition(id))
+			{
+				enabled = isEnabled = moduleIsEnabled = true;
+				moduleData.moduleIsEnabled = true;
+				Setup();
+			}
+			else
+			{
+				OnSwitchDeactivate();
+			}
 		}
 
 		public void OnSwitchDeactivate()
 		{
 			Lib.LogDebug($"B9PS : deactivating {moduleName}");
 			enabled = isEnabled = moduleIsEnabled = false;
-			ModuleDefinition = null;
+			moduleData.moduleIsEnabled = false;
 		}
 
 		public override void OnStart(StartState state)
@@ -172,23 +98,25 @@ namespace KERBALISM
 			loopAnimator = new Animator(part, anim_loop, anim_loop_reverse);
 
 			// set initial animation states
-			SetDragCubes(Running);
-
-			if (Running)
+			if (moduleData.IsRunningRequested)
 			{
 				deployAnimator.Still(1f);
 				loopAnimator.Play(false, true);
+				SetDragCubes(true);
 			}
 			else
 			{
 				deployAnimator.Still(0f);
+				SetDragCubes(false);
 			}
 
-			if (use_animation_group && AnimationGroup == null)
-				AnimationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
+			if (use_animation_group && animationGroup == null)
+				animationGroup = part.Modules.OfType<ModuleAnimationGroup>().FirstOrDefault();
 
-			if (AnimationGroup != null && !AnimationGroup.isDeployed && Running)
-				AnimationGroup.DeployModule();
+			if (animationGroup != null && !animationGroup.isDeployed && moduleData.IsRunningRequested)
+			{
+				animationGroup.DeployModule();
+			}
 
 			Events["ToggleEvent"].guiActiveUncommand = true;
 			Events["ToggleEvent"].externalToEVAOnly = true;
@@ -198,81 +126,38 @@ namespace KERBALISM
 			Events["ShowPopup"].externalToEVAOnly = true;
 			Events["ShowPopup"].requireFullControl = false;
 
-			SetupModuleDefinition();
+			if (moduleData.moduleIsEnabled)
+			{
+				moduleData.CheckPrivateDriveId();
+				Setup();
+			}
 		}
 
-		private void SetupModuleDefinition()
+		private void Setup()
 		{
 			Lib.LogDebug($"Setup with id '{id}'");
 
-			if (string.IsNullOrEmpty(id))
-			{
-				enabled = isEnabled = moduleIsEnabled = false;
-				_moduleDefinition = null;
-				return;
-			}
-
-			_moduleDefinition = ScienceDB.GetExperimentModuleDefinition(id);
-
-			if (_moduleDefinition == null)
-			{
-				Lib.Log($"No MODULE_DEFINITION found with name `{id}`, is your config broken?", Lib.LogLevel.Error);
-				enabled = isEnabled = moduleIsEnabled = false;
-				return;
-			}
-
-			enabled = isEnabled = moduleIsEnabled = true;
-
-			Actions["StartAction"].guiName = Local.Generic_START + ": " + ModuleDefinition.Info.Title;
-			Actions["StopAction"].guiName = Local.Generic_STOP + ": " + ModuleDefinition.Info.Title;
-
-			if (Lib.IsFlight)
-			{
-				foreach (DriveData drive in part.GetModuleDatasOfType<DriveData>())
-				{
-					if (drive.loadedModule.experiment_id == ExperimentID)
-						privateHdId = drive.flightId;
-				}
-
-				if (firstStart)
-				{
-					FirstStart();
-					firstStart = false;
-				}
-			}
+			Actions["StartAction"].guiName = Lib.BuildString(Local.Generic_START, ": ", moduleData.ModuleDefinition.Info.Title);
+			Actions["StopAction"].guiName = Lib.BuildString(Local.Generic_STOP, ": ", moduleData.ModuleDefinition.Info.Title);
 		}
 
-		private void FirstStart()
-		{
-			Lib.LogDebug($"First start with id '{id}'");
-
-			// initialize the remaining sample mass
-			// this needs to be done only once just after launch
-			if (!ModuleDefinition.SampleCollecting && ModuleDefinition.Info.SampleMass > 0.0 && remainingSampleMass == 0)
-			{
-				remainingSampleMass = ModuleDefinition.Info.SampleMass * ModuleDefinition.Samples;
-				if (double.IsNaN(remainingSampleMass))
-					Lib.Log("remainingSampleMass is NaN on first start " + id + " " + ModuleDefinition.Info.SampleMass + " / " + ModuleDefinition.Samples, Lib.LogLevel.Error);
-			}
-		}
 		#endregion
 
-		#region update methods
+		#region EVALUATION
 
 		public virtual void Update()
 		{
 			if (Lib.IsEditor || vessel == null) // in the editor just update the gui name
 			{
 				// update ui
-				Events["ToggleEvent"].guiName = Lib.StatusToggle(ModuleDefinition.Info.Title, StatusInfo(status, issue));
+				Events["ToggleEvent"].guiName = Lib.StatusToggle(moduleData.ExperimentTitle, StatusInfo(moduleData.Status, moduleData.issue));
 				return;
 			}
 
-			VesselData vd = vessel.KerbalismData();
-			if (!vd.IsSimulated) return;
+			if (!vessel.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return;
 
-			bool hide = hide_when_invalid
-				&& null == ScienceDB.GetSubjectData(ModuleDefinition.Info, GetSituation(vd));
+			bool hide = hide_when_invalid && moduleData.Subject == null;
 
 			if (hide)
 			{
@@ -284,579 +169,384 @@ namespace KERBALISM
 				Events["ToggleEvent"].active = true;
 				Events["ShowPopup"].active = true;
 
-				if (subject != null)
+				Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(moduleData.ExperimentTitle, 25), StatusInfo(moduleData.Status, moduleData.issue));
+
+				if (moduleData.Subject != null)
 				{
-					Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ModuleDefinition.Info.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-					Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info, Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ModuleDefinition.Info, Subject, ModuleDefinition.DataRate)));
+					Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info,
+						Lib.BuildString(
+							ScienceValue(moduleData.Subject),
+							" ",
+							moduleData.State == RunningState.Forced
+							? moduleData.Subject.PercentCollectedTotal.ToString("P0")
+							: RunningCountdown(moduleData.ModuleDefinition.Info, moduleData.Subject, moduleData.ModuleDefinition.DataRate)));
 				}
 				else
 				{
-					Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ModuleDefinition.Info.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
 					Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info, vd.VesselSituations.FirstSituationTitle);//"info"
 				}
+			}
+
+			if (animationGroup != null && !animationGroup.isDeployed && moduleData.IsRunningRequested)
+			{
+				Toggle(moduleData);
 			}
 		}
 
 		public virtual void FixedUpdate()
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
-
 			// basic sanity checks
 			if (Lib.IsEditor)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
 				return;
-			}
 
-			VesselData vd = vessel.KerbalismData();
+			moduleData.shrouded = part.ShieldedFromAirstream;
 
-			if (!vd.IsSimulated)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
+			if (!moduleData.IsRunningRequested || !vessel.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
 				return;
-			}
-
-			if (!Running)
-			{
-				situation = GetSituation(vd);
-				subject = ScienceDB.GetSubjectData(ModuleDefinition.Info, situation, out situationId);
-				UnityEngine.Profiling.Profiler.EndSample();
-				return;
-			}
-
-			if (AnimationGroup != null && !AnimationGroup.isDeployed && Running)
-			{
-				situation = GetSituation(vd);
-				subject = ScienceDB.GetSubjectData(ModuleDefinition.Info, situation, out situationId);
-				UnityEngine.Profiling.Profiler.EndSample();
-				Toggle();
-				return;
-			}
-
-			shrouded = part.ShieldedFromAirstream;
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
-			RunningUpdate(
-				vessel, vd, GetSituation(vd), this, privateHdId, shrouded,
-				ModuleDefinition,
-				expState,
-				Kerbalism.elapsed_s,
-				ref situationId,
-				ref remainingSampleMass,
-				out subject,
-				out issue);
-			UnityEngine.Profiling.Profiler.EndSample();
-
-			var newStatus = GetStatus(expState, subject, issue);
-			API.OnExperimentStateChanged.Notify(vessel, ExperimentID, status, newStatus);
-			status = newStatus;
-
+			RunningUpdate(vessel, vd, moduleData, this, Kerbalism.elapsed_s);
+			moduleData.UpdateAfterExperimentUpdate();
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		// note : we use a non-static method so it can be overriden
-		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, double elapsed_s)
+		public void BackgroundUpdate(VesselData vd, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, double elapsed_s)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
-
-			if (!vd.IsSimulated)
-			{
-				UnityEngine.Profiling.Profiler.EndSample();
-				return;
-			}
-
-			RunningState expState = Lib.Proto.GetEnum(m, "expState", RunningState.Stopped);
-			ExperimentModuleDefinition definition = ScienceDB.GetExperimentModuleDefinition(Lib.Proto.GetString(m, "id", string.Empty));
-			if (definition == null)
+			if (!ModuleData.TryGetModuleData<ModuleKsmExperiment, ExperimentData>(protoModule, out ExperimentData experimentData))
 				return;
 
-			ExperimentInfo expInfo = definition.Info;
-
-			if (!IsRunning(expState))
-			{
-				int notRunningSituationId = Situation.GetBiomeAgnosticIdForExperiment(GetSituation(vd).Id, expInfo);
-				Lib.Proto.Set(m, "situationId", notRunningSituationId);
-				UnityEngine.Profiling.Profiler.EndSample();
+			if (!experimentData.IsRunningRequested)
 				return;
-			}
-
-			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
-			int situationId = Lib.Proto.GetInt(m, "situationId", 0);
-			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
-			int privateHdId = Lib.Proto.GetInt(m, "privateHdId", 0);
-			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(m, "status", ExpStatus.Stopped);
-
-			string issue;
-			SubjectData subjectData;
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
-			RunningUpdate(
-				v, vd, GetSituation(vd), this, privateHdId, shrouded, // "this" is the prefab
-				ModuleDefinition,
-				expState,
-				elapsed_s,
-				ref situationId,
-				ref remainingSampleMass,
-				out subjectData,
-				out issue);
-			UnityEngine.Profiling.Profiler.EndSample();
-
-			var newStatus = GetStatus(expState, subjectData, issue);
-			Lib.Proto.Set(m, "situationId", situationId);
-			Lib.Proto.Set(m, "status", newStatus);
-			Lib.Proto.Set(m, "issue", issue);
-
-			if (expInfo.SampleMass > 0.0)
-				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
-
-			API.OnExperimentStateChanged.Notify(v, ExperimentID, oldStatus, newStatus);
-
+			RunningUpdate(vd.Vessel, vd, experimentData, this, elapsed_s);
+			experimentData.UpdateAfterExperimentUpdate();
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		private static void RunningUpdate(
-			Vessel v, VesselData vd, Situation vs, ModuleKsmExperiment prefab, int hdId, bool isShrouded,
-			ExperimentModuleDefinition moduleDefinition, RunningState expState, double elapsed_s,
-			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
+		private static void RunningUpdate(Vessel v, VesselData vd, ExperimentData ed, ModuleKsmExperiment prefab, double elapsed_s)
 		{
-			mainIssue = string.Empty;
+			ed.issue = string.Empty;
 
-			subjectData = ScienceDB.GetSubjectData(moduleDefinition.Info, vs);
-
-			bool subjectHasChanged;
-			if (subjectData != null)
+			if (ed.Subject == null)
 			{
-				subjectHasChanged = lastSituationId != subjectData.Situation.Id;
-				lastSituationId = subjectData.Situation.Id;
-			}
-			else
-			{
-				lastSituationId = vd.VesselSituations.FirstSituation.Id;
-				mainIssue = Local.Module_Experiment_issue1;//"invalid situation"
+				ed.issue = Local.Module_Experiment_issue1;//"invalid situation"
 				return;
 			}
 
-			double scienceRemaining = subjectData.ScienceRemainingToCollect;
+			double scienceRemaining = ed.Subject.ScienceRemainingToCollect;
 
-			if (expState != RunningState.Forced && scienceRemaining <= 0.0)
+			if (ed.State != RunningState.Forced && scienceRemaining <= 0.0)
 				return;
 
-			if (isShrouded && !prefab.allow_shrouded)
+			if (ed.shrouded && !prefab.allow_shrouded)
 			{
-				mainIssue = Local.Module_Experiment_issue2;//"shrouded"
+				ed.issue = Local.Module_Experiment_issue2;//"shrouded"
 				return;
 			}
 
-			if (moduleDefinition.RequiredEC > 0.0 && vd.ResHandler.ElectricCharge.AvailabilityFactor < 0.1)
+			// note : since we can't scale the consume() amount by availability, when one of the resources (including EC)
+			// is partially available but not the others, this will cause over-consumption of these other resources
+			// Idally we should use a pure input recipe to avoid that but currently, recipes only scale inputs
+			// if they have an output, it might be interresting to lift that limitation.
+			double resourcesProdFactor = 1.0;
+
+			if (ed.ModuleDefinition.RequiredEC > 0.0)
 			{
-				mainIssue = Local.Module_Experiment_issue4;//"no Electricity"
+				if (vd.ResHandler.ElectricCharge.AvailabilityFactor == 0.0)
+				{
+					ed.issue = Local.Module_Experiment_issue4;//"no Electricity"
+					return;
+				}
+				else
+				{
+					resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
+				}
+			}
+
+			if (ed.ModuleDefinition.Resources.Count > 0)
+			{
+				// test if there are enough resources on the vessel
+				foreach (var p in ed.ModuleDefinition.Resources)
+				{
+					VesselResource vr = vd.ResHandler.GetResource(p.Key);
+					if (vr.AvailabilityFactor == 0.0)
+					{
+						ed.issue = Local.Module_Experiment_issue12.Format(vr.Title); //"missing <<1>>"
+						return;
+					}
+					else
+					{
+						resourcesProdFactor = Math.Min(resourcesProdFactor, vr.AvailabilityFactor);
+					}
+				}
+			}
+
+			if (ed.ModuleDefinition.CrewOperate && !ed.ModuleDefinition.CrewOperate.Check(v))
+			{
+				ed.issue = ed.ModuleDefinition.CrewOperate.Warning();
 				return;
 			}
 
-			if (moduleDefinition.CrewOperate && !moduleDefinition.CrewOperate.Check(v))
+			ExperimentInfo expInfo = ed.ModuleDefinition.Info;
+
+			if (!ed.ModuleDefinition.SampleCollecting && ed.remainingSampleMass <= 0.0 && expInfo.SampleMass > 0.0)
 			{
-				mainIssue = moduleDefinition.CrewOperate.Warning();
+				ed.issue = Local.Module_Experiment_issue6;//"depleted"
 				return;
 			}
 
-			if (!moduleDefinition.SampleCollecting && remainingSampleMass <= 0.0 && moduleDefinition.Info.SampleMass > 0.0)
+			if (!v.loaded && ed.Subject.Situation.AtmosphericFlight())
 			{
-				mainIssue = Local.Module_Experiment_issue6;//"depleted"
+				ed.issue = Local.Module_Experiment_issue8;//"background flight"
 				return;
 			}
 
-			if (!v.loaded && subjectData.Situation.AtmosphericFlight())
+			if (!ed.ModuleDefinition.Requirements.TestRequirements(vd, out RequireResult[] reqResults))
 			{
-				mainIssue = Local.Module_Experiment_issue8;//"background flight"
+				ed.issue = Local.Module_Experiment_issue9;//"unmet requirement"
 				return;
 			}
 
-			RequireResult[] reqResults;
-			if (!moduleDefinition.Requirements.TestRequirements(v, out reqResults))
-			{
-				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
-				return;
-			}
-
-			if (!HasRequiredResources(v, moduleDefinition.Resources, vd.ResHandler, out mainIssue))
-			{
-				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
-				return;
-			}
-
-			double chunkSizeMax = moduleDefinition.DataRate * elapsed_s;
+			double chunkSizeMax = ed.ModuleDefinition.DataRate * elapsed_s;
 
 			// Never again generate NaNs
 			if (chunkSizeMax <= 0.0)
 			{
-				mainIssue = "Error : chunkSizeMax is 0.0";
+				ed.issue = "Error : chunkSizeMax is 0.0";
 				return;
 			}
 
 			double chunkSize;
-			if (expState != RunningState.Forced)
-				chunkSize = Math.Min(chunkSizeMax, scienceRemaining / subjectData.SciencePerMB);
+			if (ed.State != RunningState.Forced)
+				chunkSize = Math.Min(chunkSizeMax, scienceRemaining / ed.Subject.SciencePerMB);
 			else
 				chunkSize = chunkSizeMax;
 
-			DriveData drive = GetDrive(vd, hdId, chunkSize, subjectData);
+			bool isSample = expInfo.IsSample;
+			DriveData drive;
+			if (ed.PrivateDriveFlightId == 0 || !ModuleData.TryGetModuleData<ModuleKsmDrive, DriveData>(ed.PrivateDriveFlightId, out drive))
+			{
+				if (isSample)
+					drive = DriveData.SampleDrive(vd, chunkSize, ed.Subject);
+				else
+					drive = DriveData.FileDrive(vd, chunkSize);
+			}
+
 			if (drive == null)
 			{
-				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
+				ed.issue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
 			DriveData bufferDrive = null;
 			double available;
-			if (!moduleDefinition.Info.IsSample)
+			if (isSample)
+			{
+				available = drive.SampleCapacityAvailable(ed.Subject);
+			}
+			else
 			{
 				available = drive.FileCapacityAvailable();
 				if (double.IsNaN(available)) Lib.LogStack("drive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 
-				if (drive.GetFileSend(subjectData.Id))
+				if (drive.GetFileSend(ed.Subject.Id))
 				{
 					bufferDrive = Cache.TransmitBufferDrive(v);
 					available += bufferDrive.FileCapacityAvailable();
 					if (double.IsNaN(available)) Lib.LogStack("warpDrive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 				}
 			}
-			else
-			{
-				available = drive.SampleCapacityAvailable(subjectData);
-			}
 
 			if (available <= 0.0)
 			{
-				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
+				ed.issue = Local.Module_Experiment_issue11;//"no storage space"
 				return;
 			}
 
 			chunkSizeMax = Math.Min(chunkSize, available);
 
 			double chunkProdFactor = chunkSizeMax / chunkSize;
-			double resourcesProdFactor = 1.0;
-
-			// note : since we can't scale the consume() amount by availability, when one of the resources (including EC)
-			// is partially available but not the others, this will cause over-consumption of these other resources
-			// Idally we should use a pure input recipe to avoid that but currently, recipes only scale inputs
-			// if they have an output, it might be interseting to lift that limitation.
-			if (moduleDefinition.RequiredEC > 0.0)
-				resourcesProdFactor = Math.Min(resourcesProdFactor, vd.ResHandler.ElectricCharge.AvailabilityFactor);
-
-			foreach (ObjectPair<string, double> res in moduleDefinition.Resources)
-				resourcesProdFactor = Math.Min(resourcesProdFactor, ((VesselKSPResource)vd.ResHandler.GetResource(res.Key)).AvailabilityFactor);
-
-			if (resourcesProdFactor == 0.0)
-			{
-				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
-				return;
-			}
 
 			chunkSize = chunkSizeMax * resourcesProdFactor;
-			double massDelta = chunkSize * moduleDefinition.Info.MassPerMB;
+
+			double massDelta = chunkSize * expInfo.MassPerMB;
 
 #if DEBUG || DEVBUILD
 			if (double.IsNaN(chunkSize))
-				Lib.Log("chunkSize is NaN " + moduleDefinition.Info.ExperimentId + " " + chunkSizeMax + " / " + chunkProdFactor + " / " + resourcesProdFactor + " / " + available + " / " + vd.ResHandler.ElectricCharge.Amount + " / " + moduleDefinition.RequiredEC + " / " + moduleDefinition.DataRate, Lib.LogLevel.Error);
+				Lib.Log("chunkSize is NaN " + expInfo.ExperimentId + " " + chunkSizeMax + " / " + chunkProdFactor + " / " + resourcesProdFactor + " / " + available + " / " + vd.ResHandler.ElectricCharge.Amount + " / " + ed.ModuleDefinition.RequiredEC + " / " + ed.ModuleDefinition.DataRate, Lib.LogLevel.Error);
 
 			if (double.IsNaN(massDelta))
-				Lib.Log("mass delta is NaN " + moduleDefinition.Info.ExperimentId + " " + moduleDefinition.Info.SampleMass + " / " + chunkSize + " / " + moduleDefinition.Info.DataSize, Lib.LogLevel.Error);
+				Lib.Log("mass delta is NaN " + expInfo.ExperimentId + " " + expInfo.SampleMass + " / " + chunkSize + " / " + expInfo.DataSize, Lib.LogLevel.Error);
 #endif
 
-			if (!moduleDefinition.Info.IsSample)
+			if (isSample)
+			{
+				drive.RecordSample(ed.Subject, chunkSize, massDelta);
+			}
+			else
 			{
 				if (bufferDrive != null)
 				{
 					double s = Math.Min(chunkSize, bufferDrive.FileCapacityAvailable());
-					bufferDrive.RecordFile(subjectData, s, true);
+					bufferDrive.RecordFile(ed.Subject, s, true);
 
 					if (chunkSize > s) // only write to persisted drive if the data cannot be transmitted in this tick
-						drive.RecordFile(subjectData, chunkSize - s, true);
-					else if (!drive.files.ContainsKey(subjectData)) // if everything is transmitted, create an empty file so the player know what is happening
-						drive.RecordFile(subjectData, 0.0, true);
+						drive.RecordFile(ed.Subject, chunkSize - s, true);
+					else if (!drive.files.ContainsKey(ed.Subject)) // if everything is transmitted, create an empty file so the player know what is happening
+						drive.RecordFile(ed.Subject, 0.0, true);
 				}
 				else
 				{
-					drive.RecordFile(subjectData, chunkSize, true);
+					drive.RecordFile(ed.Subject, chunkSize, true);
 				}
 			}
-			else
-			{
-				drive.RecordSample(subjectData, chunkSize, massDelta);
-			}
 
-			// consume resources
-			// note : Consume() calls should only factor in the drive available space limitation and not the
-			// the resource available factor in order to have each resource AvailabilityFactor calculated correctly
-			vd.ResHandler.ElectricCharge.Consume(moduleDefinition.RequiredEC * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
-			foreach (ObjectPair<string, double> p in moduleDefinition.Resources)
+			// Consume EC and resources
+			// note : Consume() calls only factor in the drive available space limitation and not the resource availability factor, this is intended
+			// note 2 : Since drive available space is determined by the transmit buffer drive space, itself determined by EC availability,
+			// we don't totally escape a feeback effect
+			vd.ResHandler.ElectricCharge.Consume(ed.ModuleDefinition.RequiredEC * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
+
+			foreach (ObjectPair<string, double> p in ed.ModuleDefinition.Resources)
 				vd.ResHandler.Consume(p.Key, p.Value * elapsed_s * chunkProdFactor, ResourceBroker.Experiment);
 
-			if (!moduleDefinition.SampleCollecting)
+			if (!ed.ModuleDefinition.SampleCollecting)
 			{
-				remainingSampleMass -= massDelta;
-				remainingSampleMass = Math.Max(remainingSampleMass, 0.0);
+				ed.remainingSampleMass = Math.Max(ed.remainingSampleMass - massDelta, 0.0);
 			}
 		}
 
-		public virtual Situation GetSituation(VesselData vd)
-		{
-			return vd.VesselSituations.GetExperimentSituation(ModuleDefinition.Info);
-		}
-
-		private static DriveData GetDrive(VesselData vesselData, int hdId, double chunkSize, SubjectData subjectData)
-		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
-			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
-			DriveData drive;
-			if (hdId == 0 || !ModuleData.TryGetModuleData<ModuleKsmDrive, DriveData>(hdId, out drive))
-				drive = isFile ? DriveData.FileDrive(vesselData, chunkSize) : DriveData.SampleDrive(vesselData, chunkSize, subjectData);
-
-			UnityEngine.Profiling.Profiler.EndSample();
-			return drive;
-		}
-
-		private static bool HasRequiredResources(Vessel v, List<ObjectPair<string, double>> defs, VesselResHandler res, out string issue)
-		{
-			issue = string.Empty;
-			if (defs.Count < 1)
-				return true;
-
-			// test if there are enough resources on the vessel
-			foreach (var p in defs)
-			{
-				var ri = res.GetResource(p.Key);
-				if (ri.Amount == 0.0)
-				{
-					issue = Local.Module_Experiment_issue12.Format(ri.Name);//"missing " + 
-					return false;
-				}
-			}
-			return true;
-		}
 
 		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
-			if (Running) resHandler.ElectricCharge.Consume(ModuleDefinition.RequiredEC, ResourceBroker.Experiment);
+			if (moduleData.IsExperimentRunning)
+				resHandler.ElectricCharge.Consume(moduleData.ModuleDefinition.RequiredEC, ResourceBroker.Experiment);
 		}
 
 		#endregion
 
 		#region user interaction
 
-		public RunningState Toggle(bool setForcedRun = false)
-		{
-			if (State == RunningState.Broken)
-				return State;
-
-			if (Lib.IsEditor)
-			{
-				if (Running)
-				{
-					State = RunningState.Stopped;
-				}
-				else
-				{
-					if (!EditorTracker.Instance.AllowStart(this))
-					{
-						PostMultipleRunsMessage(ModuleDefinition.Info.Title, "");
-						return State;
-					}
-					State = RunningState.Running;
-				}
-
-				if (AnimationGroup != null)
-				{
-					// extend automatically, retract manually
-					if (Running && !AnimationGroup.isDeployed)
-						AnimationGroup.DeployModule();
-				}
-				else
-				{
-					deployAnimator.Play(!Running, false);
-					SetDragCubes(Running);
-				}
-
-				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-				return State;
-			}
-
-			if (Lib.IsFlight && !vessel.IsControllable)
-				return State;
-
-			// nervous clicker? wait for it, goddamnit.
-			if ((AnimationGroup != null && AnimationGroup.DeployAnimation.isPlaying) || deployAnimator.Playing)
-				return State;
-
-			if (Running)
-			{
-				if (setForcedRun && expState == RunningState.Running)
-				{
-					State = RunningState.Forced;
-					return State;
-				}
-				// stop experiment
-				// plays the deploy animation in reverse
-				// if an external deploy animation module is used, we don't retract automatically
-				Action stop = delegate ()
-				{
-					State = RunningState.Stopped;
-					deployAnimator.Play(true, false);
-					SetDragCubes(false);
-				};
-
-				// wait for loop animation to stop before deploy animation
-				if (loopAnimator.Playing)
-					loopAnimator.StopLoop(stop);
-				else
-					stop();
-			}
-			else
-			{
-				// The same experiment must run only once on a vessel
-				if (IsExperimentRunningOnVessel(vessel, ExperimentID))
-				{
-					PostMultipleRunsMessage(ModuleDefinition.Info.Title, vessel.vesselName);
-					return State;
-				}
-
-				// start experiment
-				// play the deploy animation, when it's done start the loop animation
-				if (AnimationGroup != null)
-				{
-					if (!AnimationGroup.isDeployed)
-						AnimationGroup.DeployModule();
-
-					State = setForcedRun ? RunningState.Forced : RunningState.Running;
-				}
-				else
-				{
-					deployAnimator.Play(false, false, delegate ()
-					{
-						State = setForcedRun ? RunningState.Forced : RunningState.Running;
-						loopAnimator.Play(false, true);
-						SetDragCubes(true);
-					});
-				}
-			}
-			return State;
-		}
-
-		public static RunningState ProtoToggle(Vessel v, ModuleKsmExperiment prefab, ProtoPartModuleSnapshot protoModule, bool setForcedRun = false)
-		{
-			RunningState expState = Lib.Proto.GetEnum(protoModule, "expState", RunningState.Stopped);
-
-			if (expState == RunningState.Broken)
-			{
-				ProtoSetState(v, prefab, protoModule, expState);
-				return expState;
-			}
-
-			if (!IsRunning(expState))
-			{
-				if (IsExperimentRunningOnVessel(v, prefab.ExperimentID))
-				{
-					PostMultipleRunsMessage(ScienceDB.GetExperimentInfo(prefab.ExperimentID).Title, v.vesselName);
-					{
-						ProtoSetState(v, prefab, protoModule, expState);
-						return expState;
-					}
-				}
-				expState = setForcedRun ? RunningState.Forced : RunningState.Running;
-			}
-			else if (setForcedRun && expState == RunningState.Running)
-			{
-				expState = RunningState.Forced;
-			}
-			else
-			{
-				expState = RunningState.Stopped;
-			}
-
-			ProtoSetState(v, prefab, protoModule, expState);
-			return expState;
-		}
-
-		private static void ProtoSetState(Vessel v, ModuleKsmExperiment prefab, ProtoPartModuleSnapshot protoModule, RunningState expState)
-		{
-			Lib.Proto.Set(protoModule, "expState", expState);
-
-			var oldStatus = Lib.Proto.GetEnum<ExpStatus>(protoModule, "status", ExpStatus.Stopped);
-			var newStatus = GetStatus(expState,
-				ScienceDB.GetSubjectData(ScienceDB.GetExperimentInfo(prefab.ExperimentID), prefab.GetSituation(v.KerbalismData())),
-				Lib.Proto.GetString(protoModule, "issue")
-			);
-			Lib.Proto.Set(protoModule, "status", newStatus);
-
-			API.OnExperimentStateChanged.Notify(v, prefab.ExperimentID, oldStatus, newStatus);
-		}
-
-		/// <summary> works for loaded and unloaded vessel. very slow method, don't use it every tick </summary>
-		public static bool IsExperimentRunningOnVessel(Vessel vessel, string experiment_id)
-		{
-			if (vessel.loaded)
-			{
-				foreach (ModuleKsmExperiment e in vessel.FindPartModulesImplementing<ModuleKsmExperiment>())
-				{
-					if (e.enabled && e.Running && e.ExperimentID == experiment_id)
-						return true;
-				}
-			}
-			else
-			{
-				var PD = new Dictionary<string, Lib.Module_prefab_data>();
-				foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
-				{
-					// get part prefab (required for module properties)
-					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					// get all module prefabs
-					var module_prefabs = part_prefab.FindModulesImplementing<PartModule>();
-					// clear module indexes
-					PD.Clear();
-					foreach (ProtoPartModuleSnapshot m in p.modules)
-					{
-						// get the module prefab
-						// if the prefab doesn't contain this module, skip it
-						PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
-						if (!module_prefab) continue;
-						// if the module is disabled, skip it
-						// note: this must be done after ModulePrefab is called, so that indexes are right
-						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
-
-						if (m.moduleName == "ModuleKsmExperiment"
-							&& ((ModuleKsmExperiment)module_prefab).ExperimentID == experiment_id
-							&& IsRunning(Lib.Proto.GetEnum(m, "expState", RunningState.Stopped)))
-							return true;
-					}
-				}
-			}
-
-			return false;
-		}
-
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 		public void ToggleEvent()
 		{
-			Toggle();
+			Toggle(moduleData);
 		}
 
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 		public void ShowPopup()
 		{
-			new ExperimentPopup(vessel, this, part.flightID, part.partInfo.title);
+			new ExperimentPopup(moduleData);
 		}
 
 		// action groups
 		[KSPAction("Start")]
 		public void StartAction(KSPActionParam param)
 		{
-			if (!Running) Toggle();
+			if (!moduleData.IsRunningRequested) Toggle(moduleData);
 		}
 
 		[KSPAction("Stop")]
 		public void StopAction(KSPActionParam param)
 		{
-			if (Running) Toggle();
+			if (moduleData.IsRunningRequested) Toggle(moduleData);
+		}
+
+		public static void Toggle(ExperimentData ed, bool setForcedRun = false)
+		{
+			if (ed.IsBroken || !ed.moduleIsEnabled)
+				return;
+
+			// if setting forced run on an already running experiment
+			if (setForcedRun && ed.State == RunningState.Running)
+			{
+				ed.State = RunningState.Forced;
+				return;
+			}
+
+			// abort if the experiment animation is already playing
+			if (ed.loadedModule != null)
+			{
+				if ((ed.loadedModule.animationGroup != null && ed.loadedModule.animationGroup.DeployAnimation.isPlaying)
+					|| ed.loadedModule.deployAnimator.Playing
+					|| ed.loadedModule.loopAnimator.IsLoopStopping)
+					return;
+			}
+
+			// stopping
+			if (ed.IsRunningRequested)
+			{
+				// if vessel is unloaded
+				if (ed.loadedModule == null)
+				{
+					ed.State = RunningState.Stopped;
+					return;
+				}
+				// if vessel loaded or in the editor
+				else
+				{
+					// stop experiment
+					// plays the deploy animation in reverse
+					// if an external deploy animation module is used, we don't retract automatically
+					Action onLoopStop = delegate ()
+					{
+						ed.State = RunningState.Stopped;
+						ed.loadedModule.deployAnimator.Play(true, false, null, Lib.IsEditor ? 5f : 1f);
+						ed.loadedModule.SetDragCubes(false);
+						if (Lib.IsEditor)
+							Planner.Planner.RefreshPlanner();
+					};
+
+					// wait for loop animation to stop before deploy animation
+					if (ed.loadedModule.loopAnimator.Playing)
+						ed.loadedModule.loopAnimator.StopLoop(onLoopStop);
+					else
+						onLoopStop();
+				}
+			}
+			// starting
+			else
+			{
+				CheckMultipleRun(ed);
+
+				// if vessel is unloaded
+				if (ed.loadedModule == null)
+				{
+					ed.State = setForcedRun ? RunningState.Forced : RunningState.Running;
+					return;
+				}
+				// if vessel loaded or in the editor
+				else
+				{
+					// in case of an animation group, we start the experiment immediatly
+					if (ed.loadedModule.animationGroup != null)
+					{
+						if (!ed.loadedModule.animationGroup.isDeployed)
+						{
+							ed.loadedModule.animationGroup.DeployModule();
+							ed.State = setForcedRun ? RunningState.Forced : RunningState.Running;
+							if (Lib.IsEditor)
+								Planner.Planner.RefreshPlanner();
+						}
+					}
+					// if using our own animation handler, when the animation is done playing,
+					// set the experiment running state and start the loop animation
+					else
+					{
+						Action onDeploy = delegate ()
+						{
+							ed.State = setForcedRun ? RunningState.Forced : RunningState.Running;
+							ed.loadedModule.loopAnimator.Play(false, true);
+							ed.loadedModule.SetDragCubes(true);
+							if (Lib.IsEditor)
+								Planner.Planner.RefreshPlanner();
+						};
+
+						ed.loadedModule.deployAnimator.Play(false, false, onDeploy, Lib.IsEditor ? 5f : 1f);
+					}
+				}
+			}
 		}
 
 		#endregion
@@ -912,7 +602,7 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
-			return Specs(ModuleDefinition);
+			return Specs(moduleData.ModuleDefinition);
 		}
 
 		public static Specifics Specs(ExperimentModuleDefinition moduleDefinition)
@@ -1004,14 +694,14 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (ModuleDefinition == null)
+			if (moduleData?.ModuleDefinition == null)
 				return string.Empty;
 
 			return Specs().Info();
 		}
 
 		// IModuleInfo
-		public string GetModuleTitle() => ModuleDefinition != null ? ModuleDefinition.Info.Title : "";
+		public string GetModuleTitle() => moduleData?.ModuleDefinition != null ? moduleData.ModuleDefinition.Info.Title : "";
 		public override string GetModuleDisplayName() { return GetModuleTitle(); }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
@@ -1022,62 +712,63 @@ namespace KERBALISM
 
 		public void ReliablityEvent(bool breakdown)
 		{
-			if (breakdown) State = RunningState.Broken;
-			else State = RunningState.Stopped;
+			if (breakdown)
+				moduleData.State = RunningState.Broken;
+			else
+				moduleData.State = RunningState.Stopped;
 		}
 
-		public static void PostMultipleRunsMessage(string title, string vesselName)
+		/// <summary>
+		/// Check if the same same experiment is already running on the vessel, and disable it if toggleOther is true
+		/// 
+		/// </summary>
+		public static bool CheckMultipleRun(ExperimentData thisExpData, bool toggleOther = true)
 		{
-			Message.Post(Lib.Color(Local.Module_Experiment_MultipleRunsMessage_title, Lib.Kolor.Orange, true), Local.Module_Experiment_MultipleRunsMessage.Format(title,vesselName));//"ALREADY RUNNING""Can't start " +  + " a second time on vessel " + 
+			VesselDataBase vd = thisExpData.partData.vesselData;
+			bool hasOtherRunning = false;
+
+			foreach (PartData partData in vd.PartList)
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					if (partData.modules[i] is ExperimentData expData
+						&& expData.moduleIsEnabled
+						&& expData.ExperimentID == thisExpData.ExperimentID
+						&& expData.IsRunningRequested)
+					{
+						if (toggleOther)
+						{
+							Toggle(expData);
+
+							Message.Post(
+								Lib.Color(Local.Module_Experiment_MultipleRunsMessage_title, Lib.Kolor.Orange, true),
+								string.Format("{0} was already running on vessel {1}\nThe module on {2} has been disabled",
+								expData.ExperimentTitle, expData.VesselData.VesselName, partData.Title));
+						}
+						hasOtherRunning |= true;
+					}
+				}
+			}
+
+			return hasOtherRunning;
 		}
 
 		#endregion
 
 		#region sample mass
 
-		internal static double RestoreSampleMass(double restoredAmount, ProtoPartModuleSnapshot m, string id)
-		{
-			if (IsBroken(Lib.Proto.GetEnum<RunningState>(m, "expState"))) return 0.0;
-
-			var experiment_id = Lib.Proto.GetString(m, "experiment_id", string.Empty);
-			if (experiment_id != id) return 0.0;
-
-			var sample_collecting = Lib.Proto.GetBool(m, "sample_collecting", false);
-			if (sample_collecting) return 0.0;
-
-			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
-			double sample_reservoir = Lib.Proto.GetDouble(m, "sample_reservoir", 0.0);
-			if (remainingSampleMass >= sample_reservoir) return 0;
-
-			double delta = Math.Max(restoredAmount, sample_reservoir - remainingSampleMass);
-			remainingSampleMass += delta;
-			remainingSampleMass = Math.Min(sample_reservoir, remainingSampleMass);
-			Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
-			return delta;
-		}
-
-		internal double RestoreSampleMass(double restoredAmount, string id)
-		{
-			if (Broken) return 0;
-			if (ModuleDefinition.SampleCollecting || this.id != id) return 0;
-			double maxSampleMass = ModuleDefinition.Info.SampleMass * ModuleDefinition.Samples;
-			if (remainingSampleMass >= maxSampleMass) return 0;
-			double delta = Math.Max(restoredAmount, maxSampleMass - remainingSampleMass);
-			remainingSampleMass += delta;
-			remainingSampleMass = Math.Min(maxSampleMass, remainingSampleMass);
-			return delta;
-		}
-
 		// IPartMassModifier
-		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
-			if (Double.IsNaN(remainingSampleMass))
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
+		{
+			if (moduleData == null)
+				return 0f;
+
+			if (double.IsNaN(moduleData.remainingSampleMass))
 			{
-#if DEBUG || DEVBUILD // this is logspammy, don't do it in releases
-				Lib.Log("Experiment remaining sample mass is NaN " + id, Lib.LogLevel.Error);
-#endif
-				return 0;
+				Lib.LogDebug("Experiment remaining sample mass is NaN " + id, Lib.LogLevel.Error);
+				return 0f;
 			}
-			return (float)remainingSampleMass;
+			return (float)moduleData.remainingSampleMass;
 		}
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
@@ -1125,62 +816,35 @@ namespace KERBALISM
 		public bool UsesProceduralDragCubes() => false;
 
 		#endregion
-	}
 
-	internal class EditorTracker
-	{
-		private static EditorTracker instance;
-		private readonly List<ModuleKsmExperiment> experiments = new List<ModuleKsmExperiment>();
+		#region EDITOR MULTIPLE RUN TRACKER
 
-		static EditorTracker()
+		private static List<string> editorRunningExperiments = new List<string>();
+
+		public static void CheckEditorExperimentMultipleRun()
 		{
-			if (instance == null)
-				instance = new EditorTracker();
-		}
-
-		private EditorTracker()
-		{
-			if(instance == null) {
-				instance = this;
-				GameEvents.onEditorShipModified.Add(instance.ShipModified);
-			}
-		}
-
-		internal void ShipModified(ShipConstruct construct)
-		{
-			experiments.Clear();
-			foreach(var part in construct.Parts)
+			foreach (PartData partData in VesselDataShip.LoadedParts)
 			{
-				foreach (var experiment in part.FindModulesImplementing<ModuleKsmExperiment>())
+				for (int i = 0; i < partData.modules.Count; i++)
 				{
-					if (!experiment.enabled) experiment.State = ModuleKsmExperiment.RunningState.Stopped;
-					if (experiment.Running && !AllowStart(experiment))
+					if (partData.modules[i] is ExperimentData expData && expData.moduleIsEnabled && expData.IsRunningRequested)
 					{
-						// An experiment was added in recording state? Cheeky bugger!
-						experiment.State = ModuleKsmExperiment.RunningState.Stopped;
-						experiment.deployAnimator.Still(0);
+						if (editorRunningExperiments.Contains(expData.ExperimentID))
+						{
+							Toggle(expData);
+						}
+						else
+						{
+							editorRunningExperiments.Add(expData.ExperimentID);
+						}
 					}
-					experiments.Add(experiment);
 				}
 			}
-		}
 
-		internal bool AllowStart(ModuleKsmExperiment experiment)
-		{
-			foreach (var e in experiments)
-				if (e.Running && e.ExperimentID == experiment.ExperimentID)
-					return false;
-			return true;
+			editorRunningExperiments.Clear();
 		}
-
-		internal static EditorTracker Instance
-		{
-			get
-			{
-				if (instance == null)
-					instance = new EditorTracker();
-				return instance;
-			}
-		}
+		#endregion
 	}
+
+
 } // KERBALISM

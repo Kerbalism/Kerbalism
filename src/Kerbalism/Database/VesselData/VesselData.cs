@@ -12,9 +12,11 @@ namespace KERBALISM
         public Guid VesselId { get; private set; }
         public Vessel Vessel { get; private set; }
 
-        // validity
-        /// <summary> True if the vessel exists in FlightGlobals. will be false in the editor</summary>
-        public bool ExistsInFlight { get; private set; }
+		public override string VesselName => Vessel.vesselName;
+
+		// validity
+		/// <summary> True if the vessel exists in FlightGlobals. will be false in the editor</summary>
+		public bool ExistsInFlight { get; private set; }
         public bool is_vessel;              // true if this is a valid vessel
         public bool is_rescue;              // true if this is a rescue mission vessel
         public bool is_eva_dead;
@@ -419,7 +421,7 @@ namespace KERBALISM
             if (rescueJustLoaded)
             {
                 Lib.LogDebug($"Rescue vessel {Vessel.vesselName} discovered, granting resources and enabling processing");
-                OnRescueVesselLoaded(Vessel);
+                OnRescueVesselLoaded();
             }
 
             if (isInit)
@@ -513,14 +515,12 @@ namespace KERBALISM
         }
 
         /// <summary> Gift resources to a rescue vessel, to be called when a rescue vessel is first being loaded</summary>
-        public static void OnRescueVesselLoaded(Vessel v)
+        private void OnRescueVesselLoaded()
         {
-            VesselData vd = v.KerbalismData();
-
             // give the vessel some propellant usable on eva
             string monoprop_name = Lib.EvaPropellantName();
             double monoprop_amount = Lib.EvaPropellantCapacity();
-            foreach (var part in v.parts)
+            foreach (var part in Vessel.parts)
             {
                 if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
                 {
@@ -531,10 +531,10 @@ namespace KERBALISM
                     break;
                 }
             }
-            vd.ResHandler.Produce(monoprop_name, monoprop_amount, ResourceBroker.Generic);
+            ResHandler.Produce(monoprop_name, monoprop_amount, ResourceBroker.Generic);
 
             // give the vessel some supplies
-            Profile.SetupRescue(vd);
+            Profile.SetupRescue(this);
         }
         #endregion
 
@@ -559,19 +559,28 @@ namespace KERBALISM
         {
             Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", Lib.LogLevel.Message, newVessel.vesselName, oldVessel.vesselName);
 
-            VesselData oldVD = oldVessel.KerbalismData();
+			if (!oldVessel.TryGetVesselData(out VesselData oldVD))
+				return;
+
+			if (!newVessel.TryGetVesselDataNoError(out VesselData newVD))
+			{
+				Lib.LogDebug($"Instantiating new VesselData for decoupled/undocked vessel {newVessel.vesselName}");
+				newVD = new VesselData(newVessel);
+
+				// TODO : 
+				// This cause the issue that instantiating a new vesseldata trough the extension method will instantiate new
+				// moduledatas, reaffecting new flightids to the PartModules in the process.
+				newVD.Parts.Clear(true); 
+				DB.AddNewVesselData(newVD);
+
+			}
 
 
-			VesselData newVD = newVessel.KerbalismData();
 
-			// TODO : This probably not work and seems to cause bad issues. When a RUD happens, it's likely this is called
-			// multiple times consecutively for the same new vessel. We need to have a TryGet on DB.vessels to check if the vessel already exists
-			// or not.
-			// And anyway this will likely cause the issue that instantiating a new vesseldata trough the extension method will instantiate new
-			// moduledatas, reaffecting new flightids in the process.
-			newVD.Parts.Clear(false);
 
-            foreach (Part part in newVessel.Parts)
+			//newVD.Parts.Clear(false);
+
+			foreach (Part part in newVessel.Parts)
             {
                 PartData pd;
 				// for all parts in the new vessel, move the corresponding partdata from the old vessel to the new vessel
@@ -597,8 +606,8 @@ namespace KERBALISM
             Vessel fromVessel = data.from.vessel;
             Vessel toVessel = data.to.vessel;
 
-            VesselData fromVD = fromVessel.KerbalismData();
-            VesselData toVD = toVessel.KerbalismData();
+            fromVessel.TryGetVesselData(out VesselData fromVD);
+            toVessel.TryGetVesselData(out VesselData toVD);
 
             // GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
             // In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
@@ -628,7 +637,9 @@ namespace KERBALISM
         {
 			// TODO : this likely cause an issue when, following a RUD, a part that was detached from the main vessel
 			// by creating the vesseldata for a vessel that will cease to exist immediatly
-            VesselData vd = part.vessel.KerbalismData();
+			if (!part.vessel.TryGetVesselData(out VesselData vd))
+				return;
+
             vd.Parts[part.flightID].PartWillDie();
             vd.Parts.Remove(part.flightID);
             vd.UpdateOnPartAddedOrRemoved();

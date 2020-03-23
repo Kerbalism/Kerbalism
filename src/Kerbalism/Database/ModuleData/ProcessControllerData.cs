@@ -12,13 +12,12 @@ namespace KERBALISM
 		public bool isBroken;   // true if process controller is broken
 		public Process Process { get; private set; } // the process associated with the process name, for convenience
 
-		public override void OnInstantiate(PartModule partModulePrefab, ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
+		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
 		{
-			ModuleKsmProcessController ksmPrefab = (ModuleKsmProcessController)partModulePrefab;
-			processName = ksmPrefab.processName;
-			processCapacity = ksmPrefab.capacity;
-			isRunning = ksmPrefab.running;
-			isBroken = ksmPrefab.broken;
+			processName = modulePrefab.processName;
+			processCapacity = modulePrefab.capacity;
+			isRunning = modulePrefab.running;
+			isBroken = modulePrefab.broken;
 
 			Process = Profile.processes.Find(p => p.name == processName);
 		}

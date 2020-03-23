@@ -612,7 +612,8 @@ namespace KERBALISM
 				{
 					Vector3d direction;
 					double distance;
-					if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
+					v.TryGetVesselData(out VesselData vd);
+					if (Sim.IsBodyVisible(v, position, body, vd.EnvVisibleBodies, out direction, out distance))
 					{
 						var r0 = RadiationR0(rb);
 						var r1 = DistanceRadiation(r0, distance);
@@ -664,7 +665,7 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else
 				{
-					var vd = v.KerbalismData();
+					v.TryGetVesselData(out VesselData vd);
 
 					var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
 					var strength = PreferencesRadiation.Instance.StormRadiation * sunlight * (activity + 0.5);

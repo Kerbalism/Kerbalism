@@ -172,8 +172,9 @@ namespace KERBALISM
 
 			var now = Planetarium.GetUniversalTime();
 			double step = Math.Max(120.0, elapsedSeconds / 40);
-			var sun = v.KerbalismData().EnvMainSun.SunData.body;
-			var occluders = v.KerbalismData().EnvVisibleBodies;
+			v.TryGetVesselData(out VesselData vd);
+			var sun = vd.EnvMainSun.SunData.body;
+			var occluders = vd.EnvVisibleBodies;
 			double calculatedDuration = 0;
 			double maxCalculation = Math.Min(elapsedSeconds * 1.5, v.orbit.period);
 

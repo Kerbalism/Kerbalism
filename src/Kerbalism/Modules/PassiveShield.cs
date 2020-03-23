@@ -84,7 +84,10 @@ namespace KERBALISM
 			Events["Toggle"].active = toggle && (allowDeploy || deployed);
 
 			if (deployed && ec_rate > 0)
-				vessel.KerbalismData().ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.PassiveShield);
+			{
+				vessel.TryGetVesselData(out VesselData vd);
+				vd.ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.PassiveShield);
+			}
 		}
 
 		public void BackgroundUpdate(VesselData vd, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, double elapsed_s)
@@ -142,7 +145,8 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			VesselResource ec = v.KerbalismData().ResHandler.GetResource("ElectricCharge");
+			v.TryGetVesselData(out VesselData vd);
+			VesselResource ec = vd.ResHandler.GetResource("ElectricCharge");
 
 			double total = 0.0;
 			if (v.loaded)

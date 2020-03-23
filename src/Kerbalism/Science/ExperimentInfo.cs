@@ -114,7 +114,7 @@ namespace KERBALISM
 			}
 
 			// Get the desired data size from the kerbalism node, and adjust data scale if it is set
-			DataSize = Lib.ConfigValue(kerbalismExperimentNode, "DataSize", 0);
+			DataSize = Lib.ConfigValue(kerbalismExperimentNode, "DataSize", 0.0);
 			if(DataSize > 0)
 			{
 				if (this.stockDef.applyScienceScale)
@@ -350,8 +350,6 @@ namespace KERBALISM
 						var moduleDefinition = ExperimentModuleDefinitions.Find(d => d.Name == expModule.id);
 						if (moduleDefinition == null)
 							continue;
-
-						expModule.ModuleDefinition = moduleDefinition;
 
 						// get module info for the ExperimentInfo, once
 						if (string.IsNullOrEmpty(ModuleInfo))

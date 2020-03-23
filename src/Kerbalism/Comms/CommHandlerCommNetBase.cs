@@ -46,7 +46,8 @@ namespace KERBALISM
 				{
 					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
 					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-					connection.rate = Math.Min(firstHop.KerbalismData().Connection.rate, connection.rate);
+					firstHop.TryGetVesselData(out VesselData vd);
+					connection.rate = Math.Min(vd.Connection.rate, connection.rate);
 				}
 			}
 			// is loss of connection due to plasma blackout
