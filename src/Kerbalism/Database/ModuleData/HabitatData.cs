@@ -378,7 +378,7 @@ namespace KERBALISM
 				// We do only one habitat radiation raytracing per vesseldata update 
 				// to avoid the performance hit on large vessels.
 				// Radiation raytracing is only done while loaded
-				if (partData.LoadedPart != null)
+				if (IsLoaded)
 				{
 					// if habitat was never raytraced, do it
 					if (!raytracedOnce)

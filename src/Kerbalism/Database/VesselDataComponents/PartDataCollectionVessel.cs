@@ -78,7 +78,7 @@ namespace KERBALISM
 			Lib.LogDebug($"Transferring PartData from ship to vessel for launch");
 			this.vesselData = vesselData;
 
-			foreach (PartData partData in shipPartData)
+			foreach (PartDataShip partData in shipPartData)
 			{
 				partData.flightId = partData.LoadedPart.flightID;
 				partData.vesselData = vesselData;
@@ -88,6 +88,18 @@ namespace KERBALISM
 				{
 					ModuleData.AssignNewFlightId(moduleData);
 				}
+			}
+		}
+
+		public PartDataCollectionVessel(VesselDataBase vesselData, List<PartData> partDatas)
+		{
+			Lib.LogDebug($"Transferring {partDatas.Count} PartDatas from vessel {partDatas[0].vesselData.VesselName} to vessel {vesselData.VesselName}");
+			this.vesselData = vesselData;
+
+			foreach (PartData partData in partDatas)
+			{
+				partData.vesselData = vesselData;
+				Add(partData);
 			}
 		}
 

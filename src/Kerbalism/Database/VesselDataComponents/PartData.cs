@@ -5,14 +5,25 @@ using System.Text;
 
 namespace KERBALISM
 {
+	public class PartDataShip : PartData
+	{
+		public Part LoadedPart { get; private set; }
+		public bool IsOnShip => !LoadedPart.frozen;
+
+		public PartDataShip(VesselDataBase vesselData, Part part) : base(vesselData, part)
+		{
+			LoadedPart = part;
+		}
+	}
+
 	public class PartData
 	{
 		public VesselDataBase vesselData;
 		public uint flightId;
 		private AvailablePart partInfo;
 		public Part PartPrefab { get; private set; }
-		public Part LoadedPart { get; private set; }
-		public bool IsOnShip => !LoadedPart.frozen;
+		
+		
 
 		/// <summary> Localized part title </summary>
 		public string Title => partInfo.title;
@@ -27,7 +38,7 @@ namespace KERBALISM
 		public PartData(VesselDataBase vesselData, Part part)
 		{
 			this.vesselData = vesselData;
-			LoadedPart = part;
+			
 			flightId = part.flightID;
 			partInfo = part.partInfo;
 			PartPrefab = GetPartPrefab(part.partInfo);

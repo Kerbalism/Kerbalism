@@ -554,47 +554,41 @@ namespace KERBALISM
         }
 
         /// <summary> Called by GameEvents.onVesselsUndocking, just after 2 vessels have undocked </summary>
-		
-        internal static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
+
+		private static List<PartData> transferredParts = new List<PartData>();
+
+		internal static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
         {
             Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", Lib.LogLevel.Message, newVessel.vesselName, oldVessel.vesselName);
 
 			if (!oldVessel.TryGetVesselData(out VesselData oldVD))
 				return;
 
-			if (!newVessel.TryGetVesselDataNoError(out VesselData newVD))
+			if (newVessel.TryGetVesselDataNoError(out VesselData newVD))
 			{
-				Lib.LogDebug($"Instantiating new VesselData for decoupled/undocked vessel {newVessel.vesselName}");
-				newVD = new VesselData(newVessel);
-
-				// TODO : 
-				// This cause the issue that instantiating a new vesseldata trough the extension method will instantiate new
-				// moduledatas, reaffecting new flightids to the PartModules in the process.
-				newVD.Parts.Clear(true); 
-				DB.AddNewVesselData(newVD);
-
+				Lib.LogDebugStack($"Decoupled/Undocked vessel {newVessel.vesselName} exists already, can't transfer partdatas !", Lib.LogLevel.Error);
+				return;
 			}
 
-
-
-
-			//newVD.Parts.Clear(false);
-
+			transferredParts.Clear();
 			foreach (Part part in newVessel.Parts)
             {
-                PartData pd;
 				// for all parts in the new vessel, move the corresponding partdata from the old vessel to the new vessel
-                if (oldVD.Parts.TryGet(part.flightID, out pd))
+                if (oldVD.Parts.TryGet(part.flightID, out PartData pd))
                 {
-                    newVD.Parts.Add(pd);
+					transferredParts.Add(pd);
                     oldVD.Parts.Remove(pd);
                 }
             }
 
-            newVD.UpdateOnPartAddedOrRemoved();
             oldVD.UpdateOnPartAddedOrRemoved();
 
-            Lib.LogDebug("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, newVessel.vesselName, newVD.Parts.Count, newVessel.parts.Count);
+			newVD = new VesselData(newVessel, transferredParts);
+			transferredParts.Clear();
+
+			DB.AddNewVesselData(newVD);
+
+			Lib.LogDebug("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, newVessel.vesselName, newVD.Parts.Count, newVessel.parts.Count);
             Lib.LogDebug("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, oldVessel.vesselName, oldVD.Parts.Count, oldVessel.parts.Count);
         }
 
@@ -612,7 +606,7 @@ namespace KERBALISM
             // GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
             // In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
             // so we just add the part.
-            if (fromVD == toVD)
+            if (fromVessel == toVessel)
             {
                 if (!toVD.Parts.Contains(data.from.flightID))
                 {
@@ -668,7 +662,7 @@ namespace KERBALISM
 		}
 
         /// <summary> This ctor is to be used for newly created vessels, either from ship construction or for  </summary>
-        public VesselData(Vessel vessel)
+        public VesselData(Vessel vessel, List<PartData> partDatas = null)
         {
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
 
@@ -680,13 +674,21 @@ namespace KERBALISM
 
             if (Vessel.loaded)
             {
-				Parts = new PartDataCollectionVessel(this, Vessel);
+				if (partDatas == null)
+					Parts = new PartDataCollectionVessel(this, Vessel);
+				else
+					Parts = new PartDataCollectionVessel(this, partDatas);
+
 				resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
             }
             else
             {
 				// vessels can be created unloaded, asteroids for example
-				Parts = new PartDataCollectionVessel(this, Vessel.protoVessel, null);
+				if (partDatas == null)
+					Parts = new PartDataCollectionVessel(this, Vessel.protoVessel, null);
+				else
+					Parts = new PartDataCollectionVessel(this, partDatas);
+
 				resHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
             }
 

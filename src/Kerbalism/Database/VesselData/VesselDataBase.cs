@@ -189,7 +189,7 @@ namespace KERBALISM
 			// instantiate all PartData/ModuleData for the ship, loading ModuleData if available.
 			foreach (Part part in ship.parts)
 			{
-				PartData partData = new PartData(VesselDataShip.Instance, part);
+				PartDataShip partData = new PartDataShip(VesselDataShip.Instance, part);
 				VesselDataShip.LoadedParts.Add(partData);
 
 				for (int i = 0; i < part.Modules.Count; i++)
