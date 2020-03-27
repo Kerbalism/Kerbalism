@@ -165,7 +165,7 @@ namespace KERBALISM
 			return resource;
 		}
 
-		public VesselResource SetupOrCreateVirtualResource(string name, string title, double amount = 0.0, double capacity = double.MaxValue)
+		public VesselResource SetupOrCreateVirtualResource(string name, string title, double amount = 0.0, double capacity = double.MaxValue, bool isPersistent = false)
 		{
 			VesselVirtualResource vres;
 			if (resources.TryGetValue(name, out VesselResource res))
@@ -186,7 +186,7 @@ namespace KERBALISM
 				resources.Add(name, vres);
 			}
 
-			vres.Setup(title, amount, capacity);
+			vres.Setup(title, amount, capacity, isPersistent);
 			return vres;
 		}
 

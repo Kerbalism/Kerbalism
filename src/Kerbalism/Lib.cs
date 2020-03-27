@@ -55,7 +55,10 @@ namespace KERBALISM
 		{
 			StackTrace stackTrace = new StackTrace();
 			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
-			UnityEngine.Debug.Log(stackTrace);
+
+			// KSP will already log the stacktrace if the log level is error
+			if (level != LogLevel.Error)
+				UnityEngine.Debug.Log(stackTrace);
 		}
 
 		///<summary>write a message to the log, only on DEBUG and DEVBUILD builds</summary>
@@ -72,7 +75,10 @@ namespace KERBALISM
 		{
 			StackTrace stackTrace = new StackTrace();
 			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
-			UnityEngine.Debug.Log(stackTrace);
+
+			// KSP will already log the stacktrace if the log level is error
+			if (level != LogLevel.Error)
+				UnityEngine.Debug.Log(stackTrace);
 		}
 
 		/// <summary> This constant is being set by the build system when a dev release is requested</summary>
@@ -689,6 +695,43 @@ namespace KERBALISM
 		#endregion
 
 		#region BUILD STRING
+
+		/// <summary>
+		/// Append "\n"<br/>
+		/// StringBuilder.AppendLine() is platform-dependant and can use "\r\n" which cause trouble in KSP.
+		/// </summary>
+		public static void AppendKSPNewLine(this StringBuilder sb)
+		{
+			sb.Append("\n");
+		}
+
+		/// <summary>
+		/// Append "value" and add a "\n" to the end<br/>
+		/// StringBuilder.AppendLine() is platform-dependant and can use "\r\n" which cause trouble in KSP.
+		/// </summary>
+		public static void AppendKSPLine(this StringBuilder sb, string value)
+		{
+			sb.Append(value);
+			sb.Append("\n");
+		}
+
+		/// <summary> Format to "label: <b>value</b>\n" (match the format of Specifics)</summary>
+		public static void AppendInfo(this StringBuilder sb, string label, string value)
+		{
+			sb.Append(label);
+			sb.Append(": <b>");
+			sb.Append(value);
+			sb.Append("</b>\n");
+		}
+
+		/// <summary> Append "• value\n"</summary>
+		public static void AppendList(this StringBuilder sb, string value)
+		{
+			sb.Append("• ");
+			sb.Append(value);
+			sb.Append("\n");
+		}
+
 		// compose a set of strings together, without creating temporary objects
 		// note: the objective here is to minimize number of temporary variables for GC
 		// note: okay to call recursively, as long as all individual concatenation is atomic
@@ -1119,13 +1162,20 @@ namespace KERBALISM
 		}
 
 		///<summary> Format science credits </summary>
-		public static string HumanReadableScience(double value, bool compact = true)
+		public static string HumanReadableScience(double value, bool compact = true, bool addSciSymbol = false)
 		{
 			if (compact)
+			{
+				if (addSciSymbol)
+				{
+					return Lib.Color(Lib.BuildString(value.ToString("F1"), InlineSpriteScience), Kolor.Science, true); 
+				}
 				return Lib.Color(value.ToString("F1"), Kolor.Science, true);
+			}
 			else
+			{
 				return Lib.Color(Lib.BuildString(value.ToString("F1"), " ", Local.SCIENCEARCHIVE_CREDITS), Kolor.Science);//CREDITS
-
+			}
 		}
 		#endregion
 
@@ -1159,6 +1209,8 @@ namespace KERBALISM
 
 		///<summary>return true if the current scene is editor</summary>
 		public static bool IsEditor => HighLogic.LoadedScene == GameScenes.EDITOR;
+
+		public static bool IsCareer => HighLogic.fetch.currentGame.Mode == Game.Modes.CAREER;
 
 		///<summary>return true if the current scene is not the main menu</summary>
 		public static bool IsGame()

@@ -21,7 +21,7 @@ namespace KERBALISM
 
 		public override string Name => vesselProcess.process.title;
 
-		public override string Tooltip => vesselProcess.Description();
+		public override string Tooltip => vesselProcess.CurrentRatesInfo();
 
 		public override string Status
 		{

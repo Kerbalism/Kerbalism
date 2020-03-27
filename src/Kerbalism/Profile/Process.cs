@@ -1,102 +1,105 @@
 using Flee.PublicTypes;
 using System;
 using System.Collections.Generic;
-
+using System.Text;
 
 namespace KERBALISM
 {
 	public sealed class Process
 	{
+		public class Resource
+		{
+			public string name;
+			public string displayName;
+			public string abbreviation;
+			public double rate;
+
+			public virtual bool Load(ConfigNode node)
+			{
+				name = Lib.ConfigValue(node, "name", string.Empty);
+				if (name.Length == 0)
+				{
+					Lib.Log($"skipping INPUT definition with no name in process {name}", Lib.LogLevel.Error);
+					return false;
+				}
+
+				rate = Lib.ConfigValue(node, "rate", 0.0);
+				if (rate <= 0.0)
+				{
+					Lib.Log($"skipping INPUT definition with no rate in process {name}", Lib.LogLevel.Error);
+					return false;
+				}
+
+				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(name);
+				if (resourceDef != null)
+				{
+					displayName = resourceDef.displayName;
+					abbreviation = resourceDef.abbreviation;
+				}
+				else
+				{
+					displayName = name;
+					abbreviation = name.Substring(0, 3);
+				}
+
+				return true;
+			}
+		}
+
+		public class Input : Resource
+		{ }
+
+		public class Output : Resource
+		{
+			public bool canDump;
+			public bool dumpByDefault;
+
+			public override bool Load(ConfigNode node)
+			{
+				if (!base.Load(node))
+					return false;
+
+				canDump = Lib.ConfigValue(node, "canDump", true);
+
+				if (canDump)
+					dumpByDefault = Lib.ConfigValue(node, "dumpByDefault", false);
+				else
+					dumpByDefault = false;
+
+				return true;
+			}
+		}
+
+		private static VesselDataBase modifierData = new VesselDataBase();
+		private static StringBuilder sb = new StringBuilder();
 
 		public string name;                           // unique name for the process
-		public string resourceName;
+		public string pseudoResourceName;
 		public string title;                          // UI title
 		public string desc;                           // UI description (long text)
 		public bool canToggle;                        // defines if this process can be toggled
-		public List<string> dumpableOutputs;                 // list of all outputs that can be dumped
-		public List<string> dumpedOutputsDefault;            // list of all outputs that are dumped by default
-		public Dictionary<string, double> inputs;     // input resources and rates
-		public Dictionary<string, double> outputs;    // output resources and rates
+		public List<Input> inputs;
+		public List<Output> outputs;
+
 		public ResourceBroker broker;
 		public bool hasModifier;
 		private IGenericExpression<double> modifier;
-		private static VesselDataBase modifierData = new VesselDataBase();
+		
 
 		public Process(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
-			resourceName = name + "Res";
+			if (name.Length == 0)
+				throw new Exception("skipping unnammed process");
+
+			pseudoResourceName = name + "Res";
 			title = Lib.ConfigValue(node, "title", string.Empty);
 			desc = Lib.ConfigValue(node, "desc", string.Empty);
 			canToggle = Lib.ConfigValue(node, "canToggle", true);
 			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Converter, title);
 
-			// check that name is specified
-			if (name.Length == 0) throw new Exception("skipping unnamed process");
-
-			inputs = new Dictionary<string, double>();
-			foreach (string input in node.GetValues("input"))
-			{
-				// get parameters
-				List<string> tok = Lib.Tokenize(input, '@');
-				if (tok.Count != 2) throw new Exception("malformed input on process " + name);
-				string input_res = tok[0];
-				double input_rate = Lib.Parse.ToDouble(tok[1]);
-
-				// check that resource is specified
-				if (input_res.Length == 0) throw new Exception("skipping resource-less process " + name);
-
-				// record input
-				inputs[input_res] = input_rate;
-			}
-
-			outputs = new Dictionary<string, double>();
-			foreach (string output in node.GetValues("output"))
-			{
-				// get parameters
-				List<string> tok = Lib.Tokenize(output, '@');
-				if (tok.Count != 2) throw new Exception("malformed output on process " + name);
-				string output_res = tok[0];
-				double output_rate = Lib.Parse.ToDouble(tok[1]);
-
-				// check that resource is specified
-				if (output_res.Length == 0) throw new Exception("skipping resource-less process " + name);
-
-				// record output
-				outputs[output_res] = output_rate;
-			}
-
-			// dumpable default: all outputs are dumpable
-			dumpableOutputs = Lib.Tokenize(Lib.ConfigValue(node, "dumpable", "all"), ',');
-			if(dumpableOutputs.Count == 1 && dumpableOutputs[0].ToLower() == "all")
-			{
-				dumpableOutputs = new List<string>(outputs.Keys);
-			}
-			else if(dumpableOutputs.Count == 1 && dumpableOutputs[0].ToLower() == "none")
-			{
-				dumpableOutputs.Clear();
-			}
-
-			// defaultDumped default: no outputs are dumped by default
-			dumpedOutputsDefault = new List<string>();
-			List<string> dumpedList = Lib.Tokenize(Lib.ConfigValue(node, "defaultDumped", ""), ',');
-			if (dumpedList.Count == 1 && dumpedList[0].ToLower() == "all")
-			{
-				dumpedList = new List<string>(outputs.Keys);
-			}
-			else if (dumpedList.Count == 1 && dumpedList[0].ToLower() == "none")
-			{
-				dumpedList.Clear();
-			}
-			// retain only default dumpable outputs that actually are dumpable
-			foreach (string o in dumpedList)
-			{
-				if (dumpableOutputs.Contains(o))
-					dumpedOutputsDefault.Add(o);
-			}
-
 			string modifierString = Lib.ConfigValue(node, "modifier", string.Empty);
-			hasModifier = modifierString != string.Empty;
+			hasModifier = modifierString.Length > 0;
 			if (hasModifier)
 			{
 				try
@@ -105,12 +108,33 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					string error = $"Error parsing modifier for process '{name}' :\n{modifierString}\n{e.Message}";
-					Profile.modifiersCompilationErrors.Add(error);
-					Lib.Log(error, Lib.LogLevel.Error);
+					ErrorManager.AddError(false, $"Can't parse modifier for process '{name}'", $"modifier : {modifierString}\n{e.Message}");
 					hasModifier = false;
 				}
 			}
+
+			inputs = new List<Input>();
+			foreach (ConfigNode inputNode in node.GetNodes("INPUT"))
+			{
+				Input input = new Input();
+				if (!input.Load(inputNode))
+					continue;
+
+				inputs.Add(input);
+			}
+
+			outputs = new List<Output>();
+			foreach (ConfigNode outputNode in node.GetNodes("OUTPUT"))
+			{
+				Output output = new Output();
+				if (!output.Load(outputNode))
+					continue;
+
+				outputs.Add(output);
+			}
+
+			if (inputs.Count == 0 && outputs.Count == 0)
+				throw new Exception($"Process {name} has no valid input or output, skipping..");
 		}
 
 		public double EvaluateModifier(VesselDataBase data)
@@ -126,7 +150,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void Execute(VesselData vd, VesselResHandler resources, double elapsed_s)
+		public void Execute(VesselDataBase vd, double elapsed_s)
 		{
 			// get product of all environment modifiers
 			double k = EvaluateModifier(vd);
@@ -135,44 +159,66 @@ namespace KERBALISM
 			if (k <= 0.0)
 				return;
 
-			List<string> dump;
-			if (vd.VesselProcesses.TryGetProcessData(name, out VesselProcess vesselProcess))
-			{
-				dump = vesselProcess.dumpedOutputs;
-			}
-			else
-			{
-				dump = dumpedOutputsDefault;
-			}
+			vd.VesselProcesses.TryGetProcessData(name, out VesselProcess vesselProcess);
 
 			Recipe recipe = new Recipe(broker);
 
-			foreach (var p in inputs)
+			foreach (Input input in inputs)
 			{
-				recipe.AddInput(p.Key, p.Value * k * elapsed_s);
+				recipe.AddInput(input.name, input.rate * k * elapsed_s);
 			}
-			foreach (var p in outputs)
+
+			foreach (Output output in outputs)
 			{
-				recipe.AddOutput(p.Key, p.Value * k * elapsed_s, dump.Contains(p.Key));
+				if (vesselProcess != null && vesselProcess.dumpedOutputs.Contains(output.name))
+					recipe.AddOutput(output.name, output.rate * k * elapsed_s, true);
+				else
+					recipe.AddOutput(output.name, output.rate * k * elapsed_s, output.dumpByDefault);
 			}
-			resources.AddRecipe(recipe);
+
+			vd.ResHandler.AddRecipe(recipe);
 		}
 
-		internal Specifics Specifics(double capacity)
+		public string GetInfo(double capacity, bool includeDescription)
 		{
-			Specifics specs = new Specifics();
-			foreach (KeyValuePair<string, double> pair in inputs)
+			sb.Clear();
+
+			if (includeDescription && desc.Length > 0)
 			{
-				//if (!modifiers.Contains(pair.Key))
-					specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-				//else
+				sb.AppendKSPLine(desc);
+				sb.AppendKSPNewLine();
+			}
+			int inputCount = inputs.Count;
+			int outputCount = outputs.Count;
+
+			for (int i = 0; i < outputCount; i++)
+			{
+				Output output = outputs[i];
+				sb.Append(Lib.Color(Lib.HumanReadableRate(output.rate * capacity, "F3", string.Empty, true), Lib.Kolor.PosRate, true));
+				sb.Append("\t");
+				sb.Append(output.displayName);
+
+				if (i < outputCount - 1 || inputCount > 0)
+					sb.AppendKSPNewLine();
+			}
+
+			for (int i = 0; i < inputCount; i++)
+			{
+				Input input = inputs[i];
+				sb.Append(Lib.Color(Lib.HumanReadableRate(-input.rate * capacity, "F3", string.Empty, true), Lib.Kolor.NegRate, true));
+				sb.Append("\t");
+				sb.Append(input.displayName);
+
+				if (i < inputCount - 1)
+					sb.AppendKSPNewLine();
+				
+				// TODO : what about self-consuming processes ? 
 				//specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 			}
-			foreach (KeyValuePair<string, double> pair in outputs)
-			{
-				specs.Add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
-			}
-			return specs;
+
+
+
+			return sb.ToString();
 		}
 	}
 

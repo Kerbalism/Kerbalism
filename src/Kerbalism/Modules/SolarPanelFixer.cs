@@ -601,6 +601,7 @@ namespace KERBALISM
 					case "SSTUModularPart": SolarPanel = new SSTUVeryComplexPanel(); break;
 					case "ModuleROSolar": SolarPanel = new ROConfigurablePanel(); break;
 					case "KopernicusSolarPanel":
+					case "KopernicusSolarPanels":
 						Lib.Log("Part '" + part.partInfo.title + "' use the KopernicusSolarPanel module, please remove it from your config. Kerbalism has it's own support for Kopernicus", Lib.LogLevel.Warning);
 						continue;
 					default:

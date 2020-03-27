@@ -4,15 +4,23 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-
-
 	public static class Features
 	{
+		public static bool LifeSupport;
+		public static bool Stress;
+		public static bool Radiation;
+		public static bool Failures;
+		public static bool Science;
+
 		public static void Parse()
 		{
-			var featuresNodes = GameDatabase.Instance.GetConfigs("KerbalismFeatures");
-			if (featuresNodes.Length < 1) return;
-			ConfigNode cfg = featuresNodes[0].config;
+			var featuresNodes = GameDatabase.Instance.GetConfigs("KERBALISM_FEATURES");
+
+			ConfigNode cfg;
+			if (featuresNodes.Length == 1)
+				cfg = featuresNodes[0].config;
+			else
+				cfg = new ConfigNode();
 
 			// user-defined features
 			Failures = Lib.ConfigValue(cfg, "Failures", true);
@@ -23,13 +31,13 @@ namespace KERBALISM
 
 			if (Stress && !LifeSupport)
 			{
-				Lib.Log("Enforcing Kerbalism feature LifeSupport because you have Stress set to true. You can't have one without the other.");
+				ErrorManager.AddError(false, "Can't disable feature : LifeSupport", "Enforcing Kerbalism feature LifeSupport because you have Stress set to true in `Features.cfg`\nYou can't have one without the other.");
 				LifeSupport = true;
 			}
 
 			if (Radiation && !LifeSupport)
 			{
-				Lib.Log("Enforcing Kerbalism feature LifeSupport because you have Radiation set to true. You can't have one without the other.");
+				ErrorManager.AddError(false, "Can't disable feature : LifeSupport", "Enforcing Kerbalism feature LifeSupport because you have Radiation set to true in `Features.cfg`\nYou can't have one without the other.");
 				LifeSupport = true;
 			}
 
@@ -41,14 +49,5 @@ namespace KERBALISM
 			Lib.Log("- Science: " + Science);
 			Lib.Log("- Radiation: " + Radiation);
 		}
-
-		public static bool LifeSupport;
-		public static bool Stress;
-		public static bool Radiation;
-		public static bool Failures;
-		public static bool Science;
-
 	}
-
-
 } // KERBALISM

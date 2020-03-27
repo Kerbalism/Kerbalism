@@ -139,6 +139,11 @@ namespace KERBALISM
 			node.AddValue("sendFileNames", fileNames);
 		}
 
+		public override void OnPartWillDie()
+		{
+			DeleteAllData();
+		}
+
 		#endregion
 
 		public static double StoreFile(Vessel vessel, SubjectData subjectData, double size, bool include_private = false)

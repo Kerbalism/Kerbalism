@@ -86,6 +86,8 @@ namespace KERBALISM
 
 		public override bool NeedUpdate => true;
 
+		public bool IsPersistent { get; set; } = false;
+
 		/// <summary>Don't use this to create a virtual resource, use the VesselResHandler.SetupOrCreateVirtualResource() method</summary>
 		public VesselVirtualResource(string name)
 		{
@@ -99,11 +101,12 @@ namespace KERBALISM
 			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
 		}
 
-		public void Setup(string title, double amount = 0.0, double capacity = double.MaxValue)
+		public void Setup(string title, double amount = 0.0, double capacity = double.MaxValue, bool isPersistent = false)
 		{
 			this.title = title;
 			this.amount = amount;
 			this.capacity = capacity;
+			this.IsPersistent = isPersistent;
 			deferred = 0.0;
 			level = capacity > 0.0 ? amount / capacity : 0.0;
 		}
@@ -213,6 +216,9 @@ namespace KERBALISM
 		{
 			foreach (VesselVirtualResource vRes in vd.ResHandler.GetVirtualResources())
 			{
+				if (!vRes.IsPersistent)
+					continue;
+
 				if (vRes.Amount == 0.0 && vRes.Capacity == 0.0)
 					continue;
 

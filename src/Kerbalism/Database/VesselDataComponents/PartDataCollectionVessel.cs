@@ -290,5 +290,26 @@ namespace KERBALISM
 
 			other.Clear(false);
 		}
+
+		public void OnPartWillDie(Part part)
+		{
+			if (partDictionary.TryGetValue(part.flightID, out PartData partData))
+			{
+				partData.PartWillDie();
+				partDictionary.Remove(part.flightID);
+				partList.Remove(partData);
+			}
+		}
+
+		public void OnAllPartsWillDie()
+		{
+			foreach (PartData partData in partList)
+			{
+				partData.PartWillDie();
+			}
+
+			partDictionary.Clear();
+			partList.Clear();
+		}
 	}
 }

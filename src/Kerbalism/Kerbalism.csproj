@@ -80,6 +80,15 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
+    <!-- Unity/Mono extra framework Dlls -->
+    <Reference Include="System.IO.Compression">
+      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression.FileSystem">
+      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <!-- Harmony reference, get it from the gamedata folder -->
     <Reference Include="Harmony">
       <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
@@ -157,18 +166,24 @@
     <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
     <Compile Include="Database\VesselDataComponents\PartDataCollectionShip.cs" />
+    <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
+    <Compile Include="Database\VesselDataComponents\VesselData.SunInfo.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
     <Compile Include="Database\VesselDataComponents\VesselHabitat.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcessCollection.cs" />
     <Compile Include="External\B9PartSwitch.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
+    <Compile Include="Modules\Base\SubclassingExample.cs" />
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="Patches\ShipConstruct.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
+    <Compile Include="Science\ExperimentModuleDefinition.cs" />
+    <Compile Include="System\ErrorManager.cs" />
+    <Compile Include="System\PartPrefabsPostCompilation.cs" />
     <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />
     <Compile Include="UI\KsmGui\KsmGuiTextButton.cs" />
     <Compile Include="Database\VesselData\VesselDataShip.cs" />

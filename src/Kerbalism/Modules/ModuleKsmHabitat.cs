@@ -10,7 +10,7 @@ using static KERBALISM.HabitatLib;
 
 namespace KERBALISM
 {
-	public sealed class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier
+	public class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
 		#region FIELDS / PROPERTIES
 		// general config

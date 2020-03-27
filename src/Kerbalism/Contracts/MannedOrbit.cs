@@ -81,7 +81,7 @@ namespace KERBALISM.CONTRACTS
 		{
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
-				if (v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
 					continue;
 
 				bool manned = vd.CrewCount > 0;

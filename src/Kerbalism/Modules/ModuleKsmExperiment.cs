@@ -11,14 +11,14 @@ using KERBALISM.Planner;
 
 namespace KERBALISM
 {
-
-
-	public class ModuleKsmExperiment : KsmPartModule<ModuleKsmExperiment, ExperimentData>, ISpecifics, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, IBackgroundModule, ISwitchable
+	public class ModuleKsmExperiment : KsmPartModule<ModuleKsmExperiment, ExperimentData>, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, IBackgroundModule, ISwitchable
 	{
 		#region FIELDS
 
 		/// <summary> name of the associated experiment module definition </summary>
-		[KSPField] public string id = string.Empty;
+		[KSPField] public string moduleDefinition = string.Empty;
+
+		[KSPField] public string moduleIdentifier = string.Empty;
 
 		/// <summary> don't show UI when the experiment is unavailable </summary>
 		[KSPField] public bool hide_when_invalid = false;
@@ -68,13 +68,12 @@ namespace KERBALISM
 
 		public void OnSwitchActivate()
 		{
-			Lib.LogDebug($"B9PS : activating {moduleName} with id '{id}'");
+			Lib.LogDebug($"B9PS : activating {moduleName} with id '{moduleDefinition}'");
 
-			if (moduleData.SetupDefinition(id))
+			if (TrySetup())
 			{
 				enabled = isEnabled = moduleIsEnabled = true;
 				moduleData.moduleIsEnabled = true;
-				Setup();
 			}
 			else
 			{
@@ -89,9 +88,20 @@ namespace KERBALISM
 			moduleData.moduleIsEnabled = false;
 		}
 
+		public string GetSubtypeDescription(ConfigNode dataNode)
+		{
+			throw new NotImplementedException("GetSubtypeDescription for ModuleKsmExperiment should not be called, special handling happens in PartPrefabPostCompilation");
+		}
+
+
 		public override void OnStart(StartState state)
 		{
-			Lib.LogDebug($"Starting id '{id}'");
+			Lib.LogDebug($"Starting id '{moduleDefinition}'");
+
+			if (moduleData.moduleIsEnabled && TrySetup())
+			{
+				moduleData.CheckPrivateDriveId();
+			}
 
 			// create animators
 			deployAnimator = new Animator(part, anim_deploy, anim_deploy_reverse);
@@ -125,20 +135,17 @@ namespace KERBALISM
 			Events["ShowPopup"].guiActiveUncommand = true;
 			Events["ShowPopup"].externalToEVAOnly = true;
 			Events["ShowPopup"].requireFullControl = false;
-
-			if (moduleData.moduleIsEnabled)
-			{
-				moduleData.CheckPrivateDriveId();
-				Setup();
-			}
 		}
 
-		private void Setup()
+		private bool TrySetup()
 		{
-			Lib.LogDebug($"Setup with id '{id}'");
+			Lib.LogDebug($"Setup with id '{moduleDefinition}'");
+			if (!moduleData.TrySetupDefinition(moduleDefinition))
+				return false;
 
 			Actions["StartAction"].guiName = Lib.BuildString(Local.Generic_START, ": ", moduleData.ModuleDefinition.Info.Title);
 			Actions["StopAction"].guiName = Lib.BuildString(Local.Generic_STOP, ": ", moduleData.ModuleDefinition.Info.Title);
+			return true;
 		}
 
 		#endregion
@@ -420,13 +427,13 @@ namespace KERBALISM
 
 		public void PlannerUpdate(VesselResHandler resHandler, VesselDataShip vesselData)
 		{
-			if (moduleData.IsExperimentRunning)
+			if (moduleData.IsRunningRequested)
 				resHandler.ElectricCharge.Consume(moduleData.ModuleDefinition.RequiredEC, ResourceBroker.Experiment);
 		}
 
 		#endregion
 
-		#region user interaction
+		#region USER INTERACTION
 
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 		public void ToggleEvent()
@@ -551,7 +558,7 @@ namespace KERBALISM
 
 		#endregion
 
-		#region info / UI
+		#region INFO / UI
 
 		public static string RunningStateInfo(RunningState state)
 		{
@@ -599,116 +606,53 @@ namespace KERBALISM
 				return Lib.Color(Local.Module_Experiment_ScienceValuenone, Lib.Kolor.Science, true);//"none"
 		}
 
-		// specifics support
-		public Specifics Specs()
-		{
-			return Specs(moduleData.ModuleDefinition);
-		}
 
-		public static Specifics Specs(ExperimentModuleDefinition moduleDefinition)
-		{
-			var specs = new Specifics();
-			if (moduleDefinition?.Info == null)
-			{
-				specs.Add(Local.ExperimentInfo_Unknown);
-				return specs;
-			}
-
-			if (!string.IsNullOrEmpty(moduleDefinition.Info.Description))
-			{
-				specs.Add(Lib.BuildString("<i>", moduleDefinition.Info.Description, "</i>"));
-				specs.Add(string.Empty);
-			}
-
-			double expSize = moduleDefinition.Info.DataSize;
-			if (moduleDefinition.Info.SampleMass == 0.0)
-			{
-				specs.Add(Local.Module_Experiment_Specifics_info1, Lib.HumanReadableDataSize(expSize));//"Data size"
-				if(moduleDefinition.DataRate > 0)
-				{
-					specs.Add(Local.Module_Experiment_Specifics_info2, Lib.HumanReadableDataRate(moduleDefinition.DataRate));
-					specs.Add(Local.Module_Experiment_Specifics_info3, Lib.HumanReadableDuration(moduleDefinition.Duration));
-				}
-			}
-			else
-			{
-				specs.Add(Local.Module_Experiment_Specifics_info4, Lib.HumanReadableSampleSize(expSize));//"Sample size"
-				specs.Add(Local.Module_Experiment_Specifics_info5, Lib.HumanReadableMass(moduleDefinition.Info.SampleMass));//"Sample mass"
-				if (moduleDefinition.Info.SampleMass > 0.0 && !moduleDefinition.SampleCollecting)
-					specs.Add(Local.Module_Experiment_Specifics_info6, moduleDefinition.Samples.ToString("F2"));//"Samples"
-				if(moduleDefinition.Duration > 0)
-					specs.Add(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(moduleDefinition.Duration));
-			}
-
-			if (moduleDefinition.Info.IncludedExperiments.Count > 0)
-			{
-				specs.Add(string.Empty);
-				specs.Add(Lib.Color("Included experiments:", Lib.Kolor.Cyan, true));
-				List<string> includedExpInfos = new List<string>();
-				ExperimentInfo.GetIncludedExperimentTitles(moduleDefinition.Info, includedExpInfos);
-				foreach (string includedExp in includedExpInfos)
-				{
-					specs.Add("• " + includedExp);
-				}
-			}
-
-			List<string> situations = moduleDefinition.Info.AvailableSituations();
-			if (situations.Count > 0)
-			{
-				specs.Add(string.Empty);
-				specs.Add(Lib.Color(Local.Module_Experiment_Specifics_Situations, Lib.Kolor.Cyan, true));//"Situations:"
-				foreach (string s in situations) specs.Add(Lib.BuildString("• <b>", s, "</b>"));
-			}
-
-			if (moduleDefinition.Info.ExpBodyConditions.HasConditions)
-			{
-				specs.Add(string.Empty);
-				specs.Add(moduleDefinition.Info.ExpBodyConditions.ConditionsToString());
-			}
-
-			specs.Add(string.Empty);
-
-			specs.Add(Lib.Color(Local.Module_Experiment_Specifics_info8, Lib.Kolor.Cyan, true));//"Needs:"
-
-			if(moduleDefinition.RequiredEC > 0)
-				specs.Add(Local.Module_Experiment_Specifics_info9, Lib.HumanReadableRate(moduleDefinition.RequiredEC));
-			foreach (var p in moduleDefinition.Resources)
-				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
-
-			if (moduleDefinition.CrewOperate)
-			{
-				specs.Add(Local.Module_Experiment_Specifics_info11, moduleDefinition.CrewOperate.Info());
-			}
-
-			if(moduleDefinition.Requirements.Requires.Length > 0)
-			{
-				specs.Add(string.Empty);
-				specs.Add(Lib.Color(Local.Module_Experiment_Requires, Lib.Kolor.Cyan, true));//"Requires:"
-				foreach (RequireDef req in moduleDefinition.Requirements.Requires)
-					specs.Add(Lib.BuildString("• <b>", ReqName(req.require), "</b>"), ReqValueFormat(req.require, req.value));
-			}
-
-			return specs;
-		}
 
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (moduleData?.ModuleDefinition == null)
-				return string.Empty;
+			if (moduleData?.ModuleDefinition != null)
+			{
+				return moduleData.ModuleDefinition.ModuleInfo(false);
+			}
+			else if (moduleDefinition.Length > 0)
+			{
+				ExperimentModuleDefinition expDef = ScienceDB.GetExperimentModuleDefinition(moduleDefinition);
+				if (expDef != null)
+				{
+					return expDef.ModuleInfo(false);
+				}
+			}
 
-			return Specs().Info();
+			return string.Empty;
 		}
 
 		// IModuleInfo
-		public string GetModuleTitle() => moduleData?.ModuleDefinition != null ? moduleData.ModuleDefinition.Info.Title : "";
-		public override string GetModuleDisplayName() { return GetModuleTitle(); }
-		public string GetPrimaryField() { return string.Empty; }
+		public string GetModuleTitle()
+		{
+			if (moduleData?.ModuleDefinition != null)
+			{
+				return moduleData.ModuleDefinition.Info.Title;
+			}
+			else if (moduleDefinition.Length > 0)
+			{
+				ExperimentModuleDefinition expDef = ScienceDB.GetExperimentModuleDefinition(moduleDefinition);
+				if (expDef != null)
+				{
+					return expDef.Info.Title;
+				}
+			}
+
+			return string.Empty;
+		}
+
+		public override string GetModuleDisplayName() => GetModuleTitle();
+		public string GetPrimaryField() => string.Empty;
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
 		#endregion
 
-		#region utility / other
+		#region UTILITY
 
 		public void ReliablityEvent(bool breakdown)
 		{
@@ -755,7 +699,7 @@ namespace KERBALISM
 
 		#endregion
 
-		#region sample mass
+		#region SAMPLE MASS
 
 		// IPartMassModifier
 		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
@@ -765,7 +709,7 @@ namespace KERBALISM
 
 			if (double.IsNaN(moduleData.remainingSampleMass))
 			{
-				Lib.LogDebug("Experiment remaining sample mass is NaN " + id, Lib.LogLevel.Error);
+				Lib.LogDebug("Experiment remaining sample mass is NaN " + moduleDefinition, Lib.LogLevel.Error);
 				return 0f;
 			}
 			return (float)moduleData.remainingSampleMass;
@@ -774,7 +718,7 @@ namespace KERBALISM
 
 		#endregion
 
-		#region drag cubes
+		#region DRAG CUBES
 
 		private void SetDragCubes(bool deployed)
 		{
@@ -817,7 +761,7 @@ namespace KERBALISM
 
 		#endregion
 
-		#region EDITOR MULTIPLE RUN TRACKER
+		#region MULTIPLE RUN CHECK
 
 		private static List<string> editorRunningExperiments = new List<string>();
 
@@ -845,6 +789,4 @@ namespace KERBALISM
 		}
 		#endregion
 	}
-
-
-} // KERBALISM
+}

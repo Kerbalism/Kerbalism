@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// Replacement for ProcessController
 	/// </summary>
-	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, ISpecifics, ISwitchable
+	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, ISwitchable
 	{
 		[KSPField] public string processName = string.Empty;
 		[KSPField] public double capacity = 1.0;
@@ -48,6 +48,31 @@ namespace KERBALISM
 			moduleData.moduleIsEnabled = false;
 		}
 
+		public string GetSubtypeDescription(ConfigNode subtypeDataNode)
+		{
+			string switchedProcessName;
+			if (subtypeDataNode.HasValue(nameof(processName)))
+				switchedProcessName = Lib.ConfigValue(subtypeDataNode, nameof(processName), string.Empty);
+			else
+				switchedProcessName = processName;
+
+			Process switchedProcess = Profile.processes.Find(p => p.name == switchedProcessName);
+
+			if (switchedProcess != null)
+			{
+				double switchedCapacity;
+				if (subtypeDataNode.HasValue(nameof(switchedCapacity)))
+					switchedCapacity = Lib.ConfigValue(subtypeDataNode, nameof(switchedCapacity), 0.0);
+				else
+					switchedCapacity = capacity;
+
+				if (switchedCapacity > 0.0)
+					return switchedProcess.GetInfo(switchedCapacity, true);
+			}
+
+			return null;
+		}
+
 		public override void OnStart(StartState state)
 		{
 			runningField = Fields["running"];
@@ -80,7 +105,7 @@ namespace KERBALISM
 			// we might be restarting with a different configuration
 			if (moduleData.processName != processName || moduleData.processCapacity != capacity)
 			{
-				Lib.LogDebug($"Switching to process '{processName}' from '{moduleData.processName}'");
+				Lib.LogDebug($"Configuring with process '{processName}' (was '{moduleData.processName}')");
 				moduleData.Setup(processName, capacity);
 			}
 
@@ -110,31 +135,32 @@ namespace KERBALISM
 			}
 		}
 
-		// part tooltip
-		public override string GetInfo()
+		
+
+		public bool IsRunning()
 		{
-			if (string.IsNullOrEmpty(processName))
-				return string.Empty;
-
-			return Specs().Info(moduleData.Process.desc);
-		}
-
-		public bool IsRunning() {
 			return running && !string.IsNullOrEmpty(processName);
 		}
 
-		// specifics support
-		public Specifics Specs()
+		// part tooltip
+		public override string GetInfo()
 		{
-			Process process = moduleData.Process; //Profile.processes.Find(k => k.name == processName);
-			if (process == null)
-				return new Specifics();
-			return process.Specifics(capacity);
+			if (moduleData == null || moduleData.Process == null)
+				return string.Empty;
+
+			return moduleData.Process.GetInfo(moduleData.processCapacity, true);
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "Process controller"; }
-		public override string GetModuleDisplayName() { return "Process controller"; }
+		public string GetModuleTitle()
+		{
+			if (moduleData == null || moduleData.Process == null)
+				return string.Empty;
+
+			return moduleData.Process.title;
+		}
+
+		public override string GetModuleDisplayName() => GetModuleTitle();
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

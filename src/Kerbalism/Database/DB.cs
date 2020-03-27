@@ -242,16 +242,19 @@ namespace KERBALISM
 			return true;
 		}
 
-		//{
-		//	VesselData vd;
-		//	if (!vessels.TryGetValue(vessel.id, out vd))
-		//	{
-		//		Lib.LogDebugStack($"Vessel {vessel.vesselName} was created in flight, creating VesselData", Lib.LogLevel.Warning);
-		//		vd = new VesselData(vessel);
-		//		vessels.Add(vessel.id, vd);
-		//	}
-		//	return vd;
-		//}
+		/// <summary>
+		/// Get the VesselData for this vessel. Will return null if that vessel isn't yet created in the DB, which can happen if this is called too early. <br/>
+		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()
+		/// </summary>
+		public static VesselData GetVesselData(this Vessel vessel)
+		{
+			if (!vessels.TryGetValue(vessel.id, out VesselData vesselData))
+			{
+				Lib.LogStack($"Could not get VesselData for vessel {vessel.vesselName}");
+				return null;
+			}
+			return vesselData;
+		}
 
 		public static bool TryGetVesselData(this ProtoVessel protoVessel, out VesselData vesselData)
 		{

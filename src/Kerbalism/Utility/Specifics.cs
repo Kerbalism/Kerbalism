@@ -15,10 +15,14 @@ namespace KERBALISM
 
 	public sealed class Specifics
 	{
-		public Specifics()
+		public class Entry
 		{
-			entries = new List<Entry>();
+			public string label = string.Empty;
+			public string value = string.Empty;
 		}
+
+		StringBuilder sb = new StringBuilder();
+		public List<Entry> entries = new List<Entry>();
 
 		public void Add(string label, string value = "")
 		{
@@ -32,20 +36,20 @@ namespace KERBALISM
 
 		public string Info(string desc = "")
 		{
-			StringBuilder sb = new StringBuilder();
+			sb.Clear();
 			if (desc.Length > 0)
 			{
 				sb.Append("<i>");
 				sb.Append(desc);
 				sb.Append("</i>\n\n");
 			}
-			bool firstEntry = true;
-			foreach (Entry e in entries)
+
+			for (int i = 0; i < entries.Count; i++)
 			{
-				if (!firstEntry)
+				Entry e = entries[i];
+
+				if (i > 0)
 					sb.Append("\n");
-				else
-					firstEntry = false;
 
 				sb.Append(e.label);
 				if (e.value.Length > 0)
@@ -58,13 +62,9 @@ namespace KERBALISM
 			return sb.ToString();
 		}
 
-		public class Entry
-		{
-			public string label = string.Empty;
-			public string value = string.Empty;
-		}
 
-		public List<Entry> entries;
+
+		
 	}
 
 

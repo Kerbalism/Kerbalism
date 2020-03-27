@@ -88,7 +88,7 @@ namespace KERBALISM
 
 			// right panel : experiment info
 			expInfoHeader = new KsmGuiHeader(leftPanel, Local.SCIENCEARCHIVE_EXPERIMENTINFO);//"EXPERIMENT INFO"
-			expInfoBox = new KsmGuiTextBox(leftPanel, Specs(data.ModuleDefinition).Info());
+			expInfoBox = new KsmGuiTextBox(leftPanel, data.ModuleDefinition.ModuleInfo());
 			expInfoBox.SetLayoutElement(false, true, 160);
 
 			// right panel

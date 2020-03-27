@@ -364,10 +364,6 @@ namespace KERBALISM
 							subjectInfo.Value.IncludedSubjects.Add(subjectToInclude);
 					}
 				}
-
-				// Get the experiment description that will be shown in the science archive by calling GetInfo() on the first found partmodule using it
-				experimentInfo.CompileModuleInfos();
-				Lib.LogDebug($"Compiled info for {experimentInfo.ExperimentId}");
 			}
 
 			Lib.Log($"ScienceDB init done : {subjectCount} subjects found, total science points : {totalScience.ToString("F1")}");
@@ -563,6 +559,11 @@ namespace KERBALISM
 				return moduleDefinition;
 
 			return null;
+		}
+
+		public static IEnumerable<ExperimentModuleDefinition> ExperimentModuleDefinitions()
+		{
+			return experimentModuleDefinitions.Values;
 		}
 
 		/// <summary> return the subject information for the given experiment and situation, or null if the situation isn't available. </summary>

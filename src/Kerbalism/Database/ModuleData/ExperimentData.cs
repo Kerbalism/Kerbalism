@@ -121,11 +121,11 @@ namespace KERBALISM
 			if (!moduleIsEnabled)
 				return;
 
-			if (!SetupDefinition(modulePrefab.id))
+			if (!TrySetupDefinition(modulePrefab.moduleDefinition))
 				moduleIsEnabled = false;
 		}
 
-		public bool SetupDefinition(string definitionId)
+		public bool TrySetupDefinition(string definitionId)
 		{
 			if (string.IsNullOrEmpty(definitionId))
 				return false;

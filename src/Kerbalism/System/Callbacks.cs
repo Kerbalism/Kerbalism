@@ -10,6 +10,8 @@ using KSP.UI;
 
 namespace KERBALISM
 {
+	#region HARMONY EVENTS
+
 	// OnPartDie is not called for the root part
 	// OnPartWillDie works but isn't available in 1.5/1.6
 	// Until we drop 1.5/1.6 support, we use this patch instead
@@ -17,15 +19,15 @@ namespace KERBALISM
 	[HarmonyPatch("Die")]
 	class Part_Die
 	{
-		static bool Prefix(Part __instance)
+		static void Prefix(Part __instance)
 		{
 			// replicate OnPartWillDie
 			if (__instance.State == PartStates.DEAD)
-				return true;
+				return;
 
 			Kerbalism.Callbacks.OnPartWillDie(__instance);
 
-			return true; // continue to Part.Die()
+			return; // continue to Part.Die()
 		}
 	}
 
@@ -77,21 +79,25 @@ namespace KERBALISM
 
 	// Create a OnAttemptBoard event that allow to prevent boardinga vessel from EVA
 	// Called before any check has been done so the boarding can still fail due to stock restrictions
-	// Calles before anything (experiments/inventory...) has been transfered to the boarded vessel
+	// Called before anything (experiments/inventory...) has been transfered to the boarded vessel
 	[HarmonyPatch(typeof(KerbalEVA))]
 	[HarmonyPatch("BoardPart")]
 	class KerbalEVA_BoardPart
 	{
 		static bool Prefix(KerbalEVA __instance, Part p)
 		{
-			// continue to BoardPart() if OnBoardAttempt return true 
+			// continue to BoardPart() if AttemptBoard return true 
 			return Kerbalism.Callbacks.AttemptBoard(__instance, p);
 		}
 	}
 
+	#endregion
+
 	public sealed class Callbacks
 	{
 		public static EventData<Part, Configure> onConfigure = new EventData<Part, Configure>("onConfigure");
+
+		#region CALLBACKS REGISRATION
 
 		public Callbacks()
 		{
@@ -149,16 +155,30 @@ namespace KERBALISM
 			GameEvents.onEditorShipModified.Add(OnEditorShipModified);
 		}
 
-		
+		#endregion
+
+		#region UI
+
+		public bool visible;
+
+		void AddEditorCategory()
+		{
+			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
+			{
+				RUI.Icons.Selectable.Icon icon = new RUI.Icons.Selectable.Icon("Kerbalism", Textures.category_normal, Textures.category_selected);
+				PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => string.Equals(k.button.categoryName, "filter by function", StringComparison.OrdinalIgnoreCase));
+				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
+			}
+		}
+
+		#endregion
+
+		#region EDITOR EVENTS
+
 		private void OnEditorShipModified(ShipConstruct data)
 		{
 			ModuleKsmExperiment.CheckEditorExperimentMultipleRun();
 			Planner.Planner.EditorShipModifiedEvent(data);
-		}
-
-		private void OnVesselRecoveryProcessingComplete(ProtoVessel pv, MissionRecoveryDialog dialog, float recoveryFactor)
-		{
-			VesselRecovery_OnVesselRecovered.OnVesselRecoveryProcessingComplete(dialog);
 		}
 
 		private void OnEditorPartDestroyed(Part part)
@@ -216,7 +236,7 @@ namespace KERBALISM
 						if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
 						{
 							partManifest.RemoveCrewFromSeat(i);
-								
+
 							needRefresh |= true;
 						}
 					}
@@ -242,6 +262,10 @@ namespace KERBALISM
 				CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, true);
 			}
 		}
+
+		#endregion
+
+		#region EVA EVENTS
 
 		private static bool ignoreNextBoardAttemptDriveCheck = false;
 
@@ -284,8 +308,6 @@ namespace KERBALISM
 
 				if (filesSize > fileCapacity || samplesSize > samplesCapacity)
 				{
-					canBoard = false;
-
 					DialogGUIButton cancel = new DialogGUIButton("#autoLOC_116009", delegate { }); // autoLOC_116009 : cancel
 					Callback proceedCallback = delegate { ignoreNextBoardAttemptDriveCheck = true; instance.BoardPart(targetPart); }; // ignore this check on the method next call
 					DialogGUIButton proceed = new DialogGUIButton("#autoLOC_116008", proceedCallback); // autoLOC_116008 : Board Anyway\n(Dump Experiments)
@@ -328,6 +350,104 @@ namespace KERBALISM
 				Message.Post($"Can't go on EVA from {Lib.Bold(sourcePart.partInfo.title)}", "Depressurize it first !");
 			}
 		}
+
+		private void ToEVA(GameEvents.FromToAction<Part, Part> data)
+		{
+			// setup supply resources capacity in the eva kerbal
+			// This has to be before the vesseldata creation, so the reshandler is 
+			// initialized with the correct capacities
+			Profile.SetupEva(data.to);
+
+			// get vessel data
+			if (!data.to.vessel.TryGetVesselDataNoError(out VesselData evaVD))
+			{
+				Lib.LogDebug($"Creating VesselData for EVA Kerbal : {data.to.vessel.vesselName}");
+				evaVD = new VesselData(data.to.vessel);
+				DB.AddNewVesselData(evaVD);
+			}
+
+			VesselData vesselVD = data.from.vessel.GetVesselData();
+
+			// total crew of the origin vessel plus the EVAing kerbal
+			double totalCrew = Lib.CrewCount(data.from.vessel) + 1.0;
+
+			string evaPropellant = Lib.EvaPropellantName();
+
+			// for each resource in the kerbal
+			foreach (PartResource partRes in data.to.Resources)
+			{
+				// get the resource
+				VesselResource evaRes = evaVD.ResHandler.GetResource(partRes.resourceName);
+				VesselResource vesselRes = vesselVD.ResHandler.GetResource(partRes.resourceName);
+
+				// clamp request by how much is available
+				double amountTransferred = Math.Min(evaRes.Capacity, Math.Max(vesselRes.Amount + vesselRes.Deferred, 0.0));
+
+				// special handling for EVA propellant
+				if (evaRes.Name == evaPropellant)
+				{
+					if (amountTransferred <= 0.05 && !Lib.Landed(data.from.vessel))
+					{
+						Message.Post(Severity.danger,
+							Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropellant + "</b>"), Local.CallBackMsg_EvaNoMP2);
+						// "There isn't any <<1>> in the EVA suit", "Don't let the ladder go!"
+					}
+				}
+				// for all ressources but propellant, only take this kerbal "share"
+				else
+				{
+					amountTransferred /= totalCrew;
+				}
+
+				// remove resource from vessel
+				vesselRes.Consume(amountTransferred);
+
+				// add resource to eva kerbal
+				evaRes.Produce(amountTransferred);
+			}
+
+			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
+			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
+			EVA.HeadLamps(kerbal, false);
+
+			// execute script
+			evaVD.computer.Execute(data.from.vessel, ScriptType.eva_out);
+
+			OnVesselModified(data.from.vessel);
+		}
+
+
+		private void FromEVA(GameEvents.FromToAction<Part, Part> data)
+		{
+			// contract configurator calls this event with both parts being the same when it adds a passenger
+			if (data.from == data.to)
+				return;
+
+			VesselData vesselVD = data.to.vessel.GetVesselData();
+
+			// for each resource in the eva kerbal, add leftovers to the vessel
+			foreach (PartResource partRes in data.from.Resources)
+			{
+				vesselVD.ResHandler.GetResource(partRes.resourceName).Produce(partRes.amount);
+			}
+
+			// merge drives data
+			DriveData.Transfer(data.from.vessel, data.to.vessel, true);
+
+			// forget EVA vessel data
+			Cache.PurgeVesselCaches(data.from.vessel);
+			//Drive.Purge(data.from.vessel);
+
+			// update boarded vessel
+			this.OnVesselModified(data.to.vessel);
+
+			// execute script
+			vesselVD.computer.Execute(data.to.vessel, ScriptType.eva_in);
+		}
+
+		#endregion
+
+		#region CREW TRANSFER
 
 		public static bool disableCrewTransferFailMessage = false;
 		private void CrewTransferSelected(CrewTransfer.CrewTransferData data)
@@ -405,32 +525,49 @@ namespace KERBALISM
 				fromHabitatData.crewCount = newCrewCount;
 			}
 
-			// TODO : this is called when going from a vessel to EVA, but the EVA modules OnStart() isn't yet called.
-			// in fact this will trigger the EVA VesselData creation. So this can't be relied upon for that case.
-			if (data.to != null && data.from.TryGetModuleDataOfType(out HabitatData toHabitatData))
+
+			if (data.to != null && data.to.TryGetModuleDataOfType(out HabitatData toHabitatData))
 			{
 				toHabitatData.crewCount = Lib.CrewCount(data.to);
 
-				PartResourceWrapper wasteRes = toHabitatData.loadedModule.WasteRes;
+				PartResource wasteRes;
+				if (!data.to.Resources.Contains(Settings.HabitatWasteResource))
+					wasteRes = Lib.AddResource(data.to, Settings.HabitatWasteResource, 0.0, HabitatLib.M3ToL(toHabitatData.loadedModule.volume));
+				else
+					wasteRes = data.to.Resources[Settings.HabitatWasteResource];
 
-				switch (toHabitatData.pressureState)
+				// note : this is called when going from a vessel to EVA, but the EVA modules OnStart() isn't yet called.
+				// So the waste resource capacity won't be set yet, and neither the wrapper. And we can't create it here because
+				// that will be overriden anyway in the module 
+				// So for now you magically get ride of some CO2 by going on EVA
+				if (wasteRes != null)
 				{
-					case HabitatData.PressureState.AlwaysDepressurized:
-					case HabitatData.PressureState.Depressurized:
-					case HabitatData.PressureState.Pressurizing:
-					case HabitatData.PressureState.DepressurizingBelowThreshold:
+					switch (toHabitatData.pressureState)
+					{
+						case HabitatData.PressureState.AlwaysDepressurized:
+						case HabitatData.PressureState.Depressurized:
+						case HabitatData.PressureState.Pressurizing:
+						case HabitatData.PressureState.DepressurizingBelowThreshold:
 
-						wasteRes.Capacity = toHabitatData.crewCount * Settings.PressureSuitVolume;
-						break;
+							wasteRes.maxAmount = toHabitatData.crewCount * Settings.PressureSuitVolume;
+							break;
+					}
+
+					if (wasteTransferred > 0.0)
+					{
+						wasteRes.amount = Math.Min(wasteRes.amount + wasteTransferred, wasteRes.maxAmount);
+					}
 				}
 
-				if (wasteTransferred > 0.0)
-				{
-					wasteRes.Amount = Math.Min(wasteRes.Amount + wasteTransferred, wasteRes.Capacity);
-				}
+
 			}
 		}
 
+		#endregion
+
+		#region PART LIFECYCLE
+
+		// Called by the OnPartCouple events, called for docking and KIS added parts
 		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
 		{
 			VesselData.OnPartCouple(data);
@@ -461,135 +598,58 @@ namespace KERBALISM
 			VesselData.OnPartWillDie(p);
 
 			// update vessel
-			this.OnVesselModified(p.vessel);
+			OnVesselModified(p.vessel);
+		}
+
+		#endregion
+
+		#region VESSEL LIFECYCLE
+
+		private void VesselCreated(Vessel v)
+		{
+			if (Serenity.GetModuleGroundExpControl(v) != null)
+				v.vesselName = Lib.BuildString(v.mainBody.name, " Site ", Lib.Greek());
+		}
+
+		private void OnVesselModified(Vessel vessel)
+		{
+			// TODO : move emitter to KsmPartModule and get ride of this.
+			foreach (var emitter in vessel.FindPartModulesImplementing<Emitter>())
+				emitter.Recalculate();
+
+			// Note : the anonymous cache is currently used for a bunch a bunch of things that could probably be either
+			// refactored as KsmPartModules or stored elswhere in a more efficient way :
+			// - warp drives : should definitiely be moved to CommHandler
+			// - caching the modules that are getting background processing : this is made necessary because the current way
+			//   of finding protomodules is terrible performance wise. Now that we basically have out own vessel/part/module
+			//   data structure, maybe we should just store the prefabs and protomodule references there and get ride of the whole thing.
+			//   I doubt the impact on scene change processing time would be noticeable, and that would reduce to zero the perf impact
+			//   of the background processing loop. Plus that would allow to implement background processing for non-Kerbalism modules
+			//   in a streamlined, unified way, and that simplify the background processing API implementation.
+			// - caching the vessel computer devices
+			// - caching Lib.HasPart() calls (experiment requirements)
+			// - caching the scansat scanners (?)
+			// - caching Lib.FindModules() (find protomodules), used in many places : Emitter, Greenhouse, Passive shield, Reliability, etc
+			Cache.PurgeVesselCaches(vessel);
+		}
+
+		// Hack the stock recovery dialog to show our science results
+		private void OnVesselRecoveryProcessingComplete(ProtoVessel pv, MissionRecoveryDialog dialog, float recoveryFactor)
+		{
+			VesselRecovery_OnVesselRecovered.OnVesselRecoveryProcessingComplete(dialog);
 		}
 
 		private void OnVesselStandardModification(Vessel vessel)
 		{
 			// avoid this being called on vessel launch, when vessel is not yet properly initialized
 			if (!vessel.loaded && vessel.protoVessel == null) return;
+
 			OnVesselModified(vessel);
 		}
 
-		private void OnVesselModified(Vessel vessel)
+		// note: this is called multiple times when a vessel is recovered
+		private void VesselRecovered(ProtoVessel pv, bool b)
 		{
-			foreach(var emitter in vessel.FindPartModulesImplementing<Emitter>())
-				emitter.Recalculate();
-
-			Cache.PurgeVesselCaches(vessel);
-			//vessel.KerbalismData().UpdateOnVesselModified();
-		}
-
-		//public IEnumerator NetworkInitialized()
-		//{
-		//	yield return new WaitForSeconds(2);
-		//	Communications.NetworkInitialized = true;
-		//	RemoteTech.Startup();
-		//}
-
-		void ToEVA(GameEvents.FromToAction<Part, Part> data)
-		{
-			// setup supply resources capacity in the eva kerbal
-			// This has to be before the vesseldata creation, so the reshandler is 
-			// initialized with the correct capacities
-			Profile.SetupEva(data.to);
-
-			// get vessel data
-			if (!data.to.vessel.TryGetVesselDataNoError(out VesselData evaVD))
-			{
-				Lib.LogDebug($"Creating VesselData for EVA Kerbal : {data.to.vessel.vesselName}");
-				evaVD = new VesselData(data.to.vessel);
-				DB.AddNewVesselData(evaVD);
-			}
-
-			data.from.vessel.TryGetVesselData(out VesselData vesselVD);
-
-			// total crew of the origin vessel plus the EVAing kerbal
-			double totalCrew = Lib.CrewCount(data.from.vessel) + 1.0;
-
-			string evaPropellant = Lib.EvaPropellantName();
-
-			// for each resource in the kerbal
-			foreach (PartResource partRes in data.to.Resources)
-			{
-				// get the resource
-				VesselResource evaRes = evaVD.ResHandler.GetResource(partRes.resourceName);
-				VesselResource vesselRes = vesselVD.ResHandler.GetResource(partRes.resourceName);
-
-				// clamp request by how much is available
-				double amountTransferred = Math.Min(evaRes.Capacity, Math.Max(vesselRes.Amount + vesselRes.Deferred, 0.0));
-
-				// special handling for EVA propellant
-				if (evaRes.Name == evaPropellant)
-				{
-					if (amountTransferred <= 0.05 && !Lib.Landed(data.from.vessel))
-					{
-						Message.Post(Severity.danger,
-							Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropellant + "</b>"), Local.CallBackMsg_EvaNoMP2);
-						// "There isn't any <<1>> in the EVA suit", "Don't let the ladder go!"
-					}
-				}
-				// for all ressources but propellant, only take this kerbal "share"
-				else
-				{
-					amountTransferred /= totalCrew;
-				}
-
-				// remove resource from vessel
-				vesselRes.Consume(amountTransferred);
-
-				// add resource to eva kerbal
-				evaRes.Produce(amountTransferred);
-			}
-
-			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
-			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
-			EVA.HeadLamps(kerbal, false);
-
-			// execute script
-			evaVD.computer.Execute(data.from.vessel, ScriptType.eva_out);
-
-			OnVesselModified(data.from.vessel);
-		}
-
-
-		void FromEVA(GameEvents.FromToAction<Part, Part> data)
-		{
-			// contract configurator calls this event with both parts being the same when it adds a passenger
-			if (data.from == data.to)
-				return;
-
-			String prop_name = Lib.EvaPropellantName();
-
-			// for each resource in the eva kerbal
-			for (int i = 0; i < data.from.Resources.Count; ++i)
-			{
-				// get the resource
-				PartResource res = data.from.Resources[i];
-
-				// add leftovers to the vessel
-				data.to.RequestResource(res.resourceName, -res.amount);
-			}
-
-			// merge drives data
-			DriveData.Transfer(data.from.vessel, data.to.vessel, true);
-
-			// forget EVA vessel data
-			Cache.PurgeVesselCaches(data.from.vessel);
-			//Drive.Purge(data.from.vessel);
-
-			// update boarded vessel
-			this.OnVesselModified(data.to.vessel);
-
-			// execute script
-			data.to.vessel.TryGetVesselData(out VesselData vd);
-			vd.computer.Execute(data.to.vessel, ScriptType.eva_in);
-		}
-
-		void VesselRecovered(ProtoVessel pv, bool b)
-		{
-			// note: this is called multiple times when a vessel is recovered
-
 			// for each crew member
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
 			{
@@ -612,8 +672,7 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(pv);
 		}
 
-
-		void VesselTerminated(ProtoVessel pv)
+		private void VesselTerminated(ProtoVessel pv)
 		{
 			// forget all kerbals data
 			foreach (ProtoCrewMember c in pv.GetVesselCrew())
@@ -622,18 +681,12 @@ namespace KERBALISM
 			// purge the caches
 			Cache.PurgeVesselCaches(pv);
 
-			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
-			if (pv.vesselRef != null && !pv.vesselRef.loaded)
-				DriveData.DeleteDrivesData(pv.vesselRef);
+			// trigger die event on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
+			if (pv.vesselRef != null && !pv.vesselRef.loaded && DB.TryGetVesselDataNoError(pv.vesselRef, out VesselData vd))
+				vd.OnVesselWillDie();
 		}
 
-		void VesselCreated(Vessel v)
-		{
-			if (Serenity.GetModuleGroundExpControl(v) != null)
-				v.vesselName = Lib.BuildString(v.mainBody.name, " Site ", Lib.Greek());
-		}
-
-		void VesselDestroyed(Vessel v)
+		private void VesselDestroyed(Vessel v)
 		{
 			// rescan the damn kerbals
 			// - vessel crew is empty at destruction time
@@ -659,27 +712,21 @@ namespace KERBALISM
 			// purge the caches
 			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
 
-			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
-			if (!v.loaded)
-				DriveData.DeleteDrivesData(v);
+			// trigger die event on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
+			if (!v.loaded && DB.TryGetVesselDataNoError(v, out VesselData vd))
+				vd.OnVesselWillDie();
 		}
 
 		void VesselDock(GameEvents.FromToAction<Part, Part> e)
 		{
 			Cache.PurgeVesselCaches(e.from.vessel);
 			// Update docked to vessel
-			this.OnVesselModified(e.to.vessel);
+			OnVesselModified(e.to.vessel);
 		}
 
-		void AddEditorCategory()
-		{
-			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
-			{
-				RUI.Icons.Selectable.Icon icon = new RUI.Icons.Selectable.Icon("Kerbalism", Textures.category_normal, Textures.category_selected);
-				PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => string.Equals(k.button.categoryName, "filter by function", StringComparison.OrdinalIgnoreCase));
-				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
-			}
-		}
+		#endregion
+
+		#region OTHER
 
 		void TechResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
 		{
@@ -718,7 +765,9 @@ namespace KERBALISM
 			}
 		}
 
-		public bool visible;
+		#endregion
+
+		
 	}
 
 

@@ -55,16 +55,10 @@ namespace KERBALISM
 		/// <summary> Must be called if the part is destroyed </summary>
 		public void PartWillDie()
 		{
-			
 			foreach (ModuleData moduleData in modules)
 			{
 				moduleData.PartWillDie();
 			}
-
-			// TODO : reimplement this by passing the event to every ModuleData :
-			// + do we need to do something for habitat and processes ?
-			//if (Drive != null)
-			//	Drive.DeleteDriveData();
 		}
 
 		// The kerbalEVA part variants (vintage/future) prefabs are created in some weird way

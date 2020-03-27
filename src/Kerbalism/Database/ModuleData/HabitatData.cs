@@ -288,7 +288,7 @@ namespace KERBALISM
 			sunRadiation = Lib.ConfigValue(node, "sunRadiation", sunRadiation);
 
 			sunRadiationOccluders.Clear();
-			foreach (ConfigNode occluderNode in node.GetNodes("occluder"))
+			foreach (ConfigNode occluderNode in node.GetNodes("OCCLUDER"))
 			{
 				float distance = Lib.ConfigValue(occluderNode, "distance", 1f);
 				float thickness = Lib.ConfigValue(occluderNode, "thickness", 1f);
@@ -313,7 +313,7 @@ namespace KERBALISM
 
 			foreach (SunRadiationOccluder occluder in sunRadiationOccluders)
 			{
-				ConfigNode occluderNode = node.AddNode("occluder");
+				ConfigNode occluderNode = node.AddNode("OCCLUDER");
 				occluderNode.AddValue("distance", occluder.distance);
 				occluderNode.AddValue("thickness", occluder.thickness);
 			};
