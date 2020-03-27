@@ -70,32 +70,52 @@
     </Reference>
     <!-- Unity/Mono extra framework Dlls, from the repo gamedata folder -->
     <Reference Include="$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll">
+      <Name>System.IO.Compression</Name>
+      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll">
+      <Name>System.IO.Compression.FileSystem</Name>
+      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <!-- Harmony reference, from the repo gamedata folder -->
     <Reference Include="$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll">
+      <Name>Harmony</Name>
+      <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <!-- System Dlls from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\System.dll">
+      <Name>System</Name>
+      <HintPath>$(EffectiveKSPDllPath)\System.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\System.Core.dll">
+      <Name>System.Core</Name>
+      <HintPath>$(EffectiveKSPDllPath)\System.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="$(EffectiveKSPDllPath)\System.Xml.dll">
+      <Name>System.Xml</Name>
+      <HintPath>$(EffectiveKSPDllPath)\System.Xml.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <!-- KSP Dlls from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Name>Assembly-CSharp</Name>
+      <HintPath>$(EffectiveKSPDllPath)\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Name>Assembly-CSharp-firstpass</Name>
+      <HintPath>$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
     <!-- from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Name>UnityEngine (all KSP provided dlls)</Name>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -314,6 +334,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">
