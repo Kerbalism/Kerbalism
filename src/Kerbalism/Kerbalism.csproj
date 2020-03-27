@@ -64,37 +64,29 @@
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
-    <!-- System Dlls -->
+    <!-- Nuget packages -->
     <Reference Include="Flee.Net45, Version=1.0.0.0, Culture=neutral, PublicKeyToken=951a102ce2413032, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Flee.1.2.2\lib\net45\Flee.Net45.dll</HintPath>
     </Reference>
-    <Reference Include="System">
+    <!-- Unity/Mono extra framework Dlls, from the repo gamedata folder -->
+    <Reference Include="$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll">
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Core">
+    <Reference Include="$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll">
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Xml">
+    <!-- Harmony reference, from the repo gamedata folder -->
+    <Reference Include="$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll">
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Xml.Linq">
+    <!-- System Dlls from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
+    <Reference Include="$(EffectiveKSPDllPath)\System.dll">
       <Private>False</Private>
     </Reference>
-    <!-- Unity/Mono extra framework Dlls -->
-    <Reference Include="System.IO.Compression">
-      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll</HintPath>
+    <Reference Include="$(EffectiveKSPDllPath)\System.Xml.dll">
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.IO.Compression.FileSystem">
-      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <!-- Harmony reference, get it from the gamedata folder -->
-    <Reference Include="Harmony">
-      <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <!-- KSP Dlls -->
+    <!-- KSP Dlls from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
       <Private>False</Private>
     </Reference>
@@ -102,25 +94,11 @@
       <Private>False</Private>
     </Reference>
     <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <!-- from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-  <!-- Unity Dlls (don't exists anymore since KSP 1.8, so test for their existence) -->
-  <!-- Note : this is done in choose block instead of simple condition on the reference -->
-  <!-- because Visual Studio is bypassing those. -->
-  <Choose>
-    <When Condition="Exists('$(EffectiveKSPDllPath)\Assembly-UnityScript.dll')">
-      <ItemGroup>
-        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript.dll">
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript-firstpass.dll">
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ///////////////////// COMPILES ////////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
