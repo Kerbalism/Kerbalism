@@ -488,6 +488,10 @@ namespace KERBALISM
 		public void EarlyUpdate()
 		{
 			existsInFlight = false;
+
+			/// This is just to stop the compiler complaining, I'm still not sure about suppressing existsInFlight
+			if (existsInFlight)
+				existsInFlight = true;
 		}
 
 		/// <summary> Must be called every FixedUpdate for all existing flightglobal vessels </summary>

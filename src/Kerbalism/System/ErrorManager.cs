@@ -280,6 +280,7 @@ namespace KERBALISM
 				{
 					if (System.IO.File.Exists(logFilePath))
 					{
+						ForceFlushKspLogToDisk();
 						using (Stream fileStream = System.IO.File.Open(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 						{
 							ZipArchiveEntry zipArchiveEntry = archive.CreateEntry("KSP.log", System.IO.Compression.CompressionLevel.Optimal);
@@ -343,6 +344,23 @@ namespace KERBALISM
 				}
 			}
 			return true;
+		}
+
+		public static void ForceFlushKspLogToDisk()
+		{
+			if (GameSettings.LOG_INSTANT_FLUSH)
+				return;
+
+			try
+			{
+				StreamWriter fileStream = Lib.ReflectionValue<StreamWriter>(KSPLog.Instance, "fileStream");
+				fileStream.Flush();
+			}
+			catch (Exception e)
+			{
+				Lib.Log("Couldn't flush log to disk : " + e.ToString(), Lib.LogLevel.Warning);
+				return;
+			}
 		}
 	}
 }
