@@ -1,4 +1,5 @@
-﻿using KSP.UI;
+﻿using Harmony;
+using KSP.UI;
 using KSP.UI.Screens.DebugToolbar;
 using System;
 using System.Collections;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,6 +17,8 @@ namespace KERBALISM
 {
 	public static class ErrorManager
 	{
+		#region KERBALISM ERROR DIALOG
+
 		public class Error
 		{
 			public bool fatal;
@@ -191,17 +195,26 @@ namespace KERBALISM
 				false);
 		}
 
-		public static IEnumerator InjectBugReportInDebugScreen()
+		#endregion
+
+		#region DEBUG MENU EXTRA OPTIONS
+
+		public static void SetupPatches(HarmonyInstance harmony)
 		{
-			// force the creation of the ALT+F12 debug screen, so our custom options are added last and not first
-			DebugScreenSpawner.ShowDebugScreen();
+			MethodInfo debugScreenConsole_Start = typeof(DebugScreenConsole).GetMethod("Start", BindingFlags.Instance | BindingFlags.NonPublic);
+			MethodInfo postfix = typeof(ErrorManager).GetMethod(nameof(DebugScreenConsole_Start_Postfix), BindingFlags.Static | BindingFlags.NonPublic);
+			harmony.Patch(debugScreenConsole_Start, null, new HarmonyMethod(postfix));
+		}
 
-			// doesn't work if we do it right away, we have to wait one frame
-			yield return null;
-			DebugScreen screen = Lib.ReflectionValue<DebugScreen>(DebugScreenSpawner.Instance, "screen");
-			screen.Hide();
+		private static bool debugScreenBugReportOptionsCreated = false;
 
-			yield return null;
+		private static void DebugScreenConsole_Start_Postfix()
+		{
+			if (debugScreenBugReportOptionsCreated)
+				return;
+
+			debugScreenBugReportOptionsCreated = true;
+
 			UITreeView.Item parent = DebugScreen.AddContentItem(null, "bugreport", "Bug report", null, null);
 			DebugScreen.AddContentItem(parent, "createreport", "Create report", null, CreateReportFromDebugScreen);
 			DebugScreen.AddContentItem(parent, "openreport", "Open last report", null, OpenReportFromDebugScreen);
@@ -247,6 +260,10 @@ namespace KERBALISM
 			}
 		}
 
+		#endregion
+
+		#region BUG REPORT CREATION
+
 		private static bool CreateReport(out string zipFileName, out string zipFileFolderPath, out string zipFilePath)
 		{
 			string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KSP.log");
@@ -273,6 +290,8 @@ namespace KERBALISM
 			string fileName = "KSPBugReport_" + DateTime.Now.ToString(@"yyyy-MM-dd_HHmmss");
 			zipFileName = fileName + ".zip";
 			zipFilePath = Path.Combine(zipFileFolderPath, zipFileName);
+
+			Lib.Log($"Creating bug report : {zipFilePath}");
 
 			using (ZipArchive archive = ZipFile.Open(zipFilePath, ZipArchiveMode.Create))
 			{
@@ -337,6 +356,10 @@ namespace KERBALISM
 							}
 						}
 					}
+					else
+					{
+
+					}
 				}
 				catch (Exception e)
 				{
@@ -351,16 +374,11 @@ namespace KERBALISM
 			if (GameSettings.LOG_INSTANT_FLUSH)
 				return;
 
-			try
-			{
-				StreamWriter fileStream = Lib.ReflectionValue<StreamWriter>(KSPLog.Instance, "fileStream");
-				fileStream.Flush();
-			}
-			catch (Exception e)
-			{
-				Lib.Log("Couldn't flush log to disk : " + e.ToString(), Lib.LogLevel.Warning);
-				return;
-			}
+			GameSettings.LOG_INSTANT_FLUSH = true;
+			Lib.Log("Flushing KSP.log to disk...");
+			GameSettings.LOG_INSTANT_FLUSH = false;
 		}
+
+		#endregion
 	}
 }

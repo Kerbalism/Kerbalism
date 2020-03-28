@@ -56,18 +56,21 @@ namespace KERBALISM
 			if (Features.LifeSupport) Inject(root, "Kerbalism", "LifeSupport");
 			if (Features.Stress) Inject(root, "Kerbalism", "Stress");
 
-			// inject harmony patches
+			// Create harmony instance
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
+
+			// Search all Kerbalism classes for standalone patches 
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+			// Add other patches
+			ErrorManager.SetupPatches(harmony);
 			B9PartSwitch.Init(harmony);
-			var methods = harmony.GetPatchedMethods();
 
 			// register loading callbacks
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
 				GameEvents.OnPartLoaderLoaded.Add(SaveHabitatData);
 				GameEvents.OnGameDatabaseLoaded.Add(LoadConfiguration);
-				StartCoroutine(ErrorManager.InjectBugReportInDebugScreen());
 			}
 		}
 
