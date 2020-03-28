@@ -59,9 +59,11 @@
 
     <!-- KSP Dlls -->
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <HintPath>$(EffectiveKSPDllPath)\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <HintPath>$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
     

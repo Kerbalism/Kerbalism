@@ -12,7 +12,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AEED929-B0AF-4EB1-82A0-84B98C5BA185}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		.travis.yml = .travis.yml
 		CHANGELOG.md = CHANGELOG.md
 		README.md = README.md
 		GameData\Kerbalism\VersionConfig.xml = GameData\Kerbalism\VersionConfig.xml
@@ -23,7 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildSystem", "BuildSystem"
 		buildsystem\BuildSystemTargets.xml = buildsystem\BuildSystemTargets.xml
 		buildsystem\ProjectsCommonProperties.xml = buildsystem\ProjectsCommonProperties.xml
 		BuildSystem\README.MD = BuildSystem\README.MD
-		BuildSystem\Utility\UploadGitHubRelease.cs = BuildSystem\Utility\UploadGitHubRelease.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "User IDE - dev settings", "User IDE - dev settings", "{BFB3522D-10B4-4A7D-80C5-D7BE32C91C0B}"
