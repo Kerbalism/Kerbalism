@@ -155,11 +155,6 @@
     <Compile Include="Comms\CommHandlerCommNetVessel.cs" />
     <Compile Include="Comms\CommHandlerRemoteTech.cs" />
     <Compile Include="Comms\IConnectionInfo.cs" />
-    <Compile Include="Contracts\CrossBelt.cs" />
-    <Compile Include="Contracts\CrossHeliopause.cs" />
-    <Compile Include="Contracts\MannedOrbit.cs" />
-    <Compile Include="Contracts\SpaceAnalysis.cs" />
-    <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
