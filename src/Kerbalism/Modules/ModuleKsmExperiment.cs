@@ -74,6 +74,7 @@ namespace KERBALISM
 			{
 				enabled = isEnabled = moduleIsEnabled = true;
 				moduleData.moduleIsEnabled = true;
+				moduleData.CheckPrivateDriveId();
 			}
 			else
 			{
