@@ -2,15 +2,12 @@
 using KSP.UI;
 using KSP.UI.Screens.DebugToolbar;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace KERBALISM
@@ -199,6 +196,11 @@ namespace KERBALISM
 
 		#region DEBUG MENU EXTRA OPTIONS
 
+		// Adding the ALT+F12 menu options trough DebugScreen.AddContentItem() will add them to beginning of the list unless the 
+		// DebugScreen instane has already been fully initialized once, which happens the first time it is opened.
+		// So to have our options at the end of the list, we are using a patch on DebugScreenConsole.Start(), choosen because it seems to
+		// be called quite late in the DebugScreen initialization.
+
 		public static void SetupPatches(HarmonyInstance harmony)
 		{
 			MethodInfo debugScreenConsole_Start = typeof(DebugScreenConsole).GetMethod("Start", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -358,7 +360,7 @@ namespace KERBALISM
 					}
 					else
 					{
-
+						Lib.Log($"Could not add savegame to bug report, no save loaded or saving not available in current scene");
 					}
 				}
 				catch (Exception e)
