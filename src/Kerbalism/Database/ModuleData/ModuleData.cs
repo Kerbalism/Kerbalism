@@ -127,33 +127,41 @@ namespace KERBALISM
 		/// <summary>
 		/// Compile activator delegates for every child class of ModuleData.
 		/// This is to avoid the performance hit of Activator.CreateInstance(), the delegate is ~10 times faster.
+		/// Must be called by all plugins that contain modules derived from KsmPartModule
 		/// </summary>
-		public static void Init()
+		public static void Init(Assembly executingAssembly)
 		{
 			Type moduleDataBaseType = typeof(ModuleData);
 			Type ksmPartModuleBaseType = typeof(KsmPartModule);
 			Dictionary<string, string> ksmModulesAndDataTypes = new Dictionary<string, string>();
-			foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+			foreach (Type type in executingAssembly.GetTypes())
 			{
-				if (type.IsClass && !type.IsAbstract && moduleDataBaseType.IsAssignableFrom(type))
+				if (type.IsClass && !type.IsAbstract)
 				{
-					ConstructorInfo ctor = type.GetConstructor(Type.EmptyTypes);
-					NewExpression newExp = Expression.New(ctor);
-					LambdaExpression lambda = Expression.Lambda(typeof(Func<ModuleData>), newExp);
-					activatorsByModuleData.Add(type.Name, (Func<ModuleData>)lambda.Compile());
-				}
+					if (moduleDataBaseType.IsAssignableFrom(type))
+					{
+						ConstructorInfo ctor = type.GetConstructor(Type.EmptyTypes);
+						NewExpression newExp = Expression.New(ctor);
+						LambdaExpression lambda = Expression.Lambda(typeof(Func<ModuleData>), newExp);
+						activatorsByModuleData.Add(type.Name, (Func<ModuleData>)lambda.Compile());
+					}
 
-				if (type.IsClass && !type.IsAbstract && ksmPartModuleBaseType.IsAssignableFrom(type))
-				{
-					Type moduleDataType = type.GetField("moduleData", BindingFlags.Instance | BindingFlags.Public).FieldType;
-
-					ksmModulesAndDataTypes.Add(moduleDataType.Name, type.Name);
+					if (ksmPartModuleBaseType.IsAssignableFrom(type))
+					{
+						Type moduleDataType = type.GetField("moduleData", BindingFlags.Instance | BindingFlags.Public).FieldType;
+						ksmModulesAndDataTypes.Add(moduleDataType.Name, type.Name);
+					}
 				}
 			}
 
+			// add the activators found in this assembly to our registry
+			// activatorsByModuleData is static and may contain activators for modules loaded from other assemblies
 			foreach (KeyValuePair<string, Func<ModuleData>> activator in activatorsByModuleData)
 			{
-				activatorsByKsmPartModule.Add(ksmModulesAndDataTypes[activator.Key], activator.Value);
+				if (ksmModulesAndDataTypes.ContainsKey(activator.Key))
+				{
+					activatorsByKsmPartModule.Add(ksmModulesAndDataTypes[activator.Key], activator.Value);
+				}
 			}
 		}
 
@@ -248,6 +256,7 @@ namespace KERBALISM
 
 		public static void New(KsmPartModule module, int moduleIndex, PartData partData, bool inFlight)
 		{
+			Lib.LogDebug($"Constructing moduleData for {module.ModuleDataType.Name} of {module.GetType().Name}");
 			ModuleData moduleData = activatorsByModuleData[module.ModuleDataType.Name].Invoke();
 
 			int flightId = 0;

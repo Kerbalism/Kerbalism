@@ -12,7 +12,6 @@ namespace KERBALISM
 		private const string NODENAME_VESSELS = "KERBALISMVESSELS";
 		private const string NODENAME_KERBALS = "KERBALISMKERBALS";
 		private const string NODENAME_STORMS = "KERBALISMSTORMS";
-		private const string NODENAME_LANDMARKS = "KERBALISMLANDMARKS";
 		private const string NODENAME_GUI = "KERBALISMGUI";
 		public static readonly Version LAST_SUPPORTED_VERSION = new Version(4, 0);
 
@@ -26,14 +25,11 @@ namespace KERBALISM
 		private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();
 		// store data per-body
 		private static Dictionary<string, StormData> storms;
-		// store landmark data
-		private static LandmarkData landmarks;
 		// store ui data
 		private static UIData uiData;                               
 
 		public static Guid Guid => uid;
 		public static Dictionary<string, KerbalData> Kerbals => kerbals;
-		public static LandmarkData Landmarks => landmarks;
 		public static UIData UiData => uiData;
 		public static Dictionary<Guid, VesselData>.ValueCollection VesselDatas => vessels.Values;
 
@@ -113,16 +109,6 @@ namespace KERBALISM
                 }
             }
 
-            // load landmark data
-            if (node.HasNode(NODENAME_LANDMARKS))
-            {
-                landmarks = new LandmarkData(node.GetNode(NODENAME_LANDMARKS));
-            }
-            else
-            {
-				landmarks = new LandmarkData();
-            }
-
             // load ui data
             if (node.HasNode(NODENAME_GUI))
             {
@@ -184,9 +170,6 @@ namespace KERBALISM
             {
                 p.Value.Save(bodies_node.AddNode(ToSafeKey(p.Key)));
             }
-
-            // save landmark data
-            landmarks.Save(node.AddNode(NODENAME_LANDMARKS));
 
 			// save ui data
 			uiData.Save(node.AddNode(NODENAME_GUI));

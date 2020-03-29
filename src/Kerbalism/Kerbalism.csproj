@@ -183,7 +183,6 @@
     <Compile Include="UI\ProcessPopup.cs" />
     <Compile Include="Database\ModuleData\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
-    <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\VesselDataComponents\PartData.cs" />
     <Compile Include="Database\VesselDataComponents\PartDataCollectionVessel.cs" />
     <Compile Include="Database\RuleData.cs" />

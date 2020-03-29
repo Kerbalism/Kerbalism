@@ -453,9 +453,6 @@ namespace KERBALISM
 
 			// show message
 			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
-
-			// record first harvest
-			if (!Lib.Landed(vessel)) DB.Landmarks.space_harvest = true;
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
@@ -478,9 +475,6 @@ namespace KERBALISM
 
 			// show message
 			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_3.Format(" <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
-
-			// record first harvest
-			if (!Lib.Landed(vessel)) DB.Landmarks.space_harvest = true;
 		}
 
 		// action groups

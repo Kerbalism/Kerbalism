@@ -109,7 +109,7 @@ namespace KERBALISM
 			{
 				try
 				{
-					ModuleData.Init();
+					ModuleData.Init(Assembly.GetExecutingAssembly());
 					PartModuleAPI.Init();
 					Sim.Init();         // find suns (Kopernicus support)
 					Radiation.Init();   // create the radiation fields

@@ -313,9 +313,6 @@ namespace KERBALISM
 
 				if (PreferencesScience.Instance.transmitScience)
 					fileDrive.Send(subject.Id, true);
-
-				// record landmark event
-				if (!Lib.Landed(v)) DB.Landmarks.space_analysis = true;
 			}
 
 			return Status.RUNNING;
