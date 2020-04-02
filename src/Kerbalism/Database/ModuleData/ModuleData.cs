@@ -46,6 +46,8 @@ namespace KERBALISM
 
 		public int shipId;
 
+		public int ID => flightId != 0 ? flightId : shipId;
+
 		public PartData partData;
 
 		public abstract KsmPartModule LoadedModuleBase { get; }

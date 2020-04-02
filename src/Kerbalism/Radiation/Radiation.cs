@@ -550,6 +550,8 @@ namespace KERBALISM
 			double D;
 			double r;
 
+			v.TryGetVesselData(out VesselData vd);
+
 			// accumulate radiation
 			double radiation = 0.0;
 			CelestialBody body = v.mainBody;
@@ -612,7 +614,7 @@ namespace KERBALISM
 				{
 					Vector3d direction;
 					double distance;
-					v.TryGetVesselData(out VesselData vd);
+					
 					if (Sim.IsBodyVisible(v, position, body, vd.EnvVisibleBodies, out direction, out distance))
 					{
 						var r0 = RadiationR0(rb);
@@ -665,8 +667,6 @@ namespace KERBALISM
 				if (magnetosphere) blackout = true;
 				else
 				{
-					v.TryGetVesselData(out VesselData vd);
-
 					var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
 					var strength = PreferencesRadiation.Instance.StormRadiation * sunlight * (activity + 0.5);
 
@@ -675,25 +675,22 @@ namespace KERBALISM
 				}
 			}
 
-			// add emitter radiation after atmosphere transparency
-			var emitterRadiation = Emitter.Total(v);
-			radiation += emitterRadiation;
-			shieldedRadiation += emitterRadiation;
+			radiation += vd.Habitat.emittersRadiation;
+			shieldedRadiation += vd.Habitat.emittersRadiation;
 
-#if DEBUG_RADIATION
-			if (v.loaded) Lib.Log("Radiation " + v + " after emitters: " + Lib.HumanReadableRadiation(radiation) + " shielded " + Lib.HumanReadableRadiation(shieldedRadiation));
-#endif
+			// add emitter radiation after atmosphere transparency
+			//var emitterRadiation = Emitter.Total(v);
+			//radiation += emitterRadiation;
+			//shieldedRadiation += emitterRadiation;
+
 
 			// for EVAs, add the effect of nearby emitters
-			if (v.isEVA)
-			{
-				var nearbyEmitters = Emitter.Nearby(v);
-				radiation += nearbyEmitters;
-				shieldedRadiation += nearbyEmitters;
-#if DEBUG_RADIATION
-				if (v.loaded) Lib.Log("Radiation " + v + " nearby emitters " + Lib.HumanReadableRadiation(nearbyEmitters));
-#endif
-			}
+			//if (v.isEVA)
+			//{
+			//	var nearbyEmitters = Emitter.Nearby(v);
+			//	radiation += nearbyEmitters;
+			//	shieldedRadiation += nearbyEmitters;
+			//}
 
 			var passiveShielding = PassiveShield.Total(v);
 			shieldedRadiation -= passiveShielding;

@@ -613,10 +613,6 @@ namespace KERBALISM
 
 		private void OnVesselModified(Vessel vessel)
 		{
-			// TODO : move emitter to KsmPartModule and get ride of this.
-			foreach (var emitter in vessel.FindPartModulesImplementing<Emitter>())
-				emitter.Recalculate();
-
 			// Note : the anonymous cache is currently used for a bunch a bunch of things that could probably be either
 			// refactored as KsmPartModules or stored elswhere in a more efficient way :
 			// - warp drives : should definitiely be moved to CommHandler

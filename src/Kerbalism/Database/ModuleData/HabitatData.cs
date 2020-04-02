@@ -102,7 +102,8 @@ namespace KERBALISM
 		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
 		public double animTimer = 0.0;
 
-		public double sunRadiation = 0.0; // TODO: IMPORTANT : this was in the codebase before but is unnused here. Check what this was for !!!!!
+		/// <summary> rad/s added or removed by all nearby emitters (can be on another vessel), and removed by radiation coils</summary>
+		public double localRadiation = 0.0;
 
 		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
 
@@ -229,6 +230,23 @@ namespace KERBALISM
 			}
 		}
 
+		public bool IsConsideredForHabitatRadiation
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.AlwaysDepressurized:
+					case PressureState.Depressurized:
+					case PressureState.Pressurizing:
+					case PressureState.DepressurizingBelowThreshold:
+						return isEnabled && crewCount > 0;
+					default:
+						return isEnabled;
+				}
+			}
+		}
+
 		#endregion
 
 		#region LIFECYCLE
@@ -285,8 +303,6 @@ namespace KERBALISM
 			wasteLevel = Lib.ConfigValue(node, "wasteLevel", wasteLevel);
 			shieldingAmount = Lib.ConfigValue(node, "shieldingAmount", shieldingAmount);
 
-			sunRadiation = Lib.ConfigValue(node, "sunRadiation", sunRadiation);
-
 			sunRadiationOccluders.Clear();
 			foreach (ConfigNode occluderNode in node.GetNodes("OCCLUDER"))
 			{
@@ -309,123 +325,12 @@ namespace KERBALISM
 			node.AddValue("wasteLevel", wasteLevel);
 			node.AddValue("shieldingAmount", shieldingAmount);
 
-			node.AddValue("sunRadiation", sunRadiation);
-
 			foreach (SunRadiationOccluder occluder in sunRadiationOccluders)
 			{
 				ConfigNode occluderNode = node.AddNode("OCCLUDER");
 				occluderNode.AddValue("distance", occluder.distance);
 				occluderNode.AddValue("thickness", occluder.thickness);
 			};
-		}
-
-		#endregion
-
-		#region EVALUATION
-
-		public override void OnVesselDataUpdate(VesselDataBase vd)
-		{
-			HabitatVesselData info = vd.Habitat;
-			if (isEnabled)
-			{
-				switch (pressureState)
-				{
-					case PressureState.Breatheable:
-						info.livingVolume += baseVolume;
-						info.shieldingSurface += baseSurface;
-						info.shieldingAmount += shieldingAmount;
-
-						info.comfortMask |= baseComfortsMask;
-						if (IsRotationNominal)
-							info.comfortMask |= (int)Comfort.firmGround;
-
-						info.pressurizedPartsCrewCount += crewCount;
-
-						break;
-					case PressureState.Pressurized:
-					case PressureState.DepressurizingAboveThreshold:
-						info.pressurizedVolume += baseVolume;
-						info.livingVolume += baseVolume;
-						info.pressurizedSurface += baseSurface;
-						info.shieldingSurface += baseSurface;
-						info.shieldingAmount += shieldingAmount;
-
-						info.comfortMask |= baseComfortsMask;
-						if (IsRotationNominal)
-							info.comfortMask |= (int)Comfort.firmGround | (int)Comfort.exercice;
-
-						info.pressurizedPartsAtmoAmount += atmoAmount;
-						info.pressurizedPartsCrewCount += crewCount;
-
-						// waste evaluation
-						info.poisoningLevel += wasteLevel;
-						info.wasteConsideredPartsCount++;
-						break;
-					case PressureState.AlwaysDepressurized:
-					case PressureState.Depressurized:
-					case PressureState.Pressurizing:
-					case PressureState.DepressurizingBelowThreshold:
-						if (crewCount > 0)
-						{
-							info.shieldingSurface += baseSurface;
-							info.shieldingAmount += shieldingAmount;
-							info.poisoningLevel += wasteLevel;
-							info.wasteConsideredPartsCount++;
-						}
-						// waste in suits evaluation
-						break;
-				}
-
-				// We do only one habitat radiation raytracing per vesseldata update 
-				// to avoid the performance hit on large vessels.
-				// Radiation raytracing is only done while loaded
-				if (IsLoaded)
-				{
-					// if habitat was never raytraced, do it
-					if (!raytracedOnce)
-					{
-						Radiation.RaytraceHabitatSunRadiation(vd.EnvMainSunDirection, this);
-						raytracedOnce = true;
-						info.raytraceNextModule = false;
-						info.lastRaytracedModuleId = flightId;
-					}
-					// if habitat was raytraced on last update, flag the next iterated over habitat
-					// to be raytraced in this vesseldata update
-					else if (!info.raytraceNextModule && info.lastRaytracedModuleId == flightId)
-					{
-						info.raytraceNextModule = true;
-					}
-					// if last raytraced module was iterated over just before, raytrace this module
-					else if (info.raytraceNextModule)
-					{
-						Radiation.RaytraceHabitatSunRadiation(vd.EnvMainSunDirection, this);
-						info.raytraceNextModule = false;
-						info.lastRaytracedModuleId = flightId;
-					}
-				}
-			}
-			else
-			{
-				switch (pressureState)
-				{
-					case PressureState.Breatheable:
-						// nothing here
-						break;
-					case PressureState.Pressurized:
-					case PressureState.DepressurizingAboveThreshold:
-						info.pressurizedVolume += baseVolume;
-						info.pressurizedSurface += baseSurface;
-						info.pressurizedPartsAtmoAmount += atmoAmount;
-						// waste evaluation
-						break;
-					case PressureState.AlwaysDepressurized:
-					case PressureState.Depressurized:
-					case PressureState.Pressurizing:
-					case PressureState.DepressurizingBelowThreshold:
-						// waste in suits evaluation
-						break;
-				}
-			}
 		}
 
 		#endregion

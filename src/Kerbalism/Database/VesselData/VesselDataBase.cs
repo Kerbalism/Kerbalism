@@ -30,6 +30,10 @@ namespace KERBALISM
 
 		#region VIRTUAL PROPERTIES
 
+		public virtual bool LoadedOrEditor => true;
+
+		public virtual bool IsEVA => false;
+
 		public virtual string VesselName => string.Empty;
 
 		public virtual bool IsPersistent => true;
@@ -227,6 +231,24 @@ namespace KERBALISM
 
 			habitatData.EvaluateAfterModuleUpdate(this);
 			vesselProcesses.EvaluateAfterModuleUpdate(this);
+		}
+
+		#endregion
+
+		#region UTILS
+
+		public IEnumerable<T> ModuleDatasOfType<T>() where T : ModuleData
+		{
+			foreach (PartData partData in PartList)
+			{
+				foreach (ModuleData moduleData in partData.modules)
+				{
+					if (moduleData is T typedModuleData)
+					{
+						yield return typedModuleData;
+					}
+				}
+			}
 		}
 
 		#endregion

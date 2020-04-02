@@ -35,7 +35,7 @@ namespace KERBALISM
 
 		public override Type ModuleDataType => typeof(TData);
 
-		public void OnDestroy()
+		public virtual void OnDestroy()
 		{
 			// clear loaded module reference to avoid memory leaks
 			if (moduleData != null)

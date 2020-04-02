@@ -49,29 +49,139 @@ namespace KERBALISM
 		/// <summary> [0.0 ; 1.0] factor : sum of all enabled comfort bonuses</summary>
 		public double comfortFactor = 0.0;
 
-		public double pressurizedPartsAtmoAmount = 0.0; // for calculating pressure level : all pressurized parts, enabled or not
-		public int pressurizedPartsCrewCount = 0; // crew in all pressurized parts, pressure modifier = pressurizedPartsCrewCount / totalCrewCount
-		public int wasteConsideredPartsCount = 0;
+		public double emittersRadiation = 0.0;
 
-		public int lastRaytracedModuleId = 0;
-		public bool raytraceNextModule = false;
+		public List<HabitatData> Habitats { get; private set; } = new List<HabitatData>();
+
+		private int habitatRaytraceNextIndex = -1;
 
 		public void ResetBeforeModulesUpdate(VesselDataBase vd)
 		{
 			livingVolume = volumePerCrew = livingSpaceFactor
 				= pressurizedSurface = pressurizedVolume = pressureAtm
 				= pressureFactor = poisoningLevel = shieldingSurface
-				= shieldingAmount = shieldingModifier = comfortFactor
-				= pressurizedPartsAtmoAmount = 0.0;
+				= shieldingAmount = shieldingModifier = comfortFactor = 0.0;
 
-			comfortMask = pressurizedPartsCrewCount = wasteConsideredPartsCount = 0;
+			comfortMask = 0;
 
-			if (!ModuleData.ExistsInFlight(lastRaytracedModuleId))
-				raytraceNextModule = true;
+			// the list of habitats will iterated over by every radiation emitter/shield, so build the list once.
+			Habitats.Clear();
+			foreach (HabitatData habitat in vd.ModuleDatasOfType<HabitatData>())
+			{
+				Habitats.Add(habitat);
+			}
 		}
 
 		public void EvaluateAfterModuleUpdate(VesselDataBase vd)
 		{
+			double pressurizedPartsAtmoAmount = 0.0; // for calculating pressure level : all pressurized parts, enabled or not
+			int pressurizedPartsCrewCount = 0; // crew in all pressurized parts, pressure modifier = pressurizedPartsCrewCount / totalCrewCount
+			int wasteConsideredPartsCount = 0;
+			int radiationConsideredPartsCount = 0;
+
+			for (int i = 0; i < Habitats.Count; i++)
+			{
+				HabitatData habitat = Habitats[i];
+				if (habitat.isEnabled)
+				{
+					switch (habitat.pressureState)
+					{
+						case PressureState.Breatheable:
+							livingVolume += habitat.baseVolume;
+							shieldingSurface += habitat.baseSurface;
+							shieldingAmount += habitat.shieldingAmount;
+
+							comfortMask |= habitat.baseComfortsMask;
+							if (habitat.IsRotationNominal)
+								comfortMask |= (int)Comfort.firmGround;
+
+							pressurizedPartsCrewCount += habitat.crewCount;
+							emittersRadiation += habitat.localRadiation;
+							radiationConsideredPartsCount++;
+
+							break;
+						case PressureState.Pressurized:
+						case PressureState.DepressurizingAboveThreshold:
+							pressurizedVolume += habitat.baseVolume;
+							livingVolume += habitat.baseVolume;
+							pressurizedSurface += habitat.baseSurface;
+							shieldingSurface += habitat.baseSurface;
+							shieldingAmount += habitat.shieldingAmount;
+
+							comfortMask |= habitat.baseComfortsMask;
+							if (habitat.IsRotationNominal)
+								comfortMask |= (int)Comfort.firmGround | (int)Comfort.exercice;
+
+							pressurizedPartsAtmoAmount += habitat.atmoAmount;
+							pressurizedPartsCrewCount += habitat.crewCount;
+
+							// waste evaluation
+							poisoningLevel += habitat.wasteLevel;
+							wasteConsideredPartsCount++;
+							emittersRadiation += habitat.localRadiation;
+							radiationConsideredPartsCount++;
+							break;
+						case PressureState.AlwaysDepressurized:
+						case PressureState.Depressurized:
+						case PressureState.Pressurizing:
+						case PressureState.DepressurizingBelowThreshold:
+							if (habitat.crewCount > 0)
+							{
+								shieldingSurface += habitat.baseSurface;
+								shieldingAmount += habitat.shieldingAmount;
+								poisoningLevel += habitat.wasteLevel;
+								wasteConsideredPartsCount++;
+								emittersRadiation += habitat.localRadiation;
+								radiationConsideredPartsCount++;
+							}
+							// waste in suits evaluation
+							break;
+					}
+
+					// radiation raytracing is only done while loaded.
+					if (vd.LoadedOrEditor && habitat.loadedModule != null)
+					{
+						// if partHabitatRaytraceNextIndex was reset to -1, raytrace all parts
+						if (habitatRaytraceNextIndex < 0)
+						{
+							Radiation.RaytraceHabitatSunRadiation(vd.EnvMainSunDirection, habitat);
+							habitatRaytraceNextIndex = 0;
+						}
+						// else only raytrace one habitat per update cycle to preserve performance
+						else if (i == habitatRaytraceNextIndex)
+						{
+							Radiation.RaytraceHabitatSunRadiation(vd.EnvMainSunDirection, habitat);
+							habitatRaytraceNextIndex = (habitatRaytraceNextIndex + 1) % Habitats.Count;
+						}
+					}
+				}
+				else
+				{
+					switch (habitat.pressureState)
+					{
+						case PressureState.Breatheable:
+							// nothing here
+							break;
+						case PressureState.Pressurized:
+						case PressureState.DepressurizingAboveThreshold:
+							pressurizedVolume += habitat.baseVolume;
+							pressurizedSurface += habitat.baseSurface;
+							pressurizedPartsAtmoAmount += habitat.atmoAmount;
+							// waste evaluation
+							break;
+						case PressureState.AlwaysDepressurized:
+						case PressureState.Depressurized:
+						case PressureState.Pressurizing:
+						case PressureState.DepressurizingBelowThreshold:
+							// waste in suits evaluation
+							break;
+					}
+				}
+
+				// this is incremented from the RadiationEmitterData update, so always reset it
+				habitat.localRadiation = 0.0;
+			}
+
 			int crewCount = vd.CrewCount;
 			volumePerCrew = crewCount > 0 ? livingVolume / crewCount : 0.0;
 			livingSpaceFactor = Math.Min(volumePerCrew / PreferencesComfort.Instance.livingSpace, 1.0);
@@ -79,18 +189,22 @@ namespace KERBALISM
 
 			pressureFactor = crewCount > 0 ? ((double)pressurizedPartsCrewCount / (double)crewCount) : 0.0; // 0.0 when pressurized, 1.0 when depressurized
 
-			//info.pressureModifier = Settings.PressureFactor * pressurizedFactor;
-			//info.pressureModifier = Math.Max(1.0, Settings.PressureFactor * (crewCount > 0 ? 1.0 - ((double)pressurizedPartsCrewCount / (double)crewCount) : 1.0)); // 1 when fully pressurized, 10 (Settings.PressureFactor) when fully depressurizd
 			poisoningLevel = wasteConsideredPartsCount > 0 ? poisoningLevel / wasteConsideredPartsCount : 0.0;
 			shieldingModifier = shieldingSurface > 0.0 ? Radiation.ShieldingEfficiency(shieldingAmount / shieldingSurface) : 0.0;
 
 			if (vd.EnvLanded) comfortMask |= (int)Comfort.firmGround | (int)Comfort.exercice;
-			if (crewCount > 1) comfortMask |= (int)Comfort.notAlone;
+			if (crewCount > 0) comfortMask |= (int)Comfort.notAlone;
 
 			if (vd.ConnectionInfo.Linked && vd.ConnectionInfo.DataRate > 0.0)
 				comfortMask |= (int)Comfort.callHome;
 
 			comfortFactor = HabitatLib.GetComfortFactor(comfortMask);
+
+			if (radiationConsideredPartsCount > 1)
+			{
+				emittersRadiation /= radiationConsideredPartsCount;
+			}
+			
 		}
 
 	}

@@ -137,7 +137,7 @@
     <Compile Include="Cache.cs" />
     <Compile Include="Automation\Devices\Converter.cs" />
     <Compile Include="Automation\Devices\Drill.cs" />
-    <Compile Include="Automation\Devices\Emitter.cs" />
+    <Compile Include="Automation\Devices\RadiationEmitter.cs" />
     <Compile Include="Automation\Devices\Generator.cs" />
     <Compile Include="Automation\Devices\Greenhouse.cs" />
     <Compile Include="Automation\Devices\Light.cs" />
@@ -158,6 +158,7 @@
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
+    <Compile Include="Database\ModuleData\RadiationEmitterData.cs" />
     <Compile Include="Database\VesselDataComponents\PartDataCollectionShip.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.SunInfo.cs" />
@@ -168,6 +169,8 @@
     <Compile Include="External\B9PartSwitch.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
     <Compile Include="Modules\Base\SubclassingExample.cs" />
+    <Compile Include="Modules\ModuleKsmRadiationEmitter.cs" />
+    <Compile Include="Modules\ModuleKsmRadiationCoil.cs" />
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
@@ -206,7 +209,6 @@
     <Compile Include="External\ModuleManager.cs" />
     <Compile Include="External\SCANsat.cs" />
     <Compile Include="Modules\Harvester.cs" />
-    <Compile Include="Modules\Emitter.cs" />
     <Compile Include="Modules\Greenhouse.cs" />
     <Compile Include="Modules\ModuleKsmDrive.cs" />
     <Compile Include="Modules\Laboratory.cs" />
@@ -328,7 +330,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

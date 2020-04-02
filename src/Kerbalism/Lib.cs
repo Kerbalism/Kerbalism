@@ -985,32 +985,51 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
-		public static string HumanReadableRadiation(double rad, bool nominal = true)
+		private const string radPerHour = "rad/h";
+		public static string HumanReadableRadiation(double rad, bool nominal = true, bool dangerColor = true)
 		{
-			if (nominal && rad <= Radiation.Nominal) return Local.Generic_NOMINAL;//"nominal"
+			if (nominal && rad <= Radiation.Nominal)
+			{
+				if (dangerColor)
+					return Color(Local.Generic_NOMINAL, Kolor.Green);//"nominal"
+				else
+					return Local.Generic_NOMINAL;//"nominal"
+			}
 
 			rad *= 3600.0;
-			var unit = "rad/h";
-			var prefix = "";
 
 			if (Settings.RadiationInSievert)
 			{
 				rad /= 100.0;
-				unit = "Sv/h";
+				return BuildString((rad).ToString("F3"), " Sv/h");
 			}
 
 			if (rad < 0.00001)
 			{
-				rad *= 1000000;
-				prefix = "μ";
+				if (dangerColor)
+					return Color(BuildString((rad * 1000000.0).ToString("F3"), " μrad/h"), Kolor.Green);
+				else
+					return BuildString((rad * 1000000.0).ToString("F3"), " μrad/h");
 			}
 			else if (rad < 0.01)
 			{
-				rad *= 1000;
-				prefix = "m";
+				if (dangerColor)
+					return Color(BuildString((rad * 1000.0).ToString("F3"), " mrad/h"), Kolor.Green);
+				else
+					return BuildString((rad * 1000.0).ToString("F3"), " mrad/h");
 			}
 
-			return BuildString((rad).ToString("F3"), " ", prefix, unit);
+			if (dangerColor)
+			{
+				if (rad < 0.5)
+					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Yellow);
+				else
+					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Red);
+			}
+			else
+			{
+				return BuildString(rad.ToString("F3"), " rad/h");
+			}
 		}
 
 		///<summary> Pretty-print percentage </summary>
@@ -3460,14 +3479,17 @@ namespace KERBALISM
 		{
 			public static bool ToBool( string s, bool def_value = false )
 			{
-				bool v;
-				return s != null && bool.TryParse( s, out v ) ? v : def_value;
+				return s != null && bool.TryParse( s, out bool v) ? v : def_value;
 			}
 
-			public static uint ToUInt( string s, uint def_value = 0 )
+			public static int ToInt(string s, int def_value = 0)
 			{
-				uint v;
-				return s != null && uint.TryParse( s, out v ) ? v : def_value;
+				return s != null && int.TryParse(s, out int v) ? v : def_value;
+			}
+
+			public static uint ToUInt( string s, uint def_value = 0u )
+			{
+				return s != null && uint.TryParse( s, out uint v ) ? v : def_value;
 			}
 
 			public static Guid ToGuid (string s)
@@ -3477,14 +3499,12 @@ namespace KERBALISM
 
 			public static float ToFloat( string s, float def_value = 0.0f )
 			{
-				float v;
-				return s != null && float.TryParse( s, out v ) ? v : def_value;
+				return s != null && float.TryParse( s, out float v ) ? v : def_value;
 			}
 
 			public static double ToDouble( string s, double def_value = 0.0 )
 			{
-				double v;
-				return s != null && double.TryParse( s, out v ) ? v : def_value;
+				return s != null && double.TryParse( s, out double v ) ? v : def_value;
 			}
 
 			private static bool TryParseColor( string s, out UnityEngine.Color c )

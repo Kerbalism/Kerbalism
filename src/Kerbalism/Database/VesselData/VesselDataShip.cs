@@ -170,7 +170,7 @@ namespace KERBALISM
 			AnalyzeCrew(parts);
 			AnalyzeComms();
 			ModuleDataUpdate();
-			AnalyzeRadiation(parts);
+			//AnalyzeRadiation(parts);
 			AnalyzeReliability(parts);
 		}
 
@@ -317,34 +317,34 @@ namespace KERBALISM
 			commHandler.Update(connection, minHomeDistance, maxHomeDistance);
 		}
 
-		private void AnalyzeRadiation(List<Part> parts)
-		{
-			// scan the parts
-			emitted = 0.0;
-			foreach (Part p in parts)
-			{
-				// for each module
-				foreach (PartModule m in p.Modules)
-				{
-					// skip disabled modules
-					if (!m.isEnabled)
-						continue;
+		//private void AnalyzeRadiation(List<Part> parts)
+		//{
+		//	// scan the parts
+		//	emitted = 0.0;
+		//	foreach (Part p in parts)
+		//	{
+		//		// for each module
+		//		foreach (PartModule m in p.Modules)
+		//		{
+		//			// skip disabled modules
+		//			if (!m.isEnabled)
+		//				continue;
 
-					// accumulate emitter radiation
-					if (m.moduleName == "Emitter")
-					{
-						Emitter emitter = m as Emitter;
-						emitter.Recalculate();
+		//			// accumulate emitter radiation
+		//			if (m.moduleName == "Emitter")
+		//			{
+		//				Emitter emitter = m as Emitter;
+		//				emitter.Recalculate();
 
-						if (emitter.running)
-						{
-							if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_impact;
-							else emitted += emitter.radiation;
-						}
-					}
-				}
-			}
-		}
+		//				if (emitter.running)
+		//				{
+		//					if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_impact;
+		//					else emitted += emitter.radiation;
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 
 		private void AnalyzeReliability(List<Part> parts)
 		{

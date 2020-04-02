@@ -43,6 +43,10 @@ namespace KERBALISM
 		// by only saving vessels that exist in HighLogic.CurrentGame.flightState.protoVessels
 		private bool existsInFlight;
 
+		public override bool LoadedOrEditor => Vessel.loaded;
+
+		public override bool IsEVA => Vessel.isEVA;
+
 		/// <summary>
 		/// Time elapsed since last evaluation
 		/// </summary>
