@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace KERBALISM
 {
+	/// <summary>
+	/// When extending this module in another plugin, make sure to call ModuleData.Init() from that plugin
+	/// </summary>
 	public abstract class KsmPartModule : PartModule
 	{
 		public const string VALUENAME_SHIPID = "dataShipId";
@@ -22,7 +25,7 @@ namespace KERBALISM
 		public abstract Type ModuleDataType { get; }
 	}
 
-	public class KsmPartModule<TModule, TData> : KsmPartModule
+	public abstract class KsmPartModule<TModule, TData> : KsmPartModule
 		where TModule : KsmPartModule<TModule, TData>
 		where TData : ModuleData<TModule, TData>
 	{
@@ -32,7 +35,7 @@ namespace KERBALISM
 
 		public override Type ModuleDataType => typeof(TData);
 
-		public void OnDestroy()
+		public virtual void OnDestroy()
 		{
 			// clear loaded module reference to avoid memory leaks
 			if (moduleData != null)

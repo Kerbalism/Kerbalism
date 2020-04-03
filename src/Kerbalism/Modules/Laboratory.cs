@@ -36,7 +36,7 @@ namespace KERBALISM
 		private static SubjectData background_sample = null;             // sample currently being analyzed in background simulation
 		private Status status = Status.DISABLED;                    // laboratory status
 		private string status_txt = string.Empty;                   // status string to show next to the ui button
-		private VesselKSPResource ec = null;                            // resource info for EC
+		private VesselData vesselData;                            // resource info for EC
 
 		// localized strings
 		private static readonly string localized_title = Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Laboratory_Title);
@@ -58,14 +58,15 @@ namespace KERBALISM
 			Actions["Action"].guiName = Local.Laboratory_Action;
 			Events["CleanExperiments"].guiName = Local.Laboratory_Clean;
 
-			// do nothing in the editors and when compiling parts
-			if (!Lib.IsFlight) return;
+			// do nothing else in the editors
+			if (Lib.IsEditor)
+				return;
 
 			// parse crew specs
 			researcher_cs = new CrewSpecs(researcher);
 
 			// get ec handler
-			ec = vessel.KerbalismData().ResHandler.ElectricCharge;
+			vessel.TryGetVesselData(out vesselData);
 		}
 
 		public void Update()
@@ -110,14 +111,14 @@ namespace KERBALISM
 					if (current_sample != null)
 					{
 						// consume EC
-						ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.Laboratory);
+						vesselData.ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
-						if (ec.AvailabilityFactor > 0.0)
+						if (vesselData.ResHandler.ElectricCharge.AvailabilityFactor > 0.0)
 						{
 							// analyze the sample
-							status = Analyze(vessel, current_sample, rate * ec.AvailabilityFactor * Kerbalism.elapsed_s);
+							status = Analyze(vesselData, vessel, current_sample, rate * vesselData.ResHandler.ElectricCharge.AvailabilityFactor * Kerbalism.elapsed_s);
 							running = status == Status.RUNNING;
 						}
 						// if there was no ec
@@ -133,7 +134,7 @@ namespace KERBALISM
 			else status = Status.DISABLED;
 		}
 
-		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, double elapsed_s)
+		public static void BackgroundUpdate(VesselData vd, Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Laboratory lab, double elapsed_s)
 		{
 			// if enabled
 			if (Lib.Proto.GetBool(m, "running"))
@@ -157,7 +158,7 @@ namespace KERBALISM
 					// if there is a sample to analyze
 					if (background_sample != null)
 					{
-						VesselKSPResource ec = v.KerbalismData().ResHandler.ElectricCharge;
+						VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 
 						// consume EC
 						ec.Consume(lab.ec_rate * elapsed_s, ResourceBroker.Laboratory);
@@ -167,7 +168,7 @@ namespace KERBALISM
 						if (ec.AvailabilityFactor > 0.0)
 						{
 							// analyze the sample
-							var status = Analyze(v, background_sample, rate * ec.AvailabilityFactor * elapsed_s);
+							var status = Analyze(vd, v, background_sample, rate * ec.AvailabilityFactor * elapsed_s);
 							if (status != Status.RUNNING)
 								Lib.Proto.Set(m, "running", false);
 						}
@@ -252,7 +253,7 @@ namespace KERBALISM
 		}
 
 		// analyze a sample
-		private static Status Analyze(Vessel v, SubjectData subject, double amount)
+		private static Status Analyze(VesselData vd, Vessel v, SubjectData subject, double amount)
 		{
 			Sample sample = null;
 			DriveData sampleDrive = null;
@@ -273,7 +274,7 @@ namespace KERBALISM
 				amount = Math.Min(amount, sample.size);
 			}
 
-			DriveData fileDrive = DriveData.FileDrive(v.KerbalismData(), amount);
+			DriveData fileDrive = DriveData.FileDrive(vd, amount);
 
 			if (fileDrive == null)
 				return Status.NO_STORAGE;
@@ -296,7 +297,7 @@ namespace KERBALISM
 				}
 
 				// return sample mass to experiment if needed
-				if (massRemoved > 0.0) RestoreSampleMass(v, subject, massRemoved);
+				if (massRemoved > 0.0) RestoreSampleMass(vd, subject, massRemoved);
 			}
 
 			// if the analysis is completed
@@ -312,30 +313,25 @@ namespace KERBALISM
 
 				if (PreferencesScience.Instance.transmitScience)
 					fileDrive.Send(subject.Id, true);
-
-				// record landmark event
-				if (!Lib.Landed(v)) DB.Landmarks.space_analysis = true;
 			}
 
 			return Status.RUNNING;
 		}
 
-		private static void RestoreSampleMass(Vessel v, SubjectData filename, double restoredAmount)
+		private static void RestoreSampleMass(VesselData vd, SubjectData subject, double restoredAmount)
 		{
-			if (v.loaded) // loaded vessel
+			foreach (ExperimentData experimentData in vd.Parts.AllModulesOfType<ExperimentData>(p => p.ExperimentID == subject.ExpInfo.ExperimentId))
 			{
-				foreach (var experiment in v.FindPartModulesImplementing<ModuleKsmExperiment>())
-				{
-					restoredAmount -= experiment.RestoreSampleMass(restoredAmount, filename.ExpInfo.ExperimentId);
-				}
-			}
-			else // unloaded vessel
-			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "ModuleKsmExperiment"))
-				{
-					restoredAmount -= ModuleKsmExperiment.RestoreSampleMass(restoredAmount, m, filename.ExpInfo.ExperimentId);
-					if (restoredAmount < double.Epsilon) return;
-				}
+				if (experimentData.ModuleDefinition.SampleCollecting)
+					continue;
+
+				double maxRestoredMass = (experimentData.ModuleDefinition.Samples * experimentData.ModuleDefinition.Info.SampleMass) - experimentData.remainingSampleMass;
+
+				if (maxRestoredMass <= 0.0)
+					continue;
+
+				experimentData.remainingSampleMass += Math.Min(restoredAmount, maxRestoredMass);
+				break;
 			}
 		}
 

@@ -1,0 +1,3 @@
+Unity 2019.2.2f1 provided dlls from Editor\Data\MonoBleedingEdge\lib\mono\4.5 :
+System.IO.Compression.dll
+System.IO.Compression.FileSystem.dll

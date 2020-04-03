@@ -21,19 +21,18 @@ namespace KERBALISM
 
 		#region LIFECYCLE
 
-		public override void OnInstantiate(PartModule partModulePrefab, ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
+		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
 		{
 			files = new Dictionary<SubjectData, File>();
 			samples = new Dictionary<SubjectData, Sample>();
 			fileSendFlags = new Dictionary<string, bool>();
 
 			// modulePrefab will be null for transmit buffer drives
-			if (partModulePrefab != null)
+			if (modulePrefab != null)
 			{
-				ModuleKsmDrive drivePrefab = (ModuleKsmDrive)partModulePrefab;
-				dataCapacity = drivePrefab.effectiveDataCapacity;
-				sampleCapacity = drivePrefab.effectiveSampleCapacity;
-				isPrivate = drivePrefab.IsPrivate();
+				dataCapacity = modulePrefab.effectiveDataCapacity;
+				sampleCapacity = modulePrefab.effectiveSampleCapacity;
+				isPrivate = modulePrefab.IsPrivate();
 			}
 			else
 			{
@@ -138,6 +137,11 @@ namespace KERBALISM
 				fileNames += subjectId;
 			}
 			node.AddValue("sendFileNames", fileNames);
+		}
+
+		public override void OnPartWillDie()
+		{
+			DeleteAllData();
 		}
 
 		#endregion
@@ -557,9 +561,12 @@ namespace KERBALISM
 		/// <summary> delete all files/samples in the vessel drives</summary>
 		public static void DeleteDrivesData(Vessel vessel)
 		{
-			foreach (DriveData driveData in vessel.KerbalismData().Parts.AllModulesOfType<DriveData>())
+			if (vessel.TryGetVesselData(out VesselData vd))
 			{
-				driveData.DeleteAllData();
+				foreach (DriveData driveData in vd.Parts.AllModulesOfType<DriveData>())
+				{
+					driveData.DeleteAllData();
+				}
 			}
 		}
 
@@ -577,12 +584,22 @@ namespace KERBALISM
 
 		public static IEnumerable<DriveData> GetDrives(Vessel v, bool includePrivate = false)
 		{
-			return GetDrives(v.KerbalismData(), includePrivate);
+			if (v.TryGetVesselData(out VesselData vd))
+			{
+				return GetDrives(vd, includePrivate);
+			}
+
+			return new DriveData[0];
 		}
 
 		public static IEnumerable<DriveData> GetDrives(ProtoVessel pv, bool includePrivate = false)
 		{
-			return GetDrives(pv.KerbalismData(), includePrivate);
+			if (pv.TryGetVesselData(out VesselData vd))
+			{
+				return GetDrives(vd, includePrivate);
+			}
+
+			return new DriveData[0];
 		}
 
 		public static void GetCapacity(VesselData vesseldata, out double free_capacity, out double total_capacity)

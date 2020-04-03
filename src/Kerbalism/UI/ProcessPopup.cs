@@ -103,20 +103,20 @@ namespace KERBALISM
 			dumpHeaderText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 250, 0);
 			dumpHeaderText.TopTransform.SetSizeDelta(40, 16);
 
-			foreach (KeyValuePair<string, double> output in vesselProcess.process.outputs)
+			foreach (Process.Output output in vesselProcess.process.outputs)
 			{
-				VesselResource resource = vd.ResHandler.GetResource(output.Key);
+				//VesselResource resource = vd.ResHandler.GetResource(output.Key);
 				//if (!resource.Visible) // don't display invisible resources
 				//	continue;
-				resources.Add(new ResourceEntry(resourceList, this, output, false));
+				resources.Add(new ResourceEntry(resourceList, this, output));
 			}
 
-			foreach (KeyValuePair<string, double> input in vesselProcess.process.inputs)
+			foreach (Process.Input input in vesselProcess.process.inputs)
 			{
-				VesselResource resource = vd.ResHandler.GetResource(input.Key);
+				//VesselResource resource = vd.ResHandler.GetResource(input.Key);
 				//if (!resource.Visible) // don't display invisible resources
 				//	continue;
-				resources.Add(new ResourceEntry(resourceList, this, input, true));
+				resources.Add(new ResourceEntry(resourceList, this, input));
 			}
 
 			new KsmGuiHeader(content, Local.ProcessPopup_PARTS); // "PARTS"
@@ -196,18 +196,18 @@ namespace KERBALISM
 			double baseResRate;
 			bool isInput;
 			bool dump;
-			bool dumpable;
+			bool canDump;
 			public double usage;
 
-			public ResourceEntry(KsmGuiBase parent, ProcessPopup window, KeyValuePair<string, double> inputOrOutput, bool isInput) : base(parent)
+			public ResourceEntry(KsmGuiBase parent, ProcessPopup window, Process.Resource inputOrOutput) : base(parent)
 			{
-				this.isInput = isInput;
 				this.window = window;
-				resName = inputOrOutput.Key;
-				baseResRate = isInput ? -inputOrOutput.Value : inputOrOutput.Value;
+				isInput = inputOrOutput is Process.Input;
+				resName = inputOrOutput.name;
+				baseResRate = isInput ? -inputOrOutput.rate : inputOrOutput.rate;
 				resource = window.vd.ResHandler.GetResource(resName);
 				dump = window.vesselProcess.dumpedOutputs.Contains(resName);
-				dumpable = !isInput && window.vesselProcess.process.dumpableOutputs.Contains(resName);
+				canDump = !isInput && ((Process.Output)inputOrOutput).canDump;
 
 				SetLayoutElement(true, false, -1, 16);
 				this.AddImageComponentWithColor(KsmGuiStyle.boxColor);
@@ -226,7 +226,7 @@ namespace KERBALISM
 				resStatusText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 175, 0);
 				resStatusText.TopTransform.SetSizeDelta(80, 16);
 
-				if (dumpable)
+				if (canDump)
 				{
 					resDumpText = new KsmGuiTextButton(this, "", null, null, TextAlignmentOptions.Center);
 					resDumpText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
@@ -252,7 +252,7 @@ namespace KERBALISM
 				else if (!isInput && !dump && resource.ProduceRequests == 0.0 && (resource.Capacity == 0.0 || resource.Level == 1.0))
 				{
 					resStatusText.Text = Local.ProcessPopup_NoStorage; // "no storage";
-					if(dumpable)
+					if(canDump)
 						resStatusText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Red);
 					else
 						resStatusText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Yellow);
@@ -284,7 +284,7 @@ namespace KERBALISM
 						resStatusText.TextComponent.color = Lib.KolorToColor(Lib.Kolor.PosRate);
 				}
 
-				if (dumpable)
+				if (canDump)
 				{
 					dump = window.vesselProcess.dumpedOutputs.Contains(resName);
 					resDumpText.Text = dump ? Local.Generic_YES : Local.Generic_NO;

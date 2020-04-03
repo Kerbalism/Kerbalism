@@ -23,7 +23,7 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get info from the cache
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;
@@ -76,7 +76,7 @@ namespace KERBALISM
 				{
 					foreach (File file in drive.files.Values)
 					{
-						Render_file(p, drive.partData.flightId, file, drive, short_strings && Lib.IsFlight, v);
+						Render_file(vd, p, drive.partData.flightId, file, drive, short_strings && Lib.IsFlight, v);
 					}
 				}
 
@@ -101,7 +101,7 @@ namespace KERBALISM
 			}
 		}
 
-		static void Render_file(Panel p, uint partId, File file, DriveData drive, bool short_strings, Vessel v)
+		static void Render_file(VesselData vd, Panel p, uint partId, File file, DriveData drive, bool short_strings, Vessel v)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -128,8 +128,8 @@ namespace KERBALISM
 				else
 					exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_TransmittingRate.Format(Lib.HumanReadableDataRate(file.transmitRate))), Lib.Kolor.Cyan);//Transmitting at <<1>>
 			}
-			else if (v.KerbalismData().Connection.rate > 0.0)
-				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_Transmitduration, "<i>", Lib.HumanReadableDuration(file.size / v.KerbalismData().Connection.rate), "</i>");//Transmit duration : 
+			else if (vd.Connection.rate > 0.0)
+				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_Transmitduration, "<i>", Lib.HumanReadableDuration(file.size / vd.Connection.rate), "</i>");//Transmit duration : 
 			if (!string.IsNullOrEmpty(file.resultText))
 				exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(file.resultText, 50));
 

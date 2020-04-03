@@ -73,21 +73,33 @@ namespace KERBALISM
 		private List<PartData> partList = new List<PartData>();
 		private VesselDataBase vesselData;
 
-
 		public PartDataCollectionVessel(VesselDataBase vesselData, PartDataCollectionShip shipPartData)
 		{
 			Lib.LogDebug($"Transferring PartData from ship to vessel for launch");
 			this.vesselData = vesselData;
 
-			foreach (PartData partData in shipPartData)
+			foreach (PartDataShip partData in shipPartData)
 			{
 				partData.flightId = partData.LoadedPart.flightID;
+				partData.vesselData = vesselData;
 				Add(partData);
 
 				foreach (ModuleData moduleData in partData.modules)
 				{
 					ModuleData.AssignNewFlightId(moduleData);
 				}
+			}
+		}
+
+		public PartDataCollectionVessel(VesselDataBase vesselData, List<PartData> partDatas)
+		{
+			Lib.LogDebug($"Transferring {partDatas.Count} PartDatas from vessel {partDatas[0].vesselData.VesselName} to vessel {vesselData.VesselName}");
+			this.vesselData = vesselData;
+
+			foreach (PartData partData in partDatas)
+			{
+				partData.vesselData = vesselData;
+				Add(partData);
 			}
 		}
 
@@ -141,7 +153,7 @@ namespace KERBALISM
 
 						if (modulesNode != null && flightId != 0 && moduleDataNodes.TryGetValue(flightId, out ConfigNode moduleNode))
 						{
-							ModuleData.NewFromNode(protoModule, partData, moduleNode, flightId);
+							ModuleData.NewFromNode(protopart, protoModule, partData, moduleNode, flightId);
 						}
 						else
 						{
@@ -277,6 +289,27 @@ namespace KERBALISM
 			}
 
 			other.Clear(false);
+		}
+
+		public void OnPartWillDie(Part part)
+		{
+			if (partDictionary.TryGetValue(part.flightID, out PartData partData))
+			{
+				partData.PartWillDie();
+				partDictionary.Remove(part.flightID);
+				partList.Remove(partData);
+			}
+		}
+
+		public void OnAllPartsWillDie()
+		{
+			foreach (PartData partData in partList)
+			{
+				partData.PartWillDie();
+			}
+
+			partDictionary.Clear();
+			partList.Clear();
 		}
 	}
 }

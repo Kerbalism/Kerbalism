@@ -65,9 +65,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					string error = $"Error parsing modifier for rule '{name}' :\n{modifierString}\n{e.Message}";
-					Profile.modifiersCompilationErrors.Add(error);
-					Lib.Log(error, Lib.LogLevel.Error);
+					ErrorManager.AddError(false, $"Can't parse modifier for rule '{name}'", $"modifier : {modifierString}\n{e.Message}");
 					hasModifier = false;
 				}
 			}

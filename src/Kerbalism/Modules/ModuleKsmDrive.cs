@@ -8,6 +8,8 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
+	// Note : I did a very quick and dirty implementation of KsmPartModule with the bare minimum of changes to make it work.
+	// Ideally effectiveDataCapacity and effectiveSampleCapacity should be removed and we should only use the moduledata values.
 	public class ModuleKsmDrive : KsmPartModule<ModuleKsmDrive, DriveData>, IScienceDataContainer, ISpecifics, IModuleInfo, IPartMassModifier, IPartCostModifier
 	{
 		public const int CAPACITY_UNLIMITED = -1;
@@ -388,9 +390,6 @@ namespace KERBALISM
 			return data.ToArray();
 		}
 
-		// TODO do something about limited capacity...
-		// EVAs returning should get a warning if needed
-		// TODO : this should not be used for EVA boarding, too much information is lost in the conversion
 		public void ReturnData(ScienceData data)
 		{
 			SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(data.subjectID);

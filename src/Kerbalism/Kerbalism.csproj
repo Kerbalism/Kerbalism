@@ -64,54 +64,61 @@
   <!-- //////////////////// REFERENCES ///////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
-    <!-- System Dlls -->
+    <!-- Nuget packages -->
     <Reference Include="Flee.Net45, Version=1.0.0.0, Culture=neutral, PublicKeyToken=951a102ce2413032, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Flee.1.2.2\lib\net45\Flee.Net45.dll</HintPath>
     </Reference>
-    <Reference Include="System">
+    <!-- Unity/Mono extra framework Dlls, from the repo gamedata folder -->
+    <Reference Include="$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll">
+      <Name>System.IO.Compression</Name>
+      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Core">
+    <Reference Include="$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll">
+      <Name>System.IO.Compression.FileSystem</Name>
+      <HintPath>$(GameDataKerbalismPathPR)\Lib\System.IO.Compression.FileSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Xml">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <Private>False</Private>
-    </Reference>
-    <!-- Harmony reference, get it from the gamedata folder -->
-    <Reference Include="Harmony">
+    <!-- Harmony reference, from the repo gamedata folder -->
+    <Reference Include="$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll">
+      <Name>Harmony</Name>
       <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <!-- KSP Dlls -->
+    <!-- System Dlls from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
+    <Reference Include="$(EffectiveKSPDllPath)\System.dll">
+      <Name>System</Name>
+      <HintPath>$(EffectiveKSPDllPath)\System.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\System.Core.dll">
+      <Name>System.Core</Name>
+      <HintPath>$(EffectiveKSPDllPath)\System.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(EffectiveKSPDllPath)\System.Xml.dll">
+      <Name>System.Xml</Name>
+      <HintPath>$(EffectiveKSPDllPath)\System.Xml.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- KSP Dlls from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
+      <Name>Assembly-CSharp</Name>
+      <HintPath>$(EffectiveKSPDllPath)\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
+      <Name>Assembly-CSharp-firstpass</Name>
+      <HintPath>$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
+    <!-- from either the KSP dev install (debug) or the KSP dlls protected archives (release) -->
     <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
+      <Name>UnityEngine (all KSP provided dlls)</Name>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-  <!-- Unity Dlls (don't exists anymore since KSP 1.8, so test for their existence) -->
-  <!-- Note : this is done in choose block instead of simple condition on the reference -->
-  <!-- because Visual Studio is bypassing those. -->
-  <Choose>
-    <When Condition="Exists('$(EffectiveKSPDllPath)\Assembly-UnityScript.dll')">
-      <ItemGroup>
-        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript.dll">
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="$(EffectiveKSPDllPath)\Assembly-UnityScript-firstpass.dll">
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ///////////////////// COMPILES ////////////////////// -->
   <!-- ///////////////////////////////////////////////////// -->
@@ -130,7 +137,7 @@
     <Compile Include="Cache.cs" />
     <Compile Include="Automation\Devices\Converter.cs" />
     <Compile Include="Automation\Devices\Drill.cs" />
-    <Compile Include="Automation\Devices\Emitter.cs" />
+    <Compile Include="Automation\Devices\RadiationEmitter.cs" />
     <Compile Include="Automation\Devices\Generator.cs" />
     <Compile Include="Automation\Devices\Greenhouse.cs" />
     <Compile Include="Automation\Devices\Light.cs" />
@@ -148,33 +155,37 @@
     <Compile Include="Comms\CommHandlerCommNetVessel.cs" />
     <Compile Include="Comms\CommHandlerRemoteTech.cs" />
     <Compile Include="Comms\IConnectionInfo.cs" />
-    <Compile Include="Contracts\CrossBelt.cs" />
-    <Compile Include="Contracts\CrossHeliopause.cs" />
-    <Compile Include="Contracts\MannedOrbit.cs" />
-    <Compile Include="Contracts\SpaceAnalysis.cs" />
-    <Compile Include="Contracts\SpaceHarvest.cs" />
     <Compile Include="Database\DB.cs" />
+    <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
+    <Compile Include="Database\ModuleData\RadiationEmitterData.cs" />
     <Compile Include="Database\VesselDataComponents\PartDataCollectionShip.cs" />
+    <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
+    <Compile Include="Database\VesselDataComponents\VesselData.SunInfo.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
     <Compile Include="Database\VesselDataComponents\VesselHabitat.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcessCollection.cs" />
     <Compile Include="External\B9PartSwitch.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
+    <Compile Include="Modules\Base\SubclassingExample.cs" />
+    <Compile Include="Modules\ModuleKsmRadiationEmitter.cs" />
+    <Compile Include="Modules\ModuleKsmRadiationCoil.cs" />
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
-    <Compile Include="Patches\ShipConstruct_SaveShip.cs" />
+    <Compile Include="Patches\ShipConstruct.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
+    <Compile Include="Science\ExperimentModuleDefinition.cs" />
+    <Compile Include="System\ErrorManager.cs" />
+    <Compile Include="System\PartPrefabsPostCompilation.cs" />
     <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />
     <Compile Include="UI\KsmGui\KsmGuiTextButton.cs" />
     <Compile Include="Database\VesselData\VesselDataShip.cs" />
     <Compile Include="UI\ProcessPopup.cs" />
     <Compile Include="Database\ModuleData\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
-    <Compile Include="Database\LandmarkData.cs" />
     <Compile Include="Database\VesselDataComponents\PartData.cs" />
     <Compile Include="Database\VesselDataComponents\PartDataCollectionVessel.cs" />
     <Compile Include="Database\RuleData.cs" />
@@ -198,7 +209,6 @@
     <Compile Include="External\ModuleManager.cs" />
     <Compile Include="External\SCANsat.cs" />
     <Compile Include="Modules\Harvester.cs" />
-    <Compile Include="Modules\Emitter.cs" />
     <Compile Include="Modules\Greenhouse.cs" />
     <Compile Include="Modules\ModuleKsmDrive.cs" />
     <Compile Include="Modules\Laboratory.cs" />

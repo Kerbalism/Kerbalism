@@ -59,7 +59,8 @@ namespace KERBALISM
 
 			// if nothing is selected, or if the selected vessel doesn't exist
 			// anymore, or if it has become invalid for whatever reason
-			if (selected_v == null || !selected_v.KerbalismIsValid())
+
+			if (selected_v == null || !selected_v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
 			{
 				// forget the selected vessel, if any
 				selected_id = Guid.Empty;
@@ -172,7 +173,8 @@ namespace KERBALISM
 			// if hidden vessels aren't visible, see if this vessel is hidden
 			if(filter_types.Contains(VesselType.Unknown))
 			{
-				if (!vessel.KerbalismData().cfg_show) return false;
+				vessel.TryGetVesselData(out VesselData vd);
+				if (!vd.cfg_show) return false;
 			}
 
 			if(filter.Length <= 0 || filter == filter_placeholder) return true;
@@ -194,7 +196,7 @@ namespace KERBALISM
 		bool Render_vessel(Panel p, Vessel v, bool selected = false)
 		{
 			// get vessel info
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 
 			// skip invalid vessels
 			if (!vd.IsSimulated) return false;
@@ -273,7 +275,7 @@ namespace KERBALISM
 
 		void Render_menu(Vessel v)
 		{
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 			GUILayout.BeginHorizontal(Styles.entry_container);
 			GUILayout.Label(new GUIContent(Lib.Color(page == MonitorPage.telemetry, " " + Local.Monitor_INFO, Lib.Kolor.Green, Lib.Kolor.None, true), Textures.small_info, Local.Monitor_INFO_desc + Local.Monitor_tooltip), config_style);//INFO"Telemetry readings"
 			if (Lib.IsClicked()) page = MonitorPage.telemetry;
@@ -500,16 +502,16 @@ namespace KERBALISM
 			if (Storm.Incoming(v))
 			{
 				icons.Add(Textures.storm_yellow);
-
-				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+				v.TryGetVesselData(out VesselData vd);
+				var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
 				var tti = bd.storm_time - Planetarium.GetUniversalTime();
 				tooltips.Add(Lib.BuildString(Lib.Color(Local.Monitor_ejectionincoming, Lib.Kolor.Orange), "\n<i>", Local.Monitor_TimetoimpactCoronalmass, Lib.HumanReadableDuration(tti), "</i>"));//"Coronal mass ejection incoming"Time to impact:
 			}
 			if (Storm.InProgress(v))
 			{
 				icons.Add(Textures.storm_red);
-
-				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+				v.TryGetVesselData(out VesselData vd);
+				var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
 				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
 				tooltips.Add(Lib.BuildString(Lib.Color(Local.Monitor_Solarstorminprogress, Lib.Kolor.Red), "\n<i>", Local.Monitor_SolarstormRemaining, Lib.HumanReadableDuration(remainingDuration), "</i>"));//"Solar storm in progress"Remaining duration:
 			}

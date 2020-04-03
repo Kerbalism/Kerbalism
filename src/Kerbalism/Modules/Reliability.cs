@@ -127,7 +127,8 @@ namespace KERBALISM
 				return false;
 
 			ignitions++;
-			vessel.KerbalismData().ResetReliabilityStatus();
+			vessel.TryGetVesselData(out VesselData vd);
+			vd.ResetReliabilityStatus();
 
 			bool fail = false;
 			bool launchpad = vessel.situation == Vessel.Situations.PRELAUNCH || ignitions <= 1 && vessel.situation == Vessel.Situations.LANDED;
@@ -239,8 +240,9 @@ namespace KERBALISM
 
 					if (rated_radiation > 0)
 					{
+						vessel.TryGetVesselData(out VesselData vd);
 						var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-						var current = vessel.KerbalismData().EnvRadiation * 3600.0;
+						var current = vd.EnvRadiation * 3600.0;
 						if (rated < current)
 						{
 							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange));//"taking radiation damage"
@@ -336,7 +338,9 @@ namespace KERBALISM
 #endif
 				}
 
-				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
+				vessel.TryGetVesselData(out VesselData vd);
+
+				var decay = RadiationDecay(quality, vd.EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
 				next -= decay;
 			}
 		}
@@ -375,7 +379,8 @@ namespace KERBALISM
 			{
 				var duration = now - lastRunningCheck;
 				operation_duration += duration;
-				vessel.KerbalismData().ResetReliabilityStatus();
+				vessel.TryGetVesselData(out VesselData vd);
+				vd.ResetReliabilityStatus();
 
 				if (fail_duration <= 0)
 				{
@@ -452,7 +457,8 @@ namespace KERBALISM
 #endif
 			}
 
-			var rad = v.KerbalismData().EnvRadiation;
+			v.TryGetVesselData(out VesselData vd);
+			var rad = vd.EnvRadiation;
 			var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
 			if (decay > 0)
 			{
@@ -505,7 +511,8 @@ namespace KERBALISM
 			if (rated_ignitions > 0 && ignitions >= Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
 			if (rated_operation_duration > 0 && operation_duration >= EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
 
-			v.KerbalismData().ResetReliabilityStatus();
+			v.TryGetVesselData(out VesselData vd);
+			vd.ResetReliabilityStatus();
 
 			// notify user
 			if (!needMaintenance)
@@ -567,7 +574,8 @@ namespace KERBALISM
 			operation_duration = 0;
 			ignitions = 0;
 			fail_duration = 0;
-			vessel.KerbalismData().ResetReliabilityStatus();
+			vessel.TryGetVesselData(out VesselData vd);
+			vd.ResetReliabilityStatus();
 
 			if (broken)
 			{
@@ -624,7 +632,8 @@ namespace KERBALISM
 #endif
 		public void Break()
 		{
-			vessel.KerbalismData().ResetReliabilityStatus();
+			vessel.TryGetVesselData(out VesselData vd);
+			vd.ResetReliabilityStatus();
 
 			if (broken) return;
 
@@ -636,7 +645,7 @@ namespace KERBALISM
 			}
 
 			// if enforced, manned, or if safemode didn't trigger
-			if (enforce_breakdown || vessel.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
+			if (enforce_breakdown || vd.CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
 			{
 				// flag as broken
 				broken = true;
@@ -677,7 +686,8 @@ namespace KERBALISM
 
 		public static void ProtoBreak(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
 		{
-			v.KerbalismData().ResetReliabilityStatus();
+			v.TryGetVesselData(out VesselData vd);
+			vd.ResetReliabilityStatus();
 
 			// get reliability module prefab
 			string type = Lib.Proto.GetString(m, "type", string.Empty);
@@ -687,7 +697,7 @@ namespace KERBALISM
 			bool enforce_breakdown = Lib.Proto.GetBool(m, "enforce_breakdown", false);
 
 			// if manned, or if safemode didn't trigger
-			if (enforce_breakdown || v.KerbalismData().CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
+			if (enforce_breakdown || vd.CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
 			{
 				// flag as broken
 				Lib.Proto.Set(m, "broken", true);
@@ -998,7 +1008,7 @@ namespace KERBALISM
 		// set highlighting
 		static void Highlight(Part p)
 		{
-			if (p.vessel.KerbalismData().cfg_highlights)
+			if (p.vessel.TryGetVesselData(out VesselData vd) && vd.cfg_highlights)
 			{
 				// get state among all reliability components in the part
 				bool broken = false;
@@ -1019,7 +1029,7 @@ namespace KERBALISM
 
 		static void Broken_msg(Vessel v, string title, bool critical)
 		{
-			if (v.KerbalismData().cfg_malfunction)
+			if (v.TryGetVesselData(out VesselData vd) && vd.cfg_malfunction)
 			{
 				if (!critical)
 				{

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
+
 
 
 namespace KERBALISM
 {
-
-
     public enum UnlinkedCtrl
     {
         none,     // disable all controls
@@ -14,22 +14,62 @@ namespace KERBALISM
         full      // do not disable controls at all
     }
 
-
 	public static class Settings
 	{
-		private static string MODS_REQUIRED = "";
-		private static string MODS_INCOMPATIBLE = "TacLifeSupport,Snacks,BackgroundResources,BackgroundProcessing,KolonyTools,USILifeSupport";
-		private static string MODS_WARNING = "ResearchBodies,CommNetAntennasInfo";
-		private static string MODS_SCIENCE = "KEI,[x] Science!";
+		private class ModToCheck
+		{
+			public const string NODENAME = "MOD_CHECK";
+
+			private const string requiredText = "Missing required mod dependency";
+			private const string incompatibleText = "Incompatible mod detected";
+			private const string warningText = "Mod with limited compatibility detected";
+
+			public enum ModCompatibility { None, Required, Incompatible, Warning, WarningScience }
+			public ModCompatibility compatibility;
+			public ErrorManager.Error error;
+			public string modName;
+
+			public static ModToCheck Get(ConfigNode node)
+			{
+				ModToCheck mod = new ModToCheck();
+				mod.modName = Lib.ConfigValue(node, "name", string.Empty);
+				mod.compatibility = Lib.ConfigEnum(node, "modCompatibility", ModCompatibility.None);
+				if (mod.modName.Length == 0 || mod.compatibility == ModCompatibility.None)
+					return null;
+
+				string comment = Lib.ConfigValue(node, "comment", string.Empty);
+
+				switch (mod.compatibility)
+				{
+					case ModCompatibility.Required:
+						mod.error = new ErrorManager.Error(true, $"{requiredText} : {mod.modName}", comment);
+						break;
+					case ModCompatibility.Incompatible:
+						mod.error = new ErrorManager.Error(true, $"{incompatibleText} : {mod.modName}", comment);
+						break;
+					case ModCompatibility.Warning:
+					case ModCompatibility.WarningScience:
+						if (comment.Length == 0)
+						{
+							comment = "This mod has some issues running alongside Kerbalism, please consult the mod compatibility page on the Github wiki";
+						}
+
+						mod.error = new ErrorManager.Error(false, $"{warningText} : {mod.modName}", comment);
+						break;
+				}
+
+				return mod;
+			}
+		}
+
+		private static List<ModToCheck> modsRequired = new List<ModToCheck>();
+		private static List<ModToCheck> modsIncompatible = new List<ModToCheck>();
 
 		public static void Parse()
 		{
-			var kerbalismConfigNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
+			var kerbalismConfigNodes = GameDatabase.Instance.GetConfigs("KERBALISM_SETTINGS");
 			if (kerbalismConfigNodes.Length < 1) return;
 			ConfigNode cfg = kerbalismConfigNodes[0].config;
-
-			// profile used
-			Profile = Lib.ConfigValue(cfg, "Profile", string.Empty);
 
 			// habitat & pressure 
 			PressureSuitVolume = Lib.ConfigValue(cfg, "PressureSuitVolume", 100.0);
@@ -40,7 +80,6 @@ namespace KERBALISM
 			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
-
 
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
@@ -99,50 +138,53 @@ namespace KERBALISM
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
-			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
-			ModsRequired = Lib.ConfigValue(cfg, "ModsRequired", MODS_REQUIRED);
-			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
-			ModsScience = Lib.ConfigValue(cfg, "ModsScience", MODS_SCIENCE);
-			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
-
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
 
 			// debug / logging
 			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
 
+			foreach (ConfigNode modNode in cfg.GetNodes(ModToCheck.NODENAME))
+			{
+				ModToCheck mod = ModToCheck.Get(modNode);
+				if (mod != null)
+				{
+					if (mod.compatibility == ModToCheck.ModCompatibility.Required)
+						modsRequired.Add(mod);
+					else
+						modsIncompatible.Add(mod);
+				}
+			}
+
 			loaded = true;
 		}
 
-		// profile used
-		public static string Profile;
-
-		internal static List<string> IncompatibleMods()
+		public static void CheckMods()
 		{
-			var result = Lib.Tokenize(ModsIncompatible.ToLower(), ',');
-			return result;
+			List<string> loadedModsAndAssemblies = new List<string>();
+
+			string[] directories = Directory.GetDirectories(KSPUtil.ApplicationRootPath + "GameData");
+			for (int i = 0; i < directories.Length; i++)
+			{
+				loadedModsAndAssemblies.Add(new DirectoryInfo(directories[i]).Name);
+			}
+
+			foreach (var a in AssemblyLoader.loadedAssemblies)
+			{
+				loadedModsAndAssemblies.Add(a.name);
+			}
+
+			foreach (ModToCheck mod in modsRequired)
+			{
+				if (!loadedModsAndAssemblies.Exists(p => string.Equals(p, mod.modName, StringComparison.OrdinalIgnoreCase)))
+					ErrorManager.AddError(mod.error);
+			}
+
+			foreach (ModToCheck mod in modsIncompatible)
+			{
+				if (loadedModsAndAssemblies.Exists(p => string.Equals(p, mod.modName, StringComparison.OrdinalIgnoreCase)))
+					ErrorManager.AddError(mod.error);
+			}
 		}
-
-		internal static List<string> WarningMods()
-		{
-			var result = Lib.Tokenize(ModsWarning.ToLower(), ',');
-			if (Features.Science) result.AddRange(Lib.Tokenize(ModsScience.ToLower(), ','));
-			return result;
-		}
-
-		internal static List<string> RequiredMods()
-		{
-			var result = Lib.Tokenize(ModsRequired, ',');
-			return result;
-		}
-
-		// name of profile to use, if any
-
-		// user-defined features
-		public static bool LifeSupport;
-		public static bool Stress;
-		public static bool Science;
-		public static bool Failures;
-		public static bool Radiation;
 
 		// habitat
 		public static double PressureSuitVolume;                // pressure / EVA suit volume in liters, used for determining CO2 poisoning level while kerbals are in a depressurized habitat
@@ -211,13 +253,6 @@ namespace KERBALISM
 		public static float StormRadiation;
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad
-
-		// sanity check settings
-		public static string ModsRequired;
-		public static string ModsIncompatible;
-		public static string ModsWarning;
-		public static string ModsScience;
-		public static bool CheckForCRP;
 
 		public static bool UseSamplingSunFactor;
 

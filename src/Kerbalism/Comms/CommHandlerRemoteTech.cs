@@ -76,7 +76,8 @@ namespace KERBALISM
 					if (connection.Status != LinkStatus.direct_link)
 					{
 						Vessel target = FlightGlobals.FindVessel(controlPath[0]);
-						ConnectionInfo ci = target.KerbalismData().Connection;
+						target.TryGetVesselData(out VesselData vd);
+						ConnectionInfo ci = vd.Connection;
 						connection.strength *= ci.strength;
 						connection.rate = Math.Min(ci.rate, connection.rate);
 					}

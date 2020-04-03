@@ -136,7 +136,7 @@ namespace KERBALISM
 			{
 				// get vessel info from the cache
 				// - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
-				VesselData vd = vessel.KerbalismData();
+				vessel.TryGetVesselData(out VesselData vd);
 
 				// get resource cache
 				VesselResHandler resources = vd.ResHandler;
@@ -445,16 +445,14 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			vessel.KerbalismData().ResHandler.Produce(crop_resource, crop_size, ResourceBroker.Greenhouse);
+			vessel.TryGetVesselData(out VesselData vd);
+			vd.ResHandler.Produce(crop_resource, crop_size, ResourceBroker.Greenhouse);
 
 			// reset growth
 			growth = 0.0;
 
 			// show message
 			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
-
-			// record first harvest
-			if (!Lib.Landed(vessel)) DB.Landmarks.space_harvest = true;
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
@@ -469,16 +467,14 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			vessel.KerbalismData().ResHandler.Produce(crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
+			vessel.TryGetVesselData(out VesselData vd);
+			vd.ResHandler.Produce(crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
 
 			// reset growth
 			growth = 0.0;
 
 			// show message
 			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_3.Format(" <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
-
-			// record first harvest
-			if (!Lib.Landed(vessel)) DB.Landmarks.space_harvest = true;
 		}
 
 		// action groups

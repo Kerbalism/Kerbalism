@@ -248,7 +248,7 @@ namespace KERBALISM
 
 					if (partModule is ModuleKsmExperiment experiment)
 					{
-						vesselExpInfos.Add(experiment.ModuleDefinition.Info);
+						vesselExpInfos.Add(experiment.moduleData.ModuleDefinition.Info);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{
@@ -315,11 +315,12 @@ namespace KERBALISM
 				{
 					if (partModule is ModuleKsmExperiment experiment)
 					{
-						if (experiment.ModuleDefinition == null || researchedExpInfos.Contains(experiment.ModuleDefinition.Info))
+						// TODO : this probably doesn't work anymore
+						if (experiment.moduleData.ModuleDefinition == null || researchedExpInfos.Contains(experiment.moduleData.ModuleDefinition.Info))
 							continue;
 
-						if (experiment.ModuleDefinition.Requirements.TestProgressionRequirements())
-							researchedExpInfos.Add(experiment.ModuleDefinition.Info);
+						if (experiment.moduleData.ModuleDefinition.Requirements.TestProgressionRequirements())
+							researchedExpInfos.Add(experiment.moduleData.ModuleDefinition.Info);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{

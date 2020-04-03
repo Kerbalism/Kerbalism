@@ -6,57 +6,92 @@ using static KERBALISM.HabitatData;
 
 namespace KERBALISM
 {
-    public class VesselData : VesselDataBase
+    public partial class VesselData : VesselDataBase
 	{
-        // references
-        public Guid VesselId { get; private set; }
-        public Vessel Vessel { get; private set; }
-
-        // validity
-        /// <summary> True if the vessel exists in FlightGlobals. will be false in the editor</summary>
-        public bool ExistsInFlight { get; private set; }
-        public bool is_vessel;              // true if this is a valid vessel
-        public bool is_rescue;              // true if this is a rescue mission vessel
-        public bool is_eva_dead;
-
-        /// <summary>False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-        public bool IsSimulated { get; private set; }
-
-        /// <summary>Set to true after evaluation has finished. Used to avoid triggering of events from an uninitialized status</summary>
-        private bool Evaluated = false;
-
-        // time since last update
-        private double secSinceLastEval;
-
-		#region non-evaluated non-persisted fields & properties
+		#region FIELDS/PROPERTIES : CORE STATE AND SUBSYSTEMS
 
 		/// <summary>
-		/// Resource handler for this vessel.
-		/// <para/> Note : this can be null, or not properly initialized while VesselData.IsSimulated is false.
-		/// <para/> Do not use it from PartModule.Start() / PartModule.OnStart(), and check VesselData.IsSimulated before using it from Update() / FixedUpdate()
+		/// reference to the KSP Vessel object
+		/// </summary>
+		public Vessel Vessel { get; private set; }
+
+		/// <summary>
+		/// Guid of the vessel, match the KSP affected Guid
+		/// </summary>
+		public Guid VesselId { get; private set; }
+
+		/// <summary>
+		/// convenience property
+		/// </summary>
+		public override string VesselName => Vessel.vesselName;
+
+        /// <summary>
+		/// False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue
+		/// </summary>
+        public bool IsSimulated { get; private set; }
+
+		// those are the various component of the IsSimulated check
+		private bool isVessel;  // true if the vessel is not dead and if the vessel type is right
+		private bool isRescue;  // true if this is a not yet loaded rescue mission vessel
+		private bool isEvaDead; // true if this is an EVA kerbal that we killed
+
+		/// <summary>
+		/// True if the vessel exists in FlightGlobals. Will be false in the editor
+		/// </summary>
+		// TODO : unused, can probably be removed alongside the EarlyUpdate() thing
+		// this was used to avoid saving vesseldatas for vessels that don't exist anymore, but now we do that
+		// by only saving vessels that exist in HighLogic.CurrentGame.flightState.protoVessels
+		private bool existsInFlight;
+
+		public override bool LoadedOrEditor => Vessel.loaded;
+
+		public override bool IsEVA => Vessel.isEVA;
+
+		/// <summary>
+		/// Time elapsed since last evaluation
+		/// </summary>
+		private double secSinceLastEval;
+
+		/// <summary>
+		/// Resource handler for this vessel. <br/>
+		/// This can be null, or not properly initialized while VesselData.IsSimulated is false. <br/>
+		/// Do not use it from PartModule.Start() / PartModule.OnStart(), and check VesselData.IsSimulated before using it from Update() / FixedUpdate()
 		/// </summary>
 		public override VesselResHandler ResHandler => resHandler; VesselResHandler resHandler;
 
-		/// <summary> comms handler for this vessel </summary>
+		/// <summary>
+		/// Comms handler for this vessel, evaluate and expose data about the vessel antennas and comm link
+		/// </summary>
 		public CommHandler CommHandler { get; private set; }
 
+		/// <summary>
+		/// List/Dictionary of all the vessel PartData, and their ModuleData
+		/// </summary>
 		public PartDataCollectionVessel Parts { get; private set; }
+
+		/// <summary>
+		/// Base class implementation for the PartData list.
+		/// Prefer using the Parts property unless you are doing something that must be flight/editor agnostic.
+		/// </summary>
 		public override IEnumerable<PartData> PartList => Parts;
 
-		/// <summary> all part modules that have a ResourceUpdate method </summary>
+		/// <summary>
+		/// all part modules that have a ResourceUpdate method
+		/// </summary>
 		public List<ResourceUpdateDelegate> resourceUpdateDelegates = null;
 
         /// <summary>
-        /// List of files being transmitted, or empty if nothing is being transmitted
-        /// <para/> Note that the transmit rates stored in the File objects can be unreliable, do not use it apart from UI purposes
+        /// List of files being transmitted, or empty if nothing is being transmitted <br/>
+        /// Note that the transmit rates stored in the File objects can be unreliable, do not use it apart from UI purposes
         /// </summary>
         public List<File> filesTransmitted;
 
-        #endregion
+		#endregion
 
-        #region non-evaluated persisted fields & properties
-        // user defined persisted fields
-        public bool cfg_ec;           // enable/disable message: ec level
+		#region FIELDS/PROPERTIES : PERSISTED STATE
+
+		// user defined persisted fields
+		public bool cfg_ec;           // enable/disable message: ec level
         public bool cfg_supply;       // enable/disable message: supplies level
         public bool cfg_signal;       // enable/disable message: link status
         public bool cfg_malfunction;  // enable/disable message: malfunctions
@@ -71,25 +106,27 @@ namespace KERBALISM
         public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
 
         // other persisted fields
-
-        //public PartDataCollection Parts { get; private set; }
         public bool msg_signal;       // message flag: link status
         public bool msg_belt;         // message flag: crossing radiation belt
-        public StormData stormData;
-        public Dictionary<string, Supply.SupplyState> supplies; // supplies data
+        public StormData stormData;   // store state of current/next solar storm
+        public Dictionary<string, Supply.SupplyState> supplies; // supplies state data
         public List<uint> scansat_id; // used to remember scansat sensors that were disabled
-        public double scienceTransmitted;
+        public double scienceTransmitted; // how much science points has this vessel earned trough transmission
+
+		// persist that so we don't have to do an expensive check every time
         public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
-        #endregion
 
-        #region evaluated environment properties
-        // Things like vessel situation, sunlight, temperature, radiation, 
+		#endregion
 
-        /// <summary>
-        /// [environment] true when timewarping faster at 10000x or faster. When true, some fields are updated more frequently
-        /// and their evaluation is changed to an analytic, timestep-independant and vessel-position-independant mode.
-        /// </summary>
-        public bool EnvIsAnalytic => isAnalytic; bool isAnalytic;
+		#region FIELDS/PROPERTIES : EVALUATED VESSEL ENVIRONMENT
+
+		// Things like vessel situation, sunlight, temperature, radiation, 
+
+		/// <summary>
+		/// [environment] true when timewarping faster at 10000x or faster. When true, some fields are updated more frequently
+		/// and their evaluation is changed to an analytic, timestep-independant and vessel-position-independant mode.
+		/// </summary>
+		public bool EnvIsAnalytic => isAnalytic; bool isAnalytic;
 
         /// <summary> [environment] true if inside ocean</summary>
         public override bool EnvUnderwater => underwater; bool underwater;
@@ -200,149 +237,15 @@ namespace KERBALISM
 
         public VesselSituations VesselSituations => vesselSituations; VesselSituations vesselSituations;
 
-        public class SunInfo
-        {
-            /// <summary> reference to the sun/star</summary>
-            public Sim.SunData SunData => sunData; Sim.SunData sunData;
-
-            /// <summary> normalized vector from vessel to sun</summary>
-            public Vector3d Direction => direction; Vector3d direction;
-
-            /// <summary> distance from vessel to sun surface</summary>
-            public double Distance => distance; double distance;
-
-            /// <summary>
-            /// return 1.0 when the vessel is in direct sunlight, 0.0 when in shadow
-            /// <para/> in analytic evaluation, this is a scalar of representing the fraction of time spent in sunlight
-            /// </summary>
-            // current limitations :
-            // - the result is dependant on the vessel altitude at the time of evaluation, 
-            //   consequently it gives inconsistent behavior with highly eccentric orbits
-            // - this totally ignore the orbit inclinaison, polar orbits will be treated as equatorial orbits
-            public double SunlightFactor => sunlightFactor; double sunlightFactor;
-
-            /// <summary>
-            /// solar flux at vessel position in W/m², include atmospheric absorption if inside an atmosphere (atmo_factor)
-            /// <para/> zero when the vessel is in shadow while evaluation is non-analytic (low timewarp rates)
-            /// <para/> in analytic evaluation, this include fractional sunlight / atmo absorbtion
-            /// </summary>
-            public double SolarFlux => solarFlux; double solarFlux;
-
-            /// <summary>
-            /// scalar for solar flux absorbtion by atmosphere at vessel position, not meant to be used directly (use solar_flux instead)
-            /// <para/> if integrated over orbit (analytic evaluation), average atmospheric absorption factor over the daylight period (not the whole day)
-            /// </summary>
-            public double AtmoFactor => atmoFactor; double atmoFactor;
-
-            /// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmoshere and occlusion) </summary>
-            public double FluxProportion => fluxProportion; double fluxProportion;
-
-            /// <summary> similar to solar flux but doesn't account for atmo absorbtion nor occlusion</summary>
-            private double rawSolarFlux;
-
-            public SunInfo(Sim.SunData sunData)
-            {
-                this.sunData = sunData;
-            }
-
-            /// <summary>
-            /// Update the 'sunsInfo' list and the 'mainSun', 'solarFluxTotal' variables.
-            /// Uses discrete or analytic (for high timewarp speeds) evaluation methods based on the isAnalytic bool.
-            /// Require the 'visibleBodies' variable to be set.
-            /// </summary>
-            // at the two highest timewarp speed, the number of sun visibility samples drop to the point that
-            // the quantization error first became noticeable, and then exceed 100%, to solve this:
-            // - we switch to an analytical estimation of the sunlight/shadow period
-            // - atmo_factor become an average atmospheric absorption factor over the daylight period (not the whole day)
-            public static void UpdateSunsInfo(VesselData vd, Vector3d vesselPosition, double elapsedSeconds)
-            {
-                Vessel v = vd.Vessel;
-                double lastSolarFlux = 0.0;
-
-                vd.sunsInfo = new List<SunInfo>(Sim.suns.Count);
-                vd.solarFluxTotal = 0.0;
-                vd.rawSolarFluxTotal = 0.0;
-
-                foreach (Sim.SunData sunData in Sim.suns)
-                {
-                    SunInfo sunInfo = new SunInfo(sunData);
-
-                    if (vd.isAnalytic)
-                    {
-                        // get sun direction and distance
-                        Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
-                        // analytical estimation of the portion of orbit that was in sunlight.
-                        // it has some limitations, see the comments on Sim.ShadowPeriod
-
-                        if (Settings.UseSamplingSunFactor)
-                            // sampling estimation of the portion of orbit that is in sunlight
-                            // until we will calculate again
-                            sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds);
-
-                        else
-                            // analytical estimation of the portion of orbit that was in sunlight.
-                            // it has some limitations, see the comments on Sim.ShadowPeriod
-                            sunInfo.sunlightFactor = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
-
-
-                        // get atmospheric absorbtion
-                        // for atmospheric bodies whose rotation period is less than 120 hours,
-                        // determine analytic atmospheric absorption over a single body revolution instead
-                        // of using a discrete value that would be unreliable at large timesteps :
-                        if (vd.inAtmosphere)
-                            sunInfo.atmoFactor = Sim.AtmosphereFactorAnalytic(v.mainBody, vesselPosition, sunInfo.direction);
-                        else
-                            sunInfo.atmoFactor = 1.0;
-                    }
-                    else
-                    {
-                        // determine if in sunlight, calculate sun direction and distance
-                        sunInfo.sunlightFactor = Sim.IsBodyVisible(v, vesselPosition, sunData.body, vd.visibleBodies, out sunInfo.direction, out sunInfo.distance) ? 1.0 : 0.0;
-                        // get atmospheric absorbtion
-                        sunInfo.atmoFactor = Sim.AtmosphereFactor(v.mainBody, vesselPosition, sunInfo.direction);
-                    }
-
-                    // get resulting solar flux in W/m²
-                    sunInfo.rawSolarFlux = sunInfo.sunData.SolarFlux(sunInfo.distance);
-                    sunInfo.solarFlux = sunInfo.rawSolarFlux * sunInfo.sunlightFactor * sunInfo.atmoFactor;
-                    // increment total flux from all stars
-                    vd.rawSolarFluxTotal += sunInfo.rawSolarFlux;
-                    vd.solarFluxTotal += sunInfo.solarFlux;
-                    // add the star to the list
-                    vd.sunsInfo.Add(sunInfo);
-                    // the most powerful star will be our "default" sun. Uses raw flux before atmo / sunlight factor
-                    if (sunInfo.rawSolarFlux > lastSolarFlux)
-                    {
-                        lastSolarFlux = sunInfo.rawSolarFlux;
-                        vd.mainSun = sunInfo;
-                    }
-                }
-
-                vd.sunlightFactor = 0.0;
-                foreach (SunInfo sunInfo in vd.sunsInfo)
-                {
-                    sunInfo.fluxProportion = sunInfo.rawSolarFlux / vd.rawSolarFluxTotal;
-                    vd.sunlightFactor += sunInfo.SunlightFactor * sunInfo.fluxProportion;
-                }
-                // avoid rounding errors
-                if (vd.sunlightFactor > 0.99) vd.sunlightFactor = 1.0;
-            }
-        }
 		#endregion
 
-		#region evaluated vessel state information properties
+		#region FIELDS/PROPERTIES : EVALUATED VESSEL STATE
 
 		/// <summary>number of crew on the vessel</summary>
 		public override int CrewCount => crewCount; int crewCount;
 
         /// <summary>crew capacity of the vessel</summary>
         public override int CrewCapacity => crewCapacity; int crewCapacity;
-
-        /// <summary>true if at least a component has malfunctioned or had a critical failure</summary>
-        public bool Malfunction => malfunction; bool malfunction;
-
-        /// <summary>true if at least a component had a critical failure</summary>
-        public bool Critical => critical; bool critical;
 
         /// <summary>connection info</summary>
         public ConnectionInfo Connection => connection; ConnectionInfo connection;
@@ -370,7 +273,13 @@ namespace KERBALISM
         private List<double> solarPanelsExposure = new List<double>(); // values are added by SolarPanelFixer, then cleared by VesselData once solarPanelsAverageExposure has been computed
         public void SaveSolarPanelExposure(double exposure) => solarPanelsExposure.Add(exposure); // meant to be called by SolarPanelFixer
 
-        private List<ReliabilityInfo> reliabilityStatus;
+		/// <summary>true if at least a component has malfunctioned or had a critical failure</summary>
+		public bool Malfunction => malfunction; bool malfunction;
+
+		/// <summary>true if at least a component had a critical failure</summary>
+		public bool Critical => critical; bool critical;
+
+		private List<ReliabilityInfo> reliabilityStatus;
         public List<ReliabilityInfo> ReliabilityStatus()
         {
             if (reliabilityStatus != null) return reliabilityStatus;
@@ -385,263 +294,11 @@ namespace KERBALISM
 
         #endregion
 
-        #region core update handling
-
-        /// <summary> Garanteed to be called for every VesselData in DB before any other method (Update/Evaluate) is called </summary>
-        public void EarlyUpdate()
-        {
-            ExistsInFlight = false;
-        }
-
-        /// <summary> Called every FixedUpdate for all existing flightglobal vessels </summary>
-        public void Update(Vessel v)
-        {
-            bool isInit = Vessel == null; // debug
-
-            Vessel = v;
-            ExistsInFlight = true;
-
-            if (!CheckIfSimulated(out bool rescueJustLoaded))
-            {
-                IsSimulated = false;
-            }
-            else
-            {
-                // if vessel wasn't simulated previously : update everything immediately.
-                if (!IsSimulated)
-                {
-                    Lib.LogDebug($"{Vessel.vesselName} is now simulated");
-                    IsSimulated = true;
-                    Evaluate(true, Lib.RandomDouble());
-                }
-            }
-
-            if (rescueJustLoaded)
-            {
-                Lib.LogDebug($"Rescue vessel {Vessel.vesselName} discovered, granting resources and enabling processing");
-                OnRescueVesselLoaded(Vessel);
-            }
-
-            if (isInit)
-            {
-                Lib.LogDebug("Init complete : IsSimulated={3}, is_vessel={0}, is_rescue={1}, is_eva_dead={2} ({4})", Lib.LogLevel.Message, is_vessel, is_rescue, is_eva_dead, IsSimulated, Vessel.vesselName);
-            }
-        }
-
-        private bool CheckIfSimulated(out bool rescueJustLoaded)
-        {
-            // determine if this is a valid vessel
-            is_vessel = Lib.IsVessel(Vessel);
-
-            // determine if this is a rescue mission vessel
-            is_rescue = CheckRescueStatus(Vessel, out rescueJustLoaded);
-
-            // dead EVA are not valid vessels
-            is_eva_dead = EVA.IsDead(Vessel);
-
-            return is_vessel && !is_rescue && !is_eva_dead;
-        }
-
-        /// <summary>
-        /// Evaluate Status and Conditions. Called from Kerbalism.FixedUpdate :
-        /// <para/> - for loaded vessels : every gametime second 
-        /// <para/> - for unloaded vessels : at the beginning of every background update
-        /// </summary>
-        public void Evaluate(bool forced, double elapsedSeconds)
-        {
-            if (!IsSimulated) return;
-
-            secSinceLastEval += elapsedSeconds;
-
-            // don't update more than every second of game time
-            if (!forced && secSinceLastEval < 1.0)
-                return;
-
-            EvaluateEnvironment(secSinceLastEval);
-            EvaluateStatus();
-            secSinceLastEval = 0.0;
-            Evaluated = true;
-        }
-
-        #endregion
-
-        #region rescue vessel handling
-        /// <summary> update the rescue state of kerbals when a vessel is loaded, return true if the vessek</summary>
-        public static bool CheckRescueStatus(Vessel v, out bool rescueJustLoaded)
-        {
-            bool isRescue = false;
-            rescueJustLoaded = false;
-
-            // deal with rescue missions
-            foreach (ProtoCrewMember c in Lib.CrewList(v))
-            {
-                // get kerbal data
-                // note : this whole thing rely on KerbalData.rescue being initialized to true
-                // when DB.Kerbal() (which is a get-or-create) is called for the first time
-                KerbalData kd = DB.Kerbal(c.name);
-
-                // flag the kerbal as not rescue at prelaunch
-                // if the KerbalData wasn't created during prelaunch, that code won't be called
-                // and KerbalData.rescue will stay at the default "true" value
-                if (v.situation == Vessel.Situations.PRELAUNCH)
-                {
-                    kd.rescue = false;
-                }
-
-                if (kd.rescue)
-                {
-                    if (!v.loaded)
-                    {
-                        isRescue |= true;
-                    }
-                    // we de-flag a rescue kerbal when the rescue vessel is first loaded
-                    else
-                    {
-                        rescueJustLoaded |= true;
-                        isRescue &= false;
-
-                        // flag the kerbal as non-rescue
-                        // note: enable life support mechanics for the kerbal
-                        kd.rescue = false;
-
-                        // show a message
-                        Message.Post(Lib.BuildString(Local.Rescuemission_msg1, " <b>", c.name, "</b>"), Lib.BuildString((c.gender == ProtoCrewMember.Gender.Male ? Local.Kerbal_Male : Local.Kerbal_Female), Local.Rescuemission_msg2));//We found xx  "He"/"She"'s still alive!"
-                    }
-                }
-            }
-            return isRescue;
-        }
-
-        /// <summary> Gift resources to a rescue vessel, to be called when a rescue vessel is first being loaded</summary>
-        public static void OnRescueVesselLoaded(Vessel v)
-        {
-            VesselData vd = v.KerbalismData();
-
-            // give the vessel some propellant usable on eva
-            string monoprop_name = Lib.EvaPropellantName();
-            double monoprop_amount = Lib.EvaPropellantCapacity();
-            foreach (var part in v.parts)
-            {
-                if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
-                {
-                    if (Lib.Capacity(part, monoprop_name) <= double.Epsilon)
-                    {
-                        Lib.AddResource(part, monoprop_name, 0.0, monoprop_amount);
-                    }
-                    break;
-                }
-            }
-            vd.ResHandler.Produce(monoprop_name, monoprop_amount, ResourceBroker.Generic);
-
-            // give the vessel some supplies
-            Profile.SetupRescue(vd);
-        }
-        #endregion
-
-        #region events handling
-
-        public void UpdateOnPartAddedOrRemoved()
-        {
-            if (!IsSimulated)
-                return;
-
-            resourceUpdateDelegates = null;
-            ResetReliabilityStatus();
-            CommHandler.ResetPartTransmitters();
-            EvaluateStatus();
-
-            Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
-        }
-
-        /// <summary> Called by GameEvents.onVesselsUndocking, just after 2 vessels have undocked </summary>
-		
-        internal static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
-        {
-            Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", Lib.LogLevel.Message, newVessel.vesselName, oldVessel.vesselName);
-
-            VesselData oldVD = oldVessel.KerbalismData();
-
-
-			VesselData newVD = newVessel.KerbalismData();
-
-			// TODO : This probably not work and seems to cause bad issues. When a RUD happens, it's likely this is called
-			// multiple times consecutively for the same new vessel. We need to have a TryGet on DB.vessels to check if the vessel already exists
-			// or not.
-			// And anyway this will likely cause the issue that instantiating a new vesseldata trough the extension method will instantiate new
-			// moduledatas, reaffecting new flightids in the process.
-			newVD.Parts.Clear(false);
-
-            foreach (Part part in newVessel.Parts)
-            {
-                PartData pd;
-				// for all parts in the new vessel, move the corresponding partdata from the old vessel to the new vessel
-                if (oldVD.Parts.TryGet(part.flightID, out pd))
-                {
-                    newVD.Parts.Add(pd);
-                    oldVD.Parts.Remove(pd);
-                }
-            }
-
-            newVD.UpdateOnPartAddedOrRemoved();
-            oldVD.UpdateOnPartAddedOrRemoved();
-
-            Lib.LogDebug("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, newVessel.vesselName, newVD.Parts.Count, newVessel.parts.Count);
-            Lib.LogDebug("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, oldVessel.vesselName, oldVD.Parts.Count, oldVessel.parts.Count);
-        }
-
-        // This handle docking and other means of attaching a new part to the vessel (KIS...)
-        internal static void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
-        {
-            Lib.LogDebug("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", Lib.LogLevel.Message, data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
-
-            Vessel fromVessel = data.from.vessel;
-            Vessel toVessel = data.to.vessel;
-
-            VesselData fromVD = fromVessel.KerbalismData();
-            VesselData toVD = toVessel.KerbalismData();
-
-            // GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
-            // In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
-            // so we just add the part.
-            if (fromVD == toVD)
-            {
-                if (!toVD.Parts.Contains(data.from.flightID))
-                {
-                    toVD.Parts.Add(data.from);
-                    Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", Lib.LogLevel.Message, data.from.partInfo.title, data.to.vessel.vesselName);
-                }
-                return;
-            }
-
-			// transfer all partdata of the docking vessel to the docked to vessel
-			toVD.Parts.TransferFrom(fromVD.Parts);
-
-            // reset a few things on the docked to vessel
-            toVD.scansat_id.Clear();
-            toVD.UpdateOnPartAddedOrRemoved();
-
-            Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.Parts.Count, toVessel.parts.Count);
-            Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.Parts.Count, fromVessel.parts.Count);
-        }
-
-        internal static void OnPartWillDie(Part part)
-        {
-			// TODO : this likely cause an issue when, following a RUD, a part that was detached from the main vessel
-			// by creating the vesseldata for a vessel that will cease to exist immediatly
-            VesselData vd = part.vessel.KerbalismData();
-            vd.Parts[part.flightID].PartWillDie();
-            vd.Parts.Remove(part.flightID);
-            vd.UpdateOnPartAddedOrRemoved();
-            Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", Lib.LogLevel.Message, vd.Parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
-        }
-
-        #endregion
-
-        #region ctor / init / persistence
+		#region INSTANTIATION AND PERSISTANCE
 
 		public VesselData(Vessel vessel, ConfigNode kerbalismDataNode, PartDataCollectionShip shipPartDatas)
 		{
-			ExistsInFlight = true;  // vessel exists
+			existsInFlight = true;  // vessel exists
 			IsSimulated = false;    // will be evaluated in next fixedupdate
 
 			Vessel = vessel;
@@ -656,173 +313,265 @@ namespace KERBALISM
 			SetInstantiateDefaults(vessel.protoVessel);
 		}
 
-        /// <summary> This ctor is to be used for newly created vessels, either from ship construction or for  </summary>
-        public VesselData(Vessel vessel)
-        {
+		/// <summary> This ctor is to be used for newly created vessels, either from ship construction or for  </summary>
+		public VesselData(Vessel vessel, List<PartData> partDatas = null)
+		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
 
-            ExistsInFlight = true;  // vessel exists
-            IsSimulated = false;    // will be evaluated in next fixedupdate
+			existsInFlight = true;  // vessel exists
+			IsSimulated = false;    // will be evaluated in next fixedupdate
 
-            Vessel = vessel;
-            VesselId = Vessel.id;
+			Vessel = vessel;
+			VesselId = Vessel.id;
 
-            if (Vessel.loaded)
-            {
-				Parts = new PartDataCollectionVessel(this, Vessel);
+			if (Vessel.loaded)
+			{
+				if (partDatas == null)
+					Parts = new PartDataCollectionVessel(this, Vessel);
+				else
+					Parts = new PartDataCollectionVessel(this, partDatas);
+
 				resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
-            }
-            else
-            {
+			}
+			else
+			{
 				// vessels can be created unloaded, asteroids for example
-				Parts = new PartDataCollectionVessel(this, Vessel.protoVessel, null);
+				if (partDatas == null)
+					Parts = new PartDataCollectionVessel(this, Vessel.protoVessel, null);
+				else
+					Parts = new PartDataCollectionVessel(this, partDatas);
+
 				resHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
-            }
+			}
 
 			SetPersistedFieldsDefaults(vessel.protoVessel);
 			SetInstantiateDefaults(vessel.protoVessel);
 
-            Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + Parts.Count);
-            UnityEngine.Profiling.Profiler.EndSample();
-        }
+			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + Parts.Count);
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
 
-        /// <summary>
-        /// This ctor is meant to be used in OnLoad only, but can be used as a fallback
-        /// with a null ConfigNode to create VesselData from a protovessel. 
-        /// The Vessel reference will be acquired in the first fixedupdate
-        /// </summary>
-        public VesselData(ProtoVessel protoVessel, ConfigNode topnode)
+		/// <summary>
+		/// This ctor is meant to be used in OnLoad only, but can be used as a fallback
+		/// with a null ConfigNode to create VesselData from a protovessel. 
+		/// The Vessel reference will be acquired in the first fixedupdate
+		/// </summary>
+		public VesselData(ProtoVessel protoVessel, ConfigNode topnode)
 		{
 			ConfigNode vesselDataNode = topnode?.GetNode(NODENAME_VESSEL);
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
-            ExistsInFlight = false;
-            IsSimulated = false;
+			existsInFlight = false;
+			IsSimulated = false;
 
-            VesselId = protoVessel.vesselID;
+			VesselId = protoVessel.vesselID;
 
 			if (vesselDataNode == null)
-            {
+			{
 				Parts = new PartDataCollectionVessel(this, protoVessel, null);
 				resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
 				SetPersistedFieldsDefaults(protoVessel);
-                Lib.LogDebug("VesselData ctor (created from unsaved protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
-            }
-            else
-            {
-                Lib.LogDebug("VesselData ctor (loading from database) : id '" + VesselId + "' (" + protoVessel.vesselName + ")...");
+				Lib.LogDebug("VesselData ctor (created from unsaved protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
+			}
+			else
+			{
+				Lib.LogDebug("VesselData ctor (loading from database) : id '" + VesselId + "' (" + protoVessel.vesselName + ")...");
 				Parts = new PartDataCollectionVessel(this, protoVessel, vesselDataNode);
 				resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
 				Load(vesselDataNode, false);
-                Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
-            }
+				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
+			}
 
-            SetInstantiateDefaults(protoVessel);
+			SetInstantiateDefaults(protoVessel);
 
-            UnityEngine.Profiling.Profiler.EndSample();
-        }
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
 
-        private void SetPersistedFieldsDefaults(ProtoVessel pv)
-        {
-            msg_signal = false;
-            msg_belt = false;
-            cfg_ec = PreferencesMessages.Instance.ec;
-            cfg_supply = PreferencesMessages.Instance.supply;
-            cfg_signal = PreferencesMessages.Instance.signal;
-            cfg_malfunction = PreferencesMessages.Instance.malfunction;
-            cfg_storm = Features.Radiation && PreferencesMessages.Instance.storm && Lib.CrewCount(pv) > 0;
-            cfg_script = PreferencesMessages.Instance.script;
-            cfg_highlights = PreferencesReliability.Instance.highlights;
-            cfg_showlink = true;
-            cfg_show = true;
-            deviceTransmit = true;
-            // note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
-            isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
-            stormData = new StormData(null);
-            computer = new Computer(null);
-            scansat_id = new List<uint>();
-        }
+		private void SetPersistedFieldsDefaults(ProtoVessel pv)
+		{
+			msg_signal = false;
+			msg_belt = false;
+			cfg_ec = PreferencesMessages.Instance.ec;
+			cfg_supply = PreferencesMessages.Instance.supply;
+			cfg_signal = PreferencesMessages.Instance.signal;
+			cfg_malfunction = PreferencesMessages.Instance.malfunction;
+			cfg_storm = Features.Radiation && PreferencesMessages.Instance.storm && Lib.CrewCount(pv) > 0;
+			cfg_script = PreferencesMessages.Instance.script;
+			cfg_highlights = PreferencesReliability.Instance.highlights;
+			cfg_showlink = true;
+			cfg_show = true;
+			deviceTransmit = true;
+			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
+			isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
+			stormData = new StormData(null);
+			computer = new Computer(null);
+			scansat_id = new List<uint>();
+		}
 
-        private void SetInstantiateDefaults(ProtoVessel protoVessel)
-        {
-            filesTransmitted = new List<File>();
-            vesselSituations = new VesselSituations(this);
-            connection = new ConnectionInfo();
-            CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
+		private void SetInstantiateDefaults(ProtoVessel protoVessel)
+		{
+			filesTransmitted = new List<File>();
+			vesselSituations = new VesselSituations(this);
+			connection = new ConnectionInfo();
+			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 			supplies = Supply.CreateStateDictionary(resHandler);
 		}
 
 		protected override void OnLoad(ConfigNode node)
-        {
-            msg_signal = Lib.ConfigValue(node, "msg_signal", false);
-            msg_belt = Lib.ConfigValue(node, "msg_belt", false);
-            cfg_ec = Lib.ConfigValue(node, "cfg_ec", PreferencesMessages.Instance.ec);
-            cfg_supply = Lib.ConfigValue(node, "cfg_supply", PreferencesMessages.Instance.supply);
-            cfg_signal = Lib.ConfigValue(node, "cfg_signal", PreferencesMessages.Instance.signal);
-            cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
-            cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
-            cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
-            cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
-            cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
-            cfg_show = Lib.ConfigValue(node, "cfg_show", true);
+		{
+			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
+			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
+			cfg_ec = Lib.ConfigValue(node, "cfg_ec", PreferencesMessages.Instance.ec);
+			cfg_supply = Lib.ConfigValue(node, "cfg_supply", PreferencesMessages.Instance.supply);
+			cfg_signal = Lib.ConfigValue(node, "cfg_signal", PreferencesMessages.Instance.signal);
+			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
+			cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
+			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
+			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
+			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
+			cfg_show = Lib.ConfigValue(node, "cfg_show", true);
 
-            deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
+			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
-            isSerenityGroundController = Lib.ConfigValue(node, "isSerenityGroundController", false);
+			isSerenityGroundController = Lib.ConfigValue(node, "isSerenityGroundController", false);
 
-            solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
-            scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
+			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
+			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
-            stormData = new StormData(node.GetNode("StormData"));
-            computer = new Computer(node.GetNode("computer"));
+			stormData = new StormData(node.GetNode("StormData"));
+			computer = new Computer(node.GetNode("computer"));
 
-            scansat_id = new List<uint>();
-            foreach (string s in node.GetValues("scansat_id"))
-            {
-                scansat_id.Add(Lib.Parse.ToUInt(s));
-            }
-        }
+			scansat_id = new List<uint>();
+			foreach (string s in node.GetValues("scansat_id"))
+			{
+				scansat_id.Add(Lib.Parse.ToUInt(s));
+			}
+		}
 
 		protected override void OnSave(ConfigNode node)
-        {
-            node.AddValue("msg_signal", msg_signal);
-            node.AddValue("msg_belt", msg_belt);
-            node.AddValue("cfg_ec", cfg_ec);
-            node.AddValue("cfg_supply", cfg_supply);
-            node.AddValue("cfg_signal", cfg_signal);
-            node.AddValue("cfg_malfunction", cfg_malfunction);
-            node.AddValue("cfg_storm", cfg_storm);
-            node.AddValue("cfg_script", cfg_script);
-            node.AddValue("cfg_highlights", cfg_highlights);
-            node.AddValue("cfg_showlink", cfg_showlink);
-            node.AddValue("cfg_show", cfg_show);
+		{
+			node.AddValue("msg_signal", msg_signal);
+			node.AddValue("msg_belt", msg_belt);
+			node.AddValue("cfg_ec", cfg_ec);
+			node.AddValue("cfg_supply", cfg_supply);
+			node.AddValue("cfg_signal", cfg_signal);
+			node.AddValue("cfg_malfunction", cfg_malfunction);
+			node.AddValue("cfg_storm", cfg_storm);
+			node.AddValue("cfg_script", cfg_script);
+			node.AddValue("cfg_highlights", cfg_highlights);
+			node.AddValue("cfg_showlink", cfg_showlink);
+			node.AddValue("cfg_show", cfg_show);
 
-            node.AddValue("deviceTransmit", deviceTransmit);
+			node.AddValue("deviceTransmit", deviceTransmit);
 
-            node.AddValue("isSerenityGroundController", isSerenityGroundController);
+			node.AddValue("isSerenityGroundController", isSerenityGroundController);
 
-            node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
-            node.AddValue("scienceTransmitted", scienceTransmitted);
+			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
+			node.AddValue("scienceTransmitted", scienceTransmitted);
 
-            stormData.Save(node.AddNode("StormData"));
-            computer.Save(node.AddNode("computer"));
+			stormData.Save(node.AddNode("StormData"));
+			computer.Save(node.AddNode("computer"));
 
-            foreach (uint id in scansat_id)
-            {
-                node.AddValue("scansat_id", id.ToString());
-            }
+			foreach (uint id in scansat_id)
+			{
+				node.AddValue("scansat_id", id.ToString());
+			}
 
-            if (Vessel != null)
-                Lib.LogDebug("VesselData saved for vessel " + Vessel.vesselName);
-            else
-                Lib.LogDebug("VesselData saved for vessel (Vessel is null)");
+			if (Vessel != null)
+				Lib.LogDebug("VesselData saved for vessel " + Vessel.vesselName);
+			else
+				Lib.LogDebug("VesselData saved for vessel (Vessel is null)");
 
-        }
+		}
 
-        #endregion
+		#endregion
 
-        #region vessel state evaluation
-        private void EvaluateStatus()
+		#region UPDATE
+
+		/// <summary> Garanteed to be called for every VesselData in DB before any other method (Update/Evaluate) is called </summary>
+		public void EarlyUpdate()
+		{
+			existsInFlight = false;
+
+			/// This is just to stop the compiler complaining, I'm still not sure about suppressing existsInFlight
+			if (existsInFlight)
+				existsInFlight = true;
+		}
+
+		/// <summary> Must be called every FixedUpdate for all existing flightglobal vessels </summary>
+		public void OnFixedUpdate(Vessel v)
+		{
+			bool isInit = Vessel == null; // debug
+
+			Vessel = v;
+			existsInFlight = true;
+
+			if (!CheckIfSimulated(out bool rescueJustLoaded))
+			{
+				IsSimulated = false;
+			}
+			else
+			{
+				// if vessel wasn't simulated previously : update everything immediately.
+				if (!IsSimulated)
+				{
+					secSinceLastEval = 0.0;
+					Evaluate(true, Kerbalism.elapsed_s);
+					// set the flag after evaluation, allow to know if this is the first evaluation from Evaluate()
+					IsSimulated = true; 
+					Lib.LogDebug($"{Vessel.vesselName} is now simulated");
+				}
+			}
+
+			if (rescueJustLoaded)
+			{
+				Lib.LogDebug($"Rescue vessel {Vessel.vesselName} discovered, granting resources and enabling processing");
+				OnRescueVesselLoaded();
+			}
+
+			if (isInit)
+			{
+				Lib.LogDebug("Init complete : IsSimulated={3}, is_vessel={0}, is_rescue={1}, is_eva_dead={2} ({4})", Lib.LogLevel.Message, isVessel, isRescue, isEvaDead, IsSimulated, Vessel.vesselName);
+			}
+		}
+
+		private bool CheckIfSimulated(out bool rescueJustLoaded)
+		{
+			// determine if this is a valid vessel
+			isVessel = Lib.IsVessel(Vessel);
+
+			// determine if this is a rescue mission vessel
+			isRescue = CheckRescueStatus(Vessel, out rescueJustLoaded);
+
+			// dead EVA are not valid vessels
+			isEvaDead = EVA.IsDead(Vessel);
+
+			return isVessel && !isRescue && !isEvaDead;
+		}
+
+		#endregion
+
+		#region EVALUATION
+
+		/// <summary>
+		/// Evaluate status and environment. Called from Kerbalism.FixedUpdate :
+		/// <para/> - for loaded vessels : every gametime second 
+		/// <para/> - for unloaded vessels : at the beginning of every background update
+		/// </summary>
+		public void Evaluate(bool forced, double elapsedSeconds)
+		{
+			secSinceLastEval += elapsedSeconds;
+
+			// don't update more than every second of game time
+			if (!forced && secSinceLastEval < 1.0)
+				return;
+
+			EvaluateEnvironment(secSinceLastEval);
+			EvaluateStatus();
+			secSinceLastEval = 0.0;
+		}
+
+		private void EvaluateStatus()
         {
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EvaluateStatus");
             // determine if there is enough EC for a powered state
@@ -839,7 +588,7 @@ namespace KERBALISM
             // communications info
             CommHandler.UpdateConnection(connection);
 
-            // check ModuleCommand hibernation and
+            // check ModuleCommand hibernation
             if (isSerenityGroundController)
                 hasNonHibernatingCommandModules = true;
 
@@ -871,9 +620,7 @@ namespace KERBALISM
             }
             UnityEngine.Profiling.Profiler.EndSample();
         }
-        #endregion
 
-        #region environment evaluation
         private void EvaluateEnvironment(double elapsedSeconds)
         {
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EvaluateEnvironment");
@@ -926,7 +673,7 @@ namespace KERBALISM
                 innerBelt = new_innerBelt;
                 outerBelt = new_outerBelt;
                 magnetosphere = new_magnetosphere;
-                if (Evaluated) API.OnRadiationFieldChanged.Notify(Vessel, innerBelt, outerBelt, magnetosphere);
+                if (IsSimulated) API.OnRadiationFieldChanged.Notify(Vessel, innerBelt, outerBelt, magnetosphere);
             }
             UnityEngine.Profiling.Profiler.EndSample();
 
@@ -940,6 +687,131 @@ namespace KERBALISM
             UnityEngine.Profiling.Profiler.EndSample();
         }
 
-        #endregion
-    }
+		#endregion
+
+		#region EVENTS
+
+		private static List<PartData> transferredParts = new List<PartData>();
+
+		/// <summary>
+		/// Called from Callbacks, just after a part has been decoupled (undocking) or detached (usually a joint failure)
+		/// At this point, the new Vessel object has been created by KSP and should be fully initialized.
+		/// </summary>
+		public static void OnDecoupleOrUndock(Vessel oldVessel, Vessel newVessel)
+		{
+			Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", Lib.LogLevel.Message, newVessel.vesselName, oldVessel.vesselName);
+
+			if (!oldVessel.TryGetVesselData(out VesselData oldVD))
+				return;
+
+			if (newVessel.TryGetVesselDataNoError(out VesselData newVD))
+			{
+				Lib.LogDebugStack($"Decoupled/Undocked vessel {newVessel.vesselName} exists already, can't transfer partdatas !", Lib.LogLevel.Error);
+				return;
+			}
+
+			transferredParts.Clear();
+			foreach (Part part in newVessel.Parts)
+			{
+				// for all parts in the new vessel, move the corresponding partdata from the old vessel to the new vessel
+				if (oldVD.Parts.TryGet(part.flightID, out PartData pd))
+				{
+					transferredParts.Add(pd);
+					oldVD.Parts.Remove(pd);
+				}
+			}
+
+			oldVD.OnVesselWasModified();
+
+			newVD = new VesselData(newVessel, transferredParts);
+			transferredParts.Clear();
+
+			DB.AddNewVesselData(newVD);
+
+			Lib.LogDebug("Decoupling complete for new vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, newVessel.vesselName, newVD.Parts.Count, newVessel.parts.Count);
+			Lib.LogDebug("Decoupling complete for old vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, oldVessel.vesselName, oldVD.Parts.Count, oldVessel.parts.Count);
+		}
+
+		/// <summary>
+		/// Called from Callbacks, just after a part has been coupled (docking, KIS attached part...)
+		/// </summary>
+		public static void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
+		{
+			Lib.LogDebug("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", Lib.LogLevel.Message, data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
+
+			Vessel fromVessel = data.from.vessel;
+			Vessel toVessel = data.to.vessel;
+
+			fromVessel.TryGetVesselData(out VesselData fromVD);
+			toVessel.TryGetVesselData(out VesselData toVD);
+
+			// GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
+			// In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
+			// so we just add the part.
+			if (fromVessel == toVessel)
+			{
+				if (!toVD.Parts.Contains(data.from.flightID))
+				{
+					toVD.Parts.Add(data.from);
+					Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", Lib.LogLevel.Message, data.from.partInfo.title, data.to.vessel.vesselName);
+				}
+				return;
+			}
+
+			// transfer all partdata of the docking vessel to the docked to vessel
+			toVD.Parts.TransferFrom(fromVD.Parts);
+
+			// reset a few things on the docked to vessel
+			toVD.scansat_id.Clear();
+			toVD.OnVesselWasModified();
+
+			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.Parts.Count, toVessel.parts.Count);
+			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.Parts.Count, fromVessel.parts.Count);
+		}
+
+		/// <summary>
+		/// Called from Callbacks, just after a part has been coupled (docking, KIS attached part...)
+		/// </summary>
+		public static void OnPartWillDie(Part part)
+		{
+			if (!part.vessel.TryGetVesselData(out VesselData vd))
+				return;
+
+			vd.OnPartWillDie(part.flightID);
+
+			vd.OnVesselWasModified();
+			Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", Lib.LogLevel.Message, vd.Parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
+		}
+
+		private void OnPartWillDie(uint flightId)
+		{
+			Parts[flightId].PartWillDie();
+			Parts.Remove(flightId);
+			OnVesselWasModified();
+		}
+
+		// note : we currently have no way of detecting 100% of cases 
+		// where an unloaded vessel is destroyed,
+		public void OnVesselWillDie()
+		{
+			resourceUpdateDelegates = null;
+			Parts.OnAllPartsWillDie();
+			CommHandler.ResetPartTransmitters();
+		}
+
+		public void OnVesselWasModified()
+		{
+			if (!IsSimulated)
+				return;
+
+			resourceUpdateDelegates = null;
+			CommHandler.ResetPartTransmitters();
+			ResetReliabilityStatus();
+			EvaluateStatus();
+
+			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
+		}
+
+		#endregion
+	}
 } // KERBALISM

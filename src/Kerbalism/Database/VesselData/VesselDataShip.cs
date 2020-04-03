@@ -38,21 +38,31 @@ namespace KERBALISM
 
 		#region BASE PROPERTIES IMPLEMENTATION
 
-		// note : it may be possible (but not trivial) to keep a part list using the GameEvents.onEditorPartEvent,
-		// tracking PartAttached / PartDetached events, but for now this will do.
+		private static List<PartData> shipPartsCache = new List<PartData>();
+		private static double lastFixedUpdateTimeStamp = -1.0;
+		private static int lastLoadedPartsCount = 0;
+		
 		public override IEnumerable<PartData> PartList
 		{
 			get
 			{
-				List<PartData> shipParts = new List<PartData>(LoadedParts.Count);
-				foreach (PartData partData in LoadedParts)
+				// small optimization : don't rebuild shipPartsCache if this is called multiple times in the same
+				// fixedupdate cycle and if total part count hasn't changed.
+				if (Time.fixedTime != lastFixedUpdateTimeStamp || LoadedParts.Count != lastLoadedPartsCount)
 				{
-					if (partData.IsOnShip)
+					shipPartsCache.Clear();
+					lastFixedUpdateTimeStamp = Time.fixedTime;
+					lastLoadedPartsCount = LoadedParts.Count;
+					foreach (PartDataShip partData in LoadedParts)
 					{
-						shipParts.Add(partData);
+						if (partData.IsOnShip)
+						{
+							shipPartsCache.Add(partData);
+						}
 					}
 				}
-				return shipParts;
+
+				return shipPartsCache;
 			}
 		}
 
@@ -160,7 +170,7 @@ namespace KERBALISM
 			AnalyzeCrew(parts);
 			AnalyzeComms();
 			ModuleDataUpdate();
-			AnalyzeRadiation(parts);
+			//AnalyzeRadiation(parts);
 			AnalyzeReliability(parts);
 		}
 
@@ -307,34 +317,34 @@ namespace KERBALISM
 			commHandler.Update(connection, minHomeDistance, maxHomeDistance);
 		}
 
-		private void AnalyzeRadiation(List<Part> parts)
-		{
-			// scan the parts
-			emitted = 0.0;
-			foreach (Part p in parts)
-			{
-				// for each module
-				foreach (PartModule m in p.Modules)
-				{
-					// skip disabled modules
-					if (!m.isEnabled)
-						continue;
+		//private void AnalyzeRadiation(List<Part> parts)
+		//{
+		//	// scan the parts
+		//	emitted = 0.0;
+		//	foreach (Part p in parts)
+		//	{
+		//		// for each module
+		//		foreach (PartModule m in p.Modules)
+		//		{
+		//			// skip disabled modules
+		//			if (!m.isEnabled)
+		//				continue;
 
-					// accumulate emitter radiation
-					if (m.moduleName == "Emitter")
-					{
-						Emitter emitter = m as Emitter;
-						emitter.Recalculate();
+		//			// accumulate emitter radiation
+		//			if (m.moduleName == "Emitter")
+		//			{
+		//				Emitter emitter = m as Emitter;
+		//				emitter.Recalculate();
 
-						if (emitter.running)
-						{
-							if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_impact;
-							else emitted += emitter.radiation;
-						}
-					}
-				}
-			}
-		}
+		//				if (emitter.running)
+		//				{
+		//					if (emitter.radiation > 0) emitted += emitter.radiation * emitter.radiation_impact;
+		//					else emitted += emitter.radiation;
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 
 		private void AnalyzeReliability(List<Part> parts)
 		{

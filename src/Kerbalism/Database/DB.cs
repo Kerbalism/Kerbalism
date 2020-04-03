@@ -12,7 +12,6 @@ namespace KERBALISM
 		private const string NODENAME_VESSELS = "KERBALISMVESSELS";
 		private const string NODENAME_KERBALS = "KERBALISMKERBALS";
 		private const string NODENAME_STORMS = "KERBALISMSTORMS";
-		private const string NODENAME_LANDMARKS = "KERBALISMLANDMARKS";
 		private const string NODENAME_GUI = "KERBALISMGUI";
 		public static readonly Version LAST_SUPPORTED_VERSION = new Version(4, 0);
 
@@ -26,14 +25,11 @@ namespace KERBALISM
 		private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();
 		// store data per-body
 		private static Dictionary<string, StormData> storms;
-		// store landmark data
-		private static LandmarkData landmarks;
 		// store ui data
 		private static UIData uiData;                               
 
 		public static Guid Guid => uid;
 		public static Dictionary<string, KerbalData> Kerbals => kerbals;
-		public static LandmarkData Landmarks => landmarks;
 		public static UIData UiData => uiData;
 		public static Dictionary<Guid, VesselData>.ValueCollection VesselDatas => vessels.Values;
 
@@ -113,16 +109,6 @@ namespace KERBALISM
                 }
             }
 
-            // load landmark data
-            if (node.HasNode(NODENAME_LANDMARKS))
-            {
-                landmarks = new LandmarkData(node.GetNode(NODENAME_LANDMARKS));
-            }
-            else
-            {
-				landmarks = new LandmarkData();
-            }
-
             // load ui data
             if (node.HasNode(NODENAME_GUI))
             {
@@ -167,9 +153,11 @@ namespace KERBALISM
 
                 // TODO we currently save vessel data even for asteroids. save only
 				// vessels with hard drives?
-                VesselData vd = pv.KerbalismData();
-                ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
-                vd.Save(vesselNode);
+                if (pv.TryGetVesselData(out VesselData vd))
+				{
+					ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
+					vd.Save(vesselNode);
+				}
             }
 			UnityEngine.Profiling.Profiler.EndSample();
 
@@ -182,9 +170,6 @@ namespace KERBALISM
             {
                 p.Value.Save(bodies_node.AddNode(ToSafeKey(p.Key)));
             }
-
-            // save landmark data
-            landmarks.Save(node.AddNode(NODENAME_LANDMARKS));
 
 			// save ui data
 			uiData.Save(node.AddNode(NODENAME_GUI));
@@ -208,35 +193,77 @@ namespace KERBALISM
 			return vd;
 		}
 
-		public static VesselData KerbalismData(this Vessel vessel)
+		public static void AddNewVesselData(VesselData vd)
 		{
-			VesselData vd;
-			if (!vessels.TryGetValue(vessel.id, out vd))
+			if (vessels.ContainsKey(vd.VesselId))
 			{
-				Lib.LogDebugStack($"Vessel {vessel.vesselName} was created in flight, creating VesselData");
-				vd = new VesselData(vessel);
-				vessels.Add(vessel.id, vd);
+				Lib.LogDebugStack($"Trying to register new VesselData for {vd.VesselName} but that vessel exists already !", Lib.LogLevel.Error);
+				return;
 			}
-			return vd;
+
+			Lib.LogDebug($"Adding new VesselData for {vd.VesselName}");
+			vessels.Add(vd.VesselId, vd);
 		}
 
-		public static VesselData KerbalismData(this ProtoVessel protoVessel)
+		public static bool TryGetVesselData(this Vessel vessel, out VesselData vesselData)
 		{
-			VesselData vd;
-			if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
+			if (!vessels.TryGetValue(vessel.id, out vesselData))
 			{
-				Lib.Log("VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !", Lib.LogLevel.Warning);
-				vd = new VesselData(protoVessel, null);
-				vessels.Add(protoVessel.vesselID, vd);
+				Lib.LogStack($"Could not get VesselData for vessel {vessel.vesselName}", Lib.LogLevel.Error);
+				return false;
 			}
-			return vd;
+			return true;
 		}
+
+		public static bool TryGetVesselDataNoError(this Vessel vessel, out VesselData vesselData)
+		{
+			if (!vessels.TryGetValue(vessel.id, out vesselData))
+			{
+				Lib.LogDebug($"Could not get VesselData for vessel {vessel.vesselName} (this is normal)");
+				return false;
+			}
+			return true;
+		}
+
+		/// <summary>
+		/// Get the VesselData for this vessel. Will return null if that vessel isn't yet created in the DB, which can happen if this is called too early. <br/>
+		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()
+		/// </summary>
+		public static VesselData GetVesselData(this Vessel vessel)
+		{
+			if (!vessels.TryGetValue(vessel.id, out VesselData vesselData))
+			{
+				Lib.LogStack($"Could not get VesselData for vessel {vessel.vesselName}");
+				return null;
+			}
+			return vesselData;
+		}
+
+		public static bool TryGetVesselData(this ProtoVessel protoVessel, out VesselData vesselData)
+		{
+			if (!vessels.TryGetValue(protoVessel.vesselID, out vesselData))
+			{
+				Lib.LogStack($"Could not get VesselData for vessel {protoVessel.vesselName}", Lib.LogLevel.Error);
+				return false;
+			}
+			return true;
+		}
+		//{
+		//	VesselData vd;
+		//	if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
+		//	{
+		//		Lib.Log("VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !", Lib.LogLevel.Warning);
+		//		vd = new VesselData(protoVessel, null);
+		//		vessels.Add(protoVessel.vesselID, vd);
+		//	}
+		//	return vd;
+		//}
 
 		/// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-		public static bool KerbalismIsValid(this Vessel vessel)
-        {
-            return KerbalismData(vessel).IsSimulated;
-        }
+		//public static bool KerbalismIsValid(this Vessel vessel)
+		//      {
+		//          return TryGetVesselData(vessel).IsSimulated;
+		//      }
 
 		#endregion
 

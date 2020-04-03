@@ -84,8 +84,6 @@ namespace KERBALISM
 
 		public static bool SerenityEnabled { get; private set; }
 
-		private static bool didSanityCheck = false;
-
 		#endregion
 
 		#region initialization & save/load
@@ -96,10 +94,6 @@ namespace KERBALISM
 			// enable global access
 			Fetch = this;
 
-			// You just don't know what you are doing, no ?
-			//Communications.NetworkInitialized = false;
-			//Communications.NetworkInitializing = false;
-
 			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
 		}
 
@@ -108,68 +102,43 @@ namespace KERBALISM
 			Fetch = null;
 		}
 
-		/// <summary> Initialize core game systems </summary>
-		private void CoreGameInit()
-		{
-			try
-			{
-				ModuleData.Init();
-				PartModuleAPI.Init();
-				Sim.Init();         // find suns (Kopernicus support)
-				Radiation.Init();   // create the radiation fields
-				ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
-				Science.Init();     // register the science hijacker
-
-				// static graphic components
-				LineRenderer.Init();
-				ParticleRenderer.Init();
-				Highlighter.Init();
-
-				// UI
-				Textures.Init();                      // set up the icon textures
-				UI.Init();                            // message system, main gui, launcher
-				KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
-
-				// part prefabs hacks
-				Profile.SetupPods(); // add supply resources to pods
-				Misc.PartPrefabsTweaks(); // part prefabs tweaks, must be called after ScienceDB.Init()
-
-				// Create KsmGui windows
-				new ScienceArchiveWindow();
-
-				// GameEvents callbacks
-				Callbacks = new Callbacks();
-			}
-			catch (Exception e)
-			{
-				string fatalError = "FATAL ERROR: Kerbalism core init has failed:" + "\n" + e.ToString();
-				Lib.Log(fatalError, Lib.LogLevel.Error);
-				LoadFailedPopup(fatalError);
-			}
-		}
-
 		public override void OnLoad(ConfigNode node)
 		{
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
 			if (!IsCoreGameInitDone)
 			{
-				if (GameDatabase.Instance.GetConfigs("Kerbalism").Length < 1)
+				try
 				{
-					string msg = "ERROR: No kerbalism configuration found.\n\nYou probably forgot to install KerbalismConfig.\n\n";
-					msg += "This is a fatal error and KSP must be closed.";
-					Lib.Popup("Kerbalism fatal error", msg, 600f);
-				}
-				else if (GameDatabase.Instance.GetConfigs("Profile").Length < 1)
-				{
-					string msg = "ERROR: No kerbalism profile found.\n\nYou probably forgot to install KerbalismConfig.\n\n";
-					msg += "This is a fatal error and KSP must be closed.";
-					Lib.Popup("Kerbalism fatal error", msg, 600f);
-				}
-				else
-				{
-					CoreGameInit();
-				}
+					ModuleData.Init(Assembly.GetExecutingAssembly());
+					PartModuleAPI.Init();
+					Sim.Init();         // find suns (Kopernicus support)
+					Radiation.Init();   // create the radiation fields
+					ScienceDB.Init();   // build the science database (needs Sim.Init() and Radiation.Init() first)
+					Science.Init();     // register the science hijacker
 
+					// static graphic components
+					LineRenderer.Init();
+					ParticleRenderer.Init();
+					Highlighter.Init();
+
+					// UI
+					Textures.Init();                      // set up the icon textures
+					UI.Init();                            // message system, main gui, launcher
+					KsmGui.KsmGuiMasterController.Init(); // setup the new gui framework
+
+					// part prefabs post-comilation hacks. Require ScienceDB.Init() to have run first 
+					PartPrefabsPostLoadCompilation.Compile();
+
+					// Create KsmGui windows
+					new ScienceArchiveWindow();
+
+					// GameEvents callbacks
+					Callbacks = new Callbacks();
+				}
+				catch (Exception e)
+				{
+					ErrorManager.AddError(true, "CORE INITIALIZATION FAILED", e.ToString());
+				}
 				IsCoreGameInitDone = true;
 			}
 
@@ -178,6 +147,7 @@ namespace KERBALISM
 			{
 				try
 				{
+					Message.Clear();
 					Cache.Init();
 
 					// prepare storm data
@@ -191,14 +161,10 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					string fatalError = "FATAL ERROR : Kerbalism save game init has failed :" + "\n" + e.ToString();
-					Lib.Log(fatalError, Lib.LogLevel.Error);
-					LoadFailedPopup(fatalError);
+					ErrorManager.AddError(true, "SAVEGAME LOAD FAILED", e.ToString());
 				}
 
 				IsSaveGameInitDone = true;
-
-				Message.Clear();
 			}
 
 			// eveything else will be called on every OnLoad() call :
@@ -221,21 +187,19 @@ namespace KERBALISM
 			}
 			catch (Exception e)
 			{
-				string fatalError = "FATAL ERROR: Kerbalism save game load has failed:\n" + e.ToString();
-				Lib.Log(fatalError, Lib.LogLevel.Error);
-				LoadFailedPopup(fatalError);
+				ErrorManager.AddError(true, "SAVEGAME LOAD FAILED", e.ToString());
+				ErrorManager.CheckErrors(true);
 				return;
 			}
 
-			if(DB.version < DB.LAST_SUPPORTED_VERSION)
+			if (DB.version != null && DB.version < DB.LAST_SUPPORTED_VERSION)
 			{
-				string fatalError = "OLD SAVE GAME: This is an old save game with Kerbalism " + DB.version;
-				fatalError += "\n\nCannot load save games from Kerbalism versions before " + DB.LAST_SUPPORTED_VERSION;
-				fatalError += "\n\nPlease use an older Kerbalism version or start a new game.";
-				Lib.Log(fatalError, Lib.LogLevel.Error);
-				FatalPopup(fatalError);
-				return;
+				string error = "Cannot load save games from Kerbalism versions before " + DB.LAST_SUPPORTED_VERSION;
+				error += "\n\nQuit the game using this popup to avoid corrupting your save and downgrade your Kerbalism version, or start a new game.";
+				ErrorManager.AddError(true, "OLD SAVE GAME: this save is from Kerbalism " + DB.version, error);
 			}
+
+			ErrorManager.CheckErrors(true);
 
 			// detect if this is a different savegame
 			if (DB.Guid != savegameGuid)
@@ -261,37 +225,6 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save");
 			DB.Save(node);
 			UnityEngine.Profiling.Profiler.EndSample();
-		}
-
-		private void LoadFailedPopup(string error)
-		{
-			string popupMsg = "Kerbalism has encountered an unrecoverable error and KSP must be closed\n\n";
-			popupMsg += "Report it at <b>kerbalism.github.io</b>, in the <b>kerbalism discord</b> or at the KSP forums thread\n\n";
-			popupMsg += "Please provide a screenshot of this message, and your ksp.log file found in your KSP install folder\n\n";
-			popupMsg += error;
-
-			Lib.Popup("Kerbalism fatal error", popupMsg, 600f);
-		}
-
-		private void FatalPopup(string error)
-		{
-			PopupDialog.SpawnPopupDialog(new Vector2(0.5f, 0.5f),
-				new Vector2(0.5f, 0.5f),
-				new MultiOptionDialog(
-					"Kerbalism Fatal Error",
-					$"Kerbalism has encountered a fatal error and will close KSP to protect your save game.\n\n{error}",
-					"Kerbalism - Fatal Error",
-					HighLogic.UISkin,
-					new Rect(0.5f, 0.5f, 500f, 60f),
-					new DialogGUIFlexibleSpace(),
-					new DialogGUIHorizontalLayout(
-						new DialogGUIFlexibleSpace(),
-						new DialogGUIButton("Quit", Application.Quit, 140.0f, 30.0f, true),
-						new DialogGUIFlexibleSpace()
-					)
-				),
-				true,
-				HighLogic.UISkin);
 		}
 
 		#endregion
@@ -337,10 +270,15 @@ namespace KERBALISM
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel data
-				VesselData vd = v.KerbalismData();
+				if (!v.TryGetVesselDataNoError(out VesselData vd))
+				{
+					Lib.LogDebug($"Creating VesselData for new vessel {v.vesselName}");
+					vd = new VesselData(v);
+					DB.AddNewVesselData(vd);
+				}
 
 				// update the vessel data validity
-				vd.Update(v);
+				vd.OnFixedUpdate(v);
 
 				// set locks for active vessel
 				if (v.isActiveVessel)
@@ -504,15 +442,6 @@ namespace KERBALISM
 
 		void Update()
 		{
-			if (!didSanityCheck)
-				SanityCheck();
-
-			//if (!Communications.NetworkInitializing)
-			//{
-			//	Communications.NetworkInitializing = true;
-			//	StartCoroutine(Callbacks.NetworkInitialized());
-			//}
-
 			// attach map renderer to planetarium camera once
 			if (MapView.MapIsEnabled && map_camera_script == null)
 				map_camera_script = PlanetariumCamera.Camera.gameObject.AddComponent<MapCameraScript>();
@@ -538,95 +467,6 @@ namespace KERBALISM
 		}
 
 		#endregion
-
-		private void SanityCheck()
-		{
-			// fix PostScreenMessage() not being available for a few updates after scene load since KSP 1.8
-			if (ScreenMessages.PostScreenMessage("") == null)
-			{
-				didSanityCheck = false;
-				return;
-			}
-			else
-			{
-				didSanityCheck = true;
-			}
-
-			if (!Settings.loaded)
-			{
-				DisplayWarning("<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).");
-				enabled = false;
-				return;
-			}
-
-			List<string> incompatibleMods = Settings.IncompatibleMods();
-			List<string> warningMods = Settings.WarningMods();
-			List<string> requiredMods = Settings.RequiredMods();
-
-			List<string> incompatibleModsFound = new List<string>();
-			List<string> warningModsFound = new List<string>();
-
-			foreach (var a in AssemblyLoader.loadedAssemblies)
-			{
-				if (incompatibleMods.Contains(a.name.ToLower())) incompatibleModsFound.Add(a.name);
-				if (warningMods.Contains(a.name.ToLower())) warningModsFound.Add(a.name);
-				requiredMods.Remove(a.name);
-			}
-
-			string msg = string.Empty;
-
-			var configNodes = GameDatabase.Instance.GetConfigs("Kerbalism");
-			if (configNodes.Length > 1)
-			{
-				msg += "<color=#FF4500>Multiple configurations detected</color>\nHint: delete KerbalismConfig if you are using a custom config pack.\n\n";
-			}
-
-			if (Features.LifeSupport && Settings.CheckForCRP)
-			{
-				// check for CRP
-				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water"))
-				{
-					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
-				}
-			}
-
-			if (requiredMods.Count > 0)
-			{
-				msg += "<color=#FF4500>Required Mods not found:</color>\n";
-				foreach (var m in requiredMods) msg += "- " + m + "\n";
-				msg += "Kerbalism will not run properly without it. Please install them.\n\n";
-			}
-
-			if (incompatibleModsFound.Count > 0)
-			{
-				msg += "<color=#FF4500>Mods with known incompatibilities found:</color>\n";
-				foreach (var m in incompatibleModsFound) msg += "- " + m + "\n";
-				msg += "Kerbalism will not run properly with these mods. Please remove them.\n\n";
-			}
-
-			if (warningModsFound.Count > 0)
-			{
-				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
-				foreach (var m in warningModsFound) msg += "- " + m + "\n";
-				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
-			}
-
-			DisplayWarning(msg);
-		}
-
-		private static void DisplayWarning(string msg)
-		{
-			if (string.IsNullOrEmpty(msg)) return;
-
-			msg = "<b>KERBALISM WARNING</b>\n\n" + msg;
-			ScreenMessage sm = new ScreenMessage(msg, 20, ScreenMessageStyle.UPPER_CENTER);
-			sm.color = Color.cyan;
-
-			ScreenMessages.PostScreenMessage(sm);
-			ScreenMessages.PostScreenMessage(msg, true);
-			Lib.Log("Sanity check: " + msg);
-		}
 	}
 
 	public sealed class MapCameraScript : MonoBehaviour
@@ -716,278 +556,6 @@ namespace KERBALISM
 			}
 		}
 
-		public static void PartPrefabsTweaks()
-		{
-			List<string> partSequence = new List<string>();
-
-			partSequence.Add("kerbalism-container-inline-prosemian-full-0625");
-			partSequence.Add("kerbalism-container-inline-prosemian-full-125");
-			partSequence.Add("kerbalism-container-inline-prosemian-full-250");
-			partSequence.Add("kerbalism-container-inline-prosemian-full-375");
-
-			partSequence.Add("kerbalism-container-inline-prosemian-half-125");
-			partSequence.Add("kerbalism-container-inline-prosemian-half-250");
-			partSequence.Add("kerbalism-container-inline-prosemian-half-375");
-
-			partSequence.Add("kerbalism-container-radial-box-prosemian-small");
-			partSequence.Add("kerbalism-container-radial-box-prosemian-normal");
-			partSequence.Add("kerbalism-container-radial-box-prosemian-large");
-
-			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-small");
-			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-medium");
-			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-big");
-			partSequence.Add("kerbalism-container-radial-pressurized-prosemian-huge");
-
-			partSequence.Add("kerbalism-solenoid-short-small");
-			partSequence.Add("kerbalism-solenoid-long-small");
-			partSequence.Add("kerbalism-solenoid-short-large");
-			partSequence.Add("kerbalism-solenoid-long-large");
-
-			partSequence.Add("kerbalism-greenhouse");
-			partSequence.Add("kerbalism-gravityring");
-			partSequence.Add("kerbalism-activeshield");
-			partSequence.Add("kerbalism-chemicalplant");
-
-			partSequence.Add("kerbalism-experiment-beep");
-			partSequence.Add("kerbalism-experiment-ding");
-			partSequence.Add("kerbalism-experiment-tick");
-			partSequence.Add("kerbalism-experiment-wing");
-			partSequence.Add("kerbalism-experiment-curve");
-
-			Dictionary<string, float> iconScales = new Dictionary<string, float>();
-
-			iconScales["kerbalism-container-inline-prosemian-full-0625"] = 0.6f;
-			iconScales["kerbalism-container-radial-pressurized-prosemian-small"] = 0.6f;
-			iconScales["kerbalism-container-radial-box-prosemian-small"] = 0.6f;
-
-			iconScales["kerbalism-container-inline-prosemian-full-125"] = 0.85f;
-			iconScales["kerbalism-container-inline-prosemian-half-125"] = 0.85f;
-			iconScales["kerbalism-container-radial-pressurized-prosemian-medium"] = 0.85f;
-			iconScales["kerbalism-container-radial-box-prosemian-normal"] = 0.85f;
-			iconScales["kerbalism-solenoid-short-small"] = 0.85f;
-			iconScales["kerbalism-solenoid-long-small"] = 0.85f;
-
-			iconScales["kerbalism-container-inline-prosemian-full-250"] = 1.1f;
-			iconScales["kerbalism-container-inline-prosemian-half-250"] = 1.1f;
-			iconScales["kerbalism-container-radial-pressurized-prosemian-big"] = 1.1f;
-			iconScales["kerbalism-container-radial-box-prosemian-large"] = 1.1f;
-
-			iconScales["kerbalism-container-inline-prosemian-full-375"] = 1.33f;
-			iconScales["kerbalism-container-inline-prosemian-half-375"] = 1.33f;
-			iconScales["kerbalism-container-radial-pressurized-prosemian-huge"] = 1.33f;
-			iconScales["kerbalism-solenoid-short-large"] = 1.33f;
-			iconScales["kerbalism-solenoid-long-large"] = 1.33f;
-
-
-			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
-			{
-				// scale part icons of the radial container variants
-				if (iconScales.ContainsKey(ap.name))
-				{
-					float scale = iconScales[ap.name];
-					ap.iconPrefab.transform.GetChild(0).localScale *= scale;
-					ap.iconScale *= scale;
-				}
-
-				// force a non-lexical order in the editor
-				if (partSequence.Contains(ap.name))
-				{
-					int index = partSequence.IndexOf(ap.name);
-					ap.title = Lib.BuildString("<size=1><color=#00000000>" + index.ToString("00") + "</color></size>", ap.title);
-				}
-
-				// recompile some part infos (this is normally done by KSP on loading, after each part prefab is compiled)
-				// This is needed because :
-				// - We can't check interdependent modules when OnLoad() is called, since the other modules may not be loaded yet
-				// - The science DB needs the system/bodies to be instantiated, which is done after the part compilation
-				bool partNeedsInfoRecompile = false;
-
-				foreach (PartModule module in ap.partPrefab.Modules)
-				{
-					// we want to remove the editor part tooltip module infos widgets that are switchable trough the configure module
-					// because the clutter the UI quite a bit. To do so, every module that implements IConfigurable is made to return
-					// an empty string in their GetInfo() if the IConfigurable.ModuleIsConfigured() is ever called on them.
-					if (module is Configure configure)
-					{
-						List<IConfigurable> configurables = configure.GetIConfigurableModules();
-
-						if (configurables.Count > 0)
-							partNeedsInfoRecompile = true;
-
-						foreach (IConfigurable configurable in configurables)
-							configurable.ModuleIsConfigured();
-					}
-					// note that the experiment modules on the prefab gets initialized from the scienceDB init, which also does
-					// a LoadedPartsList loop to get the scienceDB module infos. So this has to be called after the scienceDB init.
-					else if (module is ModuleKsmExperiment)
-					{
-						partNeedsInfoRecompile = true;
-					}
-					// auto balance hard drive capacity
-					else if (module is ModuleKsmDrive hardDrive)
-					{
-						AutoAssignHardDriveCapacity(ap, hardDrive);
-					}
-					// inject process details into ModuleB9PartSwitch/SUBTYPE/descriptionDetail for process switchers
-					else if (module.moduleName == "ModuleB9PartSwitch")
-					{
-						InjectB9DescriptionDetail(ap, module);
-					}
-				}
-
-				// for some reason this crashes on the EVA kerbals parts
-				if (partNeedsInfoRecompile && !ap.name.StartsWith("kerbalEVA"))
-				{
-					ap.moduleInfos.Clear();
-					ap.resourceInfos.Clear();
-					try
-					{
-						Lib.ReflectionCall(PartLoader.Instance, "CompilePartInfo", new Type[] { typeof(AvailablePart), typeof(Part) }, new object[] { ap, ap.partPrefab });
-					}
-					catch (Exception ex)
-					{
-						Lib.Log("Could not patch the moduleInfo for part " + ap.name + " - " + ex.Message + "\n" + ex.StackTrace);
-					}
-				}
-			}
-		}
-
-		public static void InjectB9DescriptionDetail(AvailablePart ap, PartModule module)
-		{
-			var subtypes = Lib.ReflectionValue<IList>(module, "subtypes");
-			if (subtypes == null || subtypes.Count == 0)
-				return;
-
-			var processControllers = ap.partPrefab.FindModulesImplementing<ModuleKsmProcessController>();
-			if (processControllers.Count > 0)
-			{
-				double capacity = processControllers[0].capacity;
-
-				foreach (var subtype in subtypes)
-				{
-					var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
-					var process = Profile.processes.Find(p => p.name.Contains(subtypeName));
-
-					if (process != null)
-					{
-						var specifics = process.Specifics(capacity);
-						var description = specifics.Info(Localizer.Format(Local.ProcessController_Capacity, capacity.ToString("F1")));
-						subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
-					}
-				}
-			}
-
-			var experiments = ap.partPrefab.FindModulesImplementing<ModuleKsmExperiment>();
-			if (experiments.Count > 0)
-			{
-				foreach (var subtype in subtypes)
-				{
-					var subtypeName = Lib.ReflectionValue<string>(subtype, "subtypeName");
-					var moduleDefinition = ScienceDB.GetExperimentModuleDefinition(subtypeName);
-
-					string description = ModuleKsmExperiment.Specs(moduleDefinition).Info();
-					subtype.GetType().GetField("descriptionDetail", BindingFlags.Instance | BindingFlags.Public).SetValue(subtype, description);
-				}
-			}
-		}
-
-		/// <summary> Auto-Assign hard drive storage capacity based on the parts position in the tech tree and part cost </summary>
-		public static void AutoAssignHardDriveCapacity(AvailablePart ap, ModuleKsmDrive hardDrive)
-		{
-			// don't touch drives assigned to an experiment
-			if (!string.IsNullOrEmpty(hardDrive.experiment_id))
-				return;
-
-			// no auto-assigning necessary
-			if (hardDrive.sampleCapacity != ModuleKsmDrive.CAPACITY_AUTO && hardDrive.dataCapacity != ModuleKsmDrive.CAPACITY_AUTO)
-				return;
-
-			// get cumulative science cost for this part
-			double maxScienceCost = 0;
-			double tier = 1.0;
-			double maxTier = 1.0;
-
-			// find start node and max. science cost
-			ProtoRDNode node = null;
-			ProtoRDNode maxNode = null;
-
-			foreach (var n in AssetBase.RnDTechTree.GetTreeNodes())
-			{
-				if (n.tech.scienceCost > maxScienceCost)
-				{
-					maxScienceCost = n.tech.scienceCost;
-					maxNode = n;
-				}
-				if (ap.TechRequired == n.tech.techID)
-					node = n;
-			}
-
-			if (node == null)
-			{
-				Lib.Log($"{ap.partPrefab.partInfo.name}: part not found in tech tree, skipping auto assignment", Lib.LogLevel.Warning);
-				return;
-			}
-
-			// add up science cost from start node and all the parents
-			// (we ignore teh requirement to unlock multiple nodes before this one)
-			while (node.parents.Count > 0)
-			{
-				tier++;
-				node = node.parents[0];
-			}
-
-			// determine max science cost and max tier
-			while (maxNode.parents.Count > 0)
-			{
-				maxTier++;
-				maxNode = maxNode.parents[0];
-			}
-
-			// see https://www.desmos.com/calculator/9oiyzsdxzv
-			//
-			// f = (tier / max. tier)^3
-			// capacity = f * max. capacity
-			// max. capacity factor 3GB (remember storages can be tweaked to 4x the base size, deep horizons had 8GB)
-			// with the variation effects, this caps out at about 10GB.
-
-			// add some part variance based on part cost
-			var t = tier - 1;
-			t += (ap.cost - 5000) / 10000;
-
-			double f = Math.Pow(t / maxTier, 3);
-			double dataCapacity = f * 3000;
-
-			dataCapacity = (int)(dataCapacity * 4) / 4.0; // set to a multiple of 0.25
-			if (dataCapacity > 2)
-				dataCapacity = (int)(dataCapacity * 2) / 2; // set to a multiple of 0.5
-			if (dataCapacity > 5)
-				dataCapacity = (int)(dataCapacity); // set to a multiple of 1
-			if (dataCapacity > 25)
-				dataCapacity = (int)(dataCapacity / 5) * 5; // set to a multiple of 5
-			if (dataCapacity > 250)
-				dataCapacity = (int)(dataCapacity / 25) * 25; // set to a multiple of 25
-			if (dataCapacity > 250)
-				dataCapacity = (int)(dataCapacity / 50) * 50; // set to a multiple of 50
-			if (dataCapacity > 1000)
-				dataCapacity = (int)(dataCapacity / 250) * 250; // set to a multiple of 250
-
-			dataCapacity = Math.Max(dataCapacity, 0.25); // 0.25 minimum
-
-			double sampleCapacity = tier / maxTier * 8;
-			sampleCapacity = Math.Max(sampleCapacity, 1); // 1 minimum
-
-			if (hardDrive.dataCapacity == ModuleKsmDrive.CAPACITY_AUTO)
-			{
-				hardDrive.dataCapacity = dataCapacity;
-				Lib.Log($"{ap.partPrefab.partInfo.name}: tier {tier}/{maxTier} part cost {ap.cost.ToString("F0")} data cap. {dataCapacity.ToString("F2")}", Lib.LogLevel.Message);
-			}
-			if (hardDrive.sampleCapacity == ModuleKsmDrive.CAPACITY_AUTO)
-			{
-				hardDrive.sampleCapacity = (int)Math.Round(sampleCapacity);
-				Lib.Log($"{ap.partPrefab.partInfo.name}: tier {tier}/{maxTier} part cost {ap.cost.ToString("F0")} sample cap. {hardDrive.sampleCapacity}", Lib.LogLevel.Message);
-			}
-		}
-
 		public static void KeyboardInput()
 		{
 			// mute/unmute messages with keyboard
@@ -1015,7 +583,7 @@ namespace KERBALISM
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null) return;
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 			if (!vd.IsSimulated) return;
 
 			// call scripts with 1-5 key
@@ -1110,7 +678,8 @@ namespace KERBALISM
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
-				res = v.KerbalismData().ResHandler.GetResource(supply.resource);
+				v.TryGetVesselData(out VesselData vd);
+				res = vd.ResHandler.GetResource(supply.resource);
 			}
 
 			// compile list of events with condition satisfied

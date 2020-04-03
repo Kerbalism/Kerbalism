@@ -150,28 +150,7 @@ namespace KERBALISM.Planner
 		/// <summary>execute a process</summary>
 		private static void ExecuteProcess(Process pr)
 		{
-			double modifier = pr.EvaluateModifier(vd);
-
-			// prepare recipe
-			Recipe recipe = new Recipe(pr.broker);
-			foreach (KeyValuePair<string, double> input in pr.inputs)
-			{
-				recipe.AddInput(input.Key, input.Value * modifier);
-			}
-			foreach (KeyValuePair<string, double> output in pr.outputs)
-			{
-				bool dump;
-				if (vd.VesselProcesses.TryGetProcessData(output.Key, out VesselProcess vesselProcess))
-				{
-					dump = vesselProcess.dumpedOutputs.Contains(output.Key);
-				}
-				else
-				{
-					dump = pr.dumpedOutputsDefault.Contains(output.Key);
-				}
-				recipe.AddOutput(output.Key, output.Value * modifier, dump);
-			}
-			vd.ResHandler.AddRecipe(recipe);
+			pr.Execute(vd, 1.0);
 		}
 
 		#endregion

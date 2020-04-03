@@ -55,7 +55,10 @@ namespace KERBALISM
 		{
 			StackTrace stackTrace = new StackTrace();
 			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
-			UnityEngine.Debug.Log(stackTrace);
+
+			// KSP will already log the stacktrace if the log level is error
+			if (level != LogLevel.Error)
+				UnityEngine.Debug.Log(stackTrace);
 		}
 
 		///<summary>write a message to the log, only on DEBUG and DEVBUILD builds</summary>
@@ -72,7 +75,10 @@ namespace KERBALISM
 		{
 			StackTrace stackTrace = new StackTrace();
 			Log(stackTrace.GetFrame(1).GetMethod(), string.Format(message, param), level);
-			UnityEngine.Debug.Log(stackTrace);
+
+			// KSP will already log the stacktrace if the log level is error
+			if (level != LogLevel.Error)
+				UnityEngine.Debug.Log(stackTrace);
 		}
 
 		/// <summary> This constant is being set by the build system when a dev release is requested</summary>
@@ -689,6 +695,43 @@ namespace KERBALISM
 		#endregion
 
 		#region BUILD STRING
+
+		/// <summary>
+		/// Append "\n"<br/>
+		/// StringBuilder.AppendLine() is platform-dependant and can use "\r\n" which cause trouble in KSP.
+		/// </summary>
+		public static void AppendKSPNewLine(this StringBuilder sb)
+		{
+			sb.Append("\n");
+		}
+
+		/// <summary>
+		/// Append "value" and add a "\n" to the end<br/>
+		/// StringBuilder.AppendLine() is platform-dependant and can use "\r\n" which cause trouble in KSP.
+		/// </summary>
+		public static void AppendKSPLine(this StringBuilder sb, string value)
+		{
+			sb.Append(value);
+			sb.Append("\n");
+		}
+
+		/// <summary> Format to "label: <b>value</b>\n" (match the format of Specifics)</summary>
+		public static void AppendInfo(this StringBuilder sb, string label, string value)
+		{
+			sb.Append(label);
+			sb.Append(": <b>");
+			sb.Append(value);
+			sb.Append("</b>\n");
+		}
+
+		/// <summary> Append "• value\n"</summary>
+		public static void AppendList(this StringBuilder sb, string value)
+		{
+			sb.Append("• ");
+			sb.Append(value);
+			sb.Append("\n");
+		}
+
 		// compose a set of strings together, without creating temporary objects
 		// note: the objective here is to minimize number of temporary variables for GC
 		// note: okay to call recursively, as long as all individual concatenation is atomic
@@ -942,32 +985,51 @@ namespace KERBALISM
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
-		public static string HumanReadableRadiation(double rad, bool nominal = true)
+		private const string radPerHour = "rad/h";
+		public static string HumanReadableRadiation(double rad, bool nominal = true, bool dangerColor = true)
 		{
-			if (nominal && rad <= Radiation.Nominal) return Local.Generic_NOMINAL;//"nominal"
+			if (nominal && rad <= Radiation.Nominal)
+			{
+				if (dangerColor)
+					return Color(Local.Generic_NOMINAL, Kolor.Green);//"nominal"
+				else
+					return Local.Generic_NOMINAL;//"nominal"
+			}
 
 			rad *= 3600.0;
-			var unit = "rad/h";
-			var prefix = "";
 
 			if (Settings.RadiationInSievert)
 			{
 				rad /= 100.0;
-				unit = "Sv/h";
+				return BuildString((rad).ToString("F3"), " Sv/h");
 			}
 
 			if (rad < 0.00001)
 			{
-				rad *= 1000000;
-				prefix = "μ";
+				if (dangerColor)
+					return Color(BuildString((rad * 1000000.0).ToString("F3"), " μrad/h"), Kolor.Green);
+				else
+					return BuildString((rad * 1000000.0).ToString("F3"), " μrad/h");
 			}
 			else if (rad < 0.01)
 			{
-				rad *= 1000;
-				prefix = "m";
+				if (dangerColor)
+					return Color(BuildString((rad * 1000.0).ToString("F3"), " mrad/h"), Kolor.Green);
+				else
+					return BuildString((rad * 1000.0).ToString("F3"), " mrad/h");
 			}
 
-			return BuildString((rad).ToString("F3"), " ", prefix, unit);
+			if (dangerColor)
+			{
+				if (rad < 0.5)
+					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Yellow);
+				else
+					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Red);
+			}
+			else
+			{
+				return BuildString(rad.ToString("F3"), " rad/h");
+			}
 		}
 
 		///<summary> Pretty-print percentage </summary>
@@ -1119,13 +1181,20 @@ namespace KERBALISM
 		}
 
 		///<summary> Format science credits </summary>
-		public static string HumanReadableScience(double value, bool compact = true)
+		public static string HumanReadableScience(double value, bool compact = true, bool addSciSymbol = false)
 		{
 			if (compact)
+			{
+				if (addSciSymbol)
+				{
+					return Lib.Color(Lib.BuildString(value.ToString("F1"), InlineSpriteScience), Kolor.Science, true); 
+				}
 				return Lib.Color(value.ToString("F1"), Kolor.Science, true);
+			}
 			else
+			{
 				return Lib.Color(Lib.BuildString(value.ToString("F1"), " ", Local.SCIENCEARCHIVE_CREDITS), Kolor.Science);//CREDITS
-
+			}
 		}
 		#endregion
 
@@ -1159,6 +1228,8 @@ namespace KERBALISM
 
 		///<summary>return true if the current scene is editor</summary>
 		public static bool IsEditor => HighLogic.LoadedScene == GameScenes.EDITOR;
+
+		public static bool IsCareer => HighLogic.fetch.currentGame.Mode == Game.Modes.CAREER;
 
 		///<summary>return true if the current scene is not the main menu</summary>
 		public static bool IsGame()
@@ -3408,14 +3479,17 @@ namespace KERBALISM
 		{
 			public static bool ToBool( string s, bool def_value = false )
 			{
-				bool v;
-				return s != null && bool.TryParse( s, out v ) ? v : def_value;
+				return s != null && bool.TryParse( s, out bool v) ? v : def_value;
 			}
 
-			public static uint ToUInt( string s, uint def_value = 0 )
+			public static int ToInt(string s, int def_value = 0)
 			{
-				uint v;
-				return s != null && uint.TryParse( s, out v ) ? v : def_value;
+				return s != null && int.TryParse(s, out int v) ? v : def_value;
+			}
+
+			public static uint ToUInt( string s, uint def_value = 0u )
+			{
+				return s != null && uint.TryParse( s, out uint v ) ? v : def_value;
 			}
 
 			public static Guid ToGuid (string s)
@@ -3425,14 +3499,12 @@ namespace KERBALISM
 
 			public static float ToFloat( string s, float def_value = 0.0f )
 			{
-				float v;
-				return s != null && float.TryParse( s, out v ) ? v : def_value;
+				return s != null && float.TryParse( s, out float v ) ? v : def_value;
 			}
 
 			public static double ToDouble( string s, double def_value = 0.0 )
 			{
-				double v;
-				return s != null && double.TryParse( s, out v ) ? v : def_value;
+				return s != null && double.TryParse( s, out double v ) ? v : def_value;
 			}
 
 			private static bool TryParseColor( string s, out UnityEngine.Color c )

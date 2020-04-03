@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// Replacement for ProcessController
 	/// </summary>
-	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, ISpecifics, ISwitchable
+	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, ISwitchable
 	{
 		[KSPField] public string processName = string.Empty;
 		[KSPField] public double capacity = 1.0;
@@ -29,7 +29,8 @@ namespace KERBALISM
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
 				ProcessControllerData prefabData = new ProcessControllerData();
-				prefabData.OnInstantiate(this, null, null);
+				prefabData.SetPartModuleReferences(this, this);
+				prefabData.OnFirstInstantiate(null, null);
 				moduleData = prefabData;
 			}
 		}
@@ -45,6 +46,31 @@ namespace KERBALISM
 			Lib.LogDebug($"B9PS : deactivating {moduleName}");
 			enabled = isEnabled = moduleIsEnabled = false;
 			moduleData.moduleIsEnabled = false;
+		}
+
+		public string GetSubtypeDescription(ConfigNode subtypeDataNode)
+		{
+			string switchedProcessName;
+			if (subtypeDataNode.HasValue(nameof(processName)))
+				switchedProcessName = Lib.ConfigValue(subtypeDataNode, nameof(processName), string.Empty);
+			else
+				switchedProcessName = processName;
+
+			Process switchedProcess = Profile.processes.Find(p => p.name == switchedProcessName);
+
+			if (switchedProcess != null)
+			{
+				double switchedCapacity;
+				if (subtypeDataNode.HasValue(nameof(switchedCapacity)))
+					switchedCapacity = Lib.ConfigValue(subtypeDataNode, nameof(switchedCapacity), 0.0);
+				else
+					switchedCapacity = capacity;
+
+				if (switchedCapacity > 0.0)
+					return switchedProcess.GetInfo(switchedCapacity, true);
+			}
+
+			return null;
 		}
 
 		public override void OnStart(StartState state)
@@ -76,16 +102,16 @@ namespace KERBALISM
 			enabled = isEnabled = moduleIsEnabled = true;
 			moduleData.moduleIsEnabled = true;
 
-			// make sure part data is valid (if we have it), we might be restarting with a different configuration
+			// we might be restarting with a different configuration
 			if (moduleData.processName != processName || moduleData.processCapacity != capacity)
 			{
-				Lib.LogDebug($"Restarting with different process '{processName}' (was '{moduleData.processName}'), discarding old part data");
-				moduleData.OnInstantiate(this, null, null);
+				Lib.LogDebug($"Configuring with process '{processName}' (was '{moduleData.processName}')");
+				moduleData.Setup(processName, capacity);
 			}
 
 			// PAW setup
-			running = moduleData.Process != null && moduleData.isRunning;
-			runningField.guiActive = runningField.guiActiveEditor = moduleData.Process != null && moduleData.Process.canToggle;
+			running = moduleData.isRunning;
+			runningField.guiActive = runningField.guiActiveEditor = moduleData.Process.canToggle;
 			runningField.guiName = moduleData.Process.title;
 
 			if (uiGroup != null)
@@ -109,31 +135,32 @@ namespace KERBALISM
 			}
 		}
 
-		// part tooltip
-		public override string GetInfo()
+		
+
+		public bool IsRunning()
 		{
-			if (string.IsNullOrEmpty(processName))
-				return string.Empty;
-
-			return Specs().Info(moduleData.Process.desc);
-		}
-
-		public bool IsRunning() {
 			return running && !string.IsNullOrEmpty(processName);
 		}
 
-		// specifics support
-		public Specifics Specs()
+		// part tooltip
+		public override string GetInfo()
 		{
-			Process process = moduleData.Process; //Profile.processes.Find(k => k.name == processName);
-			if (process == null)
-				return new Specifics();
-			return process.Specifics(capacity);
+			if (moduleData == null || moduleData.Process == null)
+				return string.Empty;
+
+			return moduleData.Process.GetInfo(moduleData.processCapacity, true);
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "Process controller"; }
-		public override string GetModuleDisplayName() { return "Process controller"; }
+		public string GetModuleTitle()
+		{
+			if (moduleData == null || moduleData.Process == null)
+				return string.Empty;
+
+			return moduleData.Process.title;
+		}
+
+		public override string GetModuleDisplayName() => GetModuleTitle();
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

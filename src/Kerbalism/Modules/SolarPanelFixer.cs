@@ -223,7 +223,7 @@ namespace KERBALISM
 				return;
 
 			// get vessel data
-			VesselData vd = vessel.KerbalismData();
+			vessel.TryGetVesselData(out VesselData vd);
 
 			// do nothing if vessel is invalid
 			if (!vd.IsSimulated) return;
@@ -358,7 +358,7 @@ namespace KERBALISM
 			}
 
 			// get vessel data from cache
-			VesselData vd = vessel.KerbalismData();
+			vessel.TryGetVesselData(out VesselData vd);
 
 			// do nothing if vessel is invalid
 			if (!vd.IsSimulated)
@@ -385,7 +385,7 @@ namespace KERBALISM
 			Vector3d sunDirDebug = trackedSunInfo.Direction;
 
 			// flight view sun dir
-			SolarDebugDrawer.DebugLine(vessel.transform.position, vessel.transform.position + (sunDirDebug * 100.0), Color.red);
+			DebugDrawer.DebugLine(vessel.transform.position, vessel.transform.position + (sunDirDebug * 100.0), Color.red);
 
 			// GetAnalyticalCosineFactorLanded() map view debugging
 			Vector3d sunCircle = Vector3d.Cross(Vector3d.left, sunDirDebug);
@@ -601,6 +601,7 @@ namespace KERBALISM
 					case "SSTUModularPart": SolarPanel = new SSTUVeryComplexPanel(); break;
 					case "ModuleROSolar": SolarPanel = new ROConfigurablePanel(); break;
 					case "KopernicusSolarPanel":
+					case "KopernicusSolarPanels":
 						Lib.Log("Part '" + part.partInfo.title + "' use the KopernicusSolarPanel module, please remove it from your config. Kerbalism has it's own support for Kopernicus", Lib.LogLevel.Warning);
 						continue;
 					default:
@@ -900,8 +901,8 @@ namespace KERBALISM
 			public override double GetCosineFactor(Vector3d sunDir, bool analytic = false)
 			{
 #if DEBUG_SOLAR
-				SolarDebugDrawer.DebugLine(sunCatcherPosition.position, sunCatcherPosition.position + sunCatcherPivot.forward, Color.yellow);
-				if (panelModule.isTracking) SolarDebugDrawer.DebugLine(sunCatcherPivot.position, sunCatcherPivot.position + (sunCatcherPivot.up * -1f), Color.blue);
+				DebugDrawer.DebugLine(sunCatcherPosition.position, sunCatcherPosition.position + sunCatcherPivot.forward, Color.yellow);
+				if (panelModule.isTracking) DebugDrawer.DebugLine(sunCatcherPivot.position, sunCatcherPivot.position + (sunCatcherPivot.up * -1f), Color.blue);
 #endif
 				switch (panelModule.panelType)
 				{
@@ -1081,7 +1082,7 @@ namespace KERBALISM
 				{
 					cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.forward), 0.0);
 #if DEBUG_SOLAR
-					SolarDebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
+					DebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
 #endif
 				}
 
@@ -1202,7 +1203,7 @@ namespace KERBALISM
 				{
 					cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.forward), 0.0);
 #if DEBUG_SOLAR
-					SolarDebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
+					DebugDrawer.DebugLine(panel.position, panel.position + panel.forward, Color.yellow);
 #endif
 				}
 
@@ -1427,8 +1428,8 @@ namespace KERBALISM
 					for (int i = 0; i < panel.SuncatcherCount; i++)
 					{
 #if DEBUG_SOLAR
-						SolarDebugDrawer.DebugLine(panel.SuncatcherPosition(i), panel.SuncatcherPosition(i) + panel.SuncatcherAxisVector(i), Color.yellow);
-						if (trackingType == TrackingType.SinglePivot) SolarDebugDrawer.DebugLine(panel.pivot.position, panel.pivot.position + (panel.PivotAxisVector * -1f), Color.blue);
+						DebugDrawer.DebugLine(panel.SuncatcherPosition(i), panel.SuncatcherPosition(i) + panel.SuncatcherAxisVector(i), Color.yellow);
+						if (trackingType == TrackingType.SinglePivot) DebugDrawer.DebugLine(panel.pivot.position, panel.pivot.position + (panel.PivotAxisVector * -1f), Color.blue);
 #endif
 
 						if (!analytic) { cosineFactor += Math.Max(Vector3d.Dot(sunDir, panel.SuncatcherAxisVector(i)), 0.0); continue; }
@@ -1560,7 +1561,7 @@ namespace KERBALISM
 	// Source : https://github.com/sarbian/DebugStuff/blob/master/DebugDrawer.cs
 	// By Sarbian, released under MIT I think
 	[KSPAddon(KSPAddon.Startup.Instantly, true)]
-	class SolarDebugDrawer : MonoBehaviour
+	class DebugDrawer : MonoBehaviour
 	{
 		private static readonly List<Line> lines = new List<Line>();
 		private static readonly List<Point> points = new List<Point>();
@@ -1609,25 +1610,31 @@ namespace KERBALISM
 			}
 		}
 
-		[Conditional("DEBUG_SOLAR")]
+		[Conditional("DEBUG")]
 		public static void DebugLine(Vector3 start, Vector3 end, Color col)
 		{
 			lines.Add(new Line(start, end, col));
 		}
 
-		[Conditional("DEBUG_SOLAR")]
+		[Conditional("DEBUG")]
+		public static void DebugLine(Vector3 start, Vector3 direction, float length, Color col)
+		{
+			lines.Add(new Line(start, start + (direction.normalized * length), col));
+		}
+
+		[Conditional("DEBUG")]
 		public static void DebugPoint(Vector3 start, Color col)
 		{
 			points.Add(new Point(start, col));
 		}
 
-		[Conditional("DEBUG_SOLAR")]
+		[Conditional("DEBUG")]
 		public static void DebugTransforms(Transform t)
 		{
 			transforms.Add(new Trans(t.position, t.up, t.right, t.forward));
 		}
 
-		[Conditional("DEBUG_SOLAR")]
+		[Conditional("DEBUG")]
 		private void Start()
 		{
 			DontDestroyOnLoad(this);
@@ -1711,6 +1718,9 @@ namespace KERBALISM
 		private static Camera GetActiveCam()
 		{
 			if (!HighLogic.fetch)
+				return Camera.main;
+
+			if (Versioning.version_minor >= 9)
 				return Camera.main;
 
 			if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch)

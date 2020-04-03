@@ -10,6 +10,7 @@ namespace KERBALISM
 		private readonly string name;
 		private bool invertPlayDirection = false;
 		private float playingSpeed;
+		private bool isLoopStopping = false;
 
 		public bool IsDefined { get; private set; } = false;
 
@@ -42,6 +43,8 @@ namespace KERBALISM
 		/// <param name="loop">if true, animation will keep playing from start to end</param>
 		public void Play(bool inReverse, bool loop, Action callback = null, float speed = 1f)
 		{
+			isLoopStopping = false;
+
 			if (!IsDefined)
 			{
 				callback?.Invoke();
@@ -112,9 +115,11 @@ namespace KERBALISM
 			if (!IsDefined)
 			{
 				callback?.Invoke();
+				isLoopStopping = false;
 				return;
 			}
 
+			isLoopStopping = true;
 			Kerbalism.Fetch.StartCoroutine(StopLoopCoroutine(callback));
 		}
 
@@ -128,6 +133,7 @@ namespace KERBALISM
 				float playDuration = anim[name].length * (anim[name].speed < 0f ? anim[name].normalizedTime : 1f - anim[name].normalizedTime);
 				yield return new WaitForSeconds(playDuration);
 				callback();
+				isLoopStopping = false;
 			}
 		}
 
@@ -186,5 +192,7 @@ namespace KERBALISM
 					return anim[name].normalizedTime;
 			}
 		}
+
+		public bool IsLoopStopping => isLoopStopping;
 	}
 }

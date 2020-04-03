@@ -40,7 +40,6 @@ namespace KERBALISM
 			switch (module_name)
 			{
 				case "Reliability": return Module_type.Reliability;
-				case "ModuleKsmExperiment": return Module_type.Experiment;
 				case "Greenhouse": return Module_type.Greenhouse;
 				case "GravityRing": return Module_type.GravityRing;
 				case "Harvester": return Module_type.Harvester;
@@ -92,10 +91,9 @@ namespace KERBALISM
 				switch (e.type)
 				{
 					case Module_type.Reliability: Reliability.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Reliability, elapsed_s); break;
-					case Module_type.Experiment: (e.module_prefab as ModuleKsmExperiment).BackgroundUpdate(v, vd, e.m, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 					case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, e.m, e.module_prefab as Greenhouse, vd, resources, elapsed_s); break;
 					case Module_type.Harvester: Harvester.BackgroundUpdate(v, e.m, e.module_prefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
-					case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, e.p, e.m, e.module_prefab as Laboratory, elapsed_s); break;
+					case Module_type.Laboratory: Laboratory.BackgroundUpdate(vd, v, e.p, e.m, e.module_prefab as Laboratory, elapsed_s); break;
 					case Module_type.Command: ProcessCommand(vd, e.p, e.m, e.module_prefab as ModuleCommand, elapsed_s); break;
 					case Module_type.Generator: ProcessGenerator(v, e.p, e.m, e.module_prefab as ModuleGenerator, resources, elapsed_s); break;
 					case Module_type.Converter: ProcessConverter(v, e.p, e.m, e.module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
@@ -205,10 +203,9 @@ namespace KERBALISM
 					switch (ppmsData.type)
 					{
 						case Module_type.Reliability: Reliability.BackgroundUpdate(v, pps, ppms, ppmsData.modulePrefab as Reliability, elapsed_s); break;
-						case Module_type.Experiment: (ppmsData.modulePrefab as ModuleKsmExperiment).BackgroundUpdate(v, vd, ppms, elapsed_s); break; // experiments use the prefab as a singleton instead of a static method
 						case Module_type.Greenhouse: Greenhouse.BackgroundUpdate(v, ppms, ppmsData.modulePrefab as Greenhouse, vd, resources, elapsed_s); break;
 						case Module_type.Harvester: Harvester.BackgroundUpdate(v, ppms, ppmsData.modulePrefab as Harvester, elapsed_s); break; // Kerbalism ground and air harvester module
-						case Module_type.Laboratory: Laboratory.BackgroundUpdate(v, pps, ppms, ppmsData.modulePrefab as Laboratory, elapsed_s); break;
+						case Module_type.Laboratory: Laboratory.BackgroundUpdate(vd, v, pps, ppms, ppmsData.modulePrefab as Laboratory, elapsed_s); break;
 						case Module_type.Command: ProcessCommand(vd, pps, ppms, ppmsData.modulePrefab as ModuleCommand, elapsed_s); break;
 						case Module_type.Generator: ProcessGenerator(v, pps, ppms, ppmsData.modulePrefab as ModuleGenerator, resources, elapsed_s); break;
 						case Module_type.Converter: ProcessConverter(v, pps, ppms, ppmsData.modulePrefab as ModuleResourceConverter, resources, elapsed_s); break;

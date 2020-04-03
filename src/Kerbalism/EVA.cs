@@ -17,17 +17,9 @@ namespace KERBALISM
 			// get KerbalEVA module
 			KerbalEVA kerbal = Lib.FindModules<KerbalEVA>(v)[0];
 
-			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
-			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
-			if(Cache.HasVesselObjectsCache(v, "eva_prop"))
-			{
-				var quantity = Cache.VesselObjectsCache<double>(v, "eva_prop");
-				Cache.RemoveVesselObjectsCache(v, "eva_prop");
-				Lib.SetResource(kerbal.part, Lib.EvaPropellantName(), quantity, Lib.EvaPropellantCapacity());
-			}
-
 			// get resource handler
-			VesselKSPResource ec = v.KerbalismData().ResHandler.ElectricCharge;
+			v.TryGetVesselData(out VesselData vd);
+			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 
 			// determine if headlamps need ec
 			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)
@@ -56,7 +48,6 @@ namespace KERBALISM
 				kerbal.flagItems = 0;
 			}
 		}
-
 
 		// return true if the vessel is a kerbal eva, and is flagged as dead
 		public static bool IsDead(Vessel v)

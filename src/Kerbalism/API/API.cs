@@ -27,7 +27,6 @@ namespace KERBALISM
 		// kill a kerbal, even an EVA one
 		public static void Kill(Vessel v, ProtoCrewMember c)
 		{
-			if (!v.KerbalismData().IsSimulated) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Kill(v, c);
 		}
@@ -35,7 +34,6 @@ namespace KERBALISM
 		// trigger an undesiderable event for the kerbal specified
 		public static void Breakdown(Vessel v, ProtoCrewMember c)
 		{
-			if (!v.KerbalismData().IsSimulated) return;
 			if (!DB.ContainsKerbal(c.name)) return;
 			Misc.Breakdown(v, c);
 		}
@@ -86,13 +84,19 @@ namespace KERBALISM
 		// return true if the vessel specified is in sunlight
 		public static bool InSunlight(Vessel v)
 		{
-			return !v.KerbalismData().EnvInFullShadow;
+			if (v.TryGetVesselData(out VesselData vd))
+				return vd.EnvInFullShadow;
+
+			return false;
 		}
 
 		// return true if the vessel specified is inside a breathable atmosphere
 		public static bool Breathable(Vessel v)
 		{
-			return v.KerbalismData().EnvInBreathableAtmosphere;
+			if (v.TryGetVesselData(out VesselData vd))
+				return vd.EnvInBreathableAtmosphere;
+
+			return false;
 		}
 
 		#endregion
@@ -108,36 +112,46 @@ namespace KERBALISM
 		/// <summary>return amount of environment radiation at the position of the specified vessel</summary>
 		public static double Radiation(Vessel v)
 		{
-			if (!Features.Radiation) return 0.0;
-			return v.KerbalismData().EnvRadiation;
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.EnvRadiation;
 		}
 
 		/// <summary>return amount of environment effective in the habitats of the given vessel</summary>
 		public static double HabitatRadiation(Vessel v)
 		{
-			if (!Features.Radiation) return 0.0;
-			return v.KerbalismData().EnvHabitatRadiation;
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.EnvHabitatRadiation;
 		}
 
 		/// <summary>return true if the vessel is inside the magnetopause of some body (except the sun)</summary>
 		public static bool Magnetosphere(Vessel v)
 		{
-			if (!Features.Radiation) return false;
-			return v.KerbalismData().EnvMagnetosphere;
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.EnvMagnetosphere;
 		}
 
 		/// <summary>return true if the vessel is inside the radiation belt of some body</summary>
 		public static bool InnerBelt(Vessel v)
 		{
-			if (!Features.Radiation) return false;
-			return v.KerbalismData().EnvInnerBelt;
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.EnvInnerBelt;
 		}
 
 		/// <summary>return true if the vessel is inside the radiation belt of some body</summary>
 		public static bool OuterBelt(Vessel v)
 		{
-			if (!Features.Radiation) return false;
-			return v.KerbalismData().EnvOuterBelt;
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.EnvOuterBelt;
 		}
 
 		/// <summary>return true if the given body has an inner radiation belt (doesn't matter if visible or not)</summary>
@@ -259,23 +273,28 @@ namespace KERBALISM
 		// return true if a solar storm is incoming at the vessel position
 		public static bool StormIncoming(Vessel v)
 		{
-			if (!Features.Radiation) return false;
-			return v.KerbalismData().IsSimulated && Storm.Incoming(v);
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.IsSimulated && Storm.Incoming(v);
 		}
 
 		// return true if a solar storm is in progress at the vessel position
 		public static bool StormInProgress(Vessel v)
 		{
-			if (!Features.Radiation) return false;
-			VesselData vd = v.KerbalismData();
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
 			return vd.IsSimulated && vd.EnvStorm;
 		}
 
 		// return true if the vessel is subject to a signal blackout
 		public static bool Blackout(Vessel v)
 		{
-			if (!RemoteTech.Enabled) return false;
-			return v.KerbalismData().EnvBlackout;
+			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.EnvBlackout;
 		}
 
 		/// <summary>
@@ -305,15 +324,19 @@ namespace KERBALISM
 		// return true if at least a component has malfunctioned, or had a critical failure
 		public static bool Malfunction(Vessel v)
 		{
-			if (!Features.Failures) return false;
-			return v.KerbalismData().Malfunction;
+			if (!Features.Failures || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.Malfunction;
 		}
 
 		// return true if at least a componet had a critical failure
 		public static bool Critical(Vessel v)
 		{
-			if (!Features.Failures) return false;
-			return v.KerbalismData().Critical;
+			if (!Features.Failures || !v.TryGetVesselData(out VesselData vd))
+				return false;
+
+			return vd.Critical;
 		}
 
 		// return true if the part specified has a malfunction or critical failure
@@ -372,47 +395,64 @@ namespace KERBALISM
 		// return volume of internal habitat in m^3
 		public static double Volume(Vessel v)
 		{
-			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().Habitat.livingVolume;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.livingVolume;
 		}
 
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
-			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().Habitat.shieldingSurface;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.shieldingSurface;
 		}
 
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
-			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().Habitat.pressureAtm;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.pressureAtm;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
-			if (!Features.LifeSupport) return 0.0;
-			return v.KerbalismData().Habitat.poisoningLevel;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.poisoningLevel;
 		}
 
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{
-			return v.KerbalismData().Habitat.shieldingModifier;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.shieldingModifier;
 		}
 
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{
-			return v.KerbalismData().Habitat.livingSpaceFactor;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.livingSpaceFactor;
 		}
 
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			return v.KerbalismData().Habitat.comfortFactor;
+			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+				return 0.0;
+
+			return vd.Habitat.comfortFactor;
 		}
 
 		#endregion
@@ -428,7 +468,10 @@ namespace KERBALISM
 		/// <param name="title">origin of the resource consumer (shown in the UI)</param>
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			v.KerbalismData().ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return;
+
+			vd.ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		/// <summary> Produce a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
@@ -440,7 +483,10 @@ namespace KERBALISM
 		/// <param name="title">origin of the resource producer (shown in the UI)</param>
 		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			v.KerbalismData().ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return;
+
+			vd.ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
 		}
 
 		/// <summary>
@@ -458,6 +504,9 @@ namespace KERBALISM
 		/// <param name="title">origin of the recipe (shown in the UI)</param>
 		public static void AddResourceRecipe(Vessel v, string[] resources, double[] rates, bool[] dump, string title)
 		{
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return;
+
 			Recipe recipe = new Recipe(ResourceBroker.GetOrCreate(title));
 
 			for (int i = 0; i < resources.Length; i++)
@@ -468,22 +517,31 @@ namespace KERBALISM
 					recipe.AddOutput(resources[i], rates[i], dump[i]);
 			}
 
-			v.KerbalismData().ResHandler.AddRecipe(recipe);
+			vd.ResHandler.AddRecipe(recipe);
 		}
 
 		public static double ResourceAmount(Vessel v, string resource_name)
 		{
-			return v.KerbalismData().ResHandler.GetResource(resource_name).Amount;
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return 0.0;
+
+			return vd.ResHandler.GetResource(resource_name).Amount;
 		}
 
 		public static double ResourceCapacity(Vessel v, string resource_name)
 		{
-			return v.KerbalismData().ResHandler.GetResource(resource_name).Capacity;
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return 0.0;
+
+			return vd.ResHandler.GetResource(resource_name).Capacity;
 		}
 
 		public static double ResourceAvailability(Vessel v, string resource_name)
 		{
-			return v.KerbalismData().ResHandler.GetResource(resource_name).AvailabilityFactor;
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return 0.0;
+
+			return vd.ResHandler.GetResource(resource_name).AvailabilityFactor;
 		}
 
 		/// <summary>
@@ -499,8 +557,13 @@ namespace KERBALISM
 		private static List<KeyValuePair<string[], double>> apiBrokers = new List<KeyValuePair<string[], double>>();
 		public static List<KeyValuePair<string[], double>> ResourceBrokers(Vessel v, string resource_name)
 		{
-			List<ResourceBrokerRate> brokers = v.KerbalismData().ResHandler.GetResource(resource_name).ResourceBrokers;
 			apiBrokers.Clear();
+
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return apiBrokers;
+
+			List<ResourceBrokerRate> brokers = vd.ResHandler.GetResource(resource_name).ResourceBrokers;
+
 			foreach (ResourceBrokerRate rb in brokers)
 			{
 				apiBrokers.Add(new KeyValuePair<string[], double>(rb.broker.BrokerInfo, rb.rate));
@@ -581,10 +644,10 @@ namespace KERBALISM
 			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
 			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
 
-			public void Notify(Vessel vessel, string experiment_id, ModuleKsmExperiment.ExpStatus oldStatus, ModuleKsmExperiment.ExpStatus newStatus)
+			public void Notify(Vessel vessel, string experiment_id, ExperimentData.ExpStatus oldStatus, ExperimentData.ExpStatus newStatus)
 			{
-				bool wasRunning = oldStatus == ModuleKsmExperiment.ExpStatus.Forced || oldStatus == ModuleKsmExperiment.ExpStatus.Running;
-				bool isRunning = newStatus == ModuleKsmExperiment.ExpStatus.Forced || newStatus == ModuleKsmExperiment.ExpStatus.Running;
+				bool wasRunning = oldStatus == ExperimentData.ExpStatus.Forced || oldStatus == ExperimentData.ExpStatus.Running;
+				bool isRunning = newStatus == ExperimentData.ExpStatus.Forced || newStatus == ExperimentData.ExpStatus.Running;
 				if (wasRunning == isRunning) return;
 				foreach (Action<Vessel, string, bool> receiver in receivers)
 				{
@@ -603,46 +666,17 @@ namespace KERBALISM
 		/// <summary> Returns true if the experiment is currently active and collecting data </summary>
 		public static bool ExperimentIsRunning(Vessel vessel, string experiment_id)
 		{
-			if (!Features.Science) return false;
+			if (!Features.Science)
+				return false;
 
-			if (vessel.loaded)
-			{
-				foreach (ModuleKsmExperiment e in vessel.FindPartModulesImplementing<ModuleKsmExperiment>())
-				{
-					if (e.enabled && e.ExperimentID == experiment_id &&
-						(e.State == ModuleKsmExperiment.RunningState.Running || e.State == ModuleKsmExperiment.RunningState.Forced))
-						return true;
-				}
-			}
-			else
-			{
-				var PD = new Dictionary<string, Lib.Module_prefab_data>();
-				foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
-				{
-					// get part prefab (required for module properties)
-					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					// get all module prefabs
-					var module_prefabs = part_prefab.FindModulesImplementing<PartModule>();
-					// clear module indexes
-					PD.Clear();
-					foreach (ProtoPartModuleSnapshot m in p.modules)
-					{
-						// get the module prefab
-						// if the prefab doesn't contain this module, skip it
-						PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
-						if (!module_prefab) continue;
-						// if the module is disabled, skip it
-						// note: this must be done after ModulePrefab is called, so that indexes are right
-						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
+			if (!vessel.TryGetVesselData(out VesselData vd))
+				return false;
 
-						if (m.moduleName == "ModuleKsmExperiment"
-							&& ((ModuleKsmExperiment)module_prefab).ExperimentID == experiment_id)
-						{
-							var state = Lib.Proto.GetEnum(m, "expState", ModuleKsmExperiment.RunningState.Stopped);
-							if (state == ModuleKsmExperiment.RunningState.Running || state == ModuleKsmExperiment.RunningState.Forced)
-								return true;
-						}
-					}
+			foreach (ExperimentData expData in vd.Parts.AllModulesOfType<ExperimentData>())
+			{
+				if (expData.moduleIsEnabled && expData.ExperimentID == experiment_id && expData.IsExperimentRunning)
+				{
+					return true;
 				}
 			}
 
@@ -655,23 +689,26 @@ namespace KERBALISM
 
 		public static double VesselConnectionRate(Vessel v)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return 0.0;
-			return vi.Connection.rate;
+			if (!Features.Science || !v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return 0.0;
+
+			return vd.Connection.rate;
 		}
 
 		public static bool VesselConnectionLinked(Vessel v)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return false;
-			return vi.Connection.linked;
+			if (!Features.Science || !v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return false;
+
+			return vd.Connection.linked;
 		}
 
 		public static int VesselConnectionTransmitting(Vessel v)
 		{
-			var vi = v.KerbalismData();
-			if (!vi.IsSimulated) return 0;
-			return vi.filesTransmitted.Count;
+			if (!Features.Science || !v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return 0;
+
+			return vd.filesTransmitted.Count;
 		}
 
 		/// <summary> Call this to register an editor comms handler. Please call this as soon as possible (ex : in a static class constructor) </summary>

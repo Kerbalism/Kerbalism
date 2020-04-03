@@ -91,6 +91,9 @@ namespace KERBALISM
 
 		public override void AddPartresources(PartResource partResource)
 		{
+			if (partResource.maxAmount <= 0.0)
+				return;
+
 			partResources.Add(partResource);
 			amount += partResource.amount;
 			capacity += partResource.maxAmount;
@@ -137,6 +140,9 @@ namespace KERBALISM
 
 		public override void AddPartresources(ProtoPartResourceSnapshot partResource)
 		{
+			if (partResource.maxAmount <= 0.0)
+				return;
+
 			partResources.Add(partResource);
 			amount += partResource.amount;
 			capacity += partResource.maxAmount;
@@ -185,6 +191,9 @@ namespace KERBALISM
 
 		public override void AddPartresources(PartResource partResource)
 		{
+			if (partResource.maxAmount <= 0.0)
+				return;
+
 			amount += partResource.amount;
 			capacity += partResource.maxAmount;
 		}

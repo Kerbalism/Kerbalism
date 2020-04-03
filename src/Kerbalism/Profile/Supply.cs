@@ -43,7 +43,7 @@ namespace KERBALISM
 
 		public Supply(ConfigNode node)
 		{
-			resource = Lib.ConfigValue(node, "resource", string.Empty);
+			resource = Lib.ConfigValue(node, "name", string.Empty);
 			// check that resource exist
 			if (resource.Length == 0)
 				throw new Exception("skipping resource-less supply");
@@ -58,7 +58,7 @@ namespace KERBALISM
 			levelThreshold = Lib.ConfigValue(node, "levelThreshold", 0.15);
 
 			warningUIMode = Lib.ConfigEnum(node, "warningUIMode", WarningMode.OnEmpty);
-			warnOnlyIfManned = Lib.ConfigValue(node, "lowStopWarp", true);
+			warnOnlyIfManned = Lib.ConfigValue(node, "warnOnlyIfManned", true);
 
 			lowMessage = Lib.ConfigValue(node, "lowMessage", string.Empty);
 			if (lowMessage.Length > 0 && lowMessage[0] == '#') Lib.Log("Broken translation: " + lowMessage);
@@ -107,61 +107,97 @@ namespace KERBALISM
 			// execute all supplies
 			foreach (Supply supply in Profile.supplies)
 			{
-				bool notify = (supply.resource == "ElectricCharge" ? vd.cfg_ec : vd.cfg_supply)
-					&& (supply.warnOnlyIfManned ? vd.CrewCount > 1 : true);
+				bool notify =
+					(supply.resource == "ElectricCharge" ? vd.cfg_ec : vd.cfg_supply)
+					&& (supply.warnOnlyIfManned ? vd.CrewCount > 0 : true);
+
 				double level = vd.ResHandler.GetResource(supply.resource).Level;
 
-				if (level == 0.0)
+				SupplyState currentState = vd.supplies[supply.resource];
+
+				if (level < 1e-6)
 				{
-					if (vd.supplies[supply.resource] == SupplyState.Empty)
-						continue;
+					switch (currentState)
+					{
+						case SupplyState.Empty:
+							continue;
+
+						case SupplyState.BelowThreshold:
+						case SupplyState.AboveThreshold:
+						case SupplyState.Full:
+							if (notify && supply.emptyMessage != string.Empty)
+							{
+								uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+								Message.Post(supply.emptySeverity, Lib.ExpandMsg(supply.emptyMessage, vd.Vessel, null, variant), "", supply.emptyStopWarp);
+							}
+							break;
+					}
 
 					vd.supplies[supply.resource] = SupplyState.Empty;
-
-					if (notify && supply.emptyMessage != string.Empty )
-					{
-						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
-						Message.Post(supply.emptySeverity, Lib.ExpandMsg(supply.emptyMessage, vd.Vessel, null, variant), "", supply.fullStopWarp);
-					}
 				}
-				else if (level == 1.0)
+				else if (level > 1.0 - 1e-6)
 				{
-					if (vd.supplies[supply.resource] == SupplyState.Full)
-						continue;
+					switch (currentState)
+					{
+						case SupplyState.Full:
+							continue;
+
+						case SupplyState.Empty:
+						case SupplyState.BelowThreshold:
+						case SupplyState.AboveThreshold:
+							if (notify && supply.fullMessage != string.Empty)
+							{
+								uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+								Message.Post(supply.fullSeverity, Lib.ExpandMsg(supply.fullMessage, vd.Vessel, null, variant), "", supply.fullStopWarp);
+							}
+							break;
+					}
 
 					vd.supplies[supply.resource] = SupplyState.Full;
-
-					if (notify && supply.fullMessage != string.Empty)
-					{
-						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
-						Message.Post(supply.fullSeverity, Lib.ExpandMsg(supply.fullMessage, vd.Vessel, null, variant), "", supply.fullStopWarp);
-					}
 				}
 				else if (level < supply.levelThreshold)
 				{
-					if (vd.supplies[supply.resource] == SupplyState.BelowThreshold)
-						continue;
+					switch (currentState)
+					{
+						case SupplyState.BelowThreshold:
+							continue;
+
+						case SupplyState.Empty:
+							break;
+
+						case SupplyState.AboveThreshold:
+						case SupplyState.Full:
+							if (notify && supply.lowMessage != string.Empty)
+							{
+								uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+								Message.Post(supply.lowSeverity, Lib.ExpandMsg(supply.lowMessage, vd.Vessel, null, variant), "", supply.lowStopWarp);
+							}
+							break;
+					}
 
 					vd.supplies[supply.resource] = SupplyState.BelowThreshold;
-
-					if (notify && supply.lowMessage != string.Empty)
-					{
-						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
-						Message.Post(supply.lowSeverity, Lib.ExpandMsg(supply.lowMessage, vd.Vessel, null, variant), "", supply.lowStopWarp);
-					}
 				}
 				else
 				{
-					if (vd.supplies[supply.resource] == SupplyState.AboveThreshold)
-						continue;
+					switch (currentState)
+					{
+						case SupplyState.AboveThreshold:
+							continue;
+
+						case SupplyState.Full:
+							break;
+
+						case SupplyState.Empty:
+						case SupplyState.BelowThreshold:
+							if (notify && supply.fillMessage != string.Empty)
+							{
+								uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
+								Message.Post(supply.fillSeverity, Lib.ExpandMsg(supply.fillMessage, vd.Vessel, null, variant), "", supply.fillStopWarp);
+							}
+							break;
+					}
 
 					vd.supplies[supply.resource] = SupplyState.AboveThreshold;
-
-					if (notify && supply.fillMessage != string.Empty)
-					{
-						uint variant = vd.CrewCount > 0 ? 0 : 1u; // manned/probe message variant
-						Message.Post(supply.fillSeverity, Lib.ExpandMsg(supply.fillMessage, vd.Vessel, null, variant), "", supply.fillStopWarp);
-					}
 				}
 			}
 		}

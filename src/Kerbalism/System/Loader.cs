@@ -41,28 +41,30 @@ namespace KERBALISM
 			if (LocalHelpers.UpdateNonEnglishLoc)
 				LocalHelpers.RegenerateNonEnglishLoc();
 
-			//Lib.Log("Forcing KSP to load resources...");
-			//PartResourceLibrary.Instance.LoadDefinitions();
-
 			// detect features
 			Features.Parse();
 
 			// get configs from DB
 			UrlDir.UrlFile root = null;
-			foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs) { root = url.parent; break; }
+			foreach (UrlDir.UrlConfig url in GameDatabase.Instance.root.AllConfigs)
+			{ root = url.parent; break; }
 
-			// inject MM patches on-the-fly, so that profile/features can be queried with NEEDS[]
+			// inject features as MM patches on-the-fly, so they can be queried with NEEDS[]
 			if (Features.Failures) Inject(root, "Kerbalism", "Failures");
 			if (Features.Science) Inject(root, "Kerbalism", "Science");
 			if (Features.Radiation) Inject(root, "Kerbalism", "Radiation");
 			if (Features.LifeSupport) Inject(root, "Kerbalism", "LifeSupport");
 			if (Features.Stress) Inject(root, "Kerbalism", "Stress");
 
-			// inject harmony patches
+			// Create harmony instance
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
+
+			// Search all Kerbalism classes for standalone patches 
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
-			B9PSPatcher.Init(harmony);
-			var methods = harmony.GetPatchedMethods();
+
+			// Add other patches
+			ErrorManager.SetupPatches(harmony);
+			B9PartSwitch.Init(harmony);
 
 			// register loading callbacks
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
@@ -70,12 +72,12 @@ namespace KERBALISM
 				GameEvents.OnPartLoaderLoaded.Add(SaveHabitatData);
 				GameEvents.OnGameDatabaseLoaded.Add(LoadConfiguration);
 			}
-			
 		}
 
 		void OnDestroy()
 		{
 			GameEvents.OnPartLoaderLoaded.Remove(SaveHabitatData);
+			GameEvents.OnGameDatabaseLoaded.Remove(LoadConfiguration);
 		}
 
 		// inject an MM patch on-the-fly, so that NEEDS[TypeId] can be used in MM patches
@@ -113,7 +115,9 @@ namespace KERBALISM
 		void LoadConfiguration()
 		{
 			Settings.Parse();
+			Settings.CheckMods();
 			Profile.Parse();
+			ErrorManager.CheckErrors(true);
 		}
 	}
 

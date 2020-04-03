@@ -113,12 +113,12 @@ namespace KERBALISM
 			Requires = ParseRequirements(requires);
 		}
 
-		public bool TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
+		public bool TestRequirements(VesselData vd, out RequireResult[] results, bool testAll = false)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
-			VesselData vd = v.KerbalismData();
 
 			results = new RequireResult[Requires.Length];
+			Vessel v = vd.Vessel;
 
 			bool good = true;
 

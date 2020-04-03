@@ -64,7 +64,9 @@ namespace KERBALISM
 		/// <summary> If true, subject completion will enable the stock resource map for the corresponding body</summary>
 		public bool UnlockResourceSurvey { get; private set; }
 
-		public bool IsROC { get; private set; }
+		public bool IsROC => ROCDef != null;
+
+		public ROCDefinition ROCDef { get; private set; }
 
 		public bool HasDBSubjects { get; private set; }
 
@@ -86,11 +88,29 @@ namespace KERBALISM
 			this.stockDef = stockDef;
 			ExperimentId = stockDef.id;
 
-			// We have some custom handling for breaking ground ROC experiments
-			IsROC = ExperimentId.StartsWith("ROCScience");
+			// We have some custom handling for breaking ground ROC experiments.
+			// ROC experiment id are always formatted with the ROC name after '_'.
+			// This behavior is hardcoded in KSP code, so should be safe even in the eventuality of non-stock ROCs
+
+			// temporary, test is this works
+			if (Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity") && ROCManager.Instance == null)
+			{
+				Lib.Log("ROCManager.Instance IS NULL, THIS DOESN'T WORK !!!!", Lib.LogLevel.Error);
+			}
+
+
+			if (ROCManager.Instance != null)
+			{
+				int rocDefIndex = ExperimentId.IndexOf('_') + 1; // will be 0 if not found
+				if (rocDefIndex > 0 && rocDefIndex < ExperimentId.Length)
+				{
+					string rocType = ExperimentId.Substring(rocDefIndex);
+					ROCDef = ROCManager.Instance.rocDefinitions.Find(p => p.type == rocType);
+				}
+			}
 
 			if (IsROC)
-				Title = "ROC: " + stockDef.experimentTitle; // group ROC together in the science archive (sorted by Title)
+				Title = "ROC: " + ROCDef.displayName; // group ROC together in the science archive (sorted by Title)
 			else
 				Title = stockDef.experimentTitle;
 
@@ -104,30 +124,30 @@ namespace KERBALISM
 
 			// Get the science points from the kerbalism node, and override the stock definition if it is set
 			// This is primarily for simplification of the experiment definition process
-			float SciencePoints = Lib.ConfigValue(kerbalismExperimentNode, "SciencePoints", 0f);
-			if (SciencePoints > 0)
+			float sciencePoints = Lib.ConfigValue(kerbalismExperimentNode, "SciencePoints", 0f);
+			if (sciencePoints > 0f)
 			{
-				if(this.stockDef.applyScienceScale) // non-serenity
-					this.stockDef.baseValue = this.stockDef.scienceCap = SciencePoints;
+				if (stockDef.applyScienceScale) // non-serenity
+					stockDef.baseValue = stockDef.scienceCap = sciencePoints;
 				else
-					this.stockDef.scienceCap = SciencePoints;
+					stockDef.scienceCap = sciencePoints;
 			}
 
 			// Get the desired data size from the kerbalism node, and adjust data scale if it is set
-			DataSize = Lib.ConfigValue(kerbalismExperimentNode, "DataSize", 0);
-			if(DataSize > 0)
+			DataSize = Lib.ConfigValue(kerbalismExperimentNode, "DataSize", 0.0);
+			if(DataSize > 0.0)
 			{
-				if (this.stockDef.applyScienceScale)
-					this.stockDef.dataScale = (float)(DataSize / this.stockDef.baseValue);
+				if (stockDef.applyScienceScale)
+					stockDef.dataScale = (float)(DataSize / stockDef.baseValue);
 				else
-					this.stockDef.dataScale = (float)(DataSize / this.stockDef.scienceCap);
+					stockDef.dataScale = (float)(DataSize / stockDef.scienceCap);
 			}
 			else
 			{
 				if (this.stockDef.applyScienceScale)
-					DataSize = this.stockDef.baseValue * this.stockDef.dataScale;
+					DataSize = stockDef.baseValue * this.stockDef.dataScale;
 				else
-					DataSize = this.stockDef.scienceCap * this.stockDef.dataScale;
+					DataSize = stockDef.scienceCap * this.stockDef.dataScale;
 			}
 
 			// make sure we don't produce NaN values down the line because of odd/wrong configs
@@ -318,133 +338,6 @@ namespace KERBALISM
 				GetIncludedExperimentTitles(includedExpinfo, includedExperiments);
 			}
 			includedExperiments.Sort((x, y) => x.CompareTo(y));
-		}
-
-		/// <summary>
-		/// parts that have experiments can't get their module info (what is shown in the VAB tooltip) correctly setup
-		/// because the ExperimentInfo database isn't available at loading time, so we recompile their info manually.
-		/// </summary>
-		public void CompileModuleInfos()
-		{
-			if (PartLoader.LoadedPartsList == null)
-			{
-				Lib.Log("Dazed and confused: PartLoader.LoadedPartsList == null");
-				return;
-			}
-
-			foreach (AvailablePart ap in PartLoader.LoadedPartsList)
-			{
-				if (ap == null || ap.partPrefab == null)
-				{
-					Lib.Log("AvailablePart is null or without prefab: " + ap);
-					continue;
-				}
-
-				foreach (PartModule module in ap.partPrefab.Modules)
-				{
-					if (module is ModuleKsmExperiment expModule)
-					{
-						if (string.IsNullOrEmpty(expModule.id))
-							continue;
-
-						var moduleDefinition = ExperimentModuleDefinitions.Find(d => d.Name == expModule.id);
-						if (moduleDefinition == null)
-							continue;
-
-						expModule.ModuleDefinition = moduleDefinition;
-
-						// get module info for the ExperimentInfo, once
-						if (string.IsNullOrEmpty(ModuleInfo))
-						{
-							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\n";
-							ModuleInfo += expModule.GetInfo();
-						}
-					}
-
-					if (!string.IsNullOrEmpty(ModuleInfo))
-						continue;
-
-					if (module is ModuleScienceExperiment stockExpModule)
-					{
-						if (stockExpModule.experimentID == ExperimentId)
-						{
-							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\n" + Local.Experimentinfo_Datasize + ": ";//Data size
-							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
-							if (stockExpModule.xmitDataScalar < Science.maxXmitDataScalarForSample)
-							{
-								ModuleInfo += "\n" + Local.Experimentinfo_generatesample;//Will generate a sample.
-								ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
-								ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-							}
-							ModuleInfo += "\n\n";
-							ModuleInfo += Lib.Color(Local.Experimentinfo_Situations, Lib.Kolor.Cyan, true);//"Situations:\n"
-
-							foreach (string s in AvailableSituations())
-								ModuleInfo += Lib.BuildString("• <b>", s, "</b>\n");
-
-							ModuleInfo += "\n";
-							ModuleInfo += stockExpModule.GetInfo();
-						}
-					}
-
-					else if (module is ModuleGroundExperiment groundExpModule)
-					{
-						if (groundExpModule.experimentId == ExperimentId)
-						{
-							ModuleInfo = Lib.Color(Title, Lib.Kolor.Cyan, true);
-							ModuleInfo += "\n" + Local.Experimentinfo_Datasize + ": ";//Data size
-							ModuleInfo += Lib.HumanReadableDataSize(DataSize);
-							ModuleInfo += "\n\n";
-							ModuleInfo += groundExpModule.GetInfo();
-						}
-					}
-				}
-
-				// special cases
-				if (ExperimentId == "asteroidSample")
-				{
-					ModuleInfo = Local.Experimentinfo_Asteroid;//"Asteroid samples can be taken by kerbals on EVA"
-					ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
-					ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-					ModuleInfo += "\n" + Local.Experimentinfo_Samplemass + " ";//Sample mass:
-					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
-				}
-				else if (IsROC)
-				{
-					string rocType = ExperimentId.Substring(ExperimentId.IndexOf('_') + 1);
-					ROCDefinition rocDef = ROCManager.Instance.rocDefinitions.Find(p => p.type == rocType);
-					if (rocDef != null)
-					{
-						ModuleInfo = Lib.Color(rocDef.displayName, Lib.Kolor.Cyan, true);
-						ModuleInfo += "\n- " + Local.Experimentinfo_scannerarm;//Analyse with a scanner arm
-						ModuleInfo += "\n  " + Local.Experimentinfo_Datasize + ": ";//Data size
-						ModuleInfo += Lib.HumanReadableDataSize(DataSize);
-
-						if (rocDef.smallRoc)
-						{
-							ModuleInfo += "\n- " + Local.Experimentinfo_smallRoc;//Collectable on EVA as a sample"
-							ModuleInfo += "\n" + Local.Experimentinfo_Samplesize + " ";//Sample size:
-							ModuleInfo += Lib.HumanReadableSampleSize(DataSize);
-						}
-						else
-						{
-							ModuleInfo += "\n- " + Local.Experimentinfo_smallRoc2;//Can't be collected on EVA
-						}
-
-						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
-						{
-							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(body.name), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
-							foreach (string biome in body.biomes)
-							{
-								ModuleInfo += "\n- ";
-								ModuleInfo += biome;
-							}
-						}
-					}
-				}
-			}
 		}
 
 		/// <summary> UI friendly list of situations available for the experiment</summary>
@@ -648,81 +541,7 @@ namespace KERBALISM
 		}
 	}
 
-	public sealed class ExperimentModuleDefinition
-	{
-		public ExperimentInfo Info { get; private set; }
 
-		public string Name { get; private set; }
-
-		/// <summary> Duration in seconds </summary>
-		public double Duration { get; private set; } = 60;
-
-		/// <summary> Data rate, automatically calculated from desired duration and experiments data size </summary>
-		public double DataRate { get; private set; }
-
-		/// <summary> EC requirement (units/second) </summary>
-		public double RequiredEC = 0.01;
-
-		/// <summary> the amount of samples this unit is shipped with </summary>
-		public double Samples { get; private set; } = 0.0;
-
-		/// <summary> If true, the experiment will generate mass out of nothing (surface samples) </summary>
-		public bool SampleCollecting { get; private set; } = false;
-
-		/// <summary> Operator crew. If set, crew has to be on vessel for the experiment to run </summary>
-		public CrewSpecs CrewOperate { get; private set; }
-
-		/// <summary> Experiment requirements </summary>
-		public ExperimentRequirements Requirements { get; private set; }
-
-		/// <summary> Resource requirements </summary>
-		public List<ObjectPair<string, double>> Resources { get; private set; }
-
-		public ExperimentModuleDefinition(ExperimentInfo experimentInfo)
-		{
-			Info = experimentInfo;
-			Name = experimentInfo.ExperimentId;
-			DataRate = Info.DataSize / Duration;
-		}
-
-		public ExperimentModuleDefinition(ExperimentInfo experimentInfo, ConfigNode moduleDefinition)
-		{
-			Info = experimentInfo;
-
-			Name = Lib.ConfigValue(moduleDefinition, "name", experimentInfo.ExperimentId);
-			Duration = Lib.ParseDuration(Lib.ConfigValue(moduleDefinition, "Duration", "60s"));
-			DataRate = Info.DataSize / Duration;
-			RequiredEC = Lib.ConfigValue(moduleDefinition, "RequiredEC", 0.0);
-			SampleCollecting = Lib.ConfigValue(moduleDefinition, "SampleCollecting", false);
-			Samples = Lib.ConfigValue(moduleDefinition, "Samples", SampleCollecting ? 0.0 : 1.0);
-			CrewOperate = new CrewSpecs(Lib.ConfigValue(moduleDefinition, "CrewOperate", string.Empty));
-			Requirements = new ExperimentRequirements(Lib.ConfigValue(moduleDefinition, "Requirements", string.Empty));
-			Resources = ParseResources(Lib.ConfigValue(moduleDefinition, "Resources", string.Empty));
-		}
-
-		private static readonly List<ObjectPair<string, double>> noResources = new List<ObjectPair<string, double>>();
-
-		internal static List<ObjectPair<string, double>> ParseResources(string resources, bool logErros = false)
-		{
-			if (string.IsNullOrEmpty(resources)) return noResources;
-
-			List<ObjectPair<string, double>> defs = new List<ObjectPair<string, double>>();
-			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-
-			foreach (string s in Lib.Tokenize(resources, ','))
-			{
-				// definitions are Resource@rate
-				var p = Lib.Tokenize(s, '@');
-				if (p.Count != 2) continue;             // malformed definition
-				string res = p[0];
-				if (!reslib.Contains(res)) continue;    // unknown resource
-				double rate = double.Parse(p[1]);
-				if (res.Length < 1 || rate < double.Epsilon) continue;  // rate <= 0
-				defs.Add(new ObjectPair<string, double>(res, rate));
-			}
-			return defs;
-		}
-	}
 
 } // KERBALISM
 

@@ -10,7 +10,7 @@ using static KERBALISM.HabitatLib;
 
 namespace KERBALISM
 {
-	public sealed class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier
+	public class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
 		#region FIELDS / PROPERTIES
 		// general config
@@ -67,7 +67,7 @@ namespace KERBALISM
 		private Transformator counterweightAnimator;
 
 		// caching frequently used things
-		private VesselData vd;
+		private VesselDataBase vd;
 		private PartResourceWrapper atmoRes;
 		private PartResourceWrapper wasteRes;
 		private PartResourceWrapper shieldRes;
@@ -210,25 +210,33 @@ namespace KERBALISM
 				if (isDeployable && deployWithPressure)
 					canRetract = false; // inflatables can't be retracted
 
-				// precalculate shielding cost and add resources
-				double volumeLiters = M3ToL(volume);
-				double currentVolumeLiters = canPressurize ? volumeLiters : 0.0;
-				Lib.AddResource(part, Settings.HabitatAtmoResource, currentVolumeLiters, volumeLiters);
-				Lib.AddResource(part, Settings.HabitatWasteResource, 0.0, volumeLiters);
-
 				// adjust depressurization speed if not specified
 				if (depressurizationSpeed < 0.0)
 					depressurizationSpeed = 10.0 * Math.Sqrt(volume);
-
-				if (hasShielding)
-				{
-					Lib.AddResource(part, shieldingResource, 0.0, surface * maxShieldingFactor);
-				}
 			}
 		}
 
 		public override void OnStart(StartState state)
 		{
+			double volumeLiters = M3ToL(volume);
+			double currentVolumeLiters = canPressurize ? volumeLiters : 0.0;
+
+			if (!part.Resources.Contains(Settings.HabitatAtmoResource))
+				Lib.AddResource(part, Settings.HabitatAtmoResource, volume, volumeLiters);
+
+			if (!part.Resources.Contains(Settings.HabitatWasteResource))
+				Lib.AddResource(part, Settings.HabitatWasteResource, 0.0, volumeLiters);
+
+			if (hasShielding && !part.Resources.Contains(shieldingResource))
+				Lib.AddResource(part, shieldingResource, 0.0, surface * maxShieldingFactor);
+
+			// This should not be needed, but there are specific cases when launching a new vessel
+			// where the normal check will be triggered at a time were the part crew isn't initialized.
+			// And there might other cases were the crew count becomes desynchronized, so additional safety
+			// Note : another solution would be to update it continously from FixedUpdate/BackgroundUpdate
+			// but that might cause issues with the crew transfer callbacks. On the otehr hand it would be safer
+			moduleData.crewCount = Lib.CrewCount(part);
+
 			bool isFlight = Lib.IsFlight;
 
 			// setup animations / transformators
@@ -253,11 +261,13 @@ namespace KERBALISM
 
 			if (isFlight)
 			{
-				vd = vessel.KerbalismData();
+				vessel.TryGetVesselData(out VesselData flightVD);
+				vd = flightVD;
 				vesselResHandler = vd.ResHandler;
 			}
 			else
 			{
+				vd = VesselDataShip.Instance;
 				vesselResHandler = VesselDataShip.Instance.ResHandler;
 			}
 
@@ -592,7 +602,7 @@ namespace KERBALISM
 		public class HabitatUpdateHandler
 		{
 			private Vessel vessel;
-			private VesselData vd;
+			private VesselDataBase vd;
 			private HabitatData data;
 			private ModuleKsmHabitat module;
 
@@ -608,7 +618,7 @@ namespace KERBALISM
 			bool isEditor;
 			bool isLoaded;
 
-			public HabitatUpdateHandler(Vessel vessel, VesselData vd, ModuleKsmHabitat module, HabitatData data,
+			public HabitatUpdateHandler(Vessel vessel, VesselDataBase vd, ModuleKsmHabitat module, HabitatData data,
 				PartResourceWrapper atmoRes, PartResourceWrapper wasteRes, PartResourceWrapper shieldRes,
 				VesselKSPResource atmoResInfo, VesselKSPResource wasteResInfo, VesselKSPResource breathableResInfo, VesselKSPResource ecResInfo)
 			{

@@ -30,6 +30,12 @@ namespace KERBALISM
 
 		#region VIRTUAL PROPERTIES
 
+		public virtual bool LoadedOrEditor => true;
+
+		public virtual bool IsEVA => false;
+
+		public virtual string VesselName => string.Empty;
+
 		public virtual bool IsPersistent => true;
 
 		public virtual IEnumerable<PartData> PartList { get; }
@@ -187,7 +193,7 @@ namespace KERBALISM
 			// instantiate all PartData/ModuleData for the ship, loading ModuleData if available.
 			foreach (Part part in ship.parts)
 			{
-				PartData partData = new PartData(VesselDataShip.Instance, part);
+				PartDataShip partData = new PartDataShip(VesselDataShip.Instance, part);
 				VesselDataShip.LoadedParts.Add(partData);
 
 				for (int i = 0; i < part.Modules.Count; i++)
@@ -196,7 +202,7 @@ namespace KERBALISM
 					{
 						if ( moduleDataNodes.TryGetValue(ksmPM.dataShipId, out ConfigNode moduleNode))
 						{
-							ModuleData.NewFromNode(ksmPM, partData, moduleNode);
+							ModuleData.NewFromNode(ksmPM, i, partData, moduleNode);
 						}
 						else
 						{
@@ -225,6 +231,24 @@ namespace KERBALISM
 
 			habitatData.EvaluateAfterModuleUpdate(this);
 			vesselProcesses.EvaluateAfterModuleUpdate(this);
+		}
+
+		#endregion
+
+		#region UTILS
+
+		public IEnumerable<T> ModuleDatasOfType<T>() where T : ModuleData
+		{
+			foreach (PartData partData in PartList)
+			{
+				foreach (ModuleData moduleData in partData.modules)
+				{
+					if (moduleData is T typedModuleData)
+					{
+						yield return typedModuleData;
+					}
+				}
+			}
 		}
 
 		#endregion

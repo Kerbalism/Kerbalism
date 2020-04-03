@@ -68,7 +68,8 @@ namespace KERBALISM
 		public void Execute(Vessel v, ScriptType type)
 		{
 			// do nothing if there is no EC left on the vessel
-			if (!v.KerbalismData().ResHandler.ElectricCharge.CriticalConsumptionSatisfied) return;
+			v.TryGetVesselData(out VesselData vd);
+			if (!vd.ResHandler.ElectricCharge.CriticalConsumptionSatisfied) return;
 
 			// get the script
 			Script script;
@@ -79,7 +80,7 @@ namespace KERBALISM
 
 				// show message to the user
 				// - unless the script is empty (can happen when being edited)
-				if (script.states.Count > 0 && v.KerbalismData().cfg_script)
+				if (script.states.Count > 0 && vd.cfg_script)
 				{
 					Message.Post(Lib.BuildString(Local.UI_scriptvessel, " <b>", v.vesselName, "</b>"));
 				}
@@ -214,7 +215,7 @@ namespace KERBALISM
 				}
 
 				// show message to the user
-				if (v.KerbalismData().cfg_script)
+				if (vd.cfg_script)
 				{
 					Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
 				}
@@ -243,7 +244,7 @@ namespace KERBALISM
 					{
 						case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
 						//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
-						case "Emitter": device = new EmitterDevice(m as Emitter); break;
+						case "Emitter": device = new EmitterDevice(m as ModuleKsmRadiationEmitter); break;
 						case "Harvester": device = new HarvesterDevice(m as Harvester); break;
 						case "Laboratory": device = new LaboratoryDevice(m as Laboratory); break;
 						case "ModuleKsmExperiment": device = new ExperimentDevice(m as ModuleKsmExperiment); break;
@@ -304,7 +305,7 @@ namespace KERBALISM
 						{
 							case "Greenhouse": device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m); break;
 							//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
-							case "Emitter": device = new ProtoEmitterDevice(module_prefab as Emitter, p, m); break;
+							case "Emitter": device = new ProtoEmitterDevice(module_prefab as ModuleKsmRadiationEmitter, p, m); break;
 							case "Harvester": device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m); break;
 							case "Laboratory": device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m); break;
 							case "ModuleKsmExperiment": device = new ProtoExperimentDevice(module_prefab as ModuleKsmExperiment, p, m, v); break;
@@ -342,7 +343,7 @@ namespace KERBALISM
 			});
 
 			// now add vessel wide devices to the end of the list
-			VesselData vd = v.KerbalismData();
+			v.TryGetVesselData(out VesselData vd);
 
 			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
 

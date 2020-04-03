@@ -44,7 +44,12 @@ namespace KERBALISM
 		public VesselProcess(Process process)
 		{
 			this.process = process;
-			this.dumpedOutputs = new List<string>(process.dumpedOutputsDefault);
+			dumpedOutputs = new List<string>(process.outputs.Count);
+			foreach (Process.Output output in process.outputs)
+			{
+				if (output.dumpByDefault)
+					dumpedOutputs.Add(output.name);
+			}
 		}
 
 		public VesselProcess(string processName, ConfigNode node)
@@ -70,7 +75,7 @@ namespace KERBALISM
 			enabledCapacity = newEnabledCapacity;
 			newEnabledCapacity = 0.0;
 
-			VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.resourceName);
+			VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.pseudoResourceName);
 			processRes.SetCapacity(enabledCapacity);
 			processRes.SetAmount(AvailableCapacity);
 		}
@@ -83,13 +88,13 @@ namespace KERBALISM
 				newEnabledCapacity += maxCapacity;
 		}
 
-		public string Description()
+		public string CurrentRatesInfo()
 		{
 			if (cachedDescriptionCapacity == AvailableCapacity && !string.IsNullOrEmpty(cachedDescription))
 				return cachedDescription;
 
 			cachedDescriptionCapacity = AvailableCapacity;
-			cachedDescription = process.Specifics(cachedDescriptionCapacity).Info();
+			cachedDescription = process.GetInfo(cachedDescriptionCapacity, false);
 			return cachedDescription;
 		}
 	}
