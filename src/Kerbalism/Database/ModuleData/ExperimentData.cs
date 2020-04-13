@@ -54,10 +54,12 @@ namespace KERBALISM
 			get => status;
 			private set
 			{
-				if (Lib.IsFlight)
-					API.OnExperimentStateChanged.Notify(((VesselData)partData.vesselData).Vessel, ExperimentID, status, value);
-
-				status = value;
+				if(status != value)
+				{
+					status = value;
+					if(!Lib.IsEditor)
+						API.OnExperimentStateChanged.Notify(((VesselData)partData.vesselData).VesselId, ExperimentID, status);
+				}
 			}
 		}
 
@@ -123,6 +125,9 @@ namespace KERBALISM
 
 			if (!TrySetupDefinition(modulePrefab.moduleDefinition))
 				moduleIsEnabled = false;
+
+			if(!Lib.IsEditor)
+				API.OnExperimentStateChanged.Notify(((VesselData)partData.vesselData).VesselId, ExperimentID, status);
 		}
 
 		public bool TrySetupDefinition(string definitionId)
@@ -170,6 +175,9 @@ namespace KERBALISM
 
 			if (node.HasValue("privateDriveId"))
 				privateDriveId = Lib.ConfigValue(node, "privateDriveId", 0);
+
+			if (!Lib.IsEditor)
+				API.OnExperimentStateChanged.Notify(((VesselData)partData.vesselData).VesselId, ExperimentID, status);
 		}
 
 		public override void OnSave(ConfigNode node)

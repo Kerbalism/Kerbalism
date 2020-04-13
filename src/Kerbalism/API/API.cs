@@ -640,20 +640,17 @@ namespace KERBALISM
 		public static ExperimentStateChanged OnExperimentStateChanged = new ExperimentStateChanged();
 		public class ExperimentStateChanged
 		{
-			internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
-			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
-			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
+			internal List<Action<Guid, string, int>> receivers = new List<Action<Guid, string, int>>();
+			public void Add(Action<Guid, string, int> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
+			public void Remove(Action<Guid, string, int> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
 
-			public void Notify(Vessel vessel, string experiment_id, ExperimentData.ExpStatus oldStatus, ExperimentData.ExpStatus newStatus)
+			public void Notify(Guid vesselId, string experiment_id, ExperimentData.ExpStatus status)
 			{
-				bool wasRunning = oldStatus == ExperimentData.ExpStatus.Forced || oldStatus == ExperimentData.ExpStatus.Running;
-				bool isRunning = newStatus == ExperimentData.ExpStatus.Forced || newStatus == ExperimentData.ExpStatus.Running;
-				if (wasRunning == isRunning) return;
-				foreach (Action<Vessel, string, bool> receiver in receivers)
+				foreach (Action<Guid, string, int> receiver in receivers)
 				{
 					try
 					{
-						receiver.Invoke(vessel, experiment_id, isRunning);
+						receiver.Invoke(vesselId, experiment_id, (int)status);
 					}
 					catch (Exception e)
 					{
