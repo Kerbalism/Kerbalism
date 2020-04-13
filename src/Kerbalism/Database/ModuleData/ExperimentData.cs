@@ -176,8 +176,10 @@ namespace KERBALISM
 			if (node.HasValue("privateDriveId"))
 				privateDriveId = Lib.ConfigValue(node, "privateDriveId", 0);
 
-			if (!Lib.IsEditor)
-				API.OnExperimentStateChanged.Notify(((VesselData)partData.vesselData).VesselId, ExperimentID, status);
+			if (!Lib.IsEditor && partData?.vesselData is VesselData vd)
+			{
+				API.OnExperimentStateChanged.Notify(vd.VesselId, ExperimentID, status);
+			}
 		}
 
 		public override void OnSave(ConfigNode node)
