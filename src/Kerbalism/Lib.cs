@@ -1022,9 +1022,9 @@ namespace KERBALISM
 			if (dangerColor)
 			{
 				if (rad < 0.5)
-					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Yellow);
+					return Color(BuildString(rad.ToString("F3"), " rad/h"), Kolor.Yellow);
 				else
-					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Red);
+					return Color(BuildString(rad.ToString("F3"), " rad/h"), Kolor.Red);
 			}
 			else
 			{
