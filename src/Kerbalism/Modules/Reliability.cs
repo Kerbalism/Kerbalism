@@ -18,7 +18,7 @@ namespace KERBALISM
 		[KSPField] public double extra_mass;                                // extra mass for high-quality, in proportion of part mass
 
 		[KSPField] public double rated_radiation = 0;                       // rad/h this part can sustain without taking any damage. Only effective with MTBF failures.
-		[KSPField] public double radiation_decay_rate = 20;                 // time to next failure is reduced by (rad/h - rated_radiation) * radiation_decay_rate seconds
+		[KSPField] public double radiation_decay_rate = 1;                  // time to next failure is reduced by (rad/h - rated_radiation) * radiation_decay_rate per second
 
 		// engine only features
 		[KSPField] public double turnon_failure_probability = -1;           // probability of a failure when turned on or staged
