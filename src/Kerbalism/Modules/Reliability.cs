@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField(isPersistant = true)] public string type;                 // component name
-		[KSPField] public double mtbf = 3600 * 6 * 1000;                    // mean time between failures, in seconds
+		[KSPField] public string mtbf = "3y";                               // mean time between failures
 		[KSPField] public string repair = string.Empty;                     // repair crew specs
 		[KSPField] public string title = string.Empty;                      // short description of component
 		[KSPField] public string redundancy = string.Empty;                 // redundancy group
@@ -47,6 +47,17 @@ namespace KERBALISM
 		List<PartModule> modules;                                           // components cache
 		CrewSpecs repair_cs;                                                // crew specs
 		bool explode = false;
+
+		public double MTBF
+		{
+			get
+			{
+				if (mtbf_seconds == double.MaxValue)
+					mtbf_seconds = Lib.ParseDuration(mtbf);
+				return mtbf_seconds;
+			}
+		}
+		private double mtbf_seconds = double.MaxValue;
 
 		public override void OnStart(StartState state)
 		{
@@ -281,9 +292,9 @@ namespace KERBALISM
 				Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + title + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
 
 				Status = string.Empty;
-				if (mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
+				if (MTBF > 0 && PreferencesReliability.Instance.mtbfFailures)
 				{
-					double effective_mtbf = EffectiveMTBF(quality, mtbf);
+					double effective_mtbf = EffectiveMTBF(quality, MTBF);
 					Status = Lib.BuildString(Status,
 							(string.IsNullOrEmpty(Status) ? "" : ", "),
 							Local.Reliability_MTBF + " ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
@@ -324,15 +335,15 @@ namespace KERBALISM
 			var now = Planetarium.GetUniversalTime();
 
 			// if it has not malfunctioned
-			if (!broken && mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
+			if (!broken && MTBF > 0 && PreferencesReliability.Instance.mtbfFailures)
 			{
 				// calculate time of next failure if necessary
 				if (next <= 0)
 				{
 					last = now;
-					var guaranteed = mtbf / 2.0;
+					var guaranteed = MTBF / 2.0;
 					var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
-					next = now + guaranteed + mtbf * (quality ? Settings.QualityScale : 1.0) * r;
+					next = now + guaranteed + MTBF * (quality ? Settings.QualityScale : 1.0) * r;
 #if DEBUG_RELIABILITY
 					Lib.Log("Reliability: MTBF failure in " + (now - next) + " for " + part.partInfo.title);
 #endif
@@ -437,7 +448,7 @@ namespace KERBALISM
 
 			// check for existing malfunction and if it actually uses MTBF failures
 			if (Lib.Proto.GetBool(m, "broken")) return;
-			if (reliability.mtbf <= 0) return;
+			if (reliability.MTBF <= 0) return;
 
 			// get time of next failure
 			double next = Lib.Proto.GetDouble(m, "next");
@@ -447,9 +458,9 @@ namespace KERBALISM
 			// calculate epoch of failure if necessary
 			if (next <= 0)
 			{
-				var guaranteed = reliability.mtbf / 2.0;
+				var guaranteed = reliability.MTBF / 2.0;
 				var r = 1 - Math.Pow(Lib.RandomDouble(), 3);
-				next = now + guaranteed + reliability.mtbf * (quality ? Settings.QualityScale : 1.0) * r;
+				next = now + guaranteed + reliability.MTBF * (quality ? Settings.QualityScale : 1.0) * r;
 				Lib.Proto.Set(m, "last", now);
 				Lib.Proto.Set(m, "next", next);
 #if DEBUG_RELIABILITY
@@ -506,7 +517,7 @@ namespace KERBALISM
 
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
-			needMaintenance = mtbf > 0 && time_k > 0.35;
+			needMaintenance = MTBF > 0 && time_k > 0.35;
 
 			if (rated_ignitions > 0 && ignitions >= Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
 			if (rated_operation_duration > 0 && operation_duration >= EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
@@ -792,21 +803,21 @@ namespace KERBALISM
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>" + Local.Reliability_info3 + "</color>");//Standard quality
-			if (mtbf > 0) specs.Add(Local.Reliability_info4, Lib.HumanReadableDuration(EffectiveMTBF(false, mtbf)));//"MTBF"
+			if (MTBF > 0) specs.Add(Local.Reliability_info4, Lib.HumanReadableDuration(EffectiveMTBF(false, MTBF)));//"MTBF"
 			if (turnon_failure_probability > 0) specs.Add(Local.Reliability_info5, Lib.HumanReadablePerc(turnon_failure_probability, "F1"));//"Ignition failures"
 			if (rated_operation_duration > 0) specs.Add(Local.Reliability_info6, Lib.HumanReadableDuration(EffectiveDuration(false, rated_operation_duration)));//"Rated burn duration"
 			if (rated_ignitions > 0) specs.Add(Local.Reliability_info7, EffectiveIgnitions(false, rated_ignitions).ToString());//"Rated ignitions"
-			if (mtbf > 0 && rated_radiation > 0) specs.Add(Local.Reliability_info8, Lib.HumanReadableRadiation(rated_radiation / 3600.0));//"Radiation rating"
+			if (MTBF > 0 && rated_radiation > 0) specs.Add(Local.Reliability_info8, Lib.HumanReadableRadiation(rated_radiation / 3600.0));//"Radiation rating"
 
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>" + Local.Reliability_info9 + "</color>");//High quality
 			if (extra_cost > double.Epsilon) specs.Add(Local.Reliability_info10, Lib.HumanReadableCost(extra_cost * part.partInfo.cost));//"Extra cost"
 			if (extra_mass > double.Epsilon) specs.Add(Local.Reliability_info11, Lib.HumanReadableMass(extra_mass * part.partInfo.partPrefab.mass));//"Extra mass"
-			if (mtbf > 0) specs.Add(Local.Reliability_info4, Lib.HumanReadableDuration(EffectiveMTBF(true, mtbf)));//"MTBF"
+			if (MTBF > 0) specs.Add(Local.Reliability_info4, Lib.HumanReadableDuration(EffectiveMTBF(true, MTBF)));//"MTBF"
 			if (turnon_failure_probability > 0) specs.Add(Local.Reliability_info5, Lib.HumanReadablePerc(turnon_failure_probability / Settings.QualityScale, "F1"));//"Ignition failures"
 			if (rated_operation_duration > 0) specs.Add(Local.Reliability_info6, Lib.HumanReadableDuration(EffectiveDuration(true, rated_operation_duration)));//"Rated burn duration"
 			if (rated_ignitions > 0) specs.Add(Local.Reliability_info7, EffectiveIgnitions(true, rated_ignitions).ToString());//"Rated ignitions"
-			if (mtbf > 0 && rated_radiation > 0) specs.Add(Local.Reliability_info8, Lib.HumanReadableRadiation(Settings.QualityScale * rated_radiation / 3600.0));//"Radiation rating"
+			if (MTBF > 0 && rated_radiation > 0) specs.Add(Local.Reliability_info8, Lib.HumanReadableRadiation(Settings.QualityScale * rated_radiation / 3600.0));//"Radiation rating"
 
 			return specs;
 		}

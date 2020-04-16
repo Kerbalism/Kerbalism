@@ -25,7 +25,7 @@ namespace KERBALISM
 			critical = module.critical;
 			partId = module.part.flightID;
 			need_maintenance = module.needMaintenance;
-			mtbf = Reliability.EffectiveMTBF(module.quality, module.mtbf);
+			mtbf = Reliability.EffectiveMTBF(module.quality, module.MTBF);
 
 			if(module.rated_operation_duration > 0)
 			{
@@ -70,7 +70,7 @@ namespace KERBALISM
 				rel_ignitions = Lib.Clamp(rel_ignitions, 0, 1);
 			}
 
-			mtbf = Reliability.EffectiveMTBF(quality, module_prefab.mtbf);
+			mtbf = Reliability.EffectiveMTBF(quality, module_prefab.MTBF);
 
 			if (mtbf > 0)
 			{
