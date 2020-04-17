@@ -185,10 +185,10 @@ namespace KERBALISM
 
 		#region VESSELDATA METHODS
 
-		public static VesselData NewVesselDataFromShipConstruct(Vessel v, ConfigNode shipNode, PartDataCollectionShip shipPartDatas)
+		public static VesselData NewVesselDataFromShipConstruct(Vessel v, ConfigNode shipNode, VesselDataShip shipVd)
 		{
 			Lib.LogDebug("Creating VesselData from ShipConstruct for launched vessel " + v.vesselName);
-			VesselData vd = new VesselData(v, shipNode, shipPartDatas);
+			VesselData vd = new VesselData(v, shipNode, shipVd);
 			vessels.Add(v.id, vd);
 			return vd;
 		}

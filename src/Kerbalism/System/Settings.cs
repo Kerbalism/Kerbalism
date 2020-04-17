@@ -16,6 +16,8 @@ namespace KERBALISM
 
 	public static class Settings
 	{
+		public const string NODENAME_RESOURCE_HVL = "RESOURCE_HVL";
+
 		private class ModToCheck
 		{
 			public const string NODENAME = "MOD_CHECK";
@@ -64,6 +66,23 @@ namespace KERBALISM
 
 		private static List<ModToCheck> modsRequired = new List<ModToCheck>();
 		private static List<ModToCheck> modsIncompatible = new List<ModToCheck>();
+
+		public static void ParseTime()
+		{
+			var kerbalismConfigNodes = GameDatabase.Instance.GetConfigs("KERBALISM_SETTINGS");
+			if (kerbalismConfigNodes.Length < 1) return;
+			ConfigNode cfg = kerbalismConfigNodes[0].config;
+
+			// time in configs
+			ConfigsHoursInDays = Lib.ConfigValue(cfg, "ConfigsHoursInDays", 6.0);
+			ConfigsDaysInYear = Lib.ConfigValue(cfg, "ConfigsDaysInYear", 426.0);
+
+			ConfigsSecondsInDays = ConfigsHoursInDays * 3600.0;
+			ConfigsSecondsInYear = ConfigsDaysInYear * ConfigsHoursInDays * 3600.0;
+
+			ConfigsDurationMultiplier = Lib.ConfigValue(cfg, "ConfigsTimeMultiplier", 1.0);
+			UseHomeBodyCalendar = Lib.ConfigValue(cfg, "UseHomeBodyCalendar", true);
+		}
 
 		public static void Parse()
 		{
@@ -155,6 +174,20 @@ namespace KERBALISM
 				}
 			}
 
+			foreach (ConfigNode resNode	in cfg.GetNodes(NODENAME_RESOURCE_HVL))
+			{
+				string resName = Lib.ConfigValue(resNode, "name", string.Empty);
+				PartResourceDefinition resDef = PartResourceLibrary.Instance.GetDefinition(resName);
+				if (resDef != null)
+				{
+					Radiation.ResourceOcclusion resOcclusion = new Radiation.ResourceOcclusion();
+					resOcclusion.onPartWalls = true;
+					resOcclusion.highHVL = Lib.ConfigValue(resNode, "highHVL", 1.0);
+					resOcclusion.lowHVL = Lib.ConfigValue(resNode, "lowHVL", 1.0);
+					Radiation.shieldingResources[resDef.id] = resOcclusion;
+				}
+			}
+
 			loaded = true;
 		}
 
@@ -185,6 +218,16 @@ namespace KERBALISM
 					ErrorManager.AddError(mod.error);
 			}
 		}
+
+		// time
+		public static double ConfigsHoursInDays;                // used when parsing duration fields in configs. Doesn't affect the "displayed" calendar, only relevant for configs.
+		public static double ConfigsDaysInYear;                 // used when parsing duration fields in configs. Doesn't affect the "displayed" calendar, only relevant for configs.
+		public static double ConfigsDurationMultiplier;         // multiplier applied to all config defined duraton fields (experiments, reliability...)
+		public static bool UseHomeBodyCalendar;					// if true, the ingame displayed time will use the calendar as determined by the home body rotation period and it's orbit rotation period.
+																// if false, the values from the "kerbin time" / "earth time" KSP main menu setting will be used.
+		// convenience values (not config defined)
+		public static double ConfigsSecondsInDays;
+		public static double ConfigsSecondsInYear;
 
 		// habitat
 		public static double PressureSuitVolume;                // pressure / EVA suit volume in liters, used for determining CO2 poisoning level while kerbals are in a depressurized habitat

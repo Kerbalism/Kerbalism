@@ -50,7 +50,7 @@ namespace KERBALISM
 		}
 
 
-		public float Inner_func(Vector3 p)
+		public float InnerFunc(Vector3 p)
 		{
 			p.x *= p.x < 0.0f ? inner_extension : inner_compression;
 			float q1 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * inner_deform_xy) - inner_dist;
@@ -60,21 +60,21 @@ namespace KERBALISM
 			return Mathf.Max(d1, -d2) + (inner_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * inner_deform : 0.0f);
 		}
 
-		public Vector3 Inner_domain()
+		public Vector3 InnerDomain()
 		{
 			float p = Mathf.Max((inner_dist + inner_radius), (inner_border_dist + inner_border_radius));
 			float w = p * Mathf.Sqrt(1 / Mathf.Min(inner_deform_xy, inner_border_deform_xy));
 			return new Vector3((w / inner_compression + w / inner_extension) * 0.5f, Mathf.Max(inner_radius, inner_border_radius), w) * (1.0f + inner_deform);
 		}
 
-		public Vector3 Inner_offset()
+		public Vector3 InnerOffset()
 		{
 			float p = Mathf.Max((inner_dist + inner_radius), (inner_border_dist + inner_border_radius));
 			float w = p * Mathf.Sqrt(1 / Mathf.Min(inner_deform_xy, inner_border_deform_xy));
 			return new Vector3(w / inner_compression - (w / inner_compression + w / inner_extension) * 0.5f, 0.0f, 0.0f);
 		}
 
-		public float Outer_func(Vector3 p)
+		public float OuterFunc(Vector3 p)
 		{
 			p.x *= p.x < 0.0f ? outer_extension : outer_compression;
 			float q1 = Mathf.Sqrt((p.x * p.x + p.z * p.z) * outer_deform_xy) - outer_dist;
@@ -84,21 +84,21 @@ namespace KERBALISM
 			return Mathf.Max(d1, -d2) + (outer_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * outer_deform : 0.0f);
 		}
 
-		public Vector3 Outer_domain()
+		public Vector3 OuterDomain()
 		{
 			float p = Mathf.Max((outer_dist + outer_radius), (outer_border_dist + outer_border_radius));
 			float w = p * Mathf.Sqrt(1 / Mathf.Min(outer_deform_xy, outer_border_deform_xy));
 			return new Vector3((w / outer_compression + w / outer_extension) * 0.5f, Mathf.Max(outer_radius, outer_border_radius), w) * (1.0f + outer_deform);
 		}
 
-		public Vector3 Outer_offset()
+		public Vector3 OuterOffset()
 		{
 			float p = Mathf.Max((outer_dist + outer_radius), (outer_border_dist + outer_border_radius));
 			float w = p * Mathf.Sqrt(1 / Mathf.Min(outer_deform_xy, outer_border_deform_xy));
 			return new Vector3(w / outer_compression - (w / outer_compression + w / outer_extension) * 0.5f, 0.0f, 0.0f);
 		}
 
-		public float Pause_func(Vector3 p)
+		public float PauseFunc(Vector3 p)
 		{
 			p.x *= p.x < 0.0f ? pause_extension : pause_compression;
 			p.y *= pause_height_scale;
@@ -106,18 +106,18 @@ namespace KERBALISM
 			  + (pause_deform > 0.001 ? (Mathf.Sin(p.x * 5.0f) * Mathf.Sin(p.y * 7.0f) * Mathf.Sin(p.z * 6.0f)) * pause_deform : 0.0f);
 		}
 
-		public Vector3 Pause_domain()
+		public Vector3 PauseDomain()
 		{
 			return new Vector3((pause_radius / pause_compression + pause_radius / pause_extension) * 0.5f,
 			  pause_radius / pause_height_scale, pause_radius) * (1.0f + pause_deform);
 		}
 
-		public Vector3 Pause_offset()
+		public Vector3 PauseOffset()
 		{
 			return new Vector3(pause_radius / pause_compression - (pause_radius / pause_compression + pause_radius / pause_extension) * 0.5f, 0.0f, 0.0f);
 		}
 
-		public bool Has_field()
+		public bool HasField()
 		{
 			return has_inner || has_outer || has_pause;
 		}

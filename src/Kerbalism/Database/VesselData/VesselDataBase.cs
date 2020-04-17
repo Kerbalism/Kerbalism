@@ -6,10 +6,10 @@ namespace KERBALISM
 {
 	// note : this class should ideally be abstract, but we need 
 	// an instance of it to compile the Flee modifiers.
-	public class VesselDataBase
+	public partial class VesselDataBase
 	{
-		public const string NODENAME_VESSEL = "KERBALISMVESSEL";
-		public const string NODENAME_MODULE = "KERBALISMMODULE";
+		public const string NODENAME_VESSEL = "KERBALISM_VESSEL";
+		public const string NODENAME_MODULE = "MODULES";
 
 		#region BASE FIELDS/PROPERTIES
 
@@ -19,6 +19,8 @@ namespace KERBALISM
 
 		/// <summary>habitat info</summary>
 		public HabitatVesselData Habitat => habitatData; HabitatVesselData habitatData;
+
+		
 
 		// the following is to provide Flee modifiers access, it isn't functionally needed otherwise
 		private PreferencesReliability PrefReliability => PreferencesReliability.Instance;
@@ -38,11 +40,13 @@ namespace KERBALISM
 
 		public virtual bool IsPersistent => true;
 
-		public virtual IEnumerable<PartData> PartList { get; }
+		public virtual PartDataCollectionBase Parts { get; }
 
 		public virtual VesselResHandler ResHandler { get; }
 
 		public virtual IConnectionInfo ConnectionInfo { get; }
+
+		
 
 		/// <summary>number of crew on the vessel</summary>
 		public virtual int CrewCount { get; }
@@ -92,6 +96,10 @@ namespace KERBALISM
 		/// <summary> [environment] radiation effective for habitats/EVAs</summary>
 		public virtual double EnvHabitatRadiation  { get; }
 
+		public bool EnvStorm => EnvStormRadiation > 0.0;
+
+		public virtual double EnvStormRadiation { get; }
+
 		/// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>
 		public virtual double EnvGammaTransparency  { get; }
 		/// <summary>
@@ -101,6 +109,7 @@ namespace KERBALISM
 		/// </summary>
 		public virtual double EnvSolarFluxTotal  { get; }
 
+		/// <summary> [environment] nomalized direction vector to the main sun</summary>
 		public virtual Vector3d EnvMainSunDirection { get; }
 
 		/// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
@@ -132,7 +141,6 @@ namespace KERBALISM
 		// it transfered when creating a vessel from a shipconstruct (ie, from editor to flight)
 		public void Load(ConfigNode vesselDataNode, bool isNewVessel)
 		{
-			VesselVirtualResource.LoadAll(this, vesselDataNode);
 			VesselProcesses.Load(vesselDataNode);
 
 			if (!isNewVessel)
@@ -149,12 +157,12 @@ namespace KERBALISM
 			ConfigNode vesselNode = new ConfigNode(NODENAME_VESSEL);
 			OnSave(vesselNode);
 			VesselProcesses.Save(vesselNode);
-			VesselVirtualResource.SaveAll(this, vesselNode);
-			ModuleData.SaveModuleDatas(PartList, vesselNode);
+			Parts.Save(vesselNode);
+			ModuleData.SaveModuleDatas(Parts, vesselNode);
 			node.AddNode(vesselNode);
 		}
 
-		// This is overridden in VesselData for vessel <> vessel persistence.
+		// This is overridden in VesselData for vessel <--> vessel persistence.
 		// It can't be used in VesselDataShip, as we don't call it when instantiating
 		// a vessel from a shipconstruct
 		protected virtual void OnLoad(ConfigNode node) { }
@@ -171,14 +179,27 @@ namespace KERBALISM
 		{
 			Lib.LogDebug($"Loading VesselDataShip for shipconstruct {ship.shipName}");
 			moduleDataNodes.Clear();
+
+			List<PartData> thisShipParts = new List<PartData>(ship.parts.Count);
+
 			if (vesselDataNode != null)
 			{
 				// we don't want to overwrite VesselData when loading a subassembly or when merging.
 				if (isNewShip)
-				{
 					VesselDataShip.Instance = new VesselDataShip();
-					VesselDataShip.Instance.Load(vesselDataNode, false);
+
+				// we need to instantiate the PartDatas before Load() is called
+				foreach (Part part in ship.parts)
+				{
+					PartData partData = new PartData(VesselDataShip.Instance, part);
+					VesselDataShip.ShipParts.Add(partData);
+					thisShipParts.Add(partData);
 				}
+
+				VesselDataShip.Instance.Parts.Load(vesselDataNode);
+
+				if (isNewShip)
+					VesselDataShip.Instance.Load(vesselDataNode, false);
 
 				// populate the dictionary of ModuleData nodes to load, to avoid doing a full loop
 				// on every node for each ModuleData
@@ -189,16 +210,22 @@ namespace KERBALISM
 						moduleDataNodes.Add(shipId, moduleNode);
 				}
 			}
-
-			// instantiate all PartData/ModuleData for the ship, loading ModuleData if available.
-			foreach (Part part in ship.parts)
+			else
 			{
-				PartDataShip partData = new PartDataShip(VesselDataShip.Instance, part);
-				VesselDataShip.LoadedParts.Add(partData);
-
-				for (int i = 0; i < part.Modules.Count; i++)
+				foreach (Part part in ship.parts)
 				{
-					if (part.Modules[i] is KsmPartModule ksmPM)
+					PartData partData = new PartData(VesselDataShip.Instance, part);
+					VesselDataShip.ShipParts.Add(partData);
+					thisShipParts.Add(partData);
+				}
+			}
+
+			// instantiate all ModuleData for the ship, loading ModuleData if available.
+			foreach (PartData partData in thisShipParts)
+			{
+				for (int i = 0; i < partData.LoadedPart.Modules.Count; i++)
+				{
+					if (partData.LoadedPart.Modules[i] is KsmPartModule ksmPM)
 					{
 						if ( moduleDataNodes.TryGetValue(ksmPM.dataShipId, out ConfigNode moduleNode))
 						{
@@ -221,34 +248,16 @@ namespace KERBALISM
 		{
 			habitatData.ResetBeforeModulesUpdate(this);
 
-			foreach (PartData partData in PartList)
+			foreach (PartData partData in Parts)
 			{
 				foreach (ModuleData moduleData in partData.modules)
 				{
-					moduleData.VesselDataUpdate(this);
+					moduleData.VesselDataUpdate();
 				}
 			}
 
 			habitatData.EvaluateAfterModuleUpdate(this);
 			vesselProcesses.EvaluateAfterModuleUpdate(this);
-		}
-
-		#endregion
-
-		#region UTILS
-
-		public IEnumerable<T> ModuleDatasOfType<T>() where T : ModuleData
-		{
-			foreach (PartData partData in PartList)
-			{
-				foreach (ModuleData moduleData in partData.modules)
-				{
-					if (moduleData is T typedModuleData)
-					{
-						yield return typedModuleData;
-					}
-				}
-			}
 		}
 
 		#endregion

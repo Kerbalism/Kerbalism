@@ -222,12 +222,12 @@ namespace KERBALISM
 
 		#region EVALUATION
 
-		public override void OnVesselDataUpdate(VesselDataBase vd)
+		public override void OnVesselDataUpdate()
 		{
 			if (Lib.IsEditor)
 				return;
 
-			situation = ((VesselData)vd).VesselSituations.GetExperimentSituation(moduleDefinition.Info);
+			situation = ((VesselData)VesselData).VesselSituations.GetExperimentSituation(moduleDefinition.Info);
 			subject = ScienceDB.GetSubjectData(moduleDefinition.Info, situation);
 		}
 

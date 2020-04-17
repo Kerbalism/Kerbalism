@@ -186,7 +186,7 @@ namespace KERBALISM
 					// now we have the probability for one failure per week, based on the
 					// individual stupidity and stress level of the kerbal.
 
-					breakdown_probability = (breakdown_probability * elapsed_s) / (Lib.DaysInYear * Lib.HoursInDay * 3600);
+					breakdown_probability = (breakdown_probability * elapsed_s) / Lib.SecondsInYearExact;
 					if (breakdown_probability > Lib.RandomDouble()) {
 						do_breakdown = true;
 

@@ -56,12 +56,12 @@ namespace KERBALISM
 
 		public abstract void SetPartModuleReferences(PartModule prefab, KsmPartModule loadedModule);
 
-		public virtual void VesselDataUpdate(VesselDataBase vd)
+		public virtual void VesselDataUpdate()
 		{
 			if (!moduleIsEnabled)
 				return;
 
-			OnVesselDataUpdate(vd);
+			OnVesselDataUpdate();
 		}
 
 		public virtual void Load(ConfigNode node)
@@ -99,17 +99,28 @@ namespace KERBALISM
 			flightModuleDatas.Remove(flightId);
 		}
 
+		public virtual void OnFixedUpdate(double elapsedSec) { }
 
-		public virtual void OnVesselDataUpdate(VesselDataBase vd) { }
+		public virtual void OnVesselDataUpdate() { }
 
 		public virtual void OnLoad(ConfigNode node) { }
 
 		public virtual void OnSave(ConfigNode node) { }
 
 		/// <summary>
-		/// Called when the PartData is instantiated for the first time.
-		/// Override it to initialize the persisted fields according to the prefab configuration.
-		/// This will usually be called in the editor, but it can also happen in flight (ex : EVA kerbals, KIS added part...), or even on an unloaded vessel (rescue missions, asteroids...)
+		/// This is called when the ModuleData is instantiated : <br/>
+		/// - After Load/OnLoad and after all the Part/Module references have been set <br/>
+		/// - After VesselData instantiation and loading, after the first VesselData evaluation <br/>
+		/// - On loaded parts, after the PartModule Awake() but before its OnStart() <br/>
+		/// - On loaded parts, there is no garantee the other parts / other modules will be initialized when this is called
+		/// </summary>
+		public virtual void OnStart() { }
+
+		/// <summary>
+		/// Called when the PartData is instantiated for the first time. <br/>
+		/// Override it to initialize the persisted fields according to the prefab configuration.<br/>
+		/// This will usually be called in the editor, but it can also happen in flight (ex : EVA kerbals, KIS added part...), <br/>
+		/// or even on an unloaded vessel (rescue missions, asteroids...)
 		/// </summary>
 		/// <param name="protoModule">Only available if the part was created unloaded (rescue, asteroids...)</param>
 		/// <param name="protoPart">Only available if the part was created unloaded (rescue, asteroids...)</param>
@@ -210,27 +221,36 @@ namespace KERBALISM
 			flightModuleDatas.Clear();
 		}
 
-		public static void GetOrCreateFlightModuleData(KsmPartModule ksmPartModule, int moduleIndex)
+		// this called by the Part.Start() prefix patch. It's a "catch all" method for all the situations were a
+		// part is instantiated in flight. It will ensure that the PartData and ModuleData exists and that the
+		// module <> data cross references are set. Common cases :
+		// - loaded vessel(s) instantiated after a scene load
+		// - previously unloaded vessel entering physics range
+		// - KIS created parts
+		public static void GetOrCreateFlightModuleData(PartData partData, KsmPartModule ksmPartModule, int moduleIndex)
 		{
 			if (flightModuleDatas.TryGetValue(ksmPartModule.dataFlightId, out ModuleData moduleData))
 			{
 				Lib.LogDebug($"Linking {ksmPartModule.GetType().Name} and it's ModuleData, flightId={ksmPartModule.dataFlightId}");
+				//moduleData.partData.SetLoadedPartReference(ksmPartModule.part);
 				ksmPartModule.ModuleData = moduleData;
-				moduleData.SetPartModuleReferences((KsmPartModule)moduleData.partData.PartPrefab.Modules[moduleIndex], ksmPartModule);
+				moduleData.SetPartModuleReferences(partData.PartPrefab.Modules[moduleIndex], ksmPartModule);
+				Lib.LogDebug($"Starting {moduleData.GetType().Name} on {partData.vesselData.VesselName}");
+				moduleData.OnStart();
 			}
 			else
 			{
 				Lib.LogDebug($"Flight Moduledata for {ksmPartModule.GetType().Name} hasn't been found after load, instatiating a new one");
-				if (!ksmPartModule.vessel.TryGetVesselData(out VesselData vd))
-				{
-					Lib.LogDebugStack($"VesselData doesn't exists for vessel {ksmPartModule.vessel.vesselName}, can't instantiate ModuleData !", Lib.LogLevel.Error);
-					return;
-				}
+				//if (!ksmPartModule.vessel.TryGetVesselData(out VesselData vd))
+				//{
+				//	Lib.LogDebugStack($"VesselData doesn't exists for vessel {ksmPartModule.vessel.vesselName}, can't instantiate ModuleData !", Lib.LogLevel.Error);
+				//	return;
+				//}
 
-				if (!vd.Parts.TryGet(ksmPartModule.part.flightID, out PartData partData))
-				{
-					partData = vd.Parts.Add(ksmPartModule.part);
-				}
+				//if (!vd.Parts.TryGet(ksmPartModule.part.flightID, out PartData partData))
+				//{
+				//	partData = vd.Parts.Add(ksmPartModule.part);
+				//}
 				New(ksmPartModule, moduleIndex, partData, true);
 			}
 		}
@@ -276,6 +296,9 @@ namespace KERBALISM
 
 			moduleData.FirstInstantiate(module);
 
+			Lib.LogDebug($"Starting {module.GetType().Name} on {partData.vesselData.VesselName}");
+			moduleData.OnStart();
+
 			Lib.LogDebug($"Instantiated new : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModuleBase.dataShipId} for part {partData.Title}");
 		}
 
@@ -296,6 +319,9 @@ namespace KERBALISM
 			moduleData.SetPartModuleReferences(partData.PartPrefab.Modules[moduleIndex], module);
 			partData.modules.Add(moduleData);
 			moduleData.Load(moduleDataNode);
+
+			Lib.LogDebug($"Starting {module.GetType().Name} on {partData.vesselData.VesselName}");
+			moduleData.OnStart();
 
 			Lib.LogDebug($"Instantiated from ConfigNode : {module.ModuleDataType.Name}, flightId={flightId}, shipId={moduleData.LoadedModuleBase.dataShipId} for part {partData.Title}");
 		}
@@ -353,7 +379,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static void SaveModuleDatas(IEnumerable<PartData> partDatas, ConfigNode vesselDataNode)
+		public static void SaveModuleDatas(PartDataCollectionBase partDatas, ConfigNode vesselDataNode)
 		{
 			ConfigNode topNode = vesselDataNode.AddNode(VesselDataBase.NODENAME_MODULE);
 

@@ -47,11 +47,11 @@ namespace KERBALISM
 			node.AddValue("isBroken", isBroken);
 		}
 
-		public override void OnVesselDataUpdate(VesselDataBase vd)
+		public override void OnVesselDataUpdate()
 		{
 			if (moduleIsEnabled && !isBroken)
 			{
-				vd.VesselProcesses.GetOrCreateProcessData(Process).RegisterProcessControllerCapacity(isRunning, processCapacity);
+				VesselData.VesselProcesses.GetOrCreateProcessData(Process).RegisterProcessControllerCapacity(isRunning, processCapacity);
 			}
 			
 		}

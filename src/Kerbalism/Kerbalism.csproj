@@ -157,9 +157,13 @@
     <Compile Include="Comms\IConnectionInfo.cs" />
     <Compile Include="Database\DB.cs" />
     <Compile Include="Database\ModuleData\ExperimentData.cs" />
+    <Compile Include="Database\ModuleData\Interfaces.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
     <Compile Include="Database\ModuleData\RadiationEmitterData.cs" />
-    <Compile Include="Database\VesselDataComponents\PartDataCollectionShip.cs" />
+    <Compile Include="Database\PartData\PartDataCollectionBase.cs" />
+    <Compile Include="Database\PartData\PartDataCollectionShip.cs" />
+    <Compile Include="Database\PartData\PartRadiationData.cs" />
+    <Compile Include="Database\PartData\PartResourceData.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.SunInfo.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
@@ -167,6 +171,7 @@
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcessCollection.cs" />
     <Compile Include="External\B9PartSwitch.cs" />
+    <Compile Include="External\Kopernicus.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
     <Compile Include="Modules\Base\SubclassingExample.cs" />
     <Compile Include="Modules\ModuleKsmRadiationEmitter.cs" />
@@ -175,6 +180,7 @@
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="Patches\ShipConstruct.cs" />
+    <Compile Include="ResourceSim\PartVirtualResource.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
     <Compile Include="Science\ExperimentModuleDefinition.cs" />
@@ -186,8 +192,8 @@
     <Compile Include="UI\ProcessPopup.cs" />
     <Compile Include="Database\ModuleData\HabitatData.cs" />
     <Compile Include="Database\KerbalData.cs" />
-    <Compile Include="Database\VesselDataComponents\PartData.cs" />
-    <Compile Include="Database\VesselDataComponents\PartDataCollectionVessel.cs" />
+    <Compile Include="Database\PartData\PartData.cs" />
+    <Compile Include="Database\PartData\PartDataCollectionVessel.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\VesselDataComponents\VesselEnvironment.cs" />
     <Compile Include="Database\VesselDataComponents\VesselSituations.cs" />
@@ -328,6 +334,7 @@
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <ItemGroup>
+    <Compile Include="Database\VesselDataComponents\VesselData.Cache.cs" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

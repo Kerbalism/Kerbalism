@@ -208,7 +208,7 @@ namespace KERBALISM
 						else
 						{
 							double depletion = res.Depletion;
-							if (depletion > 3600.0 * Lib.HoursInDay * Lib.DaysInYear * 100.0) // more than 100 years = perpetual
+							if (depletion > Lib.SecondsInYearExact * 100.0) // more than 100 years = perpetual
 							{
 								sb.Append(Lib.Color(Local.Generic_PERPETUAL, Lib.Kolor.Green));
 							}

@@ -124,7 +124,7 @@ namespace KERBALISM
 			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
 				return 0.0;
 
-			return vd.EnvHabitatRadiation;
+			return vd.Habitat.radiationRate;
 		}
 
 		/// <summary>return true if the vessel is inside the magnetopause of some body (except the sun)</summary>
@@ -231,7 +231,7 @@ namespace KERBALISM
 		{
 			if (!Features.Radiation) return false;
 			RadiationBody rb = KERBALISM.Radiation.Info(body);
-			return rb.model.Has_field();
+			return rb.model.HasField();
 		}
 
 		/// <summary> Return the current solar activity for the given body. Normal activity ranges

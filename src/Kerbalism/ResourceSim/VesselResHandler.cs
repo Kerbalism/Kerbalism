@@ -165,29 +165,24 @@ namespace KERBALISM
 			return resource;
 		}
 
-		public VesselResource SetupOrCreateVirtualResource(string name, string title, double amount = 0.0, double capacity = double.MaxValue, bool isPersistent = false)
+		public bool TryGetPartVirtualResource(string name, out PartVirtualResource resource)
 		{
-			VesselVirtualResource vres;
-			if (resources.TryGetValue(name, out VesselResource res))
+			if (resources.TryGetValue(name, out VesselResource vesselResource) && vesselResource is PartVirtualResource)
 			{
-				if (!(res is VesselVirtualResource))
-				{
-					Lib.LogStack($"Can't create VirtualResource '{name}', a VesselResource with that name already exists", Lib.LogLevel.Error);
-					return res;
-				}
-				else
-				{
-					vres = (VesselVirtualResource)res;
-				}
+				resource = (PartVirtualResource)vesselResource;
+				return true;
 			}
-			else
-			{
-				vres = new VesselVirtualResource(name);
-				resources.Add(name, vres);
-			}
+			resource = null;
+			return false;
+		}
 
-			vres.Setup(title, amount, capacity, isPersistent);
-			return vres;
+		public bool AddPartVirtualResource(PartVirtualResource resource)
+		{
+			if (resources.ContainsKey(resource.Name))
+				return false;
+
+			resources.Add(resource.Name, resource);
+			return true;
 		}
 
 		/// <summary>
@@ -223,7 +218,7 @@ namespace KERBALISM
 			recipes.Add(recipe);
 		}
 
-		public void ResourceUpdate(object vesselOrProtoVessel, VesselState state, double elapsed_s)
+		public void ResourceUpdate(VesselDataBase vd, object vesselOrProtoVessel, VesselState state, double elapsed_s)
 		{
 			Vessel vessel = null;
 			ProtoVessel protoVessel = null;
@@ -306,12 +301,22 @@ namespace KERBALISM
 				if (!resource.NeedUpdate)
 					continue;
 
-				if (resource.ExecuteAndSyncToParts(elapsed_s) && vessel != null && vessel.loaded)
+				if (resource.ExecuteAndSyncToParts(vd, elapsed_s) && vessel != null && vessel.loaded)
 					CoherencyWarning(vessel, resource.Name);
 
 				APIResources[resource.Name] = resource.Amount;
 			}
 
+		}
+
+		public void ConvertShipHandlerToVesselHandler()
+		{
+			foreach (string resourceName in AllResourceNames)
+			{
+				ResourceWrapper newWrapper = new LoadedResourceWrapper(resourceWrappers[resourceName]);
+				resourceWrappers[resourceName] = newWrapper;
+				((VesselKSPResource)resources[resourceName]).SetWrapper(newWrapper);
+			}
 		}
 
 
@@ -322,8 +327,11 @@ namespace KERBALISM
 
 			foreach (Part p in parts)
 			{
-				foreach (PartResource r in p.Resources)
+				// note : due to the list/dict hybrid implementation of PartResourceList,
+				// don't use foreach on it to avoid heap memory allocs
+				for (int i = 0; i < p.Resources.Count; i++)
 				{
+					PartResource r = p.Resources[i];
 #if DEBUG_RESOURCES
 					// Force view all resource in Debug Mode
 					r.isVisible = true;
@@ -341,8 +349,11 @@ namespace KERBALISM
 		{
 			foreach (Part p in parts)
 			{
-				foreach (PartResource r in p.Resources)
+				// note : due to the list/dict hybrid implementation of PartResourceList,
+				// don't use foreach on it to avoid heap memory allocs
+				for (int i = 0; i < p.Resources.Count; i++)
 				{
+					PartResource r = p.Resources[i];
 #if DEBUG_RESOURCES
 					// Force view all resource in Debug Mode
 					r.isVisible = true;

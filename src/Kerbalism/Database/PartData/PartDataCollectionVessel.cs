@@ -4,81 +4,26 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public static class PartDataCollectionVesselExtensions
+	public class PartDataCollectionVessel : PartDataCollectionBase
 	{
-		public static bool TryGetModuleDataOfType<T>(this Part part, out T moduleData) where T : ModuleData
-		{
-			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
-			{
-				for (int i = 0; i < partData.modules.Count; i++)
-				{
-					moduleData = partData.modules[i] as T;
-					if (moduleData != null)
-						return true;
-				}
-			}
+		#region FIELDS
 
-			moduleData = null;
-			return false;
-		}
-
-		public static bool TryGetModuleDataOfType<T>(this ProtoPartSnapshot part, out T moduleData) where T : ModuleData
-		{
-			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
-			{
-				for (int i = 0; i < partData.modules.Count; i++)
-				{
-					moduleData = partData.modules[i] as T;
-					if (moduleData != null)
-						return true;
-				}
-			}
-
-			moduleData = null;
-			return false;
-		}
-
-		public static IEnumerable<T> GetModuleDatasOfType<T>(this Part part) where T : ModuleData
-		{
-			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
-				yield break;
-
-			for (int i = 0; i < partData.modules.Count; i++)
-			{
-				T moduleData = partData.modules[i] as T;
-				if (moduleData != null)
-					yield return moduleData;
-			}
-		}
-
-		public static IEnumerable<T> GetModuleDatasOfType<T>(this ProtoPartSnapshot part) where T : ModuleData
-		{
-			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
-				yield break;
-
-			for (int i = 0; i < partData.modules.Count; i++)
-			{
-				T moduleData = partData.modules[i] as T;
-				if (moduleData != null)
-					yield return moduleData;
-			}
-		}
-	}
-
-	public class PartDataCollectionVessel : IEnumerable<PartData>
-	{
 		public static Dictionary<uint, PartData> allFlightPartDatas = new Dictionary<uint, PartData>();
 		private static Dictionary<int, ConfigNode> moduleDataNodes = new Dictionary<int, ConfigNode>();
 		private Dictionary<uint, PartData> partDictionary = new Dictionary<uint, PartData>();
 		private List<PartData> partList = new List<PartData>();
 		private VesselDataBase vesselData;
 
+		#endregion
+
+		#region CONSTRUCTORS
+
 		public PartDataCollectionVessel(VesselDataBase vesselData, PartDataCollectionShip shipPartData)
 		{
 			Lib.LogDebug($"Transferring PartData from ship to vessel for launch");
 			this.vesselData = vesselData;
 
-			foreach (PartDataShip partData in shipPartData)
+			foreach (PartData partData in shipPartData)
 			{
 				partData.flightId = partData.LoadedPart.flightID;
 				partData.vesselData = vesselData;
@@ -122,6 +67,7 @@ namespace KERBALISM
 			}
 				
 		}
+
 		public PartDataCollectionVessel(VesselDataBase vesselData, ProtoVessel protoVessel, ConfigNode vesselDataNode)
 		{
 			Lib.LogDebug($"Loading partdatas for existing vessel {protoVessel.vesselName}");
@@ -164,43 +110,64 @@ namespace KERBALISM
 			}
 		}
 
-		public IEnumerable<T> AllModulesOfType<T>() where T : ModuleData
+		#endregion
+
+		#region PERSISTENCE
+
+		public override void Save(ConfigNode VesselDataNode)
 		{
+			ConfigNode partsNode = new ConfigNode(NODENAME_PARTS);
 			foreach (PartData partData in partList)
 			{
-				for (int i = 0; i < partData.modules.Count; i++)
+				bool isPersistent = false;
+				ConfigNode partNode = new ConfigNode(partData.flightId.ToString());
+
+				isPersistent |= PartResourceData.SavePartResources(partData, partNode);
+				isPersistent |= PartRadiationData.SaveRadiationData(partData, partNode);
+
+				if (isPersistent)
+					partsNode.AddNode(partNode);
+			}
+
+			if (partsNode.CountNodes > 0)
+				VesselDataNode.AddNode(partsNode);
+		}
+
+		public override void Load(ConfigNode vesselDataNode)
+		{
+			ConfigNode partsNode = vesselDataNode.GetNode(NODENAME_PARTS);
+			if (partsNode == null)
+				return;
+
+			foreach (ConfigNode partNode in partsNode.nodes)
+			{
+				
+				if (!partDictionary.TryGetValue(Lib.Parse.ToUInt(partNode.name), out PartData partData))
 				{
-					if (partData.modules[i] is T moduleData)
-					{
-						yield return moduleData;
-					}
+					Lib.Log($"PartData with flightId {partNode.name} not found, skipping load", Lib.LogLevel.Warning);
+					continue;
 				}
+
+				PartResourceData.LoadPartResources(partData, partNode);
+				PartRadiationData.LoadRadiationData(partData, partNode);
 			}
 		}
 
-		public IEnumerable<T> AllModulesOfType<T>(Predicate<T> predicate) where T : ModuleData
-		{
-			foreach (PartData partData in partList)
-			{
-				for (int i = 0; i < partData.modules.Count; i++)
-				{
-					if (partData.modules[i] is T moduleData && predicate(moduleData))
-					{
-						yield return moduleData;
-					}
-				}
-			}
-		}
+		#endregion
 
-		// List / dictionary alike implementation
-		public IEnumerator<PartData> GetEnumerator() => partList.GetEnumerator();
-		IEnumerator IEnumerable.GetEnumerator() => partList.GetEnumerator();
-		public int Count => partList.Count;
-		public PartData this[int index] => partList[index];
+		#region LIST/DICTIONARY IMPLEMENTATION
+
+		protected override List<PartData> Parts => partList;
+
+		// base implementation
+		public override PartData this[Part part] => partDictionary[part.flightID];
+		public override bool Contains(PartData data) => partDictionary.ContainsKey(data.flightId);
+		public override bool Contains(Part part) => partDictionary.ContainsKey(part.flightID);
+		public override bool TryGet(Part part, out PartData pd) => partDictionary.TryGetValue(part.flightID, out pd);
+
+		// vessel specific implementation
 		public PartData this[uint flightId] => partDictionary[flightId];
-		public bool Contains(PartData data) => partDictionary.ContainsKey(data.flightId);
 		public bool Contains(uint flightId) => partDictionary.ContainsKey(flightId);
-
 		public bool TryGet(uint flightId, out PartData pd) => partDictionary.TryGetValue(flightId, out pd);
 
 		public void Add(PartData partData)
@@ -281,6 +248,10 @@ namespace KERBALISM
 			partList.Clear();
 		}
 
+		#endregion
+
+		#region VESSEL SPECIFIC LIFECYCLE
+
 		public void TransferFrom(PartDataCollectionVessel other)
 		{
 			foreach (PartData partData in other)
@@ -310,6 +281,70 @@ namespace KERBALISM
 
 			partDictionary.Clear();
 			partList.Clear();
+		}
+
+		#endregion
+
+	}
+
+	public static class PartDataCollectionVesselExtensions
+	{
+		public static bool TryGetFlightModuleDataOfType<T>(this Part part, out T moduleData) where T : ModuleData
+		{
+			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					moduleData = partData.modules[i] as T;
+					if (moduleData != null)
+						return true;
+				}
+			}
+
+			moduleData = null;
+			return false;
+		}
+
+		public static bool TryGetModuleDataOfType<T>(this ProtoPartSnapshot part, out T moduleData) where T : ModuleData
+		{
+			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					moduleData = partData.modules[i] as T;
+					if (moduleData != null)
+						return true;
+				}
+			}
+
+			moduleData = null;
+			return false;
+		}
+
+		public static IEnumerable<T> GetFlightModuleDatasOfType<T>(this Part part) where T : ModuleData
+		{
+			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+				yield break;
+
+			for (int i = 0; i < partData.modules.Count; i++)
+			{
+				T moduleData = partData.modules[i] as T;
+				if (moduleData != null)
+					yield return moduleData;
+			}
+		}
+
+		public static IEnumerable<T> GetModuleDatasOfType<T>(this ProtoPartSnapshot part) where T : ModuleData
+		{
+			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+				yield break;
+
+			for (int i = 0; i < partData.modules.Count; i++)
+			{
+				T moduleData = partData.modules[i] as T;
+				if (moduleData != null)
+					yield return moduleData;
+			}
 		}
 	}
 }

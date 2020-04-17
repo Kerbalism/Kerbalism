@@ -49,24 +49,24 @@ namespace KERBALISM
 		/// <summary> [0.0 ; 1.0] factor : sum of all enabled comfort bonuses</summary>
 		public double comfortFactor = 0.0;
 
-		public double emittersRadiation = 0.0;
+		/// <summary> in rad/s, radiation received by all considered habitats : non pressurized unmanned parts are ignored</summary>
+		public double radiationRate = 0.0;
 
 		public List<HabitatData> Habitats { get; private set; } = new List<HabitatData>();
-
-		private int habitatRaytraceNextIndex = -1;
 
 		public void ResetBeforeModulesUpdate(VesselDataBase vd)
 		{
 			livingVolume = volumePerCrew = livingSpaceFactor
 				= pressurizedSurface = pressurizedVolume = pressureAtm
 				= pressureFactor = poisoningLevel = shieldingSurface
-				= shieldingAmount = shieldingModifier = comfortFactor = 0.0;
+				= shieldingAmount = shieldingModifier = comfortFactor
+				= radiationRate = 0.0;
 
 			comfortMask = 0;
 
 			// the list of habitats will iterated over by every radiation emitter/shield, so build the list once.
 			Habitats.Clear();
-			foreach (HabitatData habitat in vd.ModuleDatasOfType<HabitatData>())
+			foreach (HabitatData habitat in vd.Parts.AllModulesOfType<HabitatData>())
 			{
 				Habitats.Add(habitat);
 			}
@@ -96,7 +96,7 @@ namespace KERBALISM
 								comfortMask |= (int)Comfort.firmGround;
 
 							pressurizedPartsCrewCount += habitat.crewCount;
-							emittersRadiation += habitat.localRadiation;
+							radiationRate += habitat.partData.radiationData.radiationRate;
 							radiationConsideredPartsCount++;
 
 							break;
@@ -118,7 +118,7 @@ namespace KERBALISM
 							// waste evaluation
 							poisoningLevel += habitat.wasteLevel;
 							wasteConsideredPartsCount++;
-							emittersRadiation += habitat.localRadiation;
+							radiationRate += habitat.partData.radiationData.radiationRate;
 							radiationConsideredPartsCount++;
 							break;
 						case PressureState.AlwaysDepressurized:
@@ -131,28 +131,11 @@ namespace KERBALISM
 								shieldingAmount += habitat.shieldingAmount;
 								poisoningLevel += habitat.wasteLevel;
 								wasteConsideredPartsCount++;
-								emittersRadiation += habitat.localRadiation;
+								radiationRate += habitat.partData.radiationData.radiationRate;
 								radiationConsideredPartsCount++;
 							}
 							// waste in suits evaluation
 							break;
-					}
-
-					// radiation raytracing is only done while loaded.
-					if (vd.LoadedOrEditor && habitat.loadedModule != null)
-					{
-						// if partHabitatRaytraceNextIndex was reset to -1, raytrace all parts
-						if (habitatRaytraceNextIndex < 0)
-						{
-							Radiation.RaytraceHabitatSunRadiation(vd.EnvMainSunDirection, habitat);
-							habitatRaytraceNextIndex = 0;
-						}
-						// else only raytrace one habitat per update cycle to preserve performance
-						else if (i == habitatRaytraceNextIndex)
-						{
-							Radiation.RaytraceHabitatSunRadiation(vd.EnvMainSunDirection, habitat);
-							habitatRaytraceNextIndex = (habitatRaytraceNextIndex + 1) % Habitats.Count;
-						}
 					}
 				}
 				else
@@ -177,9 +160,6 @@ namespace KERBALISM
 							break;
 					}
 				}
-
-				// this is incremented from the RadiationEmitterData update, so always reset it
-				habitat.localRadiation = 0.0;
 			}
 
 			int crewCount = vd.CrewCount;
@@ -202,7 +182,7 @@ namespace KERBALISM
 
 			if (radiationConsideredPartsCount > 1)
 			{
-				emittersRadiation /= radiationConsideredPartsCount;
+				radiationRate /= radiationConsideredPartsCount;
 			}
 			
 		}

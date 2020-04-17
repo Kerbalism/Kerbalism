@@ -18,7 +18,7 @@ namespace KERBALISM
 			this.scale = scale;
 		}
 
-		public Vector3 Transform_in(Vector3 p)
+		public Vector3 TransformIn(Vector3 p)
 		{
 			p -= origin;
 			p /= scale;
@@ -30,7 +30,7 @@ namespace KERBALISM
 			);
 		}
 
-		public Vector3 Transform_out(Vector3 p)
+		public Vector3 TransformOut(Vector3 p)
 		{
 			return origin
 			  + x_axis * (p.x * scale)
@@ -38,7 +38,7 @@ namespace KERBALISM
 			  + z_axis * (p.z * scale);
 		}
 
-		public Matrix4x4 Look_at()
+		public Matrix4x4 LookAt()
 		{
 			return Matrix4x4.TRS
 			(

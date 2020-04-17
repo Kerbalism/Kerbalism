@@ -187,7 +187,7 @@ namespace KERBALISM
 				return;
 
 			Lib.LogDebug($"Removing destroyed part: {part.persistentId} ({part.partInfo.title})");
-			VesselDataShip.LoadedParts.Remove(part);
+			VesselDataShip.ShipParts.Remove(part);
 		}
 
 		private static bool crewAssignementRefreshWasJustFiredFromCrewChanged = false;
@@ -272,7 +272,7 @@ namespace KERBALISM
 		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
 		{
 			bool canBoard = false;
-			if (targetPart != null && targetPart.TryGetModuleDataOfType(out HabitatData habitatData))
+			if (targetPart != null && targetPart.TryGetFlightModuleDataOfType(out HabitatData habitatData))
 			{
 				canBoard =
 					habitatData.pressureState == HabitatData.PressureState.Depressurized
@@ -337,7 +337,7 @@ namespace KERBALISM
 		private void AttemptEVA(ProtoCrewMember crew, Part sourcePart, Transform hatchTransform)
 		{
 			FlightEVA.fetch.overrideEVA = true;
-			if (sourcePart != null && sourcePart.TryGetModuleDataOfType(out HabitatData habitatData))
+			if (sourcePart != null && sourcePart.TryGetFlightModuleDataOfType(out HabitatData habitatData))
 			{
 					FlightEVA.fetch.overrideEVA =
 						!(habitatData.pressureState == HabitatData.PressureState.Depressurized
@@ -453,14 +453,14 @@ namespace KERBALISM
 		private void CrewTransferSelected(CrewTransfer.CrewTransferData data)
 		{
 			bool sourceIsPressurized = false;
-			if (data.sourcePart != null && data.sourcePart.TryGetModuleDataOfType(out HabitatData sourceHabitatData))
+			if (data.sourcePart != null && data.sourcePart.TryGetFlightModuleDataOfType(out HabitatData sourceHabitatData))
 			{
 				sourceIsPressurized = sourceHabitatData.pressureState == HabitatData.PressureState.Pressurized;
 			}
 
 			bool targetIsEnabled = false;
 			bool targetIsPressurized = false;
-			if (data.destPart != null && data.destPart.TryGetModuleDataOfType(out HabitatData destHabitatData))
+			if (data.destPart != null && data.destPart.TryGetFlightModuleDataOfType(out HabitatData destHabitatData))
 			{
 				// if hab isn't enabled, try to enable it. We do that because otherwise you can 
 				// brick your vessel by not being able to transfer back people in control parts.
@@ -499,7 +499,7 @@ namespace KERBALISM
 
 			double wasteTransferred = 0.0;
 
-			if (data.from != null && data.from.TryGetModuleDataOfType(out HabitatData fromHabitatData))
+			if (data.from != null && data.from.TryGetFlightModuleDataOfType(out HabitatData fromHabitatData))
 			{
 				
 				int newCrewCount = Lib.CrewCount(data.from);
@@ -526,7 +526,7 @@ namespace KERBALISM
 			}
 
 
-			if (data.to != null && data.to.TryGetModuleDataOfType(out HabitatData toHabitatData))
+			if (data.to != null && data.to.TryGetFlightModuleDataOfType(out HabitatData toHabitatData))
 			{
 				toHabitatData.crewCount = Lib.CrewCount(data.to);
 

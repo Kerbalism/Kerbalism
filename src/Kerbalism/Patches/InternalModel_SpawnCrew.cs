@@ -9,7 +9,7 @@ namespace KERBALISM
 		static bool Prefix(InternalModel __instance)
 		{
 
-			if (!__instance.part.TryGetModuleDataOfType(out HabitatData habitatData))
+			if (!__instance.part.TryGetFlightModuleDataOfType(out HabitatData habitatData))
 				return true;
 
 			bool requireSuit = habitatData.RequireSuit;

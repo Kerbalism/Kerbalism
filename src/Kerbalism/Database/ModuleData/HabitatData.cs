@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// loaded/unloaded/editor state independant persisted data and logic used by the ModuleKsmHabitat module.
 	/// </summary>
-	public class HabitatData : ModuleData<ModuleKsmHabitat, HabitatData>
+	public class HabitatData : ModuleData<ModuleKsmHabitat, HabitatData>, IRadiationReceiver
 	{
 		#region ENUMS AND TYPES
 
@@ -102,12 +102,7 @@ namespace KERBALISM
 		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
 		public double animTimer = 0.0;
 
-		/// <summary> rad/s added or removed by all nearby emitters (can be on another vessel), and removed by radiation coils</summary>
-		public double localRadiation = 0.0;
-
 		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
-
-		private bool raytracedOnce = false;
 
 		public ModuleKsmHabitat.HabitatUpdateHandler updateHandler;
 
@@ -246,6 +241,8 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		public PartRadiationData RadiationData => partData.radiationData;
 
 		#endregion
 

@@ -30,6 +30,8 @@ namespace KERBALISM
 	[KSPAddon(KSPAddon.Startup.Instantly, false)]
 	public sealed class Loader : MonoBehaviour
 	{
+		private bool mmPostLoadDone = false;
+
 		public void Start()
 		{
 			// log version
@@ -69,15 +71,28 @@ namespace KERBALISM
 			// register loading callbacks
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
-				GameEvents.OnPartLoaderLoaded.Add(SaveHabitatData);
-				GameEvents.OnGameDatabaseLoaded.Add(LoadConfiguration);
+				GameEvents.OnPartLoaderLoaded.Add(OnPartLoaderLoaded);
 			}
+		}
+
+		// Called by ModuleManager, after it has patched the game database, but before the part compilation.
+		public void ModuleManagerPostLoad()
+		{
+			Settings.ParseTime();
+			string calendarInfo = Lib.SetupCalendar();
+			Lib.Log($"Parsing calendar : {calendarInfo}");
+			Lib.Log($"{Lib.HoursInDayExact.ToString()} exact hours per day, {Lib.DaysInYearExact.ToString()} exact days per year");
+			Lib.Log($"{Lib.HoursInDayFloored.ToString()} floored hours per day, {Lib.DaysInYearFloored.ToString()} floored days per year");
+			Settings.Parse();
+			Settings.CheckMods();
+			Profile.Parse();
+			ErrorManager.CheckErrors(true);
+			mmPostLoadDone = true;
 		}
 
 		void OnDestroy()
 		{
-			GameEvents.OnPartLoaderLoaded.Remove(SaveHabitatData);
-			GameEvents.OnGameDatabaseLoaded.Remove(LoadConfiguration);
+			GameEvents.OnPartLoaderLoaded.Remove(OnPartLoaderLoaded);
 		}
 
 		// inject an MM patch on-the-fly, so that NEEDS[TypeId] can be used in MM patches
@@ -94,8 +109,15 @@ namespace KERBALISM
 			}
 		}
 
-		void SaveHabitatData()
+		void OnPartLoaderLoaded()
 		{
+			if (!mmPostLoadDone)
+			{
+				ErrorManager.AddError(true, "ModuleManager not found");
+				ErrorManager.CheckErrors(true);
+			}
+
+			// save the habitat volume/surface cache
 			if (ModuleKsmHabitat.habitatDatabase == null)
 				return;
 
@@ -110,14 +132,6 @@ namespace KERBALISM
 			}
 
 			fakeNode.Save(ModuleKsmHabitat.HabitatDataCachePath);
-		}
-
-		void LoadConfiguration()
-		{
-			Settings.Parse();
-			Settings.CheckMods();
-			Profile.Parse();
-			ErrorManager.CheckErrors(true);
 		}
 	}
 

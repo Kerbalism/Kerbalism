@@ -93,7 +93,7 @@ namespace KERBALISM
 		public static string HabitatDataCachePath => Path.Combine(Lib.KerbalismRootPath, "HabitatData.cache");
 
 		// PAW UI
-		// Note : the 4 bool using a UI_Toggle shouldn't by used from code.
+		// Note : don't change the 4 UI_Toggle bool from code, they are UI only "read-only" 
 		// To change the state from code, use the static Toggle() methods
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public string mainPAWInfo;

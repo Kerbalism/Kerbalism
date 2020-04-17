@@ -177,7 +177,7 @@ namespace KERBALISM
 		/// this function will also sync from vessel to cache so you can always use the
 		/// VesselResource properties to get information about resources
 		/// </remarks>
-		public override bool ExecuteAndSyncToParts(double elapsed_s)
+		public override bool ExecuteAndSyncToParts(VesselDataBase vd, double elapsed_s)
 		{
 			// detect flow state changes
 			bool flowStateChanged = resourceWrapper.capacity - resourceWrapper.oldCapacity > 1e-05;
