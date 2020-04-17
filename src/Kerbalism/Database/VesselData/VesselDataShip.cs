@@ -347,7 +347,7 @@ namespace KERBALISM
 						Reliability reliability = m as Reliability;
 
 						// calculate mtbf
-						double mtbf = reliability.MTBF * (reliability.quality ? Settings.QualityScale : 1.0);
+						double mtbf = reliability.mtbfSeconds * (reliability.quality ? Settings.QualityScale : 1.0);
 						if (mtbf <= 0) continue;
 
 						// accumulate failures/y
