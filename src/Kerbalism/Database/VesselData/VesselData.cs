@@ -23,7 +23,7 @@ namespace KERBALISM
 		/// <summary>
 		/// convenience property
 		/// </summary>
-		public override string VesselName => Vessel.vesselName;
+		public override string VesselName => Vessel?.vesselName;
 
         /// <summary>
 		/// False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue

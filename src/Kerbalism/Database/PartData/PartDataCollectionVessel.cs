@@ -89,6 +89,15 @@ namespace KERBALISM
 
 			foreach (ProtoPartSnapshot protopart in protoVessel.protoPartSnapshots)
 			{
+				// In case a part was removed (a part mod uninstalled), the ProtoPartSnapshot will still be created by KSP
+				// (eve tough it will delete the vessel later). Created the partdata for it will fail hard, so detect that
+				// case by checking if the part prefab is null
+				if (protopart.partPrefab == null)
+				{
+					Lib.LogDebug($"Skipping PartData creation for removed part {protopart.partName} on vessel {vesselData.VesselName}");
+					continue;
+				}
+
 				PartData partData = Add(protopart);
 
 				foreach (ProtoPartModuleSnapshot protoModule in protopart.modules)
