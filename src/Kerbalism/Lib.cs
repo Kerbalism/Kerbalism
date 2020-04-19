@@ -13,6 +13,7 @@ using KSP.UI;
 using KSP.UI.Screens.Flight;
 using System.Collections;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace KERBALISM
 {
@@ -881,13 +882,11 @@ namespace KERBALISM
 			return s.Replace('_', ' ');
 		}
 
-
 		///<summary>select a string at random</summary>
 		public static string TextVariant(params string[] list)
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
-
 
 		/// <summary> insert lines break to have a max line length of 'maxCharPerLine' characters </summary>
 		public static string WordWrapAtLength(string longText, int maxCharPerLine)
@@ -925,6 +924,12 @@ namespace KERBALISM
 			}
 			return longText;
 
+		}
+
+		/// <summary> Remove all rtf/html tags </summary>
+		public static string RemoveTags(string text)
+		{
+			return Regex.Replace(text, "<.*?>", string.Empty);
 		}
 		#endregion
 
