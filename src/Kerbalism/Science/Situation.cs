@@ -110,7 +110,7 @@ namespace KERBALISM
 			? Lib.BuildString(BodyTitle, " ", ScienceSituationTitle, " ", BiomeTitle)
 			: Lib.BuildString(BodyTitle, " ", ScienceSituationTitle);
 
-		public string BodyTitle => Body.name;
+		public string BodyTitle => Body.displayName;
 		public string BiomeTitle => Biome != null ? Biome.displayname : VirtualBiome != VirtualBiome.None ? VirtualBiome.Title() : string.Empty;
 		public string ScienceSituationTitle => ScienceSituation.Title();
 
