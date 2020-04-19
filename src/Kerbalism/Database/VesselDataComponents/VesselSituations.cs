@@ -15,7 +15,7 @@ namespace KERBALISM
 		public List<ScienceSituation> situations { get; private set; } = new List<ScienceSituation>();
 		public List<VirtualBiome> virtualBiomes { get; private set; } = new List<VirtualBiome>();
 
-		public string BodyTitle => body.name;
+		public string BodyTitle => body.displayName;
 		public string BiomeTitle => biome != null ? biome.displayname : string.Empty;
 
 		public string BodyName => body.name;
