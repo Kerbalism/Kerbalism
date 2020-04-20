@@ -368,7 +368,7 @@ namespace KERBALISM
 
 			VesselData vesselVD = data.from.vessel.GetVesselData();
 
-			// total crew of the origin vessel plus the EVAing kerbal
+			// remaining crew on the origin vessel plus the EVAing kerbal
 			double totalCrew = Lib.CrewCount(data.from.vessel) + 1.0;
 
 			string evaPropellant = Lib.EvaPropellantName();
@@ -381,29 +381,30 @@ namespace KERBALISM
 				VesselResource vesselRes = vesselVD.ResHandler.GetResource(partRes.resourceName);
 
 				// clamp request by how much is available
-				double amountTransferred = Math.Min(evaRes.Capacity, Math.Max(vesselRes.Amount + vesselRes.Deferred, 0.0));
-
+				double amountOnVessel = Math.Max(vesselRes.Amount + vesselRes.Deferred, 0.0);
+				double amountRequested = Math.Min(evaRes.Capacity, amountOnVessel);
+				
 				// special handling for EVA propellant
 				if (evaRes.Name == evaPropellant)
 				{
-					if (amountTransferred <= 0.05 && !Lib.Landed(data.from.vessel))
+					if (amountRequested < 0.5 && !vesselVD.EnvLanded)
 					{
+						// "There isn't any <<1>> in the EVA suit", "Don't let the ladder go!"
 						Message.Post(Severity.danger,
 							Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropellant + "</b>"), Local.CallBackMsg_EvaNoMP2);
-						// "There isn't any <<1>> in the EVA suit", "Don't let the ladder go!"
 					}
 				}
-				// for all ressources but propellant, only take this kerbal "share"
-				else
+				// for all ressources but propellant, only take this kerbal "share" if there isn't enough for everyone
+				else if (amountRequested * totalCrew > amountOnVessel)
 				{
-					amountTransferred /= totalCrew;
+					amountRequested = amountOnVessel / totalCrew;
 				}
 
 				// remove resource from vessel
-				vesselRes.Consume(amountTransferred);
+				vesselRes.Consume(amountRequested);
 
 				// add resource to eva kerbal
-				evaRes.Produce(amountTransferred);
+				evaRes.Produce(amountRequested);
 			}
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
