@@ -284,6 +284,10 @@ namespace KERBALISM
 				// get vessel data
 				if (!v.TryGetVesselDataNoError(out VesselData vd))
 				{
+					// flags have an empty Guid, we never create a VesselData and never process them
+					if (v.id == Guid.Empty)
+						continue;
+
 					Lib.LogDebug($"Creating VesselData for new vessel {v.vesselName}");
 					vd = new VesselData(v);
 					DB.AddNewVesselData(vd);

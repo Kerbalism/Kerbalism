@@ -87,7 +87,7 @@ namespace KERBALISM
 				{
 					if (pv.vesselID == Guid.Empty)
 					{
-						// Flags are saved with an empty GUID (?!!?). skip them.
+						// Flags have an empty GUID. skip them.
 						Lib.LogDebug("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
 						continue;
 					}

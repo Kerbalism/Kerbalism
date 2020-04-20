@@ -64,6 +64,10 @@ namespace KERBALISM
 			{
 				if (!__instance.vessel.TryGetVesselData(out VesselData vd))
 				{
+					// flags have an empty Guid, so we never create a VesselData for them
+					if (__instance.vessel.id == Guid.Empty)
+						return;
+
 					Lib.LogDebugStack($"VesselData doesn't exists for vessel {__instance.vessel.vesselName}, can't link PartData !", Lib.LogLevel.Error);
 					return;
 				}
