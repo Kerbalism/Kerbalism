@@ -59,7 +59,6 @@ namespace KERBALISM
 									string details = ExperimentModuleDefinition.CompileModuleInfo(switchedExperiment, subtype, moduleModifier);
 									if (moduleModifier.ModuleActive && !string.IsNullOrEmpty(details))
 									{
-										details.TrimStart().TrimEnd(); // stop B9PS complaining about trailing "\n"
 										subtype.SetSubTypeDescriptionDetail(details);
 									}
 								}
@@ -68,7 +67,6 @@ namespace KERBALISM
 									string description = switchedModule.GetSubtypeDescription(moduleModifier.DataNode);
 									if (!string.IsNullOrEmpty(description))
 									{
-										description.TrimStart().TrimEnd(); // stop B9PS complaining about trailing "\n"
 										subtype.SetSubTypeDescriptionDetail(description);
 									}
 									

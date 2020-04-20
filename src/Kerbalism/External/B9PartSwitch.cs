@@ -184,6 +184,7 @@ namespace KERBALISM
 
 			public void SetSubTypeDescriptionDetail(string descriptionDetail)
 			{
+				descriptionDetail = descriptionDetail.TrimStart().TrimEnd(); // stop B9PS complaining about trailing "\n"
 				subtypeDescriptionDetailField.SetValue(instance, descriptionDetail);
 			}
 		}
