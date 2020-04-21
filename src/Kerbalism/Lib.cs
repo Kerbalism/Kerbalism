@@ -3363,6 +3363,29 @@ namespace KERBALISM
 			return def_value;
 		}
 
+		public static double ConfigDuration(ConfigNode cfg, string key, bool applyTimeMultiplier, string defaultValue)
+		{
+			string durationStr = cfg.GetValue(key);
+			if (string.IsNullOrEmpty(durationStr) || !TryParseDuration(durationStr, applyTimeMultiplier, out double duration))
+			{
+				TryParseDuration(defaultValue, applyTimeMultiplier, out duration);
+			}
+
+			return duration;
+		}
+
+		public static bool ConfigDuration(ConfigNode cfg, string key, bool applyTimeMultiplier, out double duration)
+		{
+			string durationStr = cfg.GetValue(key);
+			if (string.IsNullOrEmpty(durationStr) || !TryParseDuration(durationStr, applyTimeMultiplier, out duration))
+			{
+				duration = 1.0;
+				return false;
+			}
+
+			return true;
+		}
+
 		///<summary>parse a serialized (config) value. Supports all value types including enums and common KSP/Unity types (vector, quaternion, color, matrix4x4...)</summary>
 		public static bool TryParseValue(string strValue, Type typeOfValue, out object value)
 		{
@@ -3482,10 +3505,12 @@ namespace KERBALISM
 			return false;
 		}
 
+
+
 		/// <summary> Parse a duration "3y120d5h2m93s into seconds </summary>
-		public static double ParseConfigDuration(string durationString, bool applyTimeMultiplier = true)
+		public static bool TryParseDuration(string durationString, bool applyTimeMultiplier, out double result)
 		{
-			double result = 0;
+			result = 0.0;
 
 			string str = durationString.ToLower();
 			int p = str.IndexOf('y');
@@ -3539,11 +3564,12 @@ namespace KERBALISM
 				result *= Settings.ConfigsDurationMultiplier;
 			}
 				
-			return result;
+			return true;
 
 			error:;
 			Log($"Couldn't parse misformatted duration : {durationString}", LogLevel.Error);
-			return 1.0;
+			result = 1.0;
+			return false;
 		}
 		#endregion
 

@@ -186,7 +186,7 @@ namespace KERBALISM
 			partData.radiationData.radiationRate = Lib.ConfigValue(partDataNode, "radRate", 0.0);
 			partData.radiationData.accumulatedRadiation = Lib.ConfigValue(partDataNode, "radAcc", 0.0);
 
-			ConfigNode emittersNode = partDataNode.GetNode(NODENAME_EMITTERS);
+			ConfigNode emittersNode = radNode.GetNode(NODENAME_EMITTERS);
 			if (emittersNode != null)
 			{
 				partData.radiationData.emittersRadiation = new List<EmittersRadiation>();
@@ -313,7 +313,7 @@ namespace KERBALISM
 						}
 					}
 
-					if (emitter.IsActive)
+					if (emitter.IsActive && i < knownEmittersCount)
 					{
 						radiationRate += emittersRadiation[i].radiation;
 					}

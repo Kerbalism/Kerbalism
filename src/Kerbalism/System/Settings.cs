@@ -96,8 +96,7 @@ namespace KERBALISM
 			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "KsmWasteAtmosphere");
 			HabitatBreathableResource = Lib.ConfigValue(cfg, "HabitatBreathableResource", "Oxygen");
 			HabitatBreathableResourceRate = Lib.ConfigValue(cfg, "HabitatBreathableResourceRate", 0.00172379825);
-			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
-			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
+			DepressuriationDefaultDuration = Lib.ConfigDuration(cfg, "DepressuriationDefaultDuration", false, "5m");
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
 
 			// poisoning
@@ -235,8 +234,7 @@ namespace KERBALISM
 		public static string HabitatWasteResource;              // resource used to manage habitat CO2 level (poisoning)
 		public static string HabitatBreathableResource;         // resource automagically produced when the habitat is under breathable external conditions (Oxygen in the default profile)
 		public static double HabitatBreathableResourceRate;     // per second, per kerbal production of the breathable resource. Should match the consumption defined in the breathing rule. Set it to 0 to disable it entirely.
-		public static double DepressuriationDefaultRate;        // liters / second / √(m3) of habitat volume
-		public static double PressureFactor;                    // penalty multiplier applied to the "pressure" modifier when the vessel is fully depressurized
+		public static double DepressuriationDefaultDuration;    // seconds / m3
 		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets
 																// also determine the altitude threshold at which non-pressurized habitats can use the external air
 		// poisoning

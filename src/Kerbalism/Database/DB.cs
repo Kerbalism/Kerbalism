@@ -248,22 +248,6 @@ namespace KERBALISM
 			}
 			return true;
 		}
-		//{
-		//	VesselData vd;
-		//	if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
-		//	{
-		//		Lib.Log("VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !", Lib.LogLevel.Warning);
-		//		vd = new VesselData(protoVessel, null);
-		//		vessels.Add(protoVessel.vesselID, vd);
-		//	}
-		//	return vd;
-		//}
-
-		/// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-		//public static bool KerbalismIsValid(this Vessel vessel)
-		//      {
-		//          return TryGetVesselData(vessel).IsSimulated;
-		//      }
 
 		#endregion
 

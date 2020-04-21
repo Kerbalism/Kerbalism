@@ -60,7 +60,7 @@ namespace KERBALISM
 			Info = experimentInfo;
 
 			Name = Lib.ConfigValue(moduleDefinition, "name", experimentInfo.ExperimentId);
-			Duration = Lib.ParseConfigDuration(Lib.ConfigValue(moduleDefinition, "Duration", "60s"));
+			Duration = Lib.ConfigDuration(moduleDefinition, "Duration", true, "60s");
 			DataRate = Info.DataSize / Duration;
 			RequiredEC = Lib.ConfigValue(moduleDefinition, "RequiredEC", 0.0);
 			SampleCollecting = Lib.ConfigValue(moduleDefinition, "SampleCollecting", false);

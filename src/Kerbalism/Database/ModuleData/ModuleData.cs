@@ -241,16 +241,6 @@ namespace KERBALISM
 			else
 			{
 				Lib.LogDebug($"Flight Moduledata for {ksmPartModule.GetType().Name} hasn't been found after load, instatiating a new one");
-				//if (!ksmPartModule.vessel.TryGetVesselData(out VesselData vd))
-				//{
-				//	Lib.LogDebugStack($"VesselData doesn't exists for vessel {ksmPartModule.vessel.vesselName}, can't instantiate ModuleData !", Lib.LogLevel.Error);
-				//	return;
-				//}
-
-				//if (!vd.Parts.TryGet(ksmPartModule.part.flightID, out PartData partData))
-				//{
-				//	partData = vd.Parts.Add(ksmPartModule.part);
-				//}
 				New(ksmPartModule, moduleIndex, partData, true);
 			}
 		}
