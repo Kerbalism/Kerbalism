@@ -459,6 +459,17 @@ namespace KERBALISM
 
 		#region RESOURCE SIM
 
+		/// <summary> Test if a vessel has electricity or not. This is faster than ResourceAmount(v, "ElectricCharge") and should be preferred.</summary>
+		/// <param name="v">the vessel to test for power</param>
+		/// <returns>true if there is electricity</returns>
+		public static bool IsPowered(Vessel v)
+		{
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return false;
+
+			return vd.Powered;
+		}
+
 		/// <summary> Consume a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
 		/// <param name="v">the vessel to consume the resource on</param>
 		/// <param name="resource_name">name of the resource to consume</param>
