@@ -106,7 +106,7 @@ namespace KERBALISM
 			p.AddContent("livingSpaceModifier", vd.Habitat.livingSpaceFactor.ToString("F2"));
 			p.AddContent("pressurizedSurface", vd.Habitat.pressurizedSurface.ToString("0.00 m2"));
 			p.AddContent("pressurizedVolume", vd.Habitat.pressurizedVolume.ToString("0.00 m3"));
-			p.AddContent("pressureAtm", vd.Habitat.pressureAtm.ToString("0.00 atm"));
+			p.AddContent("pressureAtm", vd.Habitat.pressure.ToString("0.00 atm"));
 			p.AddContent("pressureModifier", vd.Habitat.pressureFactor.ToString("F2"));
 
 			p.AddContent("shieldingSurface", vd.Habitat.shieldingSurface.ToString("0.00 m2"));

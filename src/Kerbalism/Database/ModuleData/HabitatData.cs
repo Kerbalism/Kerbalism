@@ -129,6 +129,26 @@ namespace KERBALISM
 			}
 		}
 
+		public bool IsDeployingRequested
+		{
+			get
+			{
+				switch (animState)
+				{
+					case AnimState.Deploying:
+					case AnimState.Deployed:
+					case AnimState.Accelerating:
+					case AnimState.Decelerating:
+					case AnimState.Rotating:
+					case AnimState.RotatingNotEnoughEC:
+					case AnimState.Stuck:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
 		public bool IsRotationNominal => animState == AnimState.Rotating;
 		public bool IsAccelerating => animState == AnimState.Accelerating;
 		public bool IsDecelerating => animState == AnimState.Decelerating;
@@ -185,6 +205,23 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		public bool IsPressurizationRequested
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.Pressurized:
+					case PressureState.Depressurized:
+					case PressureState.Pressurizing:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
 
 		/// <summary>
 		/// Are suits required. Note that this doesn't mean the habitat is depressurized.

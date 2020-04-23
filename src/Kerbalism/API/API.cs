@@ -416,7 +416,7 @@ namespace KERBALISM
 			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
 				return 0.0;
 
-			return vd.Habitat.pressureAtm;
+			return vd.Habitat.pressure;
 		}
 
 		// return level of co2 of internal habitat

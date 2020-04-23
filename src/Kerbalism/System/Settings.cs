@@ -234,9 +234,10 @@ namespace KERBALISM
 		public static string HabitatWasteResource;              // resource used to manage habitat CO2 level (poisoning)
 		public static string HabitatBreathableResource;         // resource automagically produced when the habitat is under breathable external conditions (Oxygen in the default profile)
 		public static double HabitatBreathableResourceRate;     // per second, per kerbal production of the breathable resource. Should match the consumption defined in the breathing rule. Set it to 0 to disable it entirely.
-		public static double DepressuriationDefaultDuration;    // seconds / m3
-		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets
-																// also determine the altitude threshold at which non-pressurized habitats can use the external air
+		public static double DepressuriationDefaultDuration;    // seconds / m3 of habitat volume
+		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets.
+																// also determine the altitude at which non-pressurized habitats can use the external air.
+																// note that while ingame we display hab pressure as % with no unit, 100 % = 1 atm = 101.325 kPa for all internal calculations
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
 		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status
