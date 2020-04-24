@@ -20,9 +20,11 @@ namespace KERBALISM
 
 		public static void Update()
 		{
-			// lock
+			// TODO : lock
+
 			// copy zup from Planetarium.Zup
 			zup = Planetarium.Zup;
+
 			// update bodies and their orbit
 			foreach (ThreadSafeBody body in bodies)
 				body.Update();
@@ -32,31 +34,23 @@ namespace KERBALISM
 			{
 				if (!vessels.TryGetValue(vd.VesselId, out ThreadSafeVessel vessel))
 				{
-					vessel = new ThreadSafeVessel(vd.Vessel);
+					vessel = new ThreadSafeVessel(vd.Vessel, vd.EnvLanded);
 					vessels.TryAdd(vd.VesselId, vessel);
 				}
 
 				if (!vd.IsSimulated)
 					continue;
 
-				if (vessels.ContainsKey(vd.VesselId))
-				{
-					if (!vd.IsSimulated)
-						continue;
-
-
-
-
-				}
-
-				if (!vd.IsSimulated && vessels.ContainsKey(vd.VesselId))
-					vessels.TryRemove(vd.VesselId, out ThreadSafeVessel vessel);
-
-
-
+				vessel.Update(vd.Vessel, vd.EnvLanded);
 
 			}
-			// unlock
+
+			while (true)
+			{
+
+			}
+
+			// TODO : unlock
 		}
 	}
 
@@ -67,12 +61,18 @@ namespace KERBALISM
 		ThreadSafeOrbit orbit;
 		ThreadSafeBody mainBody;
 
-		public ThreadSafeVessel(Vessel vessel)
+		public ThreadSafeVessel(Vessel vessel, bool landed)
 		{
 			id = vessel.id.GetHashCode();
-			landed = vessel.LandedOrSplashed;
+			this.landed = landed;
 			orbit = new ThreadSafeOrbit(vessel.orbit);
 			mainBody = SubStepEvaluator.bodies[vessel.mainBody.flightGlobalsIndex];
+		}
+
+		public void Update(Vessel vessel, bool landed)
+		{
+			this.landed = landed;
+			orbit.Update(vessel.orbit);
 		}
 	}
 
