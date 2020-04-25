@@ -80,7 +80,7 @@
       <Private>False</Private>
     </Reference>
     <!-- Harmony reference, from the repo gamedata folder -->
-    <Reference Include="$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll">
+    <Reference Include="$(GameDataKerbalismPathPR)\Lib\0Harmony.1.2.0.1.dll">
       <Name>Harmony</Name>
       <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
       <Private>False</Private>
