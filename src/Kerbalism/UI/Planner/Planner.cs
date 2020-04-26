@@ -338,10 +338,10 @@ namespace KERBALISM.Planner
 
 
 			// render pressure data
-			string pressure_tooltip = vesselData.Habitat.pressureAtm == 1.0
+			string pressure_tooltip = vesselData.Habitat.pressure == 1.0
 				? Local.Planner_analyzerpressurized1//"Free roaming in a pressurized environment is\nvastly superior to living in a suit."
 				: Local.Planner_analyzerpressurized2;//"Being forced inside a suit all the time greatly\nreduces the crews quality of life.\nThe worst part is the diaper."
-			p.AddContent(Local.Planner_pressurized, vesselData.Habitat.pressureAtm == 1.0 ? Local.Planner_pressurized_yes : Local.Planner_pressurized_no, pressure_tooltip);//"pressurized""yes""no"
+			p.AddContent(Local.Planner_pressurized, vesselData.Habitat.pressure == 1.0 ? Local.Planner_pressurized_yes : Local.Planner_pressurized_no, pressure_tooltip);//"pressurized""yes""no"
 
 			// render life estimate
 			p.AddContent(Local.Planner_lifeestimate, Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * rule.EvaluateModifier(vesselData))));//"duration"

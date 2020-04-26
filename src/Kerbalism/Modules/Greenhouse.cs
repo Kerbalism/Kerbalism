@@ -177,8 +177,8 @@ namespace KERBALISM
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= light_tolerance;
-				bool pressure = pressure_tolerance <= double.Epsilon || vd.Habitat.pressureAtm >= pressure_tolerance;
-				bool radiation = radiation_tolerance <= double.Epsilon || (1.0 - vd.Habitat.shieldingModifier) * vd.EnvHabitatRadiation < radiation_tolerance;
+				bool pressure = pressure_tolerance <= double.Epsilon || vd.Habitat.pressure >= pressure_tolerance;
+				bool radiation = radiation_tolerance <= double.Epsilon || (1.0 - vd.Habitat.shieldingModifier) * vd.Habitat.radiationRate < radiation_tolerance;
 
 				// determine input resources conditions
 				// - comparing against amounts in previous simulation step
@@ -286,7 +286,7 @@ namespace KERBALISM
 
 				// determine environment conditions
 				bool lighting = natural + artificial >= g.light_tolerance;
-				bool pressure = g.pressure_tolerance <= 0 || vd.Habitat.pressureAtm >= g.pressure_tolerance;
+				bool pressure = g.pressure_tolerance <= 0 || vd.Habitat.pressure >= g.pressure_tolerance;
 				bool radiation = g.radiation_tolerance <= 0 || vd.EnvRadiation * (1.0 - vd.Habitat.shieldingModifier) < g.radiation_tolerance;
 
 				// determine inputs conditions
@@ -404,7 +404,7 @@ namespace KERBALISM
 
 			// determine environment conditions
 			bool lighting = natural + artificial >= light_tolerance;
-			bool pressure = vesselData.Habitat.pressureAtm > Settings.PressureThreshold || pressure_tolerance <= double.Epsilon;
+			bool pressure = vesselData.Habitat.pressure > Settings.PressureThreshold || pressure_tolerance <= double.Epsilon;
 			bool radiation = (vesselData.landed ? vesselData.surfaceRad : vesselData.magnetopauseRad) * (1.0 - vesselData.Habitat.shieldingModifier) < radiation_tolerance;
 
 			// if all conditions apply

@@ -42,10 +42,10 @@ namespace KERBALISM
 				// we will already have instantiatied everything from there because we can't afford
 				// to skip the moduledata shipId affectation.
 				// In all other cases, this is a newly instantiated part, create the partdata/moduledata
-				if (!VesselDataShip.LoadedParts.TryGet(__instance, out PartDataShip partData))
+				if (!VesselDataShip.ShipParts.TryGet(__instance, out PartData partData))
 				{
-					partData = new PartDataShip(VesselDataShip.Instance, __instance);
-					VesselDataShip.LoadedParts.Add(partData);
+					partData = new PartData(VesselDataShip.Instance, __instance);
+					VesselDataShip.ShipParts.Add(partData);
 				}
 
 				// create and link the ModuleData for every KsmPartModule
@@ -62,11 +62,28 @@ namespace KERBALISM
 			}
 			else
 			{
+				if (!__instance.vessel.TryGetVesselData(out VesselData vd))
+				{
+					// flags have an empty Guid, so we never create a VesselData for them
+					if (__instance.vessel.id == Guid.Empty)
+						return;
+
+					Lib.LogDebugStack($"VesselData doesn't exists for vessel {__instance.vessel.vesselName}, can't link PartData !", Lib.LogLevel.Error);
+					return;
+				}
+
+				if (!vd.VesselParts.TryGet(__instance.flightID, out PartData partData))
+				{
+					partData = vd.VesselParts.Add(__instance);
+				}
+
+				partData.SetLoadedPartReference(__instance);
+
 				for (int i = 0; i < __instance.Modules.Count; i++)
 				{
 					if (__instance.Modules[i] is KsmPartModule ksmPM && ksmPM.ModuleData == null)
 					{
-						ModuleData.GetOrCreateFlightModuleData(ksmPM, i);
+						ModuleData.GetOrCreateFlightModuleData(partData, ksmPM, i);
 					}
 				}
 			}
@@ -109,7 +126,7 @@ namespace KERBALISM
 			// a part that doesn't exist anymore, by iterating over Part.allParts (which seems reliable in that matter)
 			if (Part.allParts.Count == 0)
 			{
-				VesselDataShip.LoadedParts.Clear();
+				VesselDataShip.ShipParts.Clear();
 			}
 			else
 			{
@@ -119,12 +136,12 @@ namespace KERBALISM
 					loadedPartsId.Add(Part.allParts[i].GetInstanceID());
 				}
 
-				List<int> loadedPartDataIds = new List<int>(VesselDataShip.LoadedParts.AllInstanceIDs);
+				List<int> loadedPartDataIds = new List<int>(VesselDataShip.ShipParts.AllInstanceIDs);
 				foreach (int key in loadedPartDataIds)
 				{
 					if (!loadedPartsId.Contains(key))
 					{
-						VesselDataShip.LoadedParts.Remove(key);
+						VesselDataShip.ShipParts.Remove(key);
 					}
 				}
 			}
@@ -183,10 +200,10 @@ namespace KERBALISM
 
 							// This could in the above loop, but since this only happen in unfrequent corner cases,
 							// having it here avoid doing t
-							if (!VesselDataShip.LoadedParts.TryGet(part, out PartDataShip partData))
+							if (!VesselDataShip.ShipParts.TryGet(part, out PartData partData))
 							{
-								partData = new PartDataShip(VesselDataShip.Instance, part);
-								VesselDataShip.LoadedParts.Add(partData);
+								partData = new PartData(VesselDataShip.Instance, part);
+								VesselDataShip.ShipParts.Add(partData);
 							}
 
 							ModuleData.New(ksmPM, i, partData, false);
@@ -252,9 +269,9 @@ namespace KERBALISM
 
 			ConfigNode kerbalismDataNode = ShipConstruction.ShipConfig?.nodes[0]?.GetNode(VesselDataBase.NODENAME_VESSEL);
 
-			DB.NewVesselDataFromShipConstruct(__result, kerbalismDataNode, VesselDataShip.LoadedParts);
+			DB.NewVesselDataFromShipConstruct(__result, kerbalismDataNode, VesselDataShip.Instance);
 
-			VesselDataShip.LoadedParts.Clear();
+			VesselDataShip.ShipParts.Clear();
 			VesselDataShip.Instance = null;
 		}
 	}

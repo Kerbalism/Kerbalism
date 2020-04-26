@@ -10,7 +10,6 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField(isPersistant = true)] public string type;                 // component name
-		[KSPField] public double mtbf = 3600 * 6 * 1000;                    // mean time between failures, in seconds
 		[KSPField] public string repair = string.Empty;                     // repair crew specs
 		[KSPField] public string title = string.Empty;                      // short description of component
 		[KSPField] public string redundancy = string.Empty;                 // redundancy group
@@ -18,7 +17,7 @@ namespace KERBALISM
 		[KSPField] public double extra_mass;                                // extra mass for high-quality, in proportion of part mass
 
 		[KSPField] public double rated_radiation = 0;                       // rad/h this part can sustain without taking any damage. Only effective with MTBF failures.
-		[KSPField] public double radiation_decay_rate = 20;                 // time to next failure is reduced by (rad/h - rated_radiation) * radiation_decay_rate seconds
+		[KSPField] public double radiation_decay_rate = 1;                  // time to next failure is reduced by (rad/h - rated_radiation) * radiation_decay_rate per second
 
 		// engine only features
 		[KSPField] public double turnon_failure_probability = -1;           // probability of a failure when turned on or staged
@@ -47,6 +46,17 @@ namespace KERBALISM
 		List<PartModule> modules;                                           // components cache
 		CrewSpecs repair_cs;                                                // crew specs
 		bool explode = false;
+
+		[SerializeField]
+		public double mtbf = double.MaxValue;
+
+		public override void OnLoad(ConfigNode node)
+		{
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				mtbf = Lib.ConfigDuration(node, "mtbf", true, "3y");
+			}
+		}
 
 		public override void OnStart(StartState state)
 		{
@@ -145,7 +155,7 @@ namespace KERBALISM
 				{
 					fail = true;
 #if DEBUG_RELIABILITY
-					Lib.DebugLog("Ignition check: " + part.partInfo.title + " ignitions " + ignitions + " turnon failure");
+					Lib.LogDebug($"Ignition check: {part.partInfo.title} ignitions {ignitions} turnon failure");
 #endif
 				}
 			}
@@ -579,16 +589,6 @@ namespace KERBALISM
 
 			if (broken)
 			{
-				// flag as not broken
-				broken = false;
-
-				// re-enable module
-				foreach (PartModule m in modules)
-				{
-					m.isEnabled = true;
-					m.enabled = true;
-				}
-
 				// we need to reconfigure the module here, because if all modules of a type
 				// share the broken state, and these modules are part of a configure setup,
 				// then repairing will enable all of them, messing up with the configuration
@@ -647,18 +647,8 @@ namespace KERBALISM
 			// if enforced, manned, or if safemode didn't trigger
 			if (enforce_breakdown || vd.CrewCapacity > 0 || Lib.RandomDouble() > PreferencesReliability.Instance.safeModeChance)
 			{
-				// flag as broken
-				broken = true;
-
 				// determine if this is a critical failure
 				critical = Lib.RandomDouble() < PreferencesReliability.Instance.criticalChance;
-
-				// disable module
-				foreach (PartModule m in modules)
-				{
-					m.isEnabled = false;
-					m.enabled = false;
-				}
 
 				// type-specific hacks
 				Apply(true);
@@ -855,27 +845,51 @@ namespace KERBALISM
 			return false;
 		}
 
-		// apply type-specific hacks to enable/disable the module
-		protected void Apply(bool b)
+		public IEnumerator DeferredEngineDisablement(ModuleEngines me)
 		{
-			if (b && type.StartsWith("ModuleEngines", StringComparison.Ordinal))
+			yield return new WaitUntil(() =>
+			{
+				// if that engine takes very long to reach 0 thrust, this could
+				// be called multiple times. The player might be able to reactivate
+				// the engine in the mean time, so enforce the shutdown here
+				me.Shutdown();
+				me.currentThrottle = 0;
+				return me.GetCurrentThrust() <= 0;
+			});
+
+			me.enabled = false;
+			me.isEnabled = false;
+
+			// don't set broken = true right away, that
+			// would immediately disable the module in Update()
+			broken = true;
+		}
+
+		// apply type-specific hacks to enable/disable the module
+		protected void Apply(bool broken)
+		{
+			if (broken && type.StartsWith("ModuleEngines", StringComparison.Ordinal))
 			{
 				foreach (PartModule m in modules)
 				{
-					var e = m as ModuleEngines;
-					e.Shutdown();
-					e.EngineIgnited = false;
-					e.flameout = true;
-
-					var efx = m as ModuleEnginesFX;
-					if (efx != null)
+					if(m is ModuleEngines me)
 					{
-						efx.DeactivateRunningFX();
-						efx.DeactivatePowerFX();
-						efx.DeactivateLoopingFX();
+						me.Shutdown();
+						me.currentThrottle = 0;
+						StartCoroutine(DeferredEngineDisablement(me));
 					}
 				}
+
+				return;
 			}
+
+			// disable module
+			foreach (PartModule m in modules)
+			{
+				m.isEnabled = !broken;
+				m.enabled = !broken;
+			}
+			this.broken = broken;
 
 			switch (type)
 			{
@@ -892,14 +906,14 @@ namespace KERBALISM
 					break;
 				*/
 				case "ModuleDeployableRadiator":
-					if (b)
+					if (broken)
 					{
 						part.FindModelComponents<Animation>().ForEach(k => k.Stop());
 					}
 					break;
 
 				case "ModuleLight":
-					if (b)
+					if (broken)
 					{
 						foreach (PartModule m in modules)
 						{
@@ -917,12 +931,11 @@ namespace KERBALISM
 					break;
 
 				case "ModuleRCSFX":
-					if (b)
+					if (broken)
 					{
 						foreach (PartModule m in modules)
 						{
-							var e = m as ModuleRCSFX;
-							if (e != null)
+							if(m is ModuleRCSFX e)
 							{
 								e.DeactivateFX();
 								e.DeactivatePowerFX();
@@ -932,7 +945,7 @@ namespace KERBALISM
 					break;
 
 				case "ModuleScienceExperiment":
-					if (b)
+					if (broken)
 					{
 						foreach (PartModule m in modules)
 						{
@@ -942,11 +955,11 @@ namespace KERBALISM
 					break;
 
 				case "ModuleKsmExperiment":
-					if (b)
+					if (broken)
 					{
 						foreach (PartModule m in modules)
 						{
-							(m as ModuleKsmExperiment).ReliablityEvent(b);
+							(m as ModuleKsmExperiment).ReliablityEvent(broken);
 						}
 					}
 					break;
@@ -954,12 +967,12 @@ namespace KERBALISM
 				case "SolarPanelFixer":
 					foreach (PartModule m in modules)
 					{
-						(m as SolarPanelFixer).ReliabilityEvent(b);
+						(m as SolarPanelFixer).ReliabilityEvent(broken);
 					}
 					break;
 			}
 
-			API.Failure.Notify(part, type, b);
+			API.Failure.Notify(part, type, broken);
 		}
 
 

@@ -6,27 +6,17 @@ namespace KERBALISM
 {
 	public enum ScriptType
 	{
-		power_low = 1,    // called when ec level goes below 15%
-		power_high = 2,   // called when ec level goes above 15%
-		sunlight = 3,     // called when sun rise
-		shadow = 4,       // called when sun set
-		unlinked = 5,     // called when signal is lost
-		linked = 6,       // called when signal is regained
-		drive_full = 7,  // called when storage capacity goes below 15%
-		drive_empty = 8, // called when storage capacity goes above 30%
-		landed = 9,       // called on landing
-		atmo = 10,         // called on entering atmosphere
-		space = 11,        // called on reaching space
-		rad_low = 12,     // called when radiation goes below 0.05 rad/h
-		rad_high = 13,    // called when radiation goes above 0.05 rad/h
-		eva_out = 14,     // called when going out on eva
-		eva_in = 15,      // called when coming back from eva
-		action1 = 16,     // called when pressing 1
-		action2 = 17,     // called when pressing 2
-		action3 = 18,     // called when pressing 3
-		action4 = 19,     // called when pressing 4
-		action5 = 20,     // called when pressing 5
-		last = 21
+		landed = 1,      // called on landing
+		atmo = 2,        // called on entering atmosphere
+		space = 3,       // called on reaching space
+		eva_out = 4,     // called when going out on eva
+		eva_in = 5,      // called when coming back from eva
+		action1 = 6,     // called when pressing 1
+		action2 = 7,     // called when pressing 2
+		action3 = 8,     // called when pressing 3
+		action4 = 9,     // called when pressing 4
+		action5 = 10,    // called when pressing 5
+		last = 11
 	}
 
 	public sealed class Computer
@@ -147,56 +137,6 @@ namespace KERBALISM
 					case ScriptType.space:
 						if (space && script.prev == "0") to_exec.Add(script);
 						script.prev = space ? "1" : "0";
-						break;
-
-					case ScriptType.sunlight:
-						if (sunlight && script.prev == "0") to_exec.Add(script);
-						script.prev = sunlight ? "1" : "0";
-						break;
-
-					case ScriptType.shadow:
-						if (!sunlight && script.prev == "0") to_exec.Add(script);
-						script.prev = !sunlight ? "1" : "0";
-						break;
-
-					case ScriptType.power_high:
-						if (power_high && script.prev == "0") to_exec.Add(script);
-						script.prev = power_high ? "1" : "0";
-						break;
-
-					case ScriptType.power_low:
-						if (power_low && script.prev == "0") to_exec.Add(script);
-						script.prev = power_low ? "1" : "0";
-						break;
-
-					case ScriptType.rad_low:
-						if (radiation_low && script.prev == "0") to_exec.Add(script);
-						script.prev = radiation_low ? "1" : "0";
-						break;
-
-					case ScriptType.rad_high:
-						if (radiation_high && script.prev == "0") to_exec.Add(script);
-						script.prev = radiation_high ? "1" : "0";
-						break;
-
-					case ScriptType.linked:
-						if (signal && script.prev == "0") to_exec.Add(script);
-						script.prev = signal ? "1" : "0";
-						break;
-
-					case ScriptType.unlinked:
-						if (!signal && script.prev == "0") to_exec.Add(script);
-						script.prev = !signal ? "1" : "0";
-						break;
-
-					case ScriptType.drive_full:
-						if (drive_full && script.prev == "0") to_exec.Add(script);
-						script.prev = drive_full ? "1" : "0";
-						break;
-
-					case ScriptType.drive_empty:
-						if (drive_empty && script.prev == "0") to_exec.Add(script);
-						script.prev = drive_empty ? "1" : "0";
 						break;
 				}
 			}

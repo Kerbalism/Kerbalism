@@ -52,7 +52,7 @@ namespace KERBALISM
 				// suns without a solar cycle configuration default to a cycle of 6 years
 				// (set to 0 if you really want none)
 				if (solar_cycle < 0)
-					solar_cycle = Lib.HoursInDay * 3600 * Lib.DaysInYear * 6;
+					solar_cycle = Lib.SecondsInYearExact * 6;
 
 				// add a rather nominal surface radiation for suns that have no config
 				// for comparison: the stock kerbin sun has a surface radiation of 47 rad/h, which gives 0.01 rad/h near Kerbin

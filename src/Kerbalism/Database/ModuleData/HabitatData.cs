@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// loaded/unloaded/editor state independant persisted data and logic used by the ModuleKsmHabitat module.
 	/// </summary>
-	public class HabitatData : ModuleData<ModuleKsmHabitat, HabitatData>
+	public class HabitatData : ModuleData<ModuleKsmHabitat, HabitatData>, IRadiationReceiver
 	{
 		#region ENUMS AND TYPES
 
@@ -102,12 +102,7 @@ namespace KERBALISM
 		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
 		public double animTimer = 0.0;
 
-		/// <summary> rad/s added or removed by all nearby emitters (can be on another vessel), and removed by radiation coils</summary>
-		public double localRadiation = 0.0;
-
 		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
-
-		private bool raytracedOnce = false;
 
 		public ModuleKsmHabitat.HabitatUpdateHandler updateHandler;
 
@@ -121,6 +116,26 @@ namespace KERBALISM
 			{
 				switch (animState)
 				{
+					case AnimState.Deployed:
+					case AnimState.Accelerating:
+					case AnimState.Decelerating:
+					case AnimState.Rotating:
+					case AnimState.RotatingNotEnoughEC:
+					case AnimState.Stuck:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		public bool IsDeployingRequested
+		{
+			get
+			{
+				switch (animState)
+				{
+					case AnimState.Deploying:
 					case AnimState.Deployed:
 					case AnimState.Accelerating:
 					case AnimState.Decelerating:
@@ -191,6 +206,23 @@ namespace KERBALISM
 			}
 		}
 
+		public bool IsPressurizationRequested
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.Pressurized:
+					case PressureState.Depressurized:
+					case PressureState.Pressurizing:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+
 		/// <summary>
 		/// Are suits required. Note that this doesn't mean the habitat is depressurized.
 		/// </summary>
@@ -246,6 +278,8 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		public PartRadiationData RadiationData => partData.radiationData;
 
 		#endregion
 

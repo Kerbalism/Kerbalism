@@ -201,8 +201,16 @@ namespace KERBALISM
 			}
 		}
 
+		public bool firstFU = true;
+
 		public virtual void FixedUpdate()
 		{
+			if (firstFU)
+			{
+				Lib.LogDebug("First FU !");
+				firstFU = false;
+			}
+
 			// basic sanity checks
 			if (Lib.IsEditor)
 				return;
@@ -672,7 +680,7 @@ namespace KERBALISM
 			VesselDataBase vd = thisExpData.partData.vesselData;
 			bool hasOtherRunning = false;
 
-			foreach (PartData partData in vd.PartList)
+			foreach (PartData partData in vd.Parts)
 			{
 				for (int i = 0; i < partData.modules.Count; i++)
 				{
@@ -768,7 +776,7 @@ namespace KERBALISM
 
 		public static void CheckEditorExperimentMultipleRun()
 		{
-			foreach (PartData partData in VesselDataShip.LoadedParts)
+			foreach (PartData partData in VesselDataShip.ShipParts.AllLoadedParts)
 			{
 				for (int i = 0; i < partData.modules.Count; i++)
 				{

@@ -87,7 +87,7 @@ namespace KERBALISM
 				{
 					if (pv.vesselID == Guid.Empty)
 					{
-						// Flags are saved with an empty GUID (?!!?). skip them.
+						// Flags have an empty GUID. skip them.
 						Lib.LogDebug("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
 						continue;
 					}
@@ -185,10 +185,10 @@ namespace KERBALISM
 
 		#region VESSELDATA METHODS
 
-		public static VesselData NewVesselDataFromShipConstruct(Vessel v, ConfigNode shipNode, PartDataCollectionShip shipPartDatas)
+		public static VesselData NewVesselDataFromShipConstruct(Vessel v, ConfigNode shipNode, VesselDataShip shipVd)
 		{
 			Lib.LogDebug("Creating VesselData from ShipConstruct for launched vessel " + v.vesselName);
-			VesselData vd = new VesselData(v, shipNode, shipPartDatas);
+			VesselData vd = new VesselData(v, shipNode, shipVd);
 			vessels.Add(v.id, vd);
 			return vd;
 		}
@@ -248,22 +248,6 @@ namespace KERBALISM
 			}
 			return true;
 		}
-		//{
-		//	VesselData vd;
-		//	if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
-		//	{
-		//		Lib.Log("VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !", Lib.LogLevel.Warning);
-		//		vd = new VesselData(protoVessel, null);
-		//		vessels.Add(protoVessel.vesselID, vd);
-		//	}
-		//	return vd;
-		//}
-
-		/// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-		//public static bool KerbalismIsValid(this Vessel vessel)
-		//      {
-		//          return TryGetVesselData(vessel).IsSimulated;
-		//      }
 
 		#endregion
 

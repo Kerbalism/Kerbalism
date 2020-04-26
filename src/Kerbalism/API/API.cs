@@ -124,7 +124,7 @@ namespace KERBALISM
 			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
 				return 0.0;
 
-			return vd.EnvHabitatRadiation;
+			return vd.Habitat.radiationRate;
 		}
 
 		/// <summary>return true if the vessel is inside the magnetopause of some body (except the sun)</summary>
@@ -231,7 +231,7 @@ namespace KERBALISM
 		{
 			if (!Features.Radiation) return false;
 			RadiationBody rb = KERBALISM.Radiation.Info(body);
-			return rb.model.Has_field();
+			return rb.model.HasField();
 		}
 
 		/// <summary> Return the current solar activity for the given body. Normal activity ranges
@@ -416,7 +416,7 @@ namespace KERBALISM
 			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
 				return 0.0;
 
-			return vd.Habitat.pressureAtm;
+			return vd.Habitat.pressure;
 		}
 
 		// return level of co2 of internal habitat
@@ -458,6 +458,17 @@ namespace KERBALISM
 		#endregion
 
 		#region RESOURCE SIM
+
+		/// <summary> Test if a vessel has electricity or not. This is faster than ResourceAmount(v, "ElectricCharge") and should be preferred.</summary>
+		/// <param name="v">the vessel to test for power</param>
+		/// <returns>true if there is electricity</returns>
+		public static bool IsPowered(Vessel v)
+		{
+			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+				return false;
+
+			return vd.Powered;
+		}
 
 		/// <summary> Consume a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
 		/// <param name="v">the vessel to consume the resource on</param>
@@ -640,20 +651,17 @@ namespace KERBALISM
 		public static ExperimentStateChanged OnExperimentStateChanged = new ExperimentStateChanged();
 		public class ExperimentStateChanged
 		{
-			internal List<Action<Vessel, string, bool>> receivers = new List<Action<Vessel, string, bool>>();
-			public void Add(Action<Vessel, string, bool> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
-			public void Remove(Action<Vessel, string, bool> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
+			internal List<Action<Guid, string, int>> receivers = new List<Action<Guid, string, int>>();
+			public void Add(Action<Guid, string, int> receiver) { if (!receivers.Contains(receiver)) receivers.Add(receiver); }
+			public void Remove(Action<Guid, string, int> receiver) { if (receivers.Contains(receiver)) receivers.Remove(receiver); }
 
-			public void Notify(Vessel vessel, string experiment_id, ExperimentData.ExpStatus oldStatus, ExperimentData.ExpStatus newStatus)
+			public void Notify(Guid vesselId, string experiment_id, ExperimentData.ExpStatus status)
 			{
-				bool wasRunning = oldStatus == ExperimentData.ExpStatus.Forced || oldStatus == ExperimentData.ExpStatus.Running;
-				bool isRunning = newStatus == ExperimentData.ExpStatus.Forced || newStatus == ExperimentData.ExpStatus.Running;
-				if (wasRunning == isRunning) return;
-				foreach (Action<Vessel, string, bool> receiver in receivers)
+				foreach (Action<Guid, string, int> receiver in receivers)
 				{
 					try
 					{
-						receiver.Invoke(vessel, experiment_id, isRunning);
+						receiver.Invoke(vesselId, experiment_id, (int)status);
 					}
 					catch (Exception e)
 					{

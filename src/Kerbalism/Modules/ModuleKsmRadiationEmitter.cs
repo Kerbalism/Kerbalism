@@ -28,7 +28,7 @@ namespace KERBALISM
 
 		public override void OnStart(StartState state)
 		{
-			Fields["Status"].guiName = title;
+			Fields["status"].guiName = title;
 			Events["Toggle"].active = canToggle;
 			Actions["Action"].active = canToggle;
 
@@ -101,7 +101,7 @@ namespace KERBALISM
 			sb.AppendInfo(radiation >= 0.0 ? Local.Emitter_Emitted : Local.Emitter_ActiveShielding, Lib.HumanReadableRadiation(Math.Abs(radiation)));
 
 			if (ecRate > 0.0)
-				sb.AppendInfo(Local.Planner_consumed, Lib.HumanReadableRate(ecRate, "F3", "EC", true));
+				sb.AppendInfo(Local.Planner_consumed, Lib.HumanReadableRate(-ecRate, "F3", "EC", true));
 
 			return sb.ToString();
 		}

@@ -102,6 +102,11 @@ namespace KERBALISM
 			Fetch = null;
 		}
 
+		private void Start()
+		{
+			Lib.LogDebug("Kerbalism.Start() called");
+		}
+
 		public override void OnLoad(ConfigNode node)
 		{
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
@@ -231,8 +236,15 @@ namespace KERBALISM
 
 		#region fixedupdate
 
+		public bool firstFU = true; 
 		void FixedUpdate()
 		{
+			if (firstFU)
+			{
+				Lib.LogDebug("First FixedUpdate !");
+				firstFU = false;
+			}
+
 			// remove control locks in any case
  			Misc.ClearLocks();
 
@@ -272,6 +284,10 @@ namespace KERBALISM
 				// get vessel data
 				if (!v.TryGetVesselDataNoError(out VesselData vd))
 				{
+					// flags have an empty Guid, we never create a VesselData and never process them
+					if (v.id == Guid.Empty)
+						continue;
+
 					Lib.LogDebug($"Creating VesselData for new vessel {v.vesselName}");
 					vd = new VesselData(v);
 					DB.AddNewVesselData(vd);
@@ -336,7 +352,7 @@ namespace KERBALISM
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Resource");
 					// apply deferred requests
-					resources.ResourceUpdate(v, VesselResHandler.VesselState.Loaded, elapsed_s);
+					resources.ResourceUpdate(vd, v, VesselResHandler.VesselState.Loaded, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					Supply.SendMessages(vd);
@@ -413,7 +429,7 @@ namespace KERBALISM
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Resource");
 				// apply deferred requests
-				resources.ResourceUpdate(last_v.protoVessel, VesselResHandler.VesselState.Unloaded, last_time);
+				resources.ResourceUpdate(last_vd, last_v.protoVessel, VesselResHandler.VesselState.Unloaded, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				Supply.SendMessages(last_vd);

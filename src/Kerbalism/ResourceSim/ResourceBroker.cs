@@ -51,6 +51,7 @@ namespace KERBALISM
 		public static ResourceBroker Wheel = GetOrCreate("Wheel", BrokerCategory.VesselSystem, "wheel");
 		public static ResourceBroker Engine = GetOrCreate("Engine", BrokerCategory.VesselSystem, "engine");
 		public static ResourceBroker PassiveShield = GetOrCreate("PassiveShield", BrokerCategory.VesselSystem, "passive shield");
+		public static ResourceBroker CoilArray = GetOrCreate("CoilArray", BrokerCategory.VesselSystem, "Active radiation shield");
 
 		public string Id { get; private set; }
 		public BrokerCategory Category { get; private set; }

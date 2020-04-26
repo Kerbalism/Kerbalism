@@ -57,7 +57,7 @@ namespace KERBALISM
 		/// <para/> - After Recipes have been processed
 		/// <para/> - After the VesselResHandler has been updated with all part resources references, and after amount/oldAmount and capacity/oldCapacity have been set
 		/// </summary>
-		public abstract bool ExecuteAndSyncToParts(double elapsed_s);
+		public abstract bool ExecuteAndSyncToParts(VesselDataBase vd, double elapsed_s);
 
 		/// <summary>Record a consumption, it will be stored in "Deferred" and later synchronized to the vessel in ExecuteAndSyncToParts()</summary>
 		/// <param name="broker">origin of the consumption, will be available in the UI</param>

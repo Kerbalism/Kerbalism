@@ -17,14 +17,18 @@ namespace KERBALISM
 		/// <para/>- "myResource" + "myModule" will make the resource shared with all "myModule" partmodules
 		/// <para/>- "myResource" + "myModule" + part.flightID will make that resource local to a partmodule and a part
 		/// </summary>
-		public override string Name => name; string name;
+		public override string Name => name;
+		protected string name;
 
-		public override string Title => title; string title;
+		public override string Title => title;
+		protected string title;
 
 		public override bool Visible => false;
 
 		/// <summary> Amount of virtual resource. This can be set directly if needed.</summary>
-		public override double Amount => amount; double amount;
+		public override double Amount => amount;
+		protected double amount;
+
 		public void SetAmount(double amount)
 		{
 			if (amount < 0.0)
@@ -43,7 +47,9 @@ namespace KERBALISM
 		/// <para/>In the current state of things, if you intent to use Capacity in a VirtualResource it must be set manually 
 		/// from OnLoad or OnStart as there is no persistence for it.
 		/// </summary>
-		public override double Capacity => capacity; double capacity;
+		public override double Capacity => capacity;
+		protected double capacity;
+
 		public void SetCapacity(double capacity)
 		{
 			if (capacity < 0.0)
@@ -58,31 +64,38 @@ namespace KERBALISM
 		}
 
 		/// <summary> Not yet consumed or produced amount, will be synchronized to Amount in Sync()</summary>
-		public override double Deferred => deferred; double deferred;
+		public override double Deferred => deferred;
+		protected double deferred;
 
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
-		public override double Rate => rate; double rate;
+		public override double Rate => rate;
+		protected double rate;
 
 		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
-		public override double Level => level; double level;
+		public override double Level => level;
+		protected double level;
 
 		/// <summary> [0 ; 1] availability factor that will be applied to every Consume() call in the next simulation step</summary>
-		public override double AvailabilityFactor => availabilityFactor; double availabilityFactor;
+		public override double AvailabilityFactor => availabilityFactor;
+		protected double availabilityFactor;
 
 		/// <summary> last step consumption requests. For visualization only, can be greater than what was actually consumed </summary>
-		public override double ConsumeRequests => consumeRequests; double consumeRequests;
+		public override double ConsumeRequests => consumeRequests;
+		protected double consumeRequests;
 
 		/// <summary> last step production requests. For visualization only, can be greater than what was actually produced </summary>
-		public override double ProduceRequests => produceRequests; double produceRequests;
+		public override double ProduceRequests => produceRequests;
+		protected double produceRequests;
 
-		private double currentConsumeRequests;
-		private double currentProduceRequests;
+		protected double currentConsumeRequests;
+		protected double currentProduceRequests;
 
 		/// <summary> list of consumers and producers for this resource</summary>
-		public override List<ResourceBrokerRate> ResourceBrokers => resourceBrokers; List<ResourceBrokerRate> resourceBrokers;
+		public override List<ResourceBrokerRate> ResourceBrokers => resourceBrokers;
+		protected List<ResourceBrokerRate> resourceBrokers;
 
 		/// <summary>Dictionary of all consumers and producers (key) and how much amount they did add/remove (value).</summary>
-		private Dictionary<ResourceBroker, double> brokersResourceAmounts;
+		protected Dictionary<ResourceBroker, double> brokersResourceAmounts;
 
 		public override bool NeedUpdate => true;
 
@@ -101,17 +114,7 @@ namespace KERBALISM
 			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
 		}
 
-		public void Setup(string title, double amount = 0.0, double capacity = double.MaxValue, bool isPersistent = false)
-		{
-			this.title = title;
-			this.amount = amount;
-			this.capacity = capacity;
-			this.IsPersistent = isPersistent;
-			deferred = 0.0;
-			level = capacity > 0.0 ? amount / capacity : 0.0;
-		}
-
-		public override bool ExecuteAndSyncToParts(double elapsed_s)
+		public override bool ExecuteAndSyncToParts(VesselDataBase vd, double elapsed_s)
 		{
 			// if there are consumers, get the availability factor from the consume/produce ratio
 			if (currentConsumeRequests > 0.0)
@@ -194,40 +197,6 @@ namespace KERBALISM
 				brokersResourceAmounts[broker] -= quantity;
 			else
 				brokersResourceAmounts.Add(broker, -quantity);
-		}
-
-		public static void LoadAll(VesselDataBase vd, ConfigNode vesselDataNode)
-		{
-			VesselResHandler resHandler = vd.ResHandler;
-			foreach (ConfigNode node in vesselDataNode.GetNodes("VIRTUALRESOURCE"))
-			{
-				string resName = Lib.ConfigValue(node, "Name", string.Empty);
-				if (string.IsNullOrEmpty(resName)) return;
-
-				resHandler.SetupOrCreateVirtualResource(
-					resName,
-					Lib.ConfigValue(node, "Title", resName),
-					Lib.ConfigValue(node, "Amount", 0.0),
-					Lib.ConfigValue(node, "Capacity", 0.0));
-			}
-		}
-
-		public static void SaveAll(VesselDataBase vd, ConfigNode vesselDataNode)
-		{
-			foreach (VesselVirtualResource vRes in vd.ResHandler.GetVirtualResources())
-			{
-				if (!vRes.IsPersistent)
-					continue;
-
-				if (vRes.Amount == 0.0 && vRes.Capacity == 0.0)
-					continue;
-
-				ConfigNode vResNode = vesselDataNode.AddNode("VIRTUALRESOURCE");
-				vResNode.AddValue("Name", vRes.Name);
-				vResNode.AddValue("Title", vRes.Name);
-				vResNode.AddValue("Amount", vRes.Amount);
-				vResNode.AddValue("Capacity", vRes.Capacity);
-			}
 		}
 	}
 }

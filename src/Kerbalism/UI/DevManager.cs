@@ -180,14 +180,6 @@ namespace KERBALISM
 				case ScriptType.landed: return Local.DevManager_NameTabLanded;
 				case ScriptType.atmo: return Local.DevManager_NameTabAtmo;
 				case ScriptType.space: return Local.DevManager_NameTabSpace;
-				case ScriptType.sunlight: return Local.DevManager_NameTabSunlight;
-				case ScriptType.shadow: return Local.DevManager_NameTabShadow;
-				case ScriptType.power_high: return Local.DevManager_NameTabPowerHigh;
-				case ScriptType.power_low: return Local.DevManager_NameTabPowerLow;
-				case ScriptType.rad_high: return Local.DevManager_NameTabRadHigh;
-				case ScriptType.rad_low: return Local.DevManager_NameTabRadLow;
-				case ScriptType.linked: return Local.DevManager_NameTabLinked;
-				case ScriptType.unlinked: return Local.DevManager_NameTabUnlinked;
 				case ScriptType.eva_out: return Local.DevManager_NameTabEVAOut;
 				case ScriptType.eva_in: return Local.DevManager_NameTabEVAIn;
 				case ScriptType.action1: return Local.DevManager_NameTabAct1;
@@ -195,8 +187,6 @@ namespace KERBALISM
 				case ScriptType.action3: return Local.DevManager_NameTabAct3;
 				case ScriptType.action4: return Local.DevManager_NameTabAct4;
 				case ScriptType.action5: return Local.DevManager_NameTabAct5;
-				case ScriptType.drive_full: return Local.DevManager_NameTabDriveFull;
-				case ScriptType.drive_empty: return Local.DevManager_NameTabDriveEmpty;
 			}
 			return string.Empty;
 		}
@@ -207,26 +197,16 @@ namespace KERBALISM
 			if (script_index == 0) return Local.DevManager_TabManual;//Control vessel components directly
 			switch ((ScriptType)script_index)
 			{
-				case ScriptType.landed: return Local.DevManager_TabLanded;        // <i>Called on landing</i>
+				case ScriptType.landed: return Local.DevManager_TabLanded;      // <i>Called on landing</i>
 				case ScriptType.atmo: return Local.DevManager_TabAtmo;          // <i>Called on entering atmosphere</i>
-				case ScriptType.space: return Local.DevManager_TabSpace;         // <i>Called on reaching space</i>
-				case ScriptType.sunlight: return Local.DevManager_TabSunlight;      // <i>Called when sun became visible</i>
-				case ScriptType.shadow: return Local.DevManager_TabShadow;        // <i>Called when sun became occluded</i>
-				case ScriptType.power_high: return Local.DevManager_TabPowerHigh;    // <i>Called when EC level goes above 80%</i>
-				case ScriptType.power_low: return Local.DevManager_TabPowerLow;     // <i>Called when EC level goes below 20%</i>
-				case ScriptType.rad_high: return Local.DevManager_TabRadHigh;      // <i>Called when radiation exceed 0.05 rad/h</i>
-				case ScriptType.rad_low: return Local.DevManager_TabRadLow;       // <i>Called when radiation goes below 0.02 rad/h</i>
-				case ScriptType.linked: return Local.DevManager_TabLinked;        // <i>Called when signal is regained</i>
-				case ScriptType.unlinked: return Local.DevManager_TabUnlinked;      // <i>Called when signal is lost</i>
-				case ScriptType.eva_out: return Local.DevManager_TabEVAOut;       // <i>Called when going out on EVA</i>
-				case ScriptType.eva_in: return Local.DevManager_TabEVAIn;        // <i>Called when returning from EVA</i>
+				case ScriptType.space: return Local.DevManager_TabSpace;        // <i>Called on reaching space</i>
+				case ScriptType.eva_out: return Local.DevManager_TabEVAOut;     // <i>Called when going out on EVA</i>
+				case ScriptType.eva_in: return Local.DevManager_TabEVAIn;       // <i>Called when returning from EVA</i>
 				case ScriptType.action1: return Local.DevManager_TabAct1;       // <i>Called by pressing <b>1</b> on the keyboard</i>
 				case ScriptType.action2: return Local.DevManager_TabAct2;       // <i>Called by pressing <b>2</b> on the keyboard</i>
 				case ScriptType.action3: return Local.DevManager_TabAct3;       // <i>Called by pressing <b>3</b> on the keyboard</i>
 				case ScriptType.action4: return Local.DevManager_TabAct4;       // <i>Called by pressing <b>4</b> on the keyboard</i>
 				case ScriptType.action5: return Local.DevManager_TabAct5;       // <i>Called by pressing <b>5</b> on the keyboard</i>
-				case ScriptType.drive_full: return Local.DevManager_TabDriveFull;
-				case ScriptType.drive_empty: return Local.DevManager_TabDriveEmpty;
 			}
 			return string.Empty;
 		}

@@ -117,7 +117,7 @@ namespace KERBALISM
 
 		private static double HabitatRadiation(VesselData vd)
 		{
-			return (1.0 - vd.Habitat.shieldingModifier) * vd.EnvHabitatRadiation;
+			return vd.Habitat.radiationRate;
 		}
 
 		// get readings tooltip

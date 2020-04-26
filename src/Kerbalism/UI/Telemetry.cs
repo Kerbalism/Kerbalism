@@ -106,7 +106,7 @@ namespace KERBALISM
 			p.AddContent("livingSpaceModifier", vd.Habitat.livingSpaceFactor.ToString("F2"));
 			p.AddContent("pressurizedSurface", vd.Habitat.pressurizedSurface.ToString("0.00 m2"));
 			p.AddContent("pressurizedVolume", vd.Habitat.pressurizedVolume.ToString("0.00 m3"));
-			p.AddContent("pressureAtm", vd.Habitat.pressureAtm.ToString("0.00 atm"));
+			p.AddContent("pressureAtm", vd.Habitat.pressure.ToString("0.00 atm"));
 			p.AddContent("pressureModifier", vd.Habitat.pressureFactor.ToString("F2"));
 
 			p.AddContent("shieldingSurface", vd.Habitat.shieldingSurface.ToString("0.00 m2"));
@@ -208,7 +208,7 @@ namespace KERBALISM
 						else
 						{
 							double depletion = res.Depletion;
-							if (depletion > 3600.0 * Lib.HoursInDay * Lib.DaysInYear * 100.0) // more than 100 years = perpetual
+							if (depletion > Lib.SecondsInYearExact * 100.0) // more than 100 years = perpetual
 							{
 								sb.Append(Lib.Color(Local.Generic_PERPETUAL, Lib.Kolor.Green));
 							}

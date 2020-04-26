@@ -62,7 +62,7 @@ namespace KERBALISM
 				sb.Append("Kerbalism has encountered an unrecoverable error and ");
 				sb.AppendKSPLine(Lib.Color("KSP must be closed", Lib.Kolor.Orange, true));
 				sb.AppendKSPNewLine();
-				sb.AppendKSPLine(Lib.Color("<size=14>LOADING YOUR SAVE MAY CORRUPT IT</size>", Lib.Kolor.Orange, true));
+				sb.AppendKSPLine(Lib.Color("<size=14>PROCEEDING WITH YOUR SAVE MAY CORRUPT IT</size>", Lib.Kolor.Orange, true));
 				sb.AppendKSPNewLine();
 			}
 			else

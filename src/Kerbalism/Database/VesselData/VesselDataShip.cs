@@ -12,7 +12,7 @@ namespace KERBALISM
 {
 	public class VesselDataShip : VesselDataBase
 	{
-		public static PartDataCollectionShip LoadedParts { get; private set; } = new PartDataCollectionShip();
+		public static PartDataCollectionShip ShipParts { get; private set; } = new PartDataCollectionShip();
 
 		private static VesselDataShip instance;
 
@@ -23,7 +23,7 @@ namespace KERBALISM
 				if (instance == null)
 				{
 					instance = new VesselDataShip();
-					LoadedParts.Clear();
+					ShipParts.Clear();
 				}
 				return instance;
 			}
@@ -38,33 +38,7 @@ namespace KERBALISM
 
 		#region BASE PROPERTIES IMPLEMENTATION
 
-		private static List<PartData> shipPartsCache = new List<PartData>();
-		private static double lastFixedUpdateTimeStamp = -1.0;
-		private static int lastLoadedPartsCount = 0;
-		
-		public override IEnumerable<PartData> PartList
-		{
-			get
-			{
-				// small optimization : don't rebuild shipPartsCache if this is called multiple times in the same
-				// fixedupdate cycle and if total part count hasn't changed.
-				if (Time.fixedTime != lastFixedUpdateTimeStamp || LoadedParts.Count != lastLoadedPartsCount)
-				{
-					shipPartsCache.Clear();
-					lastFixedUpdateTimeStamp = Time.fixedTime;
-					lastLoadedPartsCount = LoadedParts.Count;
-					foreach (PartDataShip partData in LoadedParts)
-					{
-						if (partData.IsOnShip)
-						{
-							shipPartsCache.Add(partData);
-						}
-					}
-				}
-
-				return shipPartsCache;
-			}
-		}
+		public override PartDataCollectionBase Parts => ShipParts;
 
 		public override VesselResHandler ResHandler => resHandler; VesselResHandler resHandler;
 
@@ -101,6 +75,8 @@ namespace KERBALISM
 		public override double EnvRadiation => radiation; public double radiation;
 
 		public override double EnvHabitatRadiation => habitatRadiation; public double habitatRadiation;
+
+		public override double EnvStormRadiation => 0.0;
 
 		public override double EnvGammaTransparency => gammaTransparency; public double gammaTransparency;
 
@@ -166,6 +142,7 @@ namespace KERBALISM
 
 		public void Analyze(List<Part> parts, CelestialBody body, double altitudeMult, SunlightState sunlight)
 		{
+			PartCache.Update(this);
 			AnalyzeEnvironment(body, altitudeMult, sunlight);
 			AnalyzeCrew(parts);
 			AnalyzeComms();
@@ -355,7 +332,6 @@ namespace KERBALISM
 			redundancy = new Dictionary<string, int>();
 
 			// scan the parts
-			double year_time = 60.0 * 60.0 * Lib.HoursInDay * Lib.DaysInYear;
 			foreach (Part p in parts)
 			{
 				// for each module
@@ -375,7 +351,7 @@ namespace KERBALISM
 						if (mtbf <= 0) continue;
 
 						// accumulate failures/y
-						failureYear += year_time / mtbf;
+						failureYear += Settings.ConfigsSecondsInYear / mtbf;
 
 						// accumulate high quality percentage
 						highQuality += reliability.quality ? 1.0 : 0.0;

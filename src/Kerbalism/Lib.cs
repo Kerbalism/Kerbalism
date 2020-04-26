@@ -13,6 +13,7 @@ using KSP.UI;
 using KSP.UI.Screens.Flight;
 using System.Collections;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace KERBALISM
 {
@@ -198,6 +199,212 @@ namespace KERBALISM
 		}
 		#endregion
 
+		#region 3D MATH
+
+		/// <summary>
+		/// return true if the ray intersects the sphere
+		/// <br/>rayDir must be normalized
+		/// </summary>
+		public static bool RaySphereIntersection(Vector3d rayOrigin, Vector3d rayDir, Vector3d sphereCenter, double sphereRadius)
+		{
+			// vector from ray origin to sphere center
+			Vector3d difference = sphereCenter - rayOrigin;
+
+			// projection of ray origin -> sphere center over the raytracing direction
+			double k = Vector3d.Dot(difference, rayDir);
+
+			// the ray hit the sphere if its minimal analytical distance along the ray is more than the radius
+			return k > 0.0 && (rayDir * k - difference).sqrMagnitude > sphereRadius * sphereRadius;
+		}
+
+		/// <summary>
+		/// return the first intersection point if the ray intersects the sphere,
+		/// <br/>return null if it doesn't intersect or if the ray origin is inside the sphere
+		/// <br/>rayDir must be normalized
+		/// </summary>
+		public static Vector3d? RaySphereIntersectionPoint(Vector3d rayOrigin, Vector3d rayDir, Vector3d sphereCenter, double sphereRadius)
+		{
+			// vector from ray origin to sphere center
+			Vector3d difference = sphereCenter - rayOrigin;
+
+			double differenceLengthSquared = difference.sqrMagnitude;
+			double sphereRadiusSquared = sphereRadius * sphereRadius;
+
+			// If the distance between the ray start and the sphere's centre is less than
+			// the radius of the sphere, we are inside the sphere.
+			if (differenceLengthSquared < sphereRadiusSquared)
+				return null;
+
+			double distanceAlongRay = Vector3d.Dot(rayDir, difference);
+			// If the ray is pointing away from the sphere then we don't ever intersect
+			if (distanceAlongRay < 0)
+				return null;
+
+			// Next check if we are within the bounds of the sphere
+			// with x = radius of sphere
+			// with y = distance between ray position and sphere centre
+			// with z = the distance we've travelled along the ray
+			// if x^2 + z^2 - y^2 < 0, we do not intersect
+			double dist = sphereRadiusSquared + distanceAlongRay * distanceAlongRay - differenceLengthSquared;
+
+			if (dist < 0.0)
+				return null;
+
+			// get the intersection point
+			double rayLength = distanceAlongRay - Math.Sqrt(dist);
+			return rayOrigin + rayDir * rayLength;
+		}
+
+		/// <summary>
+		/// return the first intersection point if the ray intersects the sphere,
+		/// <br/>return null if it doesn't intersect or if the ray origin is inside the sphere
+		/// <br/>rayDir must be normalized
+		/// </summary>
+		public static bool RaySphereIntersectionFloat(Vector3 rayOrigin, Vector3 rayDir, Vector3 sphereCenter, float sphereRadius, out Vector3 hitPoint)
+		{
+			// vector from ray origin to sphere center
+			Vector3 difference = sphereCenter - rayOrigin;
+
+			float differenceLengthSquared = difference.sqrMagnitude;
+			float sphereRadiusSquared = sphereRadius * sphereRadius;
+
+			// If the distance between the ray start and the sphere's centre is less than
+			// the radius of the sphere, we are inside the sphere.
+			if (differenceLengthSquared < sphereRadiusSquared)
+			{
+				hitPoint = Vector3.zero;
+				return false;
+			}
+
+			float distanceAlongRay = Vector3.Dot(rayDir, difference);
+			// If the ray is pointing away from the sphere then we don't ever intersect
+			if (distanceAlongRay < 0)
+			{
+				hitPoint = Vector3.zero;
+				return false;
+			}
+
+			// Next check if we are within the bounds of the sphere
+			// with x = radius of sphere
+			// with y = distance between ray position and sphere centre
+			// with z = the distance we've travelled along the ray
+			// if x^2 + z^2 - y^2 < 0, we do not intersect
+			float dist = sphereRadiusSquared + distanceAlongRay * distanceAlongRay - differenceLengthSquared;
+
+			if (dist < 0.0)
+			{
+				hitPoint = Vector3.zero;
+				return false;
+			}
+
+			// get the intersection point
+			float rayLength = distanceAlongRay - Mathf.Sqrt(dist);
+			hitPoint = rayOrigin + rayDir * rayLength;
+			return true;
+		}
+
+		/// <summary>
+		/// return the first intersection point if the ray intersects the sphere,
+		/// <br/>return null if it doesn't intersect or if the ray origin is inside the sphere
+		/// <br/>rayDir must be normalized
+		/// </summary>
+		public static bool RaySphereIntersectionFloat(Vector3 rayOrigin, Vector3 rayDir, Vector3 sphereCenter, float sphereRadius, out Vector3 hitPoint, out float differenceLengthSquared)
+		{
+			// vector from ray origin to sphere center
+			Vector3 difference = sphereCenter - rayOrigin;
+
+			differenceLengthSquared = difference.sqrMagnitude;
+			float sphereRadiusSquared = sphereRadius * sphereRadius;
+
+			// If the distance between the ray start and the sphere's centre is less than
+			// the radius of the sphere, we are inside the sphere.
+			if (differenceLengthSquared < sphereRadiusSquared)
+			{
+				hitPoint = Vector3.zero;
+				return false;
+			}
+
+			float distanceAlongRay = Vector3.Dot(rayDir, difference);
+			// If the ray is pointing away from the sphere then we don't ever intersect
+			if (distanceAlongRay < 0)
+			{
+				hitPoint = Vector3.zero;
+				return false;
+			}
+
+			// Next check if we are within the bounds of the sphere
+			// with x = radius of sphere
+			// with y = distance between ray position and sphere centre
+			// with z = the distance we've travelled along the ray
+			// if x^2 + z^2 - y^2 < 0, we do not intersect
+			float dist = sphereRadiusSquared + distanceAlongRay * distanceAlongRay - differenceLengthSquared;
+
+			if (dist < 0.0)
+			{
+				hitPoint = Vector3.zero;
+				return false;
+			}
+
+			// get the intersection point
+			float rayLength = distanceAlongRay - Mathf.Sqrt(dist);
+			hitPoint = rayOrigin + rayDir * rayLength;
+			return true;
+		}
+
+		/// <summary> Check if a point is inside a cylinder defined by two points and a radius </summary>
+		public static bool PointInCylinder(Vector3 cylTop, Vector3 cylBottom, float cylRadius, Vector3 point)
+		{
+			Vector3 topToBottom = cylBottom - cylTop;
+			return PointInCylinderFast(cylTop, topToBottom, topToBottom.sqrMagnitude, cylRadius * cylRadius, point);
+		}
+
+		/// <summary> Check if a point is inside a cylinder, batch checking optimized version </summary>
+		public static bool PointInCylinderFast(Vector3 cylTop, Vector3 topToBottom, float lengthSqr, float radiusSqr, Vector3 point)
+		{
+			Vector3 topToPoint = point - cylTop;
+
+			// Dot the vectors to see if point lies behind the cylinder cap
+			float dot = Vector3.Dot(topToPoint, topToBottom);
+
+			// If dot is less than zero the point is behind the cylTop cap.
+			// If greater than the cylinder axis line segment length squared
+			// then the point is outside the other end cap at bottom.
+			if (dot < 0f || dot > lengthSqr)
+				return false;
+
+			// Point lies within the parallel caps, so find
+			// distance squared from point to cylinder axis, using the fact that sin^2 + cos^2 = 1
+			float distanceSqr = Vector3.Dot(topToPoint, topToPoint) - dot * dot / lengthSqr;
+			return radiusSqr >= distanceSqr;
+		}
+
+		/// <summary> Check if a point is inside a sphere, batch checking optimized version </summary>
+		public static bool PointInSphere(Vector3 point, Vector3 sphereCenter, float sphereRadius)
+		{
+			return (point - sphereCenter).sqrMagnitude <= sphereRadius * sphereRadius;
+		}
+
+		/// <summary> Check if a point is inside a sphere, batch checking optimized version </summary>
+		public static bool PointInSphereFast(Vector3 point, Vector3 sphereCenter, float sphereRadiusSqr)
+		{
+			return (point - sphereCenter).sqrMagnitude <= sphereRadiusSqr;
+		}
+
+		/// <summary> shortest distance from a ray to a point. rayDir must be normalized</summary>
+		public static float RayPointDistance(Vector3d rayOrigin, Vector3d rayDir, Vector3d point)
+		{
+			return Vector3.Cross(rayDir, point - rayOrigin).magnitude;
+		}
+
+		/// <summary> shortest distance from a ray to a point, squared. rayDir must be normalized</summary>
+		public static float RayPointDistanceSquared(Vector3d rayOrigin, Vector3d rayDir, Vector3d point)
+		{
+			return Vector3.Cross(rayDir, point - rayOrigin).magnitude;
+		}
+
+
+		#endregion
+
 		#region RANDOM
 		// store the random number generator
 		static System.Random rng = new System.Random();
@@ -278,55 +485,83 @@ namespace KERBALISM
 
 		#region TIME
 
-		private static double hoursInDay = -1.0;
-		///<summary>return hours in a day</summary>
-		public static double HoursInDay
-		{
-			get
-			{
-				if (hoursInDay == -1.0)
-				{
-					if (FlightGlobals.ready || IsEditor)
-					{
-						var homeBody = FlightGlobals.GetHomeBody();
-						hoursInDay = Math.Round(homeBody.rotationPeriod / 3600, 0);
-					}
-					else
-					{
-						return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
-					}
+		///<summary>
+		///Real amount of hours in a solar day. <br/>
+		///This can be a non-integer amount if the home body rotation period isn't a multiple of an hour
+		///</summary>
+		public static double HoursInDayExact { get; private set; } = 6.0;
+		public static double SecondsInDayExact { get; private set; } = 6.0 * 3600.0;
 
-				}
-				return hoursInDay;
-			}
-		}
+		///<summary>
+		///Real amount of solar days in a solar year.<br/>
+		///This can be a fractional amount if the home body orbit period isn't a multiple of a solar day
+		///</summary>
+		public static double DaysInYearExact { get; private set; } = 426.0;
+		public static double SecondsInYearExact { get; private set; } = 426.0 * 6.0 * 3600.0;
 
-		private static double daysInYear = -1.0;
-		///<summary>return year length</summary>
-		public static double DaysInYear
+		///<summary>
+		///Floored integer amount of hours in a solar day.<br/>
+		///This may be lower than the real value if the home body rotation period isn't a multiple of an hour
+		///</summary>
+		public static double HoursInDayFloored { get; private set; } = 6.0;
+		private static double secondsInDayFloored = 6.0 * 3600.0;
+
+		///<summary>
+		///Floored integer amount of solar days in a solar year.<br/>
+		///This may be lower than the real value if the home body orbit period isn't a multiple of a solar day
+		///</summary>
+		public static double DaysInYearFloored { get; private set; } = 426.0;
+		private static double secondsInYearFloored = 426.0 * 6.0 * 3600.0;
+
+		///<summary>ulong (floored) amount of hours in a solar day (utility to avoid a cast every time we need it in Lib) </summary>
+		private static ulong hoursInDayLong = 6;
+		private static ulong secondsInDayLong = 6 * 3600;
+
+		///<summary>ulong (floored) amount of solar days in a solar year (utility to avoid a cast every time we need it in Lib)</summary>
+		private static ulong daysInYearLong = 426;
+		private static ulong secondsInYearLong = 429 * 6 * 3600;
+
+		///<summary>
+		/// Setup hours in day and days in year values by parsing kopernicus configs if present, or using the kerbin time setting otherwise.
+		/// Note that this should be called before anything using time is called : before we parse configs and before part prefabs compilation.
+		///</summary>
+		public static string SetupCalendar()
 		{
-			get
+			string info;
+
+			if (!Settings.UseHomeBodyCalendar || !Kopernicus.GetHomeWorldCalendar(out double hoursInDay, out hoursInDayLong, out double daysInYear, out daysInYearLong, out info))
 			{
-				if (daysInYear == -1.0)
-				{
-					if (FlightGlobals.ready || IsEditor)
-					{
-						var homeBody = FlightGlobals.GetHomeBody();
-						daysInYear = Math.Floor(homeBody.orbit.period / (HoursInDay * 60.0 * 60.0));
-					}
-					else
-					{
-						return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
-					}
-				}
-				return daysInYear;
+				hoursInDay = GameSettings.KERBIN_TIME ? 6.0 : 24.0;
+				daysInYear = GameSettings.KERBIN_TIME ? 426.0 : 365.0;
+				hoursInDayLong = (ulong)hoursInDay;
+				daysInYearLong = (ulong)daysInYear;
+				info = GameSettings.KERBIN_TIME ? "Using Kerbin time from settings" : "Using Earth time from settings";
 			}
+			else
+			{
+				info = "Using Kopernicus body time for " + info;
+			}
+
+			HoursInDayExact = hoursInDay;
+			DaysInYearExact = daysInYear;
+			SecondsInDayExact = hoursInDay * 3600.0;
+			SecondsInYearExact = daysInYear * hoursInDay * 3600.0;
+			HoursInDayFloored = hoursInDayLong;
+			DaysInYearFloored = daysInYearLong;
+			secondsInDayLong = hoursInDayLong * 3600;
+			secondsInYearLong = daysInYearLong * hoursInDayLong * 3600;
+			secondsInDayFloored = secondsInDayLong;
+			secondsInYearFloored = secondsInYearLong;
+			return info;
 		}
 
 
 		///<summary>stop time warping</summary>
-		public static void StopWarp(double maxSpeed = 0)
+		public static void StopWarp(double maxSpeed = 0, bool onlyIfHighMode = true)
 		{
+			if (onlyIfHighMode && TimeWarp.WarpMode == TimeWarp.Modes.LOW)
+				return;
+
 			var warp = TimeWarp.fetch;
 			warp.CancelAutoWarp();
 			int maxRate = 0;
@@ -377,8 +612,8 @@ namespace KERBALISM
 			double t = Planetarium.GetUniversalTime();
 			const double len_min = 60.0;
 			const double len_hour = len_min * 60.0;
-			double len_day = len_hour * Lib.HoursInDay;
-			double len_year = len_day * Lib.DaysInYear;
+			double len_day = len_hour * Lib.HoursInDayFloored;
+			double len_year = len_day * Lib.DaysInYearFloored;
 
 			double year = Math.Floor(t / len_year);
 			t -= year * len_year;
@@ -647,13 +882,11 @@ namespace KERBALISM
 			return s.Replace('_', ' ');
 		}
 
-
 		///<summary>select a string at random</summary>
 		public static string TextVariant(params string[] list)
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
-
 
 		/// <summary> insert lines break to have a max line length of 'maxCharPerLine' characters </summary>
 		public static string WordWrapAtLength(string longText, int maxCharPerLine)
@@ -691,6 +924,12 @@ namespace KERBALISM
 			}
 			return longText;
 
+		}
+
+		/// <summary> Remove all rtf/html tags </summary>
+		public static string RemoveTags(string text)
+		{
+			return Regex.Replace(text, "<.*?>", string.Empty);
 		}
 		#endregion
 
@@ -848,11 +1087,11 @@ namespace KERBALISM
 			if (rate >= 0.01)
 				return BuildString(sign, rate.ToString(format), unit, Local.Generic_perHour);//"/h"
 
-			rate *= HoursInDay;  // per-day
+			rate *= HoursInDayExact;  // per-day
 			if (rate >= 0.01)
 				return BuildString(sign, rate.ToString(format), unit, Local.Generic_perDay);//"/d"
 
-			return BuildString(sign, (rate * DaysInYear).ToString(format), unit, Local.Generic_perYear);//"/y"
+			return BuildString(sign, (rate * DaysInYearExact).ToString(format), unit, Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
@@ -864,39 +1103,37 @@ namespace KERBALISM
 				d = Math.Round(d);
 				if (d <= 0.0) return Local.Generic_NONE;//"none"
 
-				ulong hours_in_day = (ulong)HoursInDay;
-				ulong days_in_year = (ulong)DaysInYear;
-				ulong duration_seconds = (ulong)d;
+				ulong durationLong = (ulong)d;
 
 				// seconds
 				if (d < 60.0)
 				{
-					ulong seconds = duration_seconds % 60ul;
+					ulong seconds = durationLong % 60ul;
 					return BuildString(seconds.ToString(), "s");
 				}
 				// minutes + seconds
 				if (d < 3600.0)
 				{
-					ulong seconds = duration_seconds % 60ul;
-					ulong minutes = (duration_seconds / 60ul) % 60ul;
+					ulong seconds = durationLong % 60ul;
+					ulong minutes = (durationLong / 60ul) % 60ul;
 					return BuildString(minutes.ToString(), "m ", seconds.ToString("00"), "s");
 				}
 				// hours + minutes
-				if (d < 3600.0 * HoursInDay)
+				if (d < secondsInDayFloored)
 				{
-					ulong minutes = (duration_seconds / 60ul) % 60ul;
-					ulong hours = (duration_seconds / 3600ul) % hours_in_day;
+					ulong minutes = (durationLong / 60ul) % 60ul;
+					ulong hours = (durationLong / 3600ul) % hoursInDayLong;
 					return BuildString(hours.ToString(), "h ", minutes.ToString("00"), "m");
 				}
-				ulong days = (duration_seconds / (3600ul * hours_in_day)) % days_in_year;
+				ulong days = (durationLong / secondsInDayLong) % daysInYearLong;
 				// days + hours
-				if (d < 3600.0 * HoursInDay * DaysInYear)
+				if (d < secondsInYearFloored)
 				{
-					ulong hours = (duration_seconds / 3600ul) % hours_in_day;
+					ulong hours = (durationLong / 3600ul) % hoursInDayLong;
 					return BuildString(days.ToString(), "d ", hours.ToString(), "h");
 				}
 				// years + days
-				ulong years = duration_seconds / (3600ul * hours_in_day * days_in_year);
+				ulong years = durationLong / secondsInYearLong;
 				return BuildString(years.ToString(), "y ", days.ToString(), "d");
 			}
 			else
@@ -905,8 +1142,8 @@ namespace KERBALISM
 				d = Math.Round(d);
 				if (d <= 0.0) return Local.Generic_NONE;//"none"
 
-				double hours_in_day = HoursInDay;
-				double days_in_year = DaysInYear;
+				double hours_in_day = HoursInDayFloored;
+				double days_in_year = DaysInYearFloored;
 
 				long duration = (long)d;
 				long seconds = duration % 60;
@@ -1022,9 +1259,9 @@ namespace KERBALISM
 			if (dangerColor)
 			{
 				if (rad < 0.5)
-					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Yellow);
+					return Color(BuildString(rad.ToString("F3"), " rad/h"), Kolor.Yellow);
 				else
-					return Color(BuildString((rad * 1000.0).ToString("F3"), " rad/h"), Kolor.Red);
+					return Color(BuildString(rad.ToString("F3"), " rad/h"), Kolor.Red);
 			}
 			else
 			{
@@ -1801,13 +2038,16 @@ namespace KERBALISM
 
 		#region PART VOLUME/SURFACE 
 
+		public const double boundsCylinderVolumeFactor = 0.785398;
+		public const double boundsCylinderSurfaceFactor = 0.95493;
+
 		/// <summary>
 		/// return the volume of a part bounding box, in m^3
 		/// note: this can only be called when part has not been rotated
 		/// </summary>
 		public static double PartBoundsVolume(Part p, bool applyCylinderFactor = false)
 		{
-			return applyCylinderFactor ? BoundsVolume(GetPartBounds(p)) * 0.785398 : BoundsVolume(GetPartBounds(p));
+			return applyCylinderFactor ? BoundsVolume(GetPartBounds(p)) * boundsCylinderVolumeFactor : BoundsVolume(GetPartBounds(p));
 		}
 
 		/// <summary>
@@ -1816,7 +2056,7 @@ namespace KERBALISM
 		/// </summary>
 		public static double PartBoundsSurface(Part p, bool applyCylinderFactor = false)
 		{
-			return applyCylinderFactor ? BoundsSurface(GetPartBounds(p)) * 0.95493 : BoundsSurface(GetPartBounds(p));
+			return applyCylinderFactor ? BoundsSurface(GetPartBounds(p)) * boundsCylinderSurfaceFactor : BoundsSurface(GetPartBounds(p));
 		}
 
 		public static double BoundsVolume(Bounds bb)
@@ -2587,6 +2827,13 @@ namespace KERBALISM
 		#endregion
 
 		#region RESOURCE
+
+		/// <summary> Returns the "real world" density of a resource (KSP "density" is in ton/unit) </summary>
+		public static double RealDensity(this PartResourceDefinition res)
+		{
+			return res.density * 1000.0 / res.volume;
+		}
+
 		/// <summary> Returns the amount of a resource in a part </summary>
 		public static double Amount(Part part, string resource_name, bool ignore_flow = false)
 		{
@@ -3116,6 +3363,29 @@ namespace KERBALISM
 			return def_value;
 		}
 
+		public static double ConfigDuration(ConfigNode cfg, string key, bool applyTimeMultiplier, string defaultValue)
+		{
+			string durationStr = cfg.GetValue(key);
+			if (string.IsNullOrEmpty(durationStr) || !TryParseDuration(durationStr, applyTimeMultiplier, out double duration))
+			{
+				TryParseDuration(defaultValue, applyTimeMultiplier, out duration);
+			}
+
+			return duration;
+		}
+
+		public static bool ConfigDuration(ConfigNode cfg, string key, bool applyTimeMultiplier, out double duration)
+		{
+			string durationStr = cfg.GetValue(key);
+			if (string.IsNullOrEmpty(durationStr) || !TryParseDuration(durationStr, applyTimeMultiplier, out duration))
+			{
+				duration = 1.0;
+				return false;
+			}
+
+			return true;
+		}
+
 		///<summary>parse a serialized (config) value. Supports all value types including enums and common KSP/Unity types (vector, quaternion, color, matrix4x4...)</summary>
 		public static bool TryParseValue(string strValue, Type typeOfValue, out object value)
 		{
@@ -3235,51 +3505,71 @@ namespace KERBALISM
 			return false;
 		}
 
+
+
 		/// <summary> Parse a duration "3y120d5h2m93s into seconds </summary>
-		public static double ParseDuration(string durationString)
+		public static bool TryParseDuration(string durationString, bool applyTimeMultiplier, out double result)
 		{
-			double result = 0;
+			result = 0.0;
 
 			string str = durationString.ToLower();
 			int p = str.IndexOf('y');
 			if(p > 0)
 			{
-				result += double.Parse(str.Substring(0, p)) * DaysInYear * HoursInDay * 3600;
+				if (!double.TryParse(str.Substring(0, p), out double parsed)) goto error;
+				result += parsed * Settings.ConfigsSecondsInYear;
 				str = str.Substring(p + 1);
 			}
 
 			p = str.IndexOf('d');
 			if (p > 0)
 			{
-				result += double.Parse(str.Substring(0, p)) * HoursInDay * 3600;
+				if (!double.TryParse(str.Substring(0, p), out double parsed)) goto error;
+				result += parsed * Settings.ConfigsSecondsInDays;
 				str = str.Substring(p + 1);
 			}
 
 			p = str.IndexOf('h');
 			if (p > 0)
 			{
-				result += double.Parse(str.Substring(0, p)) * 3600;
+				if (!double.TryParse(str.Substring(0, p), out double parsed)) goto error;
+				result += parsed * 3600;
 				str = str.Substring(p + 1);
 			}
 
 			p = str.IndexOf('m');
 			if (p > 0)
 			{
-				result += double.Parse(str.Substring(0, p)) * 60;
+				if (!double.TryParse(str.Substring(0, p), out double parsed)) goto error;
+				result += parsed * 60;
 				str = str.Substring(p + 1);
 			}
 
 			p = str.IndexOf('s');
 			if (p > 0)
 			{
-				result += double.Parse(str.Substring(0, p));
+				if (!double.TryParse(str.Substring(0, p), out double parsed)) goto error;
+				result += parsed;
 				str = str.Substring(p + 1);
 			}
 
 			if (!string.IsNullOrEmpty(str))
-				result += double.Parse(str);
+			{
+				if (!double.TryParse(str, out double parsed)) goto error;
+				result += parsed;
+			}
 
-			return result;
+			if (applyTimeMultiplier)
+			{
+				result *= Settings.ConfigsDurationMultiplier;
+			}
+				
+			return true;
+
+			error:;
+			Log($"Couldn't parse misformatted duration : {durationString}", LogLevel.Error);
+			result = 1.0;
+			return false;
 		}
 		#endregion
 
