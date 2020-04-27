@@ -32,6 +32,7 @@ namespace KERBALISM
 			p.AddCheckbox(vd.cfg_show, Local.VESSELCONFIG_ShowVessel, Local.VESSELCONFIG_ShowVessel_desc, click: () => p.Toggle(ref vd.cfg_show));
 			if (Features.Failures)
 				p.AddCheckbox(vd.cfg_highlights, Local.VESSELCONFIG_Highlightfailed, Local.VESSELCONFIG_Highlightfailed_desc, click: () => p.Toggle(ref vd.cfg_highlights));
+			p.AddCheckbox(vd.cfg_orbit, Local.VESSELCONFIG_ShowOrbit, Local.VESSELCONFIG_ShowOrbit_desc, click: () => vd.SetOrbitVisible(!vd.cfg_orbit));
 
 			// toggle messages
 			p.AddSection(Local.VESSELCONFIG_MESSAGES);//"MESSAGES"

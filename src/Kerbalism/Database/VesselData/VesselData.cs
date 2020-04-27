@@ -100,7 +100,8 @@ namespace KERBALISM
         public bool cfg_highlights;   // show/hide malfunction highlights
         public bool cfg_showlink;     // show/hide link line
         public bool cfg_show;         // show/hide vessel in monitor
-        public Computer computer;     // store scripts
+		public bool cfg_orbit;       // show/hide vessel orbit lines in map view
+		public Computer computer;     // store scripts
 
         // vessel wide toggles
         public bool deviceTransmit;   // vessel wide automation : enable/disable data transmission
@@ -403,6 +404,7 @@ namespace KERBALISM
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
 			cfg_show = true;
+			cfg_orbit = true;
 			deviceTransmit = true;
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
 			isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
@@ -433,6 +435,7 @@ namespace KERBALISM
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 			cfg_show = Lib.ConfigValue(node, "cfg_show", true);
+			cfg_orbit = Lib.ConfigValue(node, "cfg_orbits", true);
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
@@ -466,6 +469,7 @@ namespace KERBALISM
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
 			node.AddValue("cfg_show", cfg_show);
+			node.AddValue("cfg_orbits", cfg_orbit);
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 
@@ -489,6 +493,21 @@ namespace KERBALISM
 
 		}
 
+		public void SetOrbitVisible(bool visible)
+		{
+			cfg_orbit = visible;
+
+			if (Vessel == null || Vessel.loaded)
+				return;
+
+			var or = Vessel.GetComponent<OrbitRenderer>();
+			if (or != null && !or.isFocused)
+			{
+				var m = cfg_orbit ? OrbitRendererBase.DrawMode.REDRAW_AND_RECALCULATE : OrbitRendererBase.DrawMode.OFF;
+				or.drawMode = m;
+			}
+		}
+
 		#endregion
 
 		#region UPDATE
@@ -501,6 +520,8 @@ namespace KERBALISM
 			/// This is just to stop the compiler complaining, I'm still not sure about suppressing existsInFlight
 			if (existsInFlight)
 				existsInFlight = true;
+
+			SetOrbitVisible(cfg_orbit);
 		}
 
 		/// <summary> Must be called every FixedUpdate for all existing flightglobal vessels </summary>
