@@ -73,6 +73,8 @@ namespace KERBALISM
 
 			p.AddSection(Local.TELEMETRY_ENVIRONMENT);//"ENVIRONMENT"
 
+			//p.AddContent("exposure", (vd.timeInSunlight / vd.timeEvaluated).ToString("P2"));
+
 			if (vd.SolarPanelsAverageExposure >= 0.0)
 			{
 				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");

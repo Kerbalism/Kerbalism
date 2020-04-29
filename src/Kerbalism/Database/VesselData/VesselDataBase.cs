@@ -46,7 +46,9 @@ namespace KERBALISM
 
 		public virtual IConnectionInfo ConnectionInfo { get; }
 
-		
+		public virtual CelestialBody MainBody { get; }
+
+		public virtual double Altitude { get; }
 
 		/// <summary>number of crew on the vessel</summary>
 		public virtual int CrewCount { get; }
@@ -107,20 +109,20 @@ namespace KERBALISM
 		/// <para/> zero when the vessel is in shadow while evaluation is non-analytic (low timewarp rates)
 		/// <para/> in analytic evaluation, this include fractional sunlight factor
 		/// </summary>
-		public virtual double EnvSolarFluxTotal  { get; }
+		public virtual double DirectStarFluxTotal  { get; }
 
 		/// <summary> [environment] nomalized direction vector to the main sun</summary>
-		public virtual Vector3d EnvMainSunDirection { get; }
+		public virtual Vector3d MainStarDirection { get; }
 
 		/// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
-		public virtual double EnvSunlightFactor  { get; }
+		public virtual double MainStarSunlightFactor  { get; }
 
 		/// <summary> [environment] true if the vessel is currently in sunlight, or at least half the time when in analytic mode</summary>
-		public virtual bool EnvInSunlight  { get; }
+		public virtual bool InSunlight  { get; }
 
 		/// <summary> [environment] true if the vessel is currently in shadow, or least 90% of the time when in analytic mode</summary>
 		// this threshold is also used to ignore light coming from distant/weak stars 
-		public virtual bool EnvInFullShadow  { get; }
+		public virtual bool InFullShadow  { get; }
 
 		#endregion
 

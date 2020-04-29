@@ -82,7 +82,7 @@ namespace KERBALISM
 		{
 			// get current states
 			VesselResource ec = resources.GetResource("ElectricCharge");
-			bool sunlight = !vd.EnvInFullShadow;
+			bool sunlight = !vd.InFullShadow;
 			bool power_low = ec.Level < 0.2;
 			bool power_high = ec.Level > 0.8;
 			bool radiation_low = vd.EnvRadiation < 0.000005552; //< 0.02 rad/h

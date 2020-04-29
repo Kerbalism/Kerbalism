@@ -85,7 +85,7 @@ namespace KERBALISM
 		public static bool InSunlight(Vessel v)
 		{
 			if (v.TryGetVesselData(out VesselData vd))
-				return vd.EnvInFullShadow;
+				return vd.InFullShadow;
 
 			return false;
 		}

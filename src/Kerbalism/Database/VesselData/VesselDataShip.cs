@@ -44,6 +44,10 @@ namespace KERBALISM
 
 		public override IConnectionInfo ConnectionInfo => connection;
 
+		public override CelestialBody MainBody => body;
+
+		public override double Altitude => altitude;
+
 		public override int CrewCount => crewCount; public int crewCount;
 
 		public override int CrewCapacity => crewCapacity; public int crewCapacity;
@@ -80,16 +84,16 @@ namespace KERBALISM
 
 		public override double EnvGammaTransparency => gammaTransparency; public double gammaTransparency;
 
-		public override double EnvSolarFluxTotal => solarFlux; public double solarFlux;
+		public override double DirectStarFluxTotal => solarFlux; public double solarFlux;
 
 		// create a sun direction according to the shadows direction in the VAB / SPH
-		public override Vector3d EnvMainSunDirection => EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
+		public override Vector3d MainStarDirection => EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
 
-		public override double EnvSunlightFactor => 1.0 - shadowTime;
+		public override double MainStarSunlightFactor => 1.0 - shadowTime;
 
-		public override bool EnvInSunlight => sunlightState != SunlightState.Shadow;
+		public override bool InSunlight => sunlightState != SunlightState.Shadow;
 
-		public override bool EnvInFullShadow => sunlightState == SunlightState.Shadow;
+		public override bool InFullShadow => sunlightState == SunlightState.Shadow;
 
 		#endregion
 
@@ -154,17 +158,28 @@ namespace KERBALISM
 		private void AnalyzeEnvironment(CelestialBody body, double altitudeMult, SunlightState sunlight)
 		{
 			this.body = body;
+			altitude = body.Radius * altitudeMult;
+			landed = altitude == 0.0;
+			// Todo : make a special vessel that calculate a position according to SunlightState and altitude
+			//SimVessel simVessel = new SimVessel();
+			//simVessel.UpdateCurrent(this);
+			//Step step = new Step(simVessel);
+			//step.Evaluate();
+
+
+
+
 			CelestialBody mainSun;
 			Vector3d sunDir;
 			solarFlux = Sim.SolarFluxAtBody(body, true, out mainSun, out sunDir, out sunDist);
-			altitude = body.Radius * altitudeMult;
+
 			landed = altitude <= double.Epsilon;
-			atmoFactor = Sim.AtmosphereFactor(body, 0.7071);
+			atmoFactor = 0.5;// Sim.AtmosphereFactor(body, 0.7071);
 			solarFlux = sunlight == SunlightState.Shadow ? 0.0 : solarFlux * (landed ? atmoFactor : 1.0);
 			breathable = Sim.Breathable(body) && landed;
-			albedoFlux = sunlight == SunlightState.Shadow ? 0.0 : Sim.AlbedoFlux(body, body.position + sunDir * (body.Radius + altitude));
-			bodyFlux = Sim.BodyFlux(body, altitude);
-			totalFlux = solarFlux + albedoFlux + bodyFlux + Sim.BackgroundFlux();
+			albedoFlux = 0.5;//sunlight == SunlightState.Shadow ? 0.0 : Sim.AlbedoFlux(body, body.position + sunDir * (body.Radius + altitude));
+			bodyFlux = 0.5;//Sim.BodyFlux(body, altitude);
+			totalFlux = 0.5;//solarFlux + albedoFlux + bodyFlux + Sim.BackgroundFlux();
 			temperature = !landed || !body.atmosphere ? Sim.BlackBodyTemperature(totalFlux) : body.GetTemperature(0.0);
 			tempDiff = Sim.TempDiff(temperature, body, landed);
 			orbitalPeriod = Sim.OrbitalPeriod(body, altitude);
@@ -173,7 +188,7 @@ namespace KERBALISM
 			zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
 			CelestialBody homeBody = FlightGlobals.GetHomeBody();
-			CelestialBody parentPlanet = Lib.GetParentPlanet(body);
+			CelestialBody parentPlanet = Sim.GetParentPlanet(body);
 
 			if (body == homeBody)
 			{
@@ -184,7 +199,7 @@ namespace KERBALISM
 				minHomeDistance = Sim.Periapsis(body);
 				maxHomeDistance = Sim.Apoapsis(body);
 			}
-			else if (Lib.IsSun(body))
+			else if (Sim.IsStar(body))
 			{
 				minHomeDistance = Math.Abs(altitude - Sim.Periapsis(homeBody));
 				maxHomeDistance = altitude + Sim.Apoapsis(homeBody);

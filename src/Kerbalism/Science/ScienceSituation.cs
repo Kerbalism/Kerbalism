@@ -104,7 +104,7 @@ namespace KERBALISM
 					if (!Radiation.Info(body).model.has_pause) return false;
 					break;
 				case VirtualBiome.Interstellar:
-					if (!Lib.IsSun(body)) return false;
+					if (!Sim.IsStar(body)) return false;
 					break;
 				case VirtualBiome.Reentry:
 					if (!body.atmosphere) return false;

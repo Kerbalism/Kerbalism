@@ -139,6 +139,8 @@ namespace KERBALISM
 
 					// GameEvents callbacks
 					Callbacks = new Callbacks();
+
+					SubStepSim.Init();
 				}
 				catch (Exception e)
 				{
@@ -245,8 +247,11 @@ namespace KERBALISM
 				firstFU = false;
 			}
 
+			SubStepSim.OnFixedUpdate();
+			Sim.OnFixedUpdate();
+
 			// remove control locks in any case
- 			Misc.ClearLocks();
+			Misc.ClearLocks();
 
 			// do nothing if paused (note : this is true in the editor)
 			if (Lib.IsPaused())

@@ -31,7 +31,7 @@ namespace KERBALISM
 			geomagnetic_pole_lat = Lib.ConfigValue(node, "geomagnetic_pole_lat", 90.0f);
 			geomagnetic_pole_lon = Lib.ConfigValue(node, "geomagnetic_pole_lon", 0.0f);
 			geomagnetic_offset = Lib.ConfigValue(node, "geomagnetic_offset", 0.0f);
-			reference = Lib.ConfigValue(node, "reference", Lib.GetParentSun(body).flightGlobalsIndex);
+			reference = Lib.ConfigValue(node, "reference", Sim.GetParentStar(body).flightGlobalsIndex);
 
 			// get the radiation environment
 			if (!models.TryGetValue(Lib.ConfigValue(node, "radiation_model", ""), out model)) model = RadiationModel.none;
@@ -47,7 +47,7 @@ namespace KERBALISM
 			float z = Mathf.Cos(lat) * Mathf.Sin(lon);
 			geomagnetic_pole = new Vector3(x, y, z).normalized;
 
-			if (Lib.IsSun(body))
+			if (Sim.IsStar(body))
 			{
 				// suns without a solar cycle configuration default to a cycle of 6 years
 				// (set to 0 if you really want none)

@@ -20,7 +20,7 @@ namespace KERBALISM
 
             if (bd.storm_generation < now)
             {
-                var sun = Lib.GetParentSun(body);
+                var sun = Sim.GetParentStar(body);
                 var avgDuration = PreferencesRadiation.Instance.AvgStormDuration;
 
                 // retry after 5 * average storm duration + jitter (to avoid recalc spikes)
@@ -127,13 +127,13 @@ namespace KERBALISM
             if (!Features.Radiation) return;
 
             // only consider vessels in interplanetary space
-            if (!Lib.IsSun(v.mainBody)) return;
+            if (!Sim.IsStar(v.mainBody)) return;
 
 			// disregard EVAs
 			if (v.isEVA) return;
 
             var bd = vd.stormData;
-            CreateStorm(bd, v.mainBody, vd.EnvMainSun.Distance);
+            CreateStorm(bd, v.mainBody, vd.MainStar.distance);
 
             if (vd.cfg_storm)
             {
@@ -197,7 +197,7 @@ namespace KERBALISM
             foreach (Vessel v in FlightGlobals.Vessels)
             {
                 // if inside the system
-                if (Lib.GetParentPlanet(v.mainBody) == body)
+                if (Sim.GetParentPlanet(v.mainBody) == body)
                 {
                     // get info from the cache
                     v.TryGetVesselData(out VesselData vd);
@@ -223,11 +223,11 @@ namespace KERBALISM
             if (!Features.Radiation) return true;
 
             // skip the sun
-            if (Lib.IsSun(body)) return true;
+            if (Sim.IsStar(body)) return true;
 
             // skip moons
             // note: referenceBody is never null here
-            if (!Lib.IsSun(body.referenceBody)) return true;
+            if (!Sim.IsStar(body.referenceBody)) return true;
 
             // do not skip the body
             return false;
@@ -237,7 +237,7 @@ namespace KERBALISM
         public static bool Incoming(Vessel v)
         {
 			v.TryGetVesselData(out VesselData vd);
-			var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 1 && bd.display_warning;
         }
 
@@ -245,7 +245,7 @@ namespace KERBALISM
         public static bool InProgress(Vessel v)
         {
 			v.TryGetVesselData(out VesselData vd);
-			var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 2;
         }
     }

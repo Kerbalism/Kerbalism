@@ -405,7 +405,7 @@ namespace KERBALISM
 
 		void Problem_sunlight(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			if (vd.EnvInFullShadow)
+			if (vd.InFullShadow)
 			{
 				icons.Add(Textures.sun_black);
 				tooltips.Add(Local.Monitor_Inshadow);//"In shadow"
@@ -503,7 +503,7 @@ namespace KERBALISM
 			{
 				icons.Add(Textures.storm_yellow);
 				v.TryGetVesselData(out VesselData vd);
-				var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+				var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
 				var tti = bd.storm_time - Planetarium.GetUniversalTime();
 				tooltips.Add(Lib.BuildString(Lib.Color(Local.Monitor_ejectionincoming, Lib.Kolor.Orange), "\n<i>", Local.Monitor_TimetoimpactCoronalmass, Lib.HumanReadableDuration(tti), "</i>"));//"Coronal mass ejection incoming"Time to impact:
 			}
@@ -511,7 +511,7 @@ namespace KERBALISM
 			{
 				icons.Add(Textures.storm_red);
 				v.TryGetVesselData(out VesselData vd);
-				var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+				var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
 				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
 				tooltips.Add(Lib.BuildString(Lib.Color(Local.Monitor_Solarstorminprogress, Lib.Kolor.Red), "\n<i>", Local.Monitor_SolarstormRemaining, Lib.HumanReadableDuration(remainingDuration), "</i>"));//"Solar storm in progress"Remaining duration:
 			}

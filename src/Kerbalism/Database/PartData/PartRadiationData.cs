@@ -245,7 +245,7 @@ namespace KERBALISM
 				if (IsReceiver)
 				{
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.PartRadiationData.SunRadiation");
-					sunRadiationFactor = GetSunRadiationFactor(partData.vesselData.EnvMainSunDirection);
+					sunRadiationFactor = GetSunRadiationFactor(partData.vesselData.MainStarDirection);
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.PartRadiationData.Update.Arrays");

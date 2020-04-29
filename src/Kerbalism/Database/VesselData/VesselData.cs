@@ -2,12 +2,15 @@ using Flee.PublicTypes;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using static KERBALISM.HabitatData;
 
 namespace KERBALISM
 {
     public partial class VesselData : VesselDataBase
 	{
+		public List<Step> subSteps = new List<Step>();
+		private SimVessel simVessel;
+		public Step CurrentStep => currentStep; Step currentStep;
+
 		#region FIELDS/PROPERTIES : CORE STATE AND SUBSYSTEMS
 
 		/// <summary>
@@ -128,8 +131,12 @@ namespace KERBALISM
 		/// </summary>
 		public bool EnvIsAnalytic => isAnalytic; bool isAnalytic;
 
-        /// <summary> [environment] true if inside ocean</summary>
-        public override bool EnvUnderwater => underwater; bool underwater;
+		public override CelestialBody MainBody => mainBody; CelestialBody mainBody;
+
+		public override double Altitude => altitude; double altitude;
+
+		/// <summary> [environment] true if inside ocean</summary>
+		public override bool EnvUnderwater => underwater; bool underwater;
 
         /// <summary> [environment] true if on the surface of a body</summary>
         public override bool EnvLanded => landed; bool landed;
@@ -199,39 +206,33 @@ namespace KERBALISM
 
         /// <summary> [environment] Bodies whose apparent diameter from the vessel POV is greater than ~10 arcmin (~0.003 radians)</summary>
         // real apparent diameters at earth : sun/moon =~ 30 arcmin, Venus =~ 1 arcmin
-        public List<CelestialBody> EnvVisibleBodies => visibleBodies; List<CelestialBody> visibleBodies;
+        public CelestialBody[] VisibleBodies => visibleBodies; CelestialBody[] visibleBodies;
 
-        /// <summary> [environment] Sun that send the highest nominal solar flux (in W/m²) at vessel position</summary>
-        public SunInfo EnvMainSun => mainSun; SunInfo mainSun;
+        /// <summary> Star that send the highest nominal flux (in W/m²) at the vessel position</summary>
+        public StarFlux MainStar => mainStar; StarFlux mainStar;
 
-		/// <summary> [environment] Normalized direction vector to the main sun</summary>
-		public override Vector3d EnvMainSunDirection => mainSun.Direction;
+		/// <summary> Normalized direction vector to the main star</summary>
+		public override Vector3d MainStarDirection => mainStar.direction;
 
-		/// <summary> [environment] Angle of the main sun on the body surface at vessel position</summary>
-		public double EnvSunBodyAngle => sunBodyAngle; double sunBodyAngle;
+		/// <summary> Proportion of current update duration spent in the direct light of the main star</summary>
+		public override double MainStarSunlightFactor => mainStar.sunlightFactor;
 
-        /// <summary>
-        ///  [environment] total solar flux from all stars at vessel position in W/m², include atmospheric absorption if inside an atmosphere (atmo_factor)
-        /// <para/> zero when the vessel is in shadow while evaluation is non-analytic (low timewarp rates)
-        /// <para/> in analytic evaluation, this include fractional sunlight factor
-        /// </summary>
-        public override double EnvSolarFluxTotal => solarFluxTotal; double solarFluxTotal;
+		/// <summary> True if at least half of the current update was spent in the direct light of the main star</summary>
+		public override bool InSunlight => mainStar.sunlightFactor > 0.45;
 
-        /// <summary> similar to solar flux total but doesn't account for atmo absorbtion nor occlusion</summary>
-        private double rawSolarFluxTotal;
+		/// <summary> True if less than 10% of the current update was spent in the direct light of the main star</summary>
+		public override bool InFullShadow => mainStar.sunlightFactor < 0.1;
 
-        /// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
-        public override double EnvSunlightFactor => sunlightFactor; double sunlightFactor;
+		/// <summary> Angle of the main sun on the body surface over the vessel position</summary>
+		public double MainStarBodyAngle => sunBodyAngle; double sunBodyAngle;
 
-        /// <summary> [environment] true if the vessel is currently in sunlight, or at least half the time when in analytic mode</summary>
-        public override bool EnvInSunlight => sunlightFactor > 0.49;
+		/// <summary> Sum of the flux from all stars at vessel position in W/m² </summary>
+		public override double DirectStarFluxTotal => directStarFluxTotal; double directStarFluxTotal;
 
-        /// <summary> [environment] true if the vessel is currently in shadow, or least 90% of the time when in analytic mode</summary>
-        // this threshold is also used to ignore light coming from distant/weak stars 
-        public override bool EnvInFullShadow => sunlightFactor < 0.1;
+		public double BodiesCoreIrradiance => bodiesCoreIrradiance; double bodiesCoreIrradiance;
 
-        /// <summary> [environment] List of all stars/suns and the related data/calculations for the current vessel</summary>
-        public List<SunInfo> EnvSunsInfo => sunsInfo; List<SunInfo> sunsInfo;
+		/// <summary> List of all stars/suns and the related data/calculations for the current vessel</summary>
+		public StarFlux[] StarsIrradiance => starsIrradiance; StarFlux[] starsIrradiance;
 
         public VesselSituations VesselSituations => vesselSituations; VesselSituations vesselSituations;
 
@@ -413,6 +414,8 @@ namespace KERBALISM
 
 		private void SetInstantiateDefaults(ProtoVessel protoVessel)
 		{
+			simVessel = new SimVessel();
+			starsIrradiance = StarFlux.StarArrayFactory();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 			connection = new ConnectionInfo();
@@ -685,41 +688,136 @@ namespace KERBALISM
         private void EnvironmentUpdate(double elapsedSec)
         {
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EnvironmentUpdate");
-            // we use analytic mode if more than 2 minutes of game time has passed since last evaluation (~ x6000 timewarp speed)
-            isAnalytic = elapsedSec > 120.0;
+            isAnalytic = elapsedSec > SubStepSim.interval * 2.0;
 
-            // get vessel position
-            Vector3d position = Lib.VesselPosition(Vessel);
+			// Those must be evaluated before the Sim / StepSim is evaluated
+			Vector3d position = Lib.VesselPosition(Vessel);
+			landed = Lib.Landed(Vessel);
+			altitude = Vessel.altitude;
+			mainBody = Vessel.mainBody;
+				
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.ProcessStep");
 
-            // this should never happen again
-            if (Vector3d.Distance(position, Vessel.mainBody.position) < 1.0)
-            {
-                throw new Exception("Shit hit the fan for vessel " + Vessel.vesselName);
-            }
 
-            // situation
-            underwater = Sim.Underwater(Vessel);
+			int subStepCount = subSteps.Count;
+			if (isAnalytic && subStepCount > 0)
+			{
+				// Reset stars
+				for (int i = 0; i < starsIrradiance.Length; i++)
+					starsIrradiance[i].Reset();
+
+				double directRawFluxTotal = 0.0;
+				bodiesCoreIrradiance = 0.0;
+
+				// take the "average" as the current step
+				currentStep = subSteps[subStepCount / 2];
+
+				foreach (Step step in subSteps)
+				{
+					bodiesCoreIrradiance += step.bodiesCoreFlux;
+
+					for (int i = 0; i < step.starFluxes.Length; i++)
+					{
+						StarFlux stepStarFlux = step.starFluxes[i];
+						StarFlux vesselStarFlux = starsIrradiance[i];
+
+						vesselStarFlux.directFlux += stepStarFlux.directFlux;
+						vesselStarFlux.directRawFlux += stepStarFlux.directRawFlux;
+						vesselStarFlux.bodiesAlbedoFlux += stepStarFlux.bodiesAlbedoFlux;
+						vesselStarFlux.bodiesEmissiveFlux += stepStarFlux.bodiesEmissiveFlux;
+						directRawFluxTotal += stepStarFlux.directRawFlux;
+
+						if (vesselStarFlux.directFlux > 0.0)
+							vesselStarFlux.sunlightFactor += 1.0;
+					}
+				}
+
+				subSteps.Clear();
+
+				double subStepCountD = subStepCount;
+				bodiesCoreIrradiance /= subStepCountD;
+				directStarFluxTotal = 0.0;
+				mainStar = starsIrradiance[0];
+				albedoFlux = 0.0;
+				bodyFlux = 0.0;
+
+				for (int i = 0; i < starsIrradiance.Length; i++)
+				{
+					StarFlux vesselStarFlux = starsIrradiance[i];
+					vesselStarFlux.direction = currentStep.starFluxes[i].direction;
+					vesselStarFlux.distance = currentStep.starFluxes[i].distance;
+					vesselStarFlux.directRawFluxProportion = vesselStarFlux.directRawFlux / directRawFluxTotal;
+					vesselStarFlux.directFlux /= subStepCountD;
+					directStarFluxTotal += vesselStarFlux.directFlux;
+					vesselStarFlux.directRawFlux /= subStepCountD;
+					vesselStarFlux.bodiesAlbedoFlux /= subStepCountD;
+					vesselStarFlux.bodiesEmissiveFlux /= subStepCountD;
+					vesselStarFlux.sunlightFactor /= subStepCountD;
+
+					albedoFlux += vesselStarFlux.bodiesAlbedoFlux;
+					bodyFlux += vesselStarFlux.bodiesEmissiveFlux;
+
+					if (mainStar.directFlux < vesselStarFlux.directFlux)
+						mainStar = vesselStarFlux;
+				}
+			}
+			else
+			{
+				subSteps.Clear();
+
+				simVessel.UpdateCurrent(this, position);
+				currentStep = new Step(simVessel);
+				currentStep.Evaluate();
+
+				bodiesCoreIrradiance = currentStep.bodiesCoreFlux;
+
+				double directRawFluxTotal = 0.0;
+				directStarFluxTotal = 0.0;
+				mainStar = starsIrradiance[0];
+				albedoFlux = 0.0;
+				bodyFlux = 0.0;
+
+				for (int i = 0; i < starsIrradiance.Length; i++)
+				{
+					starsIrradiance[i] = currentStep.starFluxes[i];
+					StarFlux starFlux = starsIrradiance[i];
+
+					directStarFluxTotal += starFlux.directFlux;
+					directRawFluxTotal += starFlux.directRawFlux;
+					albedoFlux += starFlux.bodiesAlbedoFlux;
+					bodyFlux += starFlux.bodiesEmissiveFlux;
+
+					starFlux.sunlightFactor = starFlux.directFlux > 0.0 ? 1.0 : 0.0;
+
+					if (mainStar.directFlux < starFlux.directFlux)
+						mainStar = starFlux;
+				}
+
+				foreach (StarFlux vesselStarFlux in starsIrradiance)
+				{
+					vesselStarFlux.directRawFluxProportion = vesselStarFlux.directRawFlux / directRawFluxTotal;
+				}
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
+
+
+			// situation
+			underwater = Sim.Underwater(Vessel);
             envStaticPressure = Sim.StaticPressureAtm(Vessel);
             inAtmosphere = Vessel.mainBody.atmosphere && Vessel.altitude < Vessel.mainBody.atmosphereDepth;
             inOxygenAtmosphere = Sim.InBreathableAtmosphere(Vessel, inAtmosphere, underwater);
             inBreathableAtmosphere = inOxygenAtmosphere && envStaticPressure > Settings.PressureThreshold;
-            landed = Lib.Landed(Vessel);
+
             zeroG = !EnvLanded && !inAtmosphere;
 
-            visibleBodies = Sim.GetLargeBodies(position);
-
-            // get solar info (with multiple stars / Kopernicus support)
-            // get the 'visibleBodies' and 'sunsInfo' lists, the 'mainSun', 'solarFluxTotal' variables.
-            // require the situation variables to be evaluated first
-            UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.UpdateSunsInfo");
-            SunInfo.UpdateSunsInfo(this, position, elapsedSec);
-            UnityEngine.Profiling.Profiler.EndSample();
-            sunBodyAngle = Sim.SunBodyAngle(Vessel, position, mainSun.SunData.body);
+            visibleBodies = currentStep.GetOccludingBodies();
+            sunBodyAngle = Sim.SunBodyAngle(Vessel, position, mainStar.Star.body);
 
             // temperature at vessel position
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EnvTemperature");
-            temperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
-            tempDiff = Sim.TempDiff(EnvTemperature, Vessel.mainBody, EnvLanded);
+            temperature = Sim.Temperature(bodiesCoreIrradiance, starsIrradiance);
+            tempDiff = Sim.TempDiff(temperature, Vessel.mainBody, EnvLanded);
             UnityEngine.Profiling.Profiler.EndSample();
 
             // radiation
@@ -727,7 +825,7 @@ namespace KERBALISM
             gammaTransparency = Sim.GammaTransparency(Vessel.mainBody, Vessel.altitude);
 
             bool new_innerBelt, new_outerBelt, new_magnetosphere;
-            radiation = Radiation.Compute(Vessel, position, EnvGammaTransparency, mainSun.SunlightFactor, out blackout, out new_magnetosphere, out new_innerBelt, out new_outerBelt, out interstellar);
+            radiation = Radiation.Compute(Vessel, position, EnvGammaTransparency, mainStar.sunlightFactor, out blackout, out new_magnetosphere, out new_innerBelt, out new_outerBelt, out interstellar);
 
             if (new_innerBelt != innerBelt || new_outerBelt != outerBelt || new_magnetosphere != magnetosphere)
             {
@@ -742,8 +840,8 @@ namespace KERBALISM
             exosphere = Sim.InsideExosphere(Vessel);
             if (Storm.InProgress(Vessel))
 			{
-				double sunActivity = Radiation.Info(mainSun.SunData.body).SolarActivity(false) / 2.0;
-				stormRadiation = PreferencesRadiation.Instance.StormRadiation * mainSun.SunlightFactor * (sunActivity + 0.5);
+				double sunActivity = Radiation.Info(mainStar.Star.body).SolarActivity(false) / 2.0;
+				stormRadiation = PreferencesRadiation.Instance.StormRadiation * mainStar.sunlightFactor * (sunActivity + 0.5);
 			}
 			else
 			{

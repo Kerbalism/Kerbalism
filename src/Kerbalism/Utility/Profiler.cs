@@ -16,7 +16,7 @@ namespace KERBALISM
 #if DEBUG_PROFILER
 	/// <summary> Simple profiler for measuring the execution time of code placed between the Start and Stop methods. </summary>
 	[KSPAddon(KSPAddon.Startup.EveryScene, false)]
-	public sealed class Profiler: MonoBehaviour
+	public sealed class KerbalismProfiler: MonoBehaviour
 	{
 		// constants
 		private const float width = 500.0f;
@@ -62,10 +62,10 @@ namespace KERBALISM
 
 
 		// permit global access
-		public static Profiler Fetch { get; private set; } = null;
+		public static KerbalismProfiler Fetch { get; private set; } = null;
 
 		//  constructor
-		public Profiler()
+		public KerbalismProfiler()
 		{
 			// enable global access
 			Fetch = this;
@@ -275,12 +275,12 @@ namespace KERBALISM
 			public ProfileScope(string name)
 			{
 				this.name = name;
-				Profiler.Start(name);
+				KerbalismProfiler.Start(name);
 			}
 
 			public void Dispose()
 			{
-				Profiler.Stop(name);
+				KerbalismProfiler.Stop(name);
 			}
 
 			private readonly string name;

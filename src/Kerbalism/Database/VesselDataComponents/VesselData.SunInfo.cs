@@ -4,12 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/*
 namespace KERBALISM
 {
 	public partial class VesselData : VesselDataBase
 	{
 		public class SunInfo
 		{
+			public double simDirectFlux;
+			public double simBodiesAlbedoFlux;
+			public double simBodiesEmissiveFlux;
+
 			/// <summary> reference to the sun/star</summary>
 			public Sim.SunData SunData => sunData; Sim.SunData sunData;
 
@@ -36,13 +41,7 @@ namespace KERBALISM
 			/// </summary>
 			public double SolarFlux => solarFlux; double solarFlux;
 
-			/// <summary>
-			/// scalar for solar flux absorbtion by atmosphere at vessel position, not meant to be used directly (use solar_flux instead)
-			/// <para/> if integrated over orbit (analytic evaluation), average atmospheric absorption factor over the daylight period (not the whole day)
-			/// </summary>
-			public double AtmoFactor => atmoFactor; double atmoFactor;
-
-			/// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmoshere and occlusion) </summary>
+			/// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmosphere and occlusion) </summary>
 			public double FluxProportion => fluxProportion; double fluxProportion;
 
 			/// <summary> similar to solar flux but doesn't account for atmo absorbtion nor occlusion</summary>
@@ -67,13 +66,17 @@ namespace KERBALISM
 				Vessel v = vd.Vessel;
 				double lastSolarFlux = 0.0;
 
-				vd.sunsInfo = new List<SunInfo>(Sim.suns.Count);
-				vd.solarFluxTotal = 0.0;
+				vd.starsFlux = new List<SunInfo>(Sim.stars.Count);
+				vd.directStarFluxTotal = 0.0;
 				vd.rawSolarFluxTotal = 0.0;
 
-				foreach (Sim.SunData sunData in Sim.suns)
+				foreach (Sim.SunData sunData in Sim.stars)
 				{
 					SunInfo sunInfo = new SunInfo(sunData);
+
+					Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
+
+
 
 					if (vd.isAnalytic)
 					{
@@ -115,19 +118,19 @@ namespace KERBALISM
 					sunInfo.solarFlux = sunInfo.rawSolarFlux * sunInfo.sunlightFactor * sunInfo.atmoFactor;
 					// increment total flux from all stars
 					vd.rawSolarFluxTotal += sunInfo.rawSolarFlux;
-					vd.solarFluxTotal += sunInfo.solarFlux;
+					vd.directStarFluxTotal += sunInfo.solarFlux;
 					// add the star to the list
-					vd.sunsInfo.Add(sunInfo);
+					vd.starsFlux.Add(sunInfo);
 					// the most powerful star will be our "default" sun. Uses raw flux before atmo / sunlight factor
 					if (sunInfo.rawSolarFlux > lastSolarFlux)
 					{
 						lastSolarFlux = sunInfo.rawSolarFlux;
-						vd.mainSun = sunInfo;
+						vd.mainStar = sunInfo;
 					}
 				}
 
 				vd.sunlightFactor = 0.0;
-				foreach (SunInfo sunInfo in vd.sunsInfo)
+				foreach (SunInfo sunInfo in vd.starsFlux)
 				{
 					sunInfo.fluxProportion = sunInfo.rawSolarFlux / vd.rawSolarFluxTotal;
 					vd.sunlightFactor += sunInfo.SunlightFactor * sunInfo.fluxProportion;
@@ -140,3 +143,4 @@ namespace KERBALISM
 
 
 }
+*/

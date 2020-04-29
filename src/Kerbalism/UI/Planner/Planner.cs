@@ -489,7 +489,7 @@ namespace KERBALISM.Planner
 				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.solarFlux > 0.0 ? Lib.HumanReadableFlux(vesselData.solarFlux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.solarFlux))),//"solar""none"
 				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.albedoFlux > 0.0 ? Lib.HumanReadableFlux(vesselData.albedoFlux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.albedoFlux))),//"albedo""none"
 				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.bodyFlux > 0.0 ? Lib.HumanReadableFlux(vesselData.bodyFlux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.bodyFlux))),//"body""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableFlux(Sim.BackgroundFlux()), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux()))),//"background"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableFlux(Sim.BackgroundFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux))),//"background"
 				String.Format("{0,-14}\t\t{1,-15}\t{2}", Local.Planner_total, Lib.HumanReadableFlux(vesselData.totalFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.totalFlux)))//"total"
 			);
 			string atmosphere_tooltip = Lib.BuildString

@@ -146,7 +146,7 @@ namespace KERBALISM
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
 
 				// calculate natural and artificial lighting
-				natural = vd.EnvSolarFluxTotal;
+				natural = vd.DirectStarFluxTotal;
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
@@ -254,7 +254,7 @@ namespace KERBALISM
 				VesselKSPResource ec = resources.ElectricCharge;
 
 				// calculate natural and artificial lighting
-				double natural = vd.EnvSolarFluxTotal;
+				double natural = vd.DirectStarFluxTotal;
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity

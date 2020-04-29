@@ -550,19 +550,19 @@ namespace KERBALISM
 
 			private class Planets : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && Lib.IsSun(body.referenceBody);
+				public override bool TestCondition(CelestialBody body) => !Sim.IsStar(body) && Sim.IsStar(body.referenceBody);
 				public override string Title => Local.Experimentinfo_BodyCondition8;//"planets"
 			}
 
 			private class Moons : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && !Lib.IsSun(body.referenceBody);
+				public override bool TestCondition(CelestialBody body) => !Sim.IsStar(body) && !Sim.IsStar(body.referenceBody);
 				public override string Title => Local.Experimentinfo_BodyCondition9;//"moons"
 			}
 
 			private class Suns : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => Lib.IsSun(body);
+				public override bool TestCondition(CelestialBody body) => Sim.IsStar(body);
 				public override string Title => Local.Experimentinfo_BodyCondition10;//"suns"
 			}
 
