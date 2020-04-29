@@ -793,67 +793,6 @@ namespace KERBALISM
 		// however this function can be called to generate part tooltips, and at that point the bodies are not ready
 		public static double PressureAtSeaLevel { get; } = 101.0;
 
-		// foo
-		private static double dampingExponent = 0;
-		public static double DataRateDampingExponent
-		{
-			get
-			{
-				if (dampingExponent != 0)
-					return dampingExponent;
-
-				// KSP calculates the signal strength using a cubic formula based on distance (see below).
-				// Based on that signal strength, we calculate a data rate. The goal is to get data rates that
-				// are comparable to what NASA gets near Mars, depending on the distance between Earth and Mars
-				// (~0.36 AU - ~2.73 AU).
-				// The problem is that KSPs formula would be somewhat correct for signal strength in reality,
-				// but the stock system is only 1/10th the size of the real solar system. Picture this: Jools
-				// orbit is about as far removed from the sun as the real Mercury, which means that all other
-				// planets would orbit the sun at a distance that is even smaller. In game, distance plays a
-				// much smaller role than it would in reality, because the in-game distances are very small,
-				// so signal strength just doesn't degrade fast enough with distance.
-				//
-				// We cannot change how KSP calculates signal strength, so we apply a damping formula
-				// for the data rate. Basically, it goes like this:
-				//
-				// data rate = base rate * signal strength
-				// (base rate would be the max. rate at 0 distance)
-				//
-				// To degrade the data rate with distance, Kerbalism will do this instead:
-				//
-				// data rate = base rate * (signal strength ^ damping exponent)
-				// (this works because signal strength will always be in the range [0..1])
-				//
-				// The problem is, we don't know which solar system we'll be in, and how big it will be.
-				// Popular systems like JNSQ are 2.7 times bigger than stock, RSS is 10 times bigger.
-				// So we try to find a damping exponent that gives good results for the solar system we're in,
-				// based on the distance of the home planet to the sun (1 AU).
-
-				// range of DSN at max. level
-				var maxDsnRange = GameVariables.Instance.GetDSNRange(1f);
-
-				// signal strength at ~ average earth - mars distance
-				var strengthAt2AU = SignalStrength(maxDsnRange, 2 * AU);
-
-				// For our estimation, we assume a base rate similar to the stock communotron 88-88
-				var baseRate = 0.48;
-
-				// At 2 AU, this is the rate we want to get out of it
-				var desiredRateAt2AU = 0.3;
-
-				// dataRate = baseRate * (strengthAt2AU ^ exponent)
-				// so...
-				// exponent = log_strengthAt2AU(dataRate / baseRate)
-				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
-
-				Lib.LogDebug($"Calculated DataRateDampingExponent: {dampingExponent.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")})");
-
-				return dampingExponent;
-			}
-		}
-
-		// I have no idea what to do about RT, so we're using the stock formula value
-		public static double DataRateDampingExponentRT { get { return DataRateDampingExponentRT; } }
 
 		public static double SignalStrength(double maxRange, double distance)
 		{
@@ -892,6 +831,73 @@ namespace KERBALISM
 			double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
 			return 1.0 - Math.Min(AU, 1.0); // 0 at 1AU -> 1 at sun position
 		}
+		#endregion
+
+		#region SIGNAL
+		private static double dampingExponent = 0;
+		public static double DataRateDampingExponent
+		{
+			get
+			{
+				if (dampingExponent != 0)
+					return dampingExponent;
+
+				if (Settings.DampingExponentOverride != 0)
+					return Settings.DampingExponentOverride;
+
+				// KSP calculates the signal strength using a cubic formula based on distance (see below).
+				// Based on that signal strength, we calculate a data rate. The goal is to get data rates that
+				// are comparable to what NASA gets near Mars, depending on the distance between Earth and Mars
+				// (~0.36 AU - ~2.73 AU).
+				// The problem is that KSPs formula would be somewhat correct for signal strength in reality,
+				// but the stock system is only 1/10th the size of the real solar system. Picture this: Jools
+				// orbit is about as far removed from the sun as the real Mercury, which means that all other
+				// planets would orbit the sun at a distance that is even smaller. In game, distance plays a
+				// much smaller role than it would in reality, because the in-game distances are very small,
+				// so signal strength just doesn't degrade fast enough with distance.
+				//
+				// We cannot change how KSP calculates signal strength, so we apply a damping formula
+				// for the data rate. Basically, it goes like this:
+				//
+				// data rate = base rate * signal strength
+				// (base rate would be the max. rate at 0 distance)
+				//
+				// To degrade the data rate with distance, Kerbalism will do this instead:
+				//
+				// data rate = base rate * (signal strength ^ damping exponent)
+				// (this works because signal strength will always be in the range [0..1])
+				//
+				// The problem is, we don't know which solar system we'll be in, and how big it will be.
+				// Popular systems like JNSQ are 2.7 times bigger than stock, RSS is 10 times bigger.
+				// So we try to find a damping exponent that gives good results for the solar system we're in,
+				// based on the distance of the home planet to the sun (1 AU).
+
+					// range of DSN at max. level
+				var maxDsnRange = GameVariables.Instance.GetDSNRange(1f);
+
+				// signal strength at ~ average earth - mars distance
+				var strengthAt2AU = SignalStrength(maxDsnRange, 2 * AU);
+
+				// For our estimation, we assume a base rate similar to the stock communotron 88-88
+				var baseRate = 0.48;
+
+				// At 2 AU, this is the rate we want to get out of it
+				var desiredRateAt2AU = 0.3;
+
+				// dataRate = baseRate * (strengthAt2AU ^ exponent)
+				// so...
+				// exponent = log_strengthAt2AU(dataRate / baseRate)
+				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+
+				Lib.Log($"Calculated DataRateDampingExponent: {dampingExponent.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")})");
+
+				return dampingExponent;
+			}
+		}
+
+		// I have no idea what to do about RT, so we're using the stock formula value
+		public static double DataRateDampingExponentRT { get { return DataRateDampingExponentRT; } }
+
 		#endregion
 	}
 } // KERBALISM
