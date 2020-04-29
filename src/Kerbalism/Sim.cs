@@ -383,8 +383,22 @@ namespace KERBALISM
 			{
 				if (au == 0.0)
 				{
+					// this calculates the distance between sun and home body at UT 0
+					// to avoid different values of AU between saves if the home body should
+					// be on an elliptical orbit, or the distance of the home body to
+					// the sun fluctuates for other reasons (because it's a moon, f.i.)
+
 					CelestialBody home = FlightGlobals.GetHomeBody();
-					au = (home.position - Lib.GetParentSun(home).position).magnitude;
+					var homePosition = home.position;
+					if (home.orbit != null)
+						homePosition = home.orbit.getTruePositionAtUT(0);
+
+					var sun = Lib.GetParentSun(home);
+					var sunPosition = sun.position;
+					if (sun.orbit != null)
+						sunPosition = sun.orbit.getTruePositionAtUT(0);
+					 
+					au = (homePosition - sunPosition).magnitude;
 				}
 				return au;
 			}
