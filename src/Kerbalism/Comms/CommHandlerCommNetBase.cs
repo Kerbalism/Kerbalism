@@ -38,7 +38,7 @@ namespace KERBALISM
 				connection.Status = link.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
 				connection.strength = link.signalStrength;
 
-				connection.rate = baseRate * Math.Pow(link.signalStrength, Settings.DataRateDampingExponent);
+				connection.rate = baseRate * Math.Pow(link.signalStrength, Sim.DataRateDampingExponent);
 
 				connection.target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
 

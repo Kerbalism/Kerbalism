@@ -106,8 +106,8 @@ namespace KERBALISM
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
 			DataRateMinimumBitsPerSecond = Lib.ConfigValue(cfg, "DataRateMinimumBitsPerSecond", 1.0);
-			DataRateDampingExponent = Lib.ConfigValue(cfg, "DataRateDampingExponent", 6.0f);
-			DataRateDampingExponentRT = Lib.ConfigValue(cfg, "DataRateDampingExponentRT", 6.0f);
+			//DataRateDampingExponent = Lib.ConfigValue(cfg, "DataRateDampingExponent", 6.0f);
+			//DataRateDampingExponentRT = Lib.ConfigValue(cfg, "DataRateDampingExponentRT", 6.0f);
 			DataRateSurfaceExperiment = Lib.ConfigValue(cfg, "DataRateSurfaceExperiment", 0.3f);
 			TransmitterActiveEcFactor = Lib.ConfigValue(cfg, "TransmitterActiveEcFactor", 1.5);
 			TransmitterPassiveEcFactor = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactor", 0.04);
@@ -245,8 +245,8 @@ namespace KERBALISM
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
 		public static double DataRateMinimumBitsPerSecond;      // as long as there is a control connection, the science data rate will never go below this.
-		public static float DataRateDampingExponent;            // how much to damp data rate. stock is equivalent to 1, 6 gives nice values, RSS would use 4
-		public static float DataRateDampingExponentRT;          // same for RemoteTech
+		//public static float DataRateDampingExponent;            // how much to damp data rate. stock is equivalent to 1, 6 gives nice values, RSS would use 4
+		//public static float DataRateDampingExponentRT;          // same for RemoteTech
 		public static float DataRateSurfaceExperiment;          // transmission rate for surface experiments (Serenity DLC)
 		public static double TransmitterActiveEcFactor;         // how much of the configured EC rate is used while transmitter is active
 		public static double TransmitterPassiveEcFactor;        // how much of the configured EC rate is used while transmitter is passive
