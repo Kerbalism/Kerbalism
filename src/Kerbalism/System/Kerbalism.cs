@@ -238,9 +238,12 @@ namespace KERBALISM
 
 		#region fixedupdate
 
+		static System.Diagnostics.Stopwatch fuWatch = new System.Diagnostics.Stopwatch();
 		public bool firstFU = true; 
 		void FixedUpdate()
 		{
+			MiniProfiler.lastKerbalismFuTicks = fuWatch.ElapsedTicks;
+			fuWatch.Restart();
 			if (firstFU)
 			{
 				Lib.LogDebug("First FixedUpdate !");
@@ -454,6 +457,8 @@ namespace KERBALISM
 				sd.time = 0.0;
 				storm_index = (storm_index + 1) % storm_bodies.Count;
 			}
+
+			fuWatch.Stop();
 		}
 
 		#endregion

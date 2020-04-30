@@ -11,7 +11,7 @@ namespace KERBALISM
 		private static List<Step> stepPool = new List<Step>(10000);
 		private static ConcurrentQueue<int> freeSteps = new ConcurrentQueue<int>();
 
-		public static Step WorkerStepFactory()
+		public static Step GetFromWorkerPool()
 		{
 			if (freeSteps.IsEmpty)
 			{

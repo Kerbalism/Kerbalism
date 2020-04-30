@@ -90,7 +90,7 @@ namespace KERBALISM
 		{
 			if (Lib.IsGameRunning)
 			{
-				UpdateParameters();
+				Synchronize();
 				if (!workerIsAlive)
 				{
 					if (worker != null)
@@ -98,7 +98,7 @@ namespace KERBALISM
 
 					Lib.LogDebug($"Starting worker thread");
 					workerIsAlive = true;
-					worker = new Thread(new ThreadStart(ComputeLoop));
+					worker = new Thread(new ThreadStart(WorkerLoop));
 					worker.Start();
 				}
 			}
@@ -109,15 +109,10 @@ namespace KERBALISM
 		}
 
 
-		public static void UpdateParameters()
+		public static void Synchronize()
 		{
-			SimProfiler.lastFuTicks = fuWatch.ElapsedTicks;
+			MiniProfiler.lastFuTicks = fuWatch.ElapsedTicks;
 			fuWatch.Restart();
-
-			if (SimProfiler.lastFuTicks > SimProfiler.maxFuTicks)
-				SimProfiler.maxFuTicks = SimProfiler.lastFuTicks;
-			if (SimProfiler.lastFuTicks < SimProfiler.minFuTicks)
-				SimProfiler.minFuTicks = SimProfiler.lastFuTicks;
 
 			Profiler.BeginSample("Kerbalism.SubStepSim.Update");
 
@@ -128,7 +123,7 @@ namespace KERBALISM
 				System.Threading.Monitor.TryEnter(__lockObj, 1, ref __lockWasTaken);
 				if (__lockWasTaken)
 				{
-					ThreadSafeUpdate();
+					ThreadSafeSynchronize();
 				}
 				else
 				{
@@ -150,15 +145,10 @@ namespace KERBALISM
 
 		}
 
-		private static void ThreadSafeUpdate()
+		private static void ThreadSafeSynchronize()
 		{
-			SimProfiler.lastWorkerTicks = currentWorkerTicks;
+			MiniProfiler.lastWorkerTicks = currentWorkerTicks;
 			currentWorkerTicks = 0;
-
-			if (SimProfiler.lastWorkerTicks > SimProfiler.maxWorkerTicks)
-				SimProfiler.maxWorkerTicks = SimProfiler.lastWorkerTicks;
-			if (SimProfiler.lastWorkerTicks < SimProfiler.minWorkerTicks)
-				SimProfiler.minWorkerTicks = SimProfiler.lastWorkerTicks;
 
 			currentUT = Planetarium.GetUniversalTime();
 
@@ -231,7 +221,7 @@ namespace KERBALISM
 
 
 
-		public static void ComputeLoop()
+		public static void WorkerLoop()
 		{
 
 			prfSubStep = new ProfilerMarker("Kerbalism.SubStep");
