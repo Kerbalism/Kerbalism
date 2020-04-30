@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	[KSPAddon(KSPAddon.Startup.FlightAndKSC | KSPAddon.Startup.TrackingStation, false)]
+	[KSPAddon(KSPAddon.Startup.AllGameScenes, false)]
 	public sealed class MiniProfiler : MonoBehaviour
 	{
 		private class Measure
