@@ -199,8 +199,9 @@ namespace KERBALISM
                 // if inside the system
                 if (Sim.GetParentPlanet(v.mainBody) == body)
                 {
-                    // get info from the cache
-                    v.TryGetVesselData(out VesselData vd);
+					// get info from the cache
+					if (!v.TryGetVesselData(out VesselData vd))
+						continue;
 
                     // skip invalid vessels
                     if (!vd.IsSimulated) continue;
@@ -236,7 +237,7 @@ namespace KERBALISM
         /// <summary>return true if a storm is incoming</summary>
         public static bool Incoming(Vessel v)
         {
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 1 && bd.display_warning;
         }
@@ -244,7 +245,7 @@ namespace KERBALISM
         /// <summary>return true if a storm is in progress</summary>
         public static bool InProgress(Vessel v)
         {
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 2;
         }

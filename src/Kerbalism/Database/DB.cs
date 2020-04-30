@@ -85,12 +85,8 @@ namespace KERBALISM
 				// the first OnLoad in a new game.
 				foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
 				{
-					if (pv.vesselID == Guid.Empty)
-					{
-						// Flags have an empty GUID. skip them.
-						Lib.LogDebug("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
+					if (!VesselData.VesselNeedVesselData(pv))
 						continue;
-					}
 
 					VesselData vd = new VesselData(pv, vesselsNode.GetNode(pv.vesselID.ToString()));
 					vessels.Add(pv.vesselID, vd);
@@ -144,16 +140,7 @@ namespace KERBALISM
 			ConfigNode vesselsNode = node.AddNode(NODENAME_VESSELS);
 			foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
 			{
-				if (pv.vesselID == Guid.Empty)
-				{
-					// It seems flags are saved with an empty GUID. skip them.
-					Lib.LogDebug("Skipping VesselData save for vessel with empty GUID :" + pv.vesselName);
-					continue;
-				}
-
-                // TODO we currently save vessel data even for asteroids. save only
-				// vessels with hard drives?
-                if (pv.TryGetVesselData(out VesselData vd))
+                if (pv.TryGetVesselDataNoError(out VesselData vd))
 				{
 					ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
 					vd.Save(vesselNode);
@@ -205,7 +192,7 @@ namespace KERBALISM
 			vessels.Add(vd.VesselId, vd);
 		}
 
-		public static bool TryGetVesselData(this Vessel vessel, out VesselData vesselData)
+		public static bool TryGetVesselDataTemp(this Vessel vessel, out VesselData vesselData)
 		{
 			if (!vessels.TryGetValue(vessel.id, out vesselData))
 			{
@@ -215,19 +202,21 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static bool TryGetVesselDataNoError(this Vessel vessel, out VesselData vesselData)
+		/// <summary>
+		/// Get the VesselData for this vessel, if it exists. Typically, you will need this in a Foreach on FlightGlobals.Vessels
+		/// </summary>
+		public static bool TryGetVesselData(this Vessel vessel, out VesselData vesselData)
 		{
 			if (!vessels.TryGetValue(vessel.id, out vesselData))
-			{
-				Lib.LogDebug($"Could not get VesselData for vessel {vessel.vesselName} (this is normal)");
 				return false;
-			}
+
 			return true;
 		}
 
 		/// <summary>
 		/// Get the VesselData for this vessel. Will return null if that vessel isn't yet created in the DB, which can happen if this is called too early. <br/>
-		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()
+		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()<br/>
+		/// Also, don't use this in a Foreach on FlightGlobals.Vessels, check the result of TryGetVesselData() instead
 		/// </summary>
 		public static VesselData GetVesselData(this Vessel vessel)
 		{
@@ -239,14 +228,9 @@ namespace KERBALISM
 			return vesselData;
 		}
 
-		public static bool TryGetVesselData(this ProtoVessel protoVessel, out VesselData vesselData)
+		public static bool TryGetVesselDataNoError(this ProtoVessel protoVessel, out VesselData vesselData)
 		{
-			if (!vessels.TryGetValue(protoVessel.vesselID, out vesselData))
-			{
-				Lib.LogStack($"Could not get VesselData for vessel {protoVessel.vesselName}", Lib.LogLevel.Error);
-				return false;
-			}
-			return true;
+			return vessels.TryGetValue(protoVessel.vesselID, out vesselData);
 		}
 
 		#endregion

@@ -40,7 +40,7 @@ namespace KERBALISM
 			if (Lib.IsFlight)
 			{
 				// get info from cache
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 
 				// do nothing if vessel is invalid
 				if (!vd.IsSimulated) return;

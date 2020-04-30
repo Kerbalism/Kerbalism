@@ -15,9 +15,38 @@ namespace KERBALISM
 {
 	public class StepGlobalData
 	{
+		private static List<StepGlobalData> stepPool = new List<StepGlobalData>(200);
+		private static Queue<int> freeSteps = new Queue<int>(200);
+
+		public static StepGlobalData GetFromPool()
+		{
+			if (freeSteps.TryDequeue(out int index))
+			{
+				return stepPool[index];
+			}
+			else
+			{
+				StepGlobalData newStep = new StepGlobalData(stepPool.Count);
+				stepPool.Add(newStep);
+				return newStep;
+			}
+		}
+
+		private readonly int stepPoolIndex;
+
 		public double ut;
 		public double inverseRotAngle; // Planetarium.InverseRotAngle
 		public Planetarium.CelestialFrame zup; // Planetarium.Zup;
+
+		private StepGlobalData(int stepPoolIndex)
+		{
+			this.stepPoolIndex = stepPoolIndex;
+		}
+
+		public void ReleaseToPool()
+		{
+			freeSteps.Enqueue(stepPoolIndex);
+		}
 	}
 
 	public static class SubStepSim
@@ -41,7 +70,7 @@ namespace KERBALISM
 
 		public static Queue<SubStepVessel> vesselsInNeedOfCatchup = new Queue<SubStepVessel>();
 
-		public static readonly object workerLock = new object();
+		private static readonly object workerLock = new object();
 
 		public static void Init()
 		{
@@ -82,114 +111,178 @@ namespace KERBALISM
 
 		public static void UpdateParameters()
 		{
-			Profiler.BeginSample("Kerbalism.SubStepSim.UpdateParameters");
-			lock (workerLock)
+			SimProfiler.lastFuTicks = fuWatch.ElapsedTicks;
+			fuWatch.Restart();
+
+			if (SimProfiler.lastFuTicks > SimProfiler.maxFuTicks)
+				SimProfiler.maxFuTicks = SimProfiler.lastFuTicks;
+			if (SimProfiler.lastFuTicks < SimProfiler.minFuTicks)
+				SimProfiler.minFuTicks = SimProfiler.lastFuTicks;
+
+			Profiler.BeginSample("Kerbalism.SubStepSim.Update");
+
+			object __lockObj = workerLock;
+			bool __lockWasTaken = false;
+			try
 			{
-				currentUT = Planetarium.GetUniversalTime();
-
-				maxUT = currentUT + (maxSubsteps * interval);
-
-				int stepsToConsume = 0;
-				// remove old steps
-				while (steps.Count > 0 && steps.Peek().ut < currentUT)
+				System.Threading.Monitor.TryEnter(__lockObj, 1, ref __lockWasTaken);
+				if (__lockWasTaken)
 				{
-					stepsToConsume++;
-					steps.Dequeue();
+					ThreadSafeUpdate();
 				}
-
-				stepCount = steps.Count;
-
-				// copy things from Planetarium
-				currentZup = Planetarium.Zup;
-				currentInverseRotAngle = Planetarium.InverseRotAngle;
-
-				// update bodies and their orbit
-				foreach (SubStepBody body in Bodies)
+				else
 				{
-					body.Update();
+					// maxUT is read from the worker thread in only one place, between step evaluation
+					// so i guess (hope) it's ok to increment it even if we don't have a lock for it
+					// Incrementing it will allow the worker thread to go forward using the old parameters,
+					// instead of having to compute twice the normal amount of steps during the next FU.
+					maxUT += maxSubsteps * interval;
+					Lib.LogDebug("Could not acquire lock !", Lib.LogLevel.Warning);
 				}
-
-				// update vessels and their orbit
-				foreach (VesselData vd in DB.VesselDatas)
-				{
-					if (!vessels.TryGetValue(vd.VesselId, out SubStepVessel vessel))
-					{
-						if (vd.IsSimulated)
-						{
-							vessel = new SubStepVessel(vd.Vessel);
-							vessels.Add(vd.VesselId, vessel);
-							vesselsInNeedOfCatchup.Enqueue(vessel);
-						}
-						else
-						{
-							continue;
-						}
-					}
-					else
-					{
-						if (!vd.IsSimulated)
-						{
-							vessels.Remove(vd.VesselId);
-							continue;
-						}
-					}
-
-					vessel.UpdateCurrent(vd);
-					vessel.Update(vd, stepsToConsume);
-				}
+				
+			}
+			finally
+			{
+				if (__lockWasTaken) System.Threading.Monitor.Exit(__lockObj);
 			}
 
 			Profiler.EndSample();
+
+		}
+
+		private static void ThreadSafeUpdate()
+		{
+			SimProfiler.lastWorkerTicks = currentWorkerTicks;
+			currentWorkerTicks = 0;
+
+			if (SimProfiler.lastWorkerTicks > SimProfiler.maxWorkerTicks)
+				SimProfiler.maxWorkerTicks = SimProfiler.lastWorkerTicks;
+			if (SimProfiler.lastWorkerTicks < SimProfiler.minWorkerTicks)
+				SimProfiler.minWorkerTicks = SimProfiler.lastWorkerTicks;
+
+			currentUT = Planetarium.GetUniversalTime();
+
+			maxUT = currentUT + (maxSubsteps * interval);
+
+			int stepsToConsume = 0;
+			// remove old steps
+			while (steps.Count > 0 && steps.Peek().ut < currentUT)
+			{
+				stepsToConsume++;
+				steps.Dequeue().ReleaseToPool();
+			}
+
+			stepCount = steps.Count;
+
+			// copy things from Planetarium
+			currentZup = Planetarium.Zup;
+			currentInverseRotAngle = Planetarium.InverseRotAngle;
+
+			// update bodies and their orbit
+			foreach (SubStepBody body in Bodies)
+			{
+				body.Update();
+			}
+
+			// update vessels and their orbit
+			foreach (VesselData vd in DB.VesselDatas)
+			{
+				if (!vessels.TryGetValue(vd.VesselId, out SubStepVessel vessel))
+				{
+					if (vd.IsSimulated)
+					{
+						vessel = new SubStepVessel(vd.Vessel);
+						vessels.Add(vd.VesselId, vessel);
+						vesselsInNeedOfCatchup.Enqueue(vessel);
+					}
+					else
+					{
+						continue;
+					}
+				}
+				else
+				{
+					if (!vd.IsSimulated)
+					{
+						vessels.Remove(vd.VesselId);
+						continue;
+					}
+				}
+
+				vessel.UpdateCurrent(vd);
+				vessel.Update(vd, stepsToConsume);
+			}
 		}
 
 
 		static ProfilerMarker prfSubStep;
+		static ProfilerMarker prfSubStepCatchup;
 		static ProfilerMarker prfNewStepGlobalData;
 		static ProfilerMarker prfSubStepBodyCompute;
 		static ProfilerMarker prfSubStepVesselCompute;
 		public static ProfilerMarker prfSubStepVesselInstantiate;
 		public static ProfilerMarker prfSubStepVesselEvaluate;
+		public static ProfilerMarker prfSubStepVesselGetVesselPos;
+		public static ProfilerMarker prfSubStepVesselGetBodiesPos;
+		static Stopwatch fuWatch = new Stopwatch();
+		static Stopwatch workerWatch = new Stopwatch();
+
+		static long currentWorkerTicks;
+
+
 
 		public static void ComputeLoop()
 		{
 
 			prfSubStep = new ProfilerMarker("Kerbalism.SubStep");
+			prfSubStepCatchup = new ProfilerMarker("Kerbalism.SubStepCatchup");
 			prfNewStepGlobalData = new ProfilerMarker("Kerbalism.NewStepGlobalData");
 			prfSubStepBodyCompute = new ProfilerMarker("Kerbalism.SubStepBodyCompute");
 			prfSubStepVesselCompute = new ProfilerMarker("Kerbalism.SubStepVesselCompute");
 			prfSubStepVesselInstantiate = new ProfilerMarker("Kerbalism.SubStepVesselInstantiate");
 			prfSubStepVesselEvaluate = new ProfilerMarker("Kerbalism.SubStepVesselEvaluate");
+			prfSubStepVesselGetVesselPos = new ProfilerMarker("Kerbalism.SubStepVesselGetVesselPos");
+			prfSubStepVesselGetBodiesPos = new ProfilerMarker("Kerbalism.SubStepVesselGetBodiesPos");
 
 			while (true)
 			{
 				if (!workerIsAlive)
 					worker.Abort();
 
-				bool isFree = true;
-				lock (workerLock)
-				{
-					
-					if (lastStepUT < maxUT)
-					{
-						prfSubStep.Begin();
-						ComputeNextStep();
-						prfSubStep.End();
-						isFree = false;
-					}
 
-					while (vesselsInNeedOfCatchup.Count > 0)
-					{
-						prfSubStep.Begin();
-						vesselsInNeedOfCatchup.Dequeue().Catchup();
-						prfSubStep.End();
-						isFree = false;
-					}
+				object __lockObj = workerLock;
+				bool __lockWasTaken = false;
+				try
+				{
+					System.Threading.Monitor.Enter(__lockObj, ref __lockWasTaken);
+					DoWorkerStep();
+				}
+				finally
+				{
+					if (__lockWasTaken) System.Threading.Monitor.Exit(__lockObj);
 				}
 
-				if (isFree)
-				{
-					Thread.Sleep(0);
-				}
+				Thread.Sleep(0);
+			}
+		}
+
+		private static void DoWorkerStep()
+		{
+			if (lastStepUT < maxUT)
+			{
+				prfSubStep.Begin();
+				workerWatch.Restart();
+				ComputeNextStep();
+				workerWatch.Stop();
+				currentWorkerTicks += workerWatch.ElapsedTicks;
+				prfSubStep.End();
+			}
+
+			while (vesselsInNeedOfCatchup.Count > 0)
+			{
+				prfSubStepCatchup.Begin();
+				vesselsInNeedOfCatchup.Dequeue().Catchup();
+				prfSubStepCatchup.End();
 			}
 		}
 
@@ -199,7 +292,7 @@ namespace KERBALISM
 			lastStepUT = currentUT + (stepCount * interval);
 
 			prfNewStepGlobalData.Begin();
-			lastStep = new StepGlobalData();
+			lastStep = StepGlobalData.GetFromPool();
 			lastStep.ut = lastStepUT;
 			lastStep.inverseRotAngle = currentInverseRotAngle;
 			lastStep.zup = currentZup;

@@ -49,6 +49,11 @@ namespace KERBALISM
 		public bool isSun;
 		public double surfaceGravity;
 
+		public bool stepCacheIsOccluding;
+		public Vector3d stepCacheOcclusionDiff;
+		public Vector3d stepCachePosition;
+
+
 		internal SimBody(CelestialBody body)
 		{
 			stockBody = body;

@@ -287,10 +287,9 @@ namespace KERBALISM
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel data
-				if (!v.TryGetVesselDataNoError(out VesselData vd))
+				if (!v.TryGetVesselData(out VesselData vd))
 				{
-					// flags have an empty Guid, we never create a VesselData and never process them
-					if (v.id == Guid.Empty)
+					if (!VesselData.VesselNeedVesselData(v.protoVessel))
 						continue;
 
 					Lib.LogDebug($"Creating VesselData for new vessel {v.vesselName}");
@@ -604,7 +603,7 @@ namespace KERBALISM
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null) return;
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			if (!vd.IsSimulated) return;
 
 			// call scripts with 1-5 key
@@ -699,7 +698,7 @@ namespace KERBALISM
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
-				v.TryGetVesselData(out VesselData vd);
+				v.TryGetVesselDataTemp(out VesselData vd);
 				res = vd.ResHandler.GetResource(supply.resource);
 			}
 

@@ -359,7 +359,7 @@ namespace KERBALISM
 			Profile.SetupEva(data.to);
 
 			// get vessel data
-			if (!data.to.vessel.TryGetVesselDataNoError(out VesselData evaVD))
+			if (!data.to.vessel.TryGetVesselData(out VesselData evaVD))
 			{
 				Lib.LogDebug($"Creating VesselData for EVA Kerbal : {data.to.vessel.vesselName}");
 				evaVD = new VesselData(data.to.vessel);
@@ -679,7 +679,7 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(pv);
 
 			// trigger die event on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
-			if (pv.vesselRef != null && !pv.vesselRef.loaded && DB.TryGetVesselDataNoError(pv.vesselRef, out VesselData vd))
+			if (pv.vesselRef != null && !pv.vesselRef.loaded && DB.TryGetVesselData(pv.vesselRef, out VesselData vd))
 				vd.OnVesselWillDie();
 		}
 
@@ -710,7 +710,7 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(v); // works with loaded and unloaded vessels
 
 			// trigger die event on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
-			if (!v.loaded && DB.TryGetVesselDataNoError(v, out VesselData vd))
+			if (!v.loaded && DB.TryGetVesselData(v, out VesselData vd))
 				vd.OnVesselWillDie();
 		}
 

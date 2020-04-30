@@ -9,7 +9,7 @@ namespace KERBALISM
 	{
 		public List<Step> subSteps = new List<Step>();
 		private SimVessel simVessel;
-		public Step CurrentStep => currentStep; Step currentStep;
+		
 
 		#region FIELDS/PROPERTIES : CORE STATE AND SUBSYSTEMS
 
@@ -293,9 +293,36 @@ namespace KERBALISM
             reliabilityStatus = null;
         }
 
-        #endregion
+		#endregion
 
 		#region INSTANTIATION AND PERSISTANCE
+
+		public static bool VesselNeedVesselData(ProtoVessel pv)
+		{
+			if (pv.vesselRef == null)
+			{
+				// flags have an empty Guid
+				if (pv.vesselID == Guid.Empty)
+					return false;
+
+				// exclude unloaded asteroids
+				if (pv.protoPartSnapshots.Count == 1 && pv.protoPartSnapshots[0].partName == "PotatoRoid")
+					return false;
+			}
+			else
+			{
+				// flags have an empty Guid
+				if (pv.vesselRef.id == Guid.Empty)
+					return false;
+
+				// exclude unloaded asteroids
+				if (!pv.vesselRef.loaded
+					&& pv.protoPartSnapshots.Count == 1 && pv.protoPartSnapshots[0].partName == "PotatoRoid")
+					return false;
+			}
+
+			return true;
+		}
 
 		public VesselData(Vessel vessel, ConfigNode kerbalismDataNode, VesselDataShip shipVd)
 		{
@@ -710,15 +737,22 @@ namespace KERBALISM
 				bodiesCoreIrradiance = 0.0;
 
 				// take the "average" as the current step
-				currentStep = subSteps[subStepCount / 2];
-
-				foreach (Step step in subSteps)
+				Step currentStep = subSteps[subStepCount / 2];
+				for (int i = 0; i < starsIrradiance.Length; i++)
 				{
-					bodiesCoreIrradiance += step.bodiesCoreFlux;
+					StarFlux vesselStarFlux = starsIrradiance[i];
+					vesselStarFlux.direction = currentStep.starFluxes[i].direction;
+					vesselStarFlux.distance = currentStep.starFluxes[i].distance;
+				}
 
-					for (int i = 0; i < step.starFluxes.Length; i++)
+				int starCount = subSteps[0].starFluxes.Length;
+				for (int k = 0; k < subStepCount; k++)
+				{
+					bodiesCoreIrradiance += subSteps[k].bodiesCoreFlux;
+
+					for (int i = 0; i < starCount; i++)
 					{
-						StarFlux stepStarFlux = step.starFluxes[i];
+						StarFlux stepStarFlux = subSteps[k].starFluxes[i];
 						StarFlux vesselStarFlux = starsIrradiance[i];
 
 						vesselStarFlux.directFlux += stepStarFlux.directFlux;
@@ -730,6 +764,8 @@ namespace KERBALISM
 						if (vesselStarFlux.directFlux > 0.0)
 							vesselStarFlux.sunlightFactor += 1.0;
 					}
+
+					subSteps[k].ReleaseWorkerStep();
 				}
 
 				subSteps.Clear();
@@ -744,8 +780,6 @@ namespace KERBALISM
 				for (int i = 0; i < starsIrradiance.Length; i++)
 				{
 					StarFlux vesselStarFlux = starsIrradiance[i];
-					vesselStarFlux.direction = currentStep.starFluxes[i].direction;
-					vesselStarFlux.distance = currentStep.starFluxes[i].distance;
 					vesselStarFlux.directRawFluxProportion = vesselStarFlux.directRawFlux / directRawFluxTotal;
 					vesselStarFlux.directFlux /= subStepCountD;
 					directStarFluxTotal += vesselStarFlux.directFlux;
@@ -766,10 +800,11 @@ namespace KERBALISM
 				subSteps.Clear();
 
 				simVessel.UpdateCurrent(this, position);
-				currentStep = new Step(simVessel);
-				currentStep.Evaluate();
+				Step step = new Step();
+				step.Init(simVessel);
+				step.Evaluate();
 
-				bodiesCoreIrradiance = currentStep.bodiesCoreFlux;
+				bodiesCoreIrradiance = step.bodiesCoreFlux;
 
 				double directRawFluxTotal = 0.0;
 				directStarFluxTotal = 0.0;
@@ -779,7 +814,7 @@ namespace KERBALISM
 
 				for (int i = 0; i < starsIrradiance.Length; i++)
 				{
-					starsIrradiance[i] = currentStep.starFluxes[i];
+					starsIrradiance[i] = step.starFluxes[i];
 					StarFlux starFlux = starsIrradiance[i];
 
 					directStarFluxTotal += starFlux.directFlux;
@@ -811,7 +846,7 @@ namespace KERBALISM
 
             zeroG = !EnvLanded && !inAtmosphere;
 
-            visibleBodies = currentStep.GetOccludingBodies();
+			visibleBodies = Sim.GetLargeBodies(position).ToArray();
             sunBodyAngle = Sim.SunBodyAngle(Vessel, position, mainStar.Star.body);
 
             // temperature at vessel position
@@ -871,10 +906,10 @@ namespace KERBALISM
 		{
 			Lib.LogDebug("Decoupling vessel '{0}' from vessel '{1}'", Lib.LogLevel.Message, newVessel.vesselName, oldVessel.vesselName);
 
-			if (!oldVessel.TryGetVesselData(out VesselData oldVD))
+			if (!oldVessel.TryGetVesselDataTemp(out VesselData oldVD))
 				return;
 
-			if (newVessel.TryGetVesselDataNoError(out VesselData newVD))
+			if (newVessel.TryGetVesselData(out VesselData newVD))
 			{
 				Lib.LogDebugStack($"Decoupled/Undocked vessel {newVessel.vesselName} exists already, can't transfer partdatas !", Lib.LogLevel.Error);
 				return;
@@ -912,8 +947,8 @@ namespace KERBALISM
 			Vessel fromVessel = data.from.vessel;
 			Vessel toVessel = data.to.vessel;
 
-			fromVessel.TryGetVesselData(out VesselData fromVD);
-			toVessel.TryGetVesselData(out VesselData toVD);
+			fromVessel.TryGetVesselDataTemp(out VesselData fromVD);
+			toVessel.TryGetVesselDataTemp(out VesselData toVD);
 
 			// GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
 			// In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
@@ -944,7 +979,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void OnPartWillDie(Part part)
 		{
-			if (!part.vessel.TryGetVesselData(out VesselData vd))
+			if (!part.vessel.TryGetVesselDataTemp(out VesselData vd))
 				return;
 
 			vd.OnPartWillDie(part.flightID);

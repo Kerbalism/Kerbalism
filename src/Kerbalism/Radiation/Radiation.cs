@@ -575,7 +575,7 @@ namespace KERBALISM
 			double D;
 			double r;
 
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			// accumulate radiation
 			double radiation = 0.0;

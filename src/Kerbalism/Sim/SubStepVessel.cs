@@ -89,7 +89,8 @@ namespace KERBALISM
 		public void ComputeNextStep()
 		{
 			SubStepSim.prfSubStepVesselInstantiate.Begin();
-			Step step = new Step(this);
+			Step step = Step.WorkerStepFactory();
+			step.Init(this);
 			SubStepSim.prfSubStepVesselInstantiate.End();
 
 			SubStepSim.prfSubStepVesselEvaluate.Begin();
@@ -107,7 +108,8 @@ namespace KERBALISM
 			while (stepCount < SubStepSim.stepCount)
 			{
 				double stepUT = SubStepSim.steps[stepCount].ut;
-				Step step = new Step(this, stepUT);
+				Step step = Step.WorkerStepFactory();
+				step.Init(this, stepUT);
 				step.Evaluate();
 				stepsData.AddToBack(step);
 				lastStep = step;

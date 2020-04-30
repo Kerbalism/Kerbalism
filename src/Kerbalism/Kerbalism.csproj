@@ -185,6 +185,7 @@
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
     <Compile Include="Science\ExperimentModuleDefinition.cs" />
+    <Compile Include="Sim\SimProfiler.cs" />
     <Compile Include="Sim\SimVessel.cs" />
     <Compile Include="Sim\SimBody.cs" />
     <Compile Include="Sim\Step.cs" />

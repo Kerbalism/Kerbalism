@@ -58,7 +58,7 @@ namespace KERBALISM
 		public void Execute(Vessel v, ScriptType type)
 		{
 			// do nothing if there is no EC left on the vessel
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			if (!vd.ResHandler.ElectricCharge.CriticalConsumptionSatisfied) return;
 
 			// get the script
@@ -283,7 +283,7 @@ namespace KERBALISM
 			});
 
 			// now add vessel wide devices to the end of the list
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
 

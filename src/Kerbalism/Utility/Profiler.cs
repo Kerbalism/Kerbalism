@@ -122,6 +122,8 @@ namespace KERBALISM
 				update_timer = Lib.Clocks();
 				Calculate();
 			}
+
+
 		}
 
 		private static void Calculate()

@@ -279,7 +279,7 @@ namespace KERBALISM
 
 			if (isFlight)
 			{
-				vessel.TryGetVesselData(out VesselData flightVD);
+				vessel.TryGetVesselDataTemp(out VesselData flightVD);
 				vd = flightVD;
 				vesselResHandler = vd.ResHandler;
 			}

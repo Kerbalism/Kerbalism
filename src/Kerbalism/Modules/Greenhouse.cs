@@ -136,7 +136,7 @@ namespace KERBALISM
 			{
 				// get vessel info from the cache
 				// - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 
 				// get resource cache
 				VesselResHandler resources = vd.ResHandler;
@@ -445,7 +445,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResHandler.Produce(crop_resource, crop_size, ResourceBroker.Greenhouse);
 
 			// reset growth
@@ -467,7 +467,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResHandler.Produce(crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
 
 			// reset growth

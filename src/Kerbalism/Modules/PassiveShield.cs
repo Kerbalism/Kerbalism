@@ -85,7 +85,7 @@ namespace KERBALISM
 
 			if (deployed && ec_rate > 0)
 			{
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 				vd.ResHandler.ElectricCharge.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.PassiveShield);
 			}
 		}
@@ -145,7 +145,7 @@ namespace KERBALISM
 		public static double Total(Vessel v)
 		{
 			// get resource cache
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			VesselResource ec = vd.ResHandler.GetResource("ElectricCharge");
 
 			double total = 0.0;

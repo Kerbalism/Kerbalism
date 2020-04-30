@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,18 +8,40 @@ namespace KERBALISM
 {
 	public class Step
 	{
+		private static List<Step> stepPool = new List<Step>(10000);
+		private static ConcurrentQueue<int> freeSteps = new ConcurrentQueue<int>();
+
+		public static Step WorkerStepFactory()
+		{
+			if (freeSteps.IsEmpty)
+			{
+				Step newStep = new Step();
+				stepPool.Add(newStep);
+				newStep.stepPoolIndex = stepPool.Count - 1;
+				return newStep;
+			}
+
+			if (freeSteps.TryDequeue(out int index))
+				return stepPool[index];
+
+			return new Step();
+		}
+
+		private int stepPoolIndex;
+
 		// step results
 		public double bodiesCoreFlux;
-		public StarFlux[] starFluxes = StarFlux.StarArrayFactory();
+		public StarFlux[] starFluxes;
 
 		// step parameters
-		private SimBody[] bodies;
-		private List<SimBody> occludingBodies = new List<SimBody>();
-		private List<Vector3d> occludingBodiesDiff = new List<Vector3d>();
+		private SimVessel simVessel;
+		//private SimBody[] bodies;
+		//private List<SimBody> occludingBodies = new List<SimBody>();
+		//private List<Vector3d> occludingBodiesDiff = new List<Vector3d>();
 		private double ut;
-		private bool landed;
+
 		private Vector3d vesselPosition;
-		private SimBody mainBody;
+
 		private Vector3d mainBodyPosition;
 		private Vector3d mainBodyDirection;
 		private double altitude;
@@ -32,45 +54,74 @@ namespace KERBALISM
 		public double UT => ut;
 		public double Altitude => altitude;
 
-		public Step(SimVessel vessel, double ut = -1.0)
+		private SimBody[] Bodies => simVessel.Bodies;
+		private bool Landed => simVessel.landed;
+		private SimBody MainBody => simVessel.mainBody;
+
+		public Step()
+		{
+			stepPoolIndex = -1;
+			starFluxes = StarFlux.StarArrayFactory();
+		}
+
+		public void ReleaseWorkerStep()
+		{
+			if (stepPoolIndex < 0)
+				return;
+
+			freeSteps.Enqueue(stepPoolIndex);
+		}
+
+		public void Init(SimVessel simVessel, double ut = -1.0)
 		{
 			this.ut = ut;
-			landed = vessel.landed;
-			bodies = vessel.Bodies;
-			vesselPosition = vessel.GetPosition(this);
-			mainBody = vessel.mainBody;
-			mainBodyPosition = mainBody.GetPosition(ut);
+			this.simVessel = simVessel;
+			SubStepSim.prfSubStepVesselGetVesselPos.Begin();
+			vesselPosition = simVessel.GetPosition(this);
+			SubStepSim.prfSubStepVesselGetVesselPos.End();
+
+			SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
+			mainBodyPosition = MainBody.GetPosition(ut);
+			SubStepSim.prfSubStepVesselGetBodiesPos.End();
+
 			mainBodyDirection = mainBodyPosition - vesselPosition;
 			altitude = mainBodyDirection.magnitude;
 			mainBodyDirection /= altitude;
-			altitude -= mainBody.radius;
+			altitude -= MainBody.radius;
 
-			occludingBodies.Clear();
-			occludingBodiesDiff.Clear();
+			//occludingBodies.Clear();
+			//occludingBodiesDiff.Clear();
 
-			foreach (SimBody occludingBody in bodies)
+			foreach (SimBody body in Bodies)
 			{
-				Vector3d bodyPosition = occludingBody.GetPosition(ut);
+				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
+				body.stepCachePosition = body.GetPosition(ut);
+				SubStepSim.prfSubStepVesselGetBodiesPos.End();
 
 				// vector from ray origin to sphere center
-				Vector3d difference = bodyPosition - vesselPosition;
+				body.stepCacheOcclusionDiff = body.stepCachePosition - vesselPosition;
 
 				// if apparent diameter < ~10 arcmin (~0.003 radians), don't consider the body for occlusion checks
 				// real apparent diameters at earth : sun/moon ~ 30 arcmin, Venus ~ 1 arcmin max
-				if ((occludingBody.radius * 2.0) / difference.magnitude < 0.003)
-					continue;
-
-				occludingBodies.Add(occludingBody);
-				occludingBodiesDiff.Add(difference);
+				body.stepCacheIsOccluding = (body.radius * 2.0) / body.stepCacheOcclusionDiff.magnitude > 0.003;
+					
+				//occludingBodies.Add(occludingBody);
+				//occludingBodiesDiff.Add(difference);
 			}
 
 			mainBodyIsVisible = IsMainBodyVisible();
-			mainBodyIsMoon = !mainBody.ReferenceBody.isSun;
+			mainBodyIsMoon = !MainBody.ReferenceBody.isSun;
 			if (mainBodyIsMoon)
 			{
-				mainPlanet = mainBody.ReferenceBody;
+				mainPlanet = MainBody.ReferenceBody;
 				mainPlanetIsVisible = IsMainPlanetVisible();
+				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
 				mainPlanetPosition = mainPlanet.GetPosition(ut);
+				SubStepSim.prfSubStepVesselGetBodiesPos.End();
+			}
+			else
+			{
+				mainPlanetIsVisible = false;
 			}
 		}
 
@@ -80,27 +131,17 @@ namespace KERBALISM
 			AnalyzeBodiesCoreFluxes();
 		}
 
-		public CelestialBody[] GetOccludingBodies()
-		{
-			CelestialBody[] bodies = new CelestialBody[occludingBodies.Count];
-
-			for (int i = 0; i < occludingBodies.Count; i++)
-				bodies[i] = occludingBodies[i].stockBody;
-
-			return bodies;
-		}
-
 		private bool IsMainBodyVisible()
 		{
-			if (landed || (mainBody.hasAtmosphere && altitude < mainBody.atmosphereDepth))
+			if (Landed || (MainBody.hasAtmosphere && altitude < MainBody.atmosphereDepth))
 				return true;
 
-			for (int i = 0; i < occludingBodies.Count; i++)
+			foreach (SimBody occludingBody in Bodies)
 			{
-				if (occludingBodies[i] == mainBody)
+				if (occludingBody == MainBody)
 					continue;
 
-				if (Sim.RayHitSphere(occludingBodiesDiff[i], mainBodyDirection, occludingBodies[i].radius, altitude))
+				if (Sim.RayHitSphere(occludingBody.stepCacheOcclusionDiff, mainBodyDirection, occludingBody.radius, altitude))
 					return false;
 			}
 
@@ -113,12 +154,12 @@ namespace KERBALISM
 			double distance = vesselToPlanet.magnitude;
 			vesselToPlanet /= distance;
 
-			for (int i = 0; i < occludingBodies.Count; i++)
+			foreach (SimBody occludingBody in Bodies)
 			{
-				if (occludingBodies[i] == mainPlanet)
+				if (occludingBody == mainPlanet)
 					continue;
 
-				if (Sim.RayHitSphere(occludingBodiesDiff[i], vesselToPlanet, occludingBodies[i].radius, distance))
+				if (Sim.RayHitSphere(occludingBody.stepCacheOcclusionDiff, vesselToPlanet, occludingBody.radius, distance))
 					return false;
 			}
 
@@ -129,9 +170,11 @@ namespace KERBALISM
 		{
 			foreach (StarFlux starFlux in starFluxes)
 			{
-				SimBody sun = bodies[starFlux.Star.body.flightGlobalsIndex];
+				SimBody sun = Bodies[starFlux.Star.body.flightGlobalsIndex];
 
+				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
 				Vector3d sunPosition = sun.GetPosition(ut);
+				SubStepSim.prfSubStepVesselGetBodiesPos.End();
 
 				// generate ray parameters
 				starFlux.direction = sunPosition - vesselPosition;
@@ -139,14 +182,12 @@ namespace KERBALISM
 				starFlux.direction /= starFlux.distance;
 
 				bool isOccluded = false;
-				for (int i = 0; i < occludingBodies.Count; i++)
+				foreach (SimBody occludingBody in Bodies)
 				{
-					SimBody occludingBody = occludingBodies[i];
-
 					if (occludingBody == sun)
 						continue;
 
-					if (Sim.RayHitSphere(occludingBodiesDiff[i], starFlux.direction, occludingBody.radius, starFlux.distance))
+					if (Sim.RayHitSphere(occludingBody.stepCacheOcclusionDiff, starFlux.direction, occludingBody.radius, starFlux.distance))
 					{
 						isOccluded = true;
 						break;
@@ -164,12 +205,12 @@ namespace KERBALISM
 				{
 					starFlux.directFlux = starFlux.directRawFlux;
 
-					if (mainBody.hasAtmosphere && altitude < mainBody.atmosphereDepth)
-						starFlux.directFlux *= Sim.AtmosphereFactor(mainBody, mainBodyPosition, starFlux.direction, vesselPosition, altitude);
+					if (MainBody.hasAtmosphere && altitude < MainBody.atmosphereDepth)
+						starFlux.directFlux *= Sim.AtmosphereFactor(MainBody, mainBodyPosition, starFlux.direction, vesselPosition, altitude);
 				}
 
 				// get indirect fluxes from bodies
-				if (!mainBody.isSun)
+				if (!MainBody.isSun)
 				{
 					if (mainBodyIsVisible)
 					{
@@ -184,7 +225,7 @@ namespace KERBALISM
 							mainBodyHasSunLoS = !Sim.RayHitSphere(moonToPlanet, mainBodyToSun, mainPlanet.radius, mainBodyToSunDist);
 						}
 
-						GetBodyIndirectSunFluxes(starFlux, mainBody, mainBodyPosition, sunPosition, mainBodyToSunDist, mainBodyHasSunLoS);
+						GetBodyIndirectSunFluxes(starFlux, MainBody, mainBodyPosition, sunPosition, mainBodyToSunDist, mainBodyHasSunLoS);
 					}
 
 					// if main body is a moon, also consider fluxes from the planet
@@ -279,11 +320,11 @@ namespace KERBALISM
 
 		private void AnalyzeBodiesCoreFluxes()
 		{
-			if (mainBody.isSun)
+			if (MainBody.isSun)
 				return;
 
 			if (mainBodyIsVisible)
-				bodiesCoreFlux += BodyCoreFlux(mainBody);
+				bodiesCoreFlux += BodyCoreFlux(MainBody);
 
 			// if main body is a moon, also consider core flux from the planet
 			if (mainBodyIsMoon && mainPlanetIsVisible)
