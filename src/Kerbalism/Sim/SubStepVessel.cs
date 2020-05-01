@@ -14,7 +14,7 @@ namespace KERBALISM
 
 		public SubStepVessel(Vessel stockVessel)
 		{
-			stepsData = new Deque<Step>(SubStepSim.maxSubsteps);
+			stepsData = new Deque<Step>(SubStepSim.subStepsToCompute);
 
 			if (stockVessel.orbit != null)
 				orbit = new SubStepOrbit(stockVessel.orbit);

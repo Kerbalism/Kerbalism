@@ -715,7 +715,7 @@ namespace KERBALISM
         private void EnvironmentUpdate(double elapsedSec)
         {
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EnvironmentUpdate");
-            isAnalytic = elapsedSec > SubStepSim.interval * 2.0;
+            isAnalytic = elapsedSec > SubStepSim.subStepInterval * 2.0;
 
 			// Those must be evaluated before the Sim / StepSim is evaluated
 			Vector3d position = Lib.VesselPosition(Vessel);

@@ -201,6 +201,8 @@ namespace KERBALISM
 				}
 
 				// get indirect fluxes from bodies
+				starFlux.bodiesAlbedoFlux = 0.0;
+				starFlux.bodiesEmissiveFlux = 0.0;
 				if (!MainBody.isSun)
 				{
 					if (mainBodyIsVisible)
@@ -315,6 +317,7 @@ namespace KERBALISM
 
 		private void AnalyzeBodiesCoreFluxes()
 		{
+			bodiesCoreFlux = 0.0;
 			if (MainBody.isSun)
 				return;
 

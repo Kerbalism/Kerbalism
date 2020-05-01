@@ -14,6 +14,16 @@ namespace KERBALISM
 
 	public static class SubStepSim
 	{
+		private static int maxWarpRateIndex;
+		private static float lastMaxWarprate;
+
+		// The interval is the in-game time between each substep evaluation.
+		// It determine how many substeps will be required at a given timewarp rate.
+		// Lower values give a more precise simulation (more sampling points)
+		// Higher values will reduce the amount of substeps consumed per FixedUpdate, preventing the simulation
+		// from falling behind when there is a large number of vessels or if higher than stock timewarp rates are used.
+
+
 		private static Planetarium.CelestialFrame currentZup;
 		private static double currentInverseRotAngle;
 
@@ -24,12 +34,17 @@ namespace KERBALISM
 		public static int bodyCount;
 		public static int stepCount;
 		public static double lastStepUT;
-		public static double interval = 60.0;
+
 		public static Dictionary<Guid, SubStepVessel> vessels = new Dictionary<Guid, SubStepVessel>();
 		public static SubStepBody[] Bodies { get; private set; }
 		public static IndexedQueue<SubStepGlobalData> steps = new IndexedQueue<SubStepGlobalData>();
 		public static SubStepGlobalData lastStep;
-		public static int maxSubsteps;
+
+		public static double subStepInterval;
+		public static int subStepsAtMaxWarp;
+		public static int subStepsToCompute;
+
+
 
 		public static Queue<SubStepVessel> vesselsInNeedOfCatchup = new Queue<SubStepVessel>();
 
@@ -37,6 +52,11 @@ namespace KERBALISM
 
 		public static void Init()
 		{
+			maxWarpRateIndex = TimeWarp.fetch.warpRates.Length - 1;
+
+			subStepInterval = minInterval;
+			UpdateMaxSubSteps();
+
 			bodyCount = FlightGlobals.Bodies.Count;
 			Bodies = new SubStepBody[bodyCount];
 
@@ -45,8 +65,115 @@ namespace KERBALISM
 				SubStepBody safeBody = new SubStepBody(FlightGlobals.Bodies[i]);
 				Bodies[i] = safeBody;
 			}
+		}
 
-			maxSubsteps = (int)(TimeWarp.fetch.warpRates.Last() * 0.02 * 1.5 / interval);
+		public static void Load(ConfigNode node)
+		{
+			if (Lib.IsGameRunning)
+			{
+				subStepInterval = Lib.ConfigValue(node, nameof(subStepInterval), minInterval);
+				UpdateMaxSubSteps();
+			}
+		}
+
+		public static void Save(ConfigNode node)
+		{
+			node.AddValue(nameof(subStepInterval), subStepInterval);
+		}
+
+		private const int maxSubSteps = 100; // max amount of substeps, no matter the interval and max timewarp rate
+		private const int subStepsMargin = 25; // substep "buffer"
+		private const double minInterval = 30.0; // in seconds
+		private const double maxInterval = 120.0; // in seconds
+		private const double intervalChange = 15.0; // in seconds
+
+		private const int fuLagCheckFrequency = 50 ; // 1 second
+		private const int maxLaggingFu = 2;
+		private const int minNonLaggingFu = 20;
+		private const int lagChecksForDecision = 5;
+		private const int lagChecksReset = 25;
+
+
+		private static int fuCounter;
+		private static int laggingFuCount;
+		private static int nonLaggingFuCount;
+
+		private static int lagChecksCount;
+		private static int lagCheckResultsCount;
+		private static int laggingLagChecks;
+		private static int nonLaggingLagChecks;
+
+		private static void WorkerLoadCheck()
+		{
+			if (lastMaxWarprate != TimeWarp.fetch.warpRates[maxWarpRateIndex])
+			{
+				UpdateMaxSubSteps();
+				return;
+			}
+
+			fuCounter++;
+
+			if (fuCounter < fuLagCheckFrequency)
+				return;
+
+			fuCounter = 0;
+			lagChecksCount++;
+
+			if (laggingFuCount > maxLaggingFu)
+			{
+				laggingLagChecks++;
+				lagCheckResultsCount++;
+			}
+			else if (laggingFuCount == 0 && nonLaggingFuCount > minNonLaggingFu)
+			{
+				nonLaggingLagChecks++;
+				lagCheckResultsCount++;
+			}
+
+			laggingFuCount = 0;
+			nonLaggingFuCount = 0;
+
+			if (lagChecksCount > lagChecksReset)
+			{
+				lagChecksCount = 0;
+				lagCheckResultsCount = 0;
+				nonLaggingLagChecks = 0;
+				laggingLagChecks = 0;
+				return;
+			}
+
+			if (lagCheckResultsCount > lagChecksForDecision)
+			{
+				if (nonLaggingLagChecks == 0 && laggingLagChecks == lagCheckResultsCount && subStepInterval < maxInterval)
+				{
+					subStepInterval = Math.Min(subStepInterval + intervalChange, maxInterval);
+					UpdateMaxSubSteps();
+				}
+				else if (laggingLagChecks == 0 && nonLaggingLagChecks == lagCheckResultsCount && subStepInterval > minInterval)
+				{
+					subStepInterval = Math.Max(subStepInterval - intervalChange, minInterval);
+					UpdateMaxSubSteps();
+				}
+			}
+		}
+
+		private static void UpdateMaxSubSteps()
+		{
+			lastMaxWarprate = TimeWarp.fetch.warpRates[maxWarpRateIndex];
+			subStepsAtMaxWarp = (int)(lastMaxWarprate * 0.02 / subStepInterval);
+			if (subStepsAtMaxWarp > maxSubSteps)
+				subStepsAtMaxWarp = maxSubSteps;
+
+			subStepsToCompute = subStepsAtMaxWarp + subStepsMargin;
+
+			fuCounter = 0;
+			laggingFuCount = 0;
+			nonLaggingFuCount = 0;
+
+			lagChecksCount = 0;
+			lagCheckResultsCount = 0;
+			laggingLagChecks = 0;
+			nonLaggingLagChecks = 0;
 		}
 
 		public static void OnFixedUpdate()
@@ -79,6 +206,8 @@ namespace KERBALISM
 
 			Profiler.BeginSample("Kerbalism.SubStepSim.Update");
 
+			subStepsToCompute = (int)(TimeWarp.fetch.warpRates[7] * 0.02 * 1.5 / subStepInterval);
+
 			object __lockObj = workerLock;
 			bool __lockWasTaken = false;
 			try
@@ -87,6 +216,7 @@ namespace KERBALISM
 				if (__lockWasTaken)
 				{
 					ThreadSafeSynchronize();
+					WorkerLoadCheck();
 				}
 				else
 				{
@@ -94,7 +224,7 @@ namespace KERBALISM
 					// so i guess (hope) it's ok to increment it even if we don't have a lock for it
 					// Incrementing it will allow the worker thread to go forward using the old parameters,
 					// instead of having to compute twice the normal amount of steps during the next FU.
-					maxUT = Planetarium.GetUniversalTime() + (maxSubsteps * interval);
+					maxUT = Planetarium.GetUniversalTime() + (subStepsToCompute * subStepInterval);
 					Lib.LogDebug("Could not acquire lock !", Lib.LogLevel.Warning);
 				}
 				
@@ -115,7 +245,7 @@ namespace KERBALISM
 
 			currentUT = Planetarium.GetUniversalTime();
 
-			maxUT = currentUT + (maxSubsteps * interval);
+			maxUT = currentUT + (subStepsToCompute * subStepInterval);
 
 			int stepsToConsume = 0;
 			// remove old steps
@@ -127,20 +257,23 @@ namespace KERBALISM
 
 			stepCount = steps.Count;
 
-			MiniProfiler.workerTimeUsed = stepsToConsume * interval;
+			MiniProfiler.workerTimeUsed = stepsToConsume * subStepInterval;
 
 			if (stepCount == 0)
 			{
-				MiniProfiler.workerTimeMissed = (Math.Floor(TimeWarp.fixedDeltaTime / interval) - stepsToConsume) * interval;
+				MiniProfiler.workerTimeMissed = (Math.Floor(TimeWarp.fixedDeltaTime / subStepInterval) - stepsToConsume) * subStepInterval;
+				laggingFuCount++;
+			}
+			else if (stepsToConsume >= subStepsAtMaxWarp)
+			{
+				MiniProfiler.workerTimeMissed = 0.0;
+				nonLaggingFuCount++;
 			}
 			else
 			{
 				MiniProfiler.workerTimeMissed = 0.0;
 			}
 			
-
-			
-
 			// copy things from Planetarium
 			currentZup = Planetarium.Zup;
 			currentInverseRotAngle = Planetarium.InverseRotAngle;
@@ -195,8 +328,6 @@ namespace KERBALISM
 		static Stopwatch workerWatch = new Stopwatch();
 
 		static long currentWorkerTicks;
-
-
 
 		public static void WorkerLoop()
 		{
@@ -262,7 +393,7 @@ namespace KERBALISM
 		public static void ComputeNextStep()
 		{
 			stepCount++;
-			lastStepUT = currentUT + (stepCount * interval);
+			lastStepUT = currentUT + (stepCount * subStepInterval);
 
 			prfNewStepGlobalData.Begin();
 			lastStep = SubStepGlobalData.GetFromPool();

@@ -95,7 +95,7 @@ namespace KERBALISM
 
 		// constants
 		private const float width = 550.0f;
-		private const float height = 200.0f;
+		private const float height = 220.0f;
 
 		private const float value_width = 65.0f;
 
@@ -144,7 +144,8 @@ namespace KERBALISM
 			   {
 				   new DialogGUIVerticalLayout(false, false, 0, new RectOffset(), TextAnchor.UpperCenter,
                        // create header line
-                       new DialogGUIHorizontalLayout(
+					   new DialogGUILabel(GetIntervalInfo, true),
+					   new DialogGUIHorizontalLayout(
 						   new DialogGUILabel("<b>Measure</b>", true),
 						   new DialogGUILabel("<b>Avg/s</b>", value_width),
 						   new DialogGUILabel("<b>Min/s</b>", value_width),
@@ -197,6 +198,11 @@ namespace KERBALISM
 			workerLoad.Update(lastWorkerPercent);
 			wTimeMissed.Update(workerTimeMissed);
 			wTimeUsed.Update(workerTimeUsed);
+		}
+
+		private string GetIntervalInfo()
+		{
+			return Lib.BuildString("Sim sub-stepping interval : ", Lib.HumanReadableDuration(SubStepSim.subStepInterval), ", max sub-steps : ", SubStepSim.subStepsAtMaxWarp.ToString());
 		}
 
 		private void Update()
