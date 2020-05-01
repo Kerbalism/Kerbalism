@@ -9,22 +9,18 @@ namespace KERBALISM
 		public bool needCatchup;
 		public SubStepOrbit orbit;
 		public Deque<Step> stepsData = new Deque<Step>();
-		public Step lastStep;
 
-		private bool isNew;
-
-		internal override SimBody[] Bodies => SubStepSim.Bodies;
+		public override SimBody[] Bodies => SubStepSim.Bodies;
 
 		public SubStepVessel(Vessel stockVessel)
 		{
-			isNew = true;
 			stepsData = new Deque<Step>(SubStepSim.maxSubsteps);
 
 			if (stockVessel.orbit != null)
 				orbit = new SubStepOrbit(stockVessel.orbit);
 		}
 
-		internal override Vector3d GetPosition(Step step)
+		public override Vector3d GetPosition(Step step)
 		{
 			if (landed)
 				return mainBody.GetSurfacePosition(vesselLatitude, vesselLongitude, step.Altitude, step.UT);
@@ -32,34 +28,14 @@ namespace KERBALISM
 				return orbit.GetSafeTruePosition(step.UT);
 		}
 
-		public void Update(VesselData vd, int stepsToConsume)
+		public void Synchronize(VesselData vd, int stepsToConsume)
 		{
-			if (isNew && stepsToConsume == 0)
-			{
-				if (stepsData.Count > 0)
-				{
-					Lib.LogDebug($"Forcing evaluation of new vessel {vd.VesselName}");
-					stepsToConsume = 1;
-					isNew = false;
-				}
-				else
-				{
-					Lib.LogDebug($"Can't evaluate new vessel {vd.VesselName} yet, no steps computed !");
-				}
-			}
-
-			bool orbitHasChanged = false;
 			Vessel vessel = vd.Vessel;
 
 			if (orbit == null && vessel.orbit != null)
-			{
 				orbit = new SubStepOrbit(vessel.orbit);
-			}
 			else
-			{
 				orbit.Update(vessel.orbit);
-				orbitHasChanged = !landed && orbit.OrbitHasChanged();
-			}
 
 			for (int i = 0; i < stepsToConsume; i++)
 			{
@@ -72,16 +48,19 @@ namespace KERBALISM
 				vd.subSteps.Add(stepsData.RemoveFromFront());
 			}
 
-			lastStep = null;
-
-			if (orbitHasChanged && stepsData.Count > 1)
+			if (soiHasChanged && stepsData.Count > 1)
 			{
-				Lib.Log("Orbit has changed, clearing substeps");
-				stepsData.RemoveRange(1, stepsData.Count - 1);
+				// always recompute all steps for vessels that just changed SOI
+				Lib.LogDebug($"{vd.VesselName} SOI has changed, clearing substeps");
+				stepsData.Clear();
+				SubStepSim.vesselsInNeedOfCatchup.Enqueue(this);
 			}
-
-			if (stepsData.Count < SubStepSim.stepCount - stepsToConsume)
+			else if (vessel.loaded && stepsToConsume == 0)
 			{
+				// on loaded vessels, the orbit can change at any time unless we are timewarping
+				// if we aren't timewarping (no steps consumed), the worker thread will be mostly idle
+				// so take advantage of that and always recompute all steps between every FixedUpdate
+				stepsData.Clear();
 				SubStepSim.vesselsInNeedOfCatchup.Enqueue(this);
 			}
 		}
@@ -98,12 +77,12 @@ namespace KERBALISM
 			SubStepSim.prfSubStepVesselEvaluate.End();
 
 			stepsData.AddToBack(step);
-			lastStep = step;
 		}
 
-		public void Catchup()
+		public bool TryComputeMissingSteps()
 		{
 			int stepCount = stepsData.Count;
+			int maxSteps = stepCount + 25;
 
 			while (stepCount < SubStepSim.stepCount)
 			{
@@ -112,11 +91,13 @@ namespace KERBALISM
 				step.Init(this, stepUT);
 				step.Evaluate();
 				stepsData.AddToBack(step);
-				lastStep = step;
 				stepCount++;
+
+				if (stepCount > maxSteps)
+					return false;
 			}
 
-			lastStep = stepsData[stepCount - 1];
+			return true;
 		}
 	}
 }

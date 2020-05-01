@@ -24,6 +24,7 @@ namespace KERBALISM
 		public bool hasOcean;
 		public double density;
 		public double surfaceArea;
+		public double albedo;
 
 		// stock body atmosphere
 		public bool hasAtmosphere;
@@ -40,21 +41,18 @@ namespace KERBALISM
 		public FloatCurve atmosphereTemperatureCurve;
 		public FloatCurve atmospherePressureCurve;
 
-		// stock body thermal stats
-		public double albedo;
-
-		// custom stats that we calculate
+		// custom stats that don't exist on CelestialBody
 		public double coreThermalFlux;
 		public bool canRotate;
 		public bool isSun;
 		public double surfaceGravity;
 
+		// step cache
 		public bool stepCacheIsOccluding;
 		public Vector3d stepCacheOcclusionDiff;
 		public Vector3d stepCachePosition;
 
-
-		internal SimBody(CelestialBody body)
+		public SimBody(CelestialBody body)
 		{
 			stockBody = body;
 			flightGlobalsIndex = body.flightGlobalsIndex;
@@ -107,24 +105,24 @@ namespace KERBALISM
 
 		public virtual SimBody ReferenceBody => Sim.Bodies[referenceBodyFlightGlobalsIndex];
 
-		internal virtual void Update()
+		public virtual void Update()
 		{
 			currentPosition = stockBody.position;
 			currentInverseRotation = stockBody.inverseRotation;
 		}
 
-		internal virtual Vector3d GetPosition(double ut = -1.0)
+		public virtual Vector3d GetPosition(double ut = -1.0)
 		{
 			return currentPosition;
 		}
 
-		internal virtual Vector3d GetSurfacePosition(double lat, double lon, double alt, double ut = -1.0)
+		public virtual Vector3d GetSurfacePosition(double lat, double lon, double alt, double ut = -1.0)
 		{
 			return stockBody.GetWorldSurfacePosition(lat, lon, alt);
 		}
 
 		// stock method
-		internal double GetPressure(double altitude)
+		public double GetPressure(double altitude)
 		{
 			if (hasAtmosphere && altitude < atmosphereDepth)
 			{
@@ -142,7 +140,7 @@ namespace KERBALISM
 		}
 
 		// stock method
-		internal double GetDensity(double pressure, double temperature)
+		public double GetDensity(double pressure, double temperature)
 		{
 			if (!(pressure <= 0.0) && temperature > 0.0)
 			{
@@ -152,7 +150,7 @@ namespace KERBALISM
 		}
 
 		// stock method
-		internal double GetTemperature(double altitude)
+		public double GetTemperature(double altitude)
 		{
 			if (altitude >= atmosphereDepth)
 			{

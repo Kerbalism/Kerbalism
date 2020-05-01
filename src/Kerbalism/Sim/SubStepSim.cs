@@ -1,53 +1,16 @@
 ﻿using KERBALISM.Collections;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Unity.Profiling;
-using UnityEngine;
 using UnityEngine.Profiling;
 
 namespace KERBALISM
 {
-	public class StepGlobalData
-	{
-		private static List<StepGlobalData> stepPool = new List<StepGlobalData>(200);
-		private static Queue<int> freeSteps = new Queue<int>(200);
 
-		public static StepGlobalData GetFromPool()
-		{
-			if (freeSteps.TryDequeue(out int index))
-			{
-				return stepPool[index];
-			}
-			else
-			{
-				StepGlobalData newStep = new StepGlobalData(stepPool.Count);
-				stepPool.Add(newStep);
-				return newStep;
-			}
-		}
-
-		private readonly int stepPoolIndex;
-
-		public double ut;
-		public double inverseRotAngle; // Planetarium.InverseRotAngle
-		public Planetarium.CelestialFrame zup; // Planetarium.Zup;
-
-		private StepGlobalData(int stepPoolIndex)
-		{
-			this.stepPoolIndex = stepPoolIndex;
-		}
-
-		public void ReleaseToPool()
-		{
-			freeSteps.Enqueue(stepPoolIndex);
-		}
-	}
 
 	public static class SubStepSim
 	{
@@ -64,8 +27,8 @@ namespace KERBALISM
 		public static double interval = 60.0;
 		public static Dictionary<Guid, SubStepVessel> vessels = new Dictionary<Guid, SubStepVessel>();
 		public static SubStepBody[] Bodies { get; private set; }
-		public static IndexedQueue<StepGlobalData> steps = new IndexedQueue<StepGlobalData>();
-		public static StepGlobalData lastStep;
+		public static IndexedQueue<SubStepGlobalData> steps = new IndexedQueue<SubStepGlobalData>();
+		public static SubStepGlobalData lastStep;
 		public static int maxSubsteps;
 
 		public static Queue<SubStepVessel> vesselsInNeedOfCatchup = new Queue<SubStepVessel>();
@@ -83,7 +46,7 @@ namespace KERBALISM
 				Bodies[i] = safeBody;
 			}
 
-			maxSubsteps = (int)(TimeWarp.fetch.warpRates.Last() * 0.02 * 2.0 / interval);
+			maxSubsteps = (int)(TimeWarp.fetch.warpRates.Last() * 0.02 * 1.5 / interval);
 		}
 
 		public static void OnFixedUpdate()
@@ -131,7 +94,7 @@ namespace KERBALISM
 					// so i guess (hope) it's ok to increment it even if we don't have a lock for it
 					// Incrementing it will allow the worker thread to go forward using the old parameters,
 					// instead of having to compute twice the normal amount of steps during the next FU.
-					maxUT += maxSubsteps * interval;
+					maxUT = Planetarium.GetUniversalTime() + (maxSubsteps * interval);
 					Lib.LogDebug("Could not acquire lock !", Lib.LogLevel.Warning);
 				}
 				
@@ -163,6 +126,20 @@ namespace KERBALISM
 			}
 
 			stepCount = steps.Count;
+
+			MiniProfiler.workerTimeUsed = stepsToConsume * interval;
+
+			if (stepCount == 0)
+			{
+				MiniProfiler.workerTimeMissed = (Math.Floor(TimeWarp.fixedDeltaTime / interval) - stepsToConsume) * interval;
+			}
+			else
+			{
+				MiniProfiler.workerTimeMissed = 0.0;
+			}
+			
+
+			
 
 			// copy things from Planetarium
 			currentZup = Planetarium.Zup;
@@ -199,8 +176,8 @@ namespace KERBALISM
 					}
 				}
 
-				vessel.UpdateCurrent(vd);
-				vessel.Update(vd, stepsToConsume);
+				vessel.UpdatePosition(vd);
+				vessel.Synchronize(vd, stepsToConsume);
 			}
 		}
 
@@ -268,10 +245,16 @@ namespace KERBALISM
 				prfSubStep.End();
 			}
 
-			while (vesselsInNeedOfCatchup.Count > 0)
+			if (vesselsInNeedOfCatchup.Count > 0)
 			{
 				prfSubStepCatchup.Begin();
-				vesselsInNeedOfCatchup.Dequeue().Catchup();
+				workerWatch.Restart();
+
+				if (vesselsInNeedOfCatchup.Peek().TryComputeMissingSteps())
+					vesselsInNeedOfCatchup.Dequeue();
+
+				workerWatch.Stop();
+				currentWorkerTicks += workerWatch.ElapsedTicks;
 				prfSubStepCatchup.End();
 			}
 		}
@@ -282,7 +265,7 @@ namespace KERBALISM
 			lastStepUT = currentUT + (stepCount * interval);
 
 			prfNewStepGlobalData.Begin();
-			lastStep = StepGlobalData.GetFromPool();
+			lastStep = SubStepGlobalData.GetFromPool();
 			lastStep.ut = lastStepUT;
 			lastStep.inverseRotAngle = currentInverseRotAngle;
 			lastStep.zup = currentZup;

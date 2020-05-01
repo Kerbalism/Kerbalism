@@ -35,9 +35,6 @@ namespace KERBALISM
 
 		// step parameters
 		private SimVessel simVessel;
-		//private SimBody[] bodies;
-		//private List<SimBody> occludingBodies = new List<SimBody>();
-		//private List<Vector3d> occludingBodiesDiff = new List<Vector3d>();
 		private double ut;
 
 		private Vector3d vesselPosition;
@@ -64,7 +61,7 @@ namespace KERBALISM
 			starFluxes = StarFlux.StarArrayFactory();
 		}
 
-		public void ReleaseWorkerStep()
+		public void ReleaseToWorkerPool()
 		{
 			if (stepPoolIndex < 0)
 				return;
@@ -89,9 +86,6 @@ namespace KERBALISM
 			mainBodyDirection /= altitude;
 			altitude -= MainBody.radius;
 
-			//occludingBodies.Clear();
-			//occludingBodiesDiff.Clear();
-
 			foreach (SimBody body in Bodies)
 			{
 				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
@@ -104,9 +98,6 @@ namespace KERBALISM
 				// if apparent diameter < ~10 arcmin (~0.003 radians), don't consider the body for occlusion checks
 				// real apparent diameters at earth : sun/moon ~ 30 arcmin, Venus ~ 1 arcmin max
 				body.stepCacheIsOccluding = (body.radius * 2.0) / body.stepCacheOcclusionDiff.magnitude > 0.003;
-					
-				//occludingBodies.Add(occludingBody);
-				//occludingBodiesDiff.Add(difference);
 			}
 
 			mainBodyIsVisible = IsMainBodyVisible();
@@ -288,9 +279,13 @@ namespace KERBALISM
 				// We do some square scaling to approximate those effects, the choosen exponents seems to give results that 
 				// aren't too far from RL data given by the JPL-HORIZONS data set : https://ssd.jpl.nasa.gov/horizons.cgi
 				if (body.hasAtmosphere)
-					albedoFlux *= Math.Pow(anglefactor, 2.0);
+				{
+					albedoFlux *= Math.Pow(anglefactor * 1.1, 2.0);
+				}
 				else
-					albedoFlux *= Math.Pow(anglefactor, 3.0);
+				{
+					albedoFlux *= Math.Pow(anglefactor * 1.25, 3.0);
+				}
 			}
 
 			// THERMAL RE-EMISSION

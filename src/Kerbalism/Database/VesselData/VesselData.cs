@@ -765,7 +765,7 @@ namespace KERBALISM
 							vesselStarFlux.sunlightFactor += 1.0;
 					}
 
-					subSteps[k].ReleaseWorkerStep();
+					subSteps[k].ReleaseToWorkerPool();
 				}
 
 				subSteps.Clear();
@@ -799,7 +799,7 @@ namespace KERBALISM
 			{
 				subSteps.Clear();
 
-				simVessel.UpdateCurrent(this, position);
+				simVessel.UpdatePosition(this, position);
 				Step step = new Step();
 				step.Init(simVessel);
 				step.Evaluate();

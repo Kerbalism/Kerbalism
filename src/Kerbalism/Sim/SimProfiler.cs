@@ -14,7 +14,6 @@ namespace KERBALISM
 		private class Measure
 		{
 			string name;
-			string unitFormat;
 			List<double> secList = new List<double>();
 			List<double> minList = new List<double>();
 			double maxSec = -1.0;
@@ -23,11 +22,12 @@ namespace KERBALISM
 			double maxMin = -1.0;
 			double minMin = -1.0;
 			double avgMin = -1.0;
+			Func<double, string> valueFormatter;
 
-			public Measure(string name, string unitFormat)
+			public Measure(string name, Func<double, string> valueFormatter)
 			{
 				this.name = name;
-				this.unitFormat = unitFormat + ";--";
+				this.valueFormatter = valueFormatter;
 			}
 
 			public void Update(double current)
@@ -79,12 +79,12 @@ namespace KERBALISM
 				dialog_items.AddChild(
 					new DialogGUIHorizontalLayout(
 						new DialogGUILabel(name, true),
-						new DialogGUILabel(() => { return avgSec.ToString(unitFormat); }, value_width),
-						new DialogGUILabel(() => { return minSec.ToString(unitFormat); }, value_width),
-						new DialogGUILabel(() => { return maxSec.ToString(unitFormat); }, value_width),
-						new DialogGUILabel(() => { return avgMin.ToString(unitFormat); }, value_width),
-						new DialogGUILabel(() => { return minMin.ToString(unitFormat); }, value_width),
-						new DialogGUILabel(() => { return maxMin.ToString(unitFormat); }, value_width)));
+						new DialogGUILabel(() => { return valueFormatter(avgSec); }, value_width),
+						new DialogGUILabel(() => { return valueFormatter(minSec); }, value_width),
+						new DialogGUILabel(() => { return valueFormatter(maxSec); }, value_width),
+						new DialogGUILabel(() => { return valueFormatter(avgMin); }, value_width),
+						new DialogGUILabel(() => { return valueFormatter(minMin); }, value_width),
+						new DialogGUILabel(() => { return valueFormatter(maxMin); }, value_width)));
 
 				// required to force the Gui creation
 				Stack<Transform> stack = new Stack<Transform>();
@@ -95,7 +95,7 @@ namespace KERBALISM
 
 		// constants
 		private const float width = 550.0f;
-		private const float height = 160.0f;
+		private const float height = 200.0f;
 
 		private const float value_width = 65.0f;
 
@@ -110,14 +110,18 @@ namespace KERBALISM
 		public static long lastFuTicks;
 		public static long lastWorkerTicks;
 		public static long lastKerbalismFuTicks;
+		public static double workerTimeMissed;
+		public static double workerTimeUsed;
 		static double lastFps;
 
-		static Measure fps = new Measure("Update (FPS)", "00.0");
-		static Measure fuMs = new Measure("FixedUpdate (FU)", "00.00 ms");
-		static Measure ksmFuMs = new Measure("Kerbalism FU", "00.00 ms");
-		static Measure ksmFuLoad = new Measure("Kerbalism FU load", "00.0 %");
-		static Measure workerMs = new Measure("Sim thread", "00.00 ms");
-		static Measure workerLoad = new Measure("Sim thread load", "00.0 %");
+		static Measure fps = new Measure("Update (FPS)", (v) => v.ToString("00.0;--"));
+		static Measure fuMs = new Measure("FixedUpdate (FU)", (v) => v.ToString("00.00 ms;--"));
+		static Measure ksmFuMs = new Measure("Kerbalism FU", (v) => v.ToString("00.00 ms;--"));
+		static Measure ksmFuLoad = new Measure("Kerbalism FU load", (v) => v.ToString("00.0 %;--"));
+		static Measure workerMs = new Measure("Sim thread", (v) => v.ToString("00.00 ms;--"));
+		static Measure workerLoad = new Measure("Sim thread load", (v) => v.ToString("00.0 %;--"));
+		static Measure wTimeMissed = new Measure("Sim time missed", (v) => Lib.HumanReadableDuration(v));
+		static Measure wTimeUsed = new Measure("Sim time used", (v) => Lib.HumanReadableDuration(v));
 
 		// permit global access
 		public static MiniProfiler Fetch { get; private set; } = null;
@@ -169,6 +173,8 @@ namespace KERBALISM
 			workerMs.CreateDialogEntry();
 			ksmFuLoad.CreateDialogEntry();
 			workerLoad.CreateDialogEntry();
+			wTimeMissed.CreateDialogEntry();
+			wTimeUsed.CreateDialogEntry();
 		}
 
 		private void FixedUpdate()
@@ -189,6 +195,8 @@ namespace KERBALISM
 			workerMs.Update(lastWorkerMs);
 			ksmFuLoad.Update(lastkerbalismFuPercent);
 			workerLoad.Update(lastWorkerPercent);
+			wTimeMissed.Update(workerTimeMissed);
+			wTimeUsed.Update(workerTimeUsed);
 		}
 
 		private void Update()

@@ -8,15 +8,12 @@ namespace KERBALISM
 {
 	public class SubStepOrbit : Orbit
 	{
-		private int lastCheckedOrbitHash;
-		private int currentOrbitHash;
 		public SubStepBody safeReferenceBody;
 
 		public SubStepOrbit(Orbit stockOrbit)
 		{
 			safeReferenceBody = SubStepSim.Bodies[stockOrbit.referenceBody.flightGlobalsIndex];
 			Update(stockOrbit);
-			lastCheckedOrbitHash = currentOrbitHash;
 		}
 
 		public void Update(Orbit stockOrbit)
@@ -33,8 +30,6 @@ namespace KERBALISM
 			referenceBody = stockOrbit.referenceBody;
 			safeReferenceBody = SubStepSim.Bodies[stockOrbit.referenceBody.flightGlobalsIndex];
 
-			currentOrbitHash = GetOrbitHash();
-
 			// Orbit.Init()
 			OrbitFrame = stockOrbit.OrbitFrame;
 			an = stockOrbit.an;
@@ -49,16 +44,6 @@ namespace KERBALISM
 		}
 
 		public double SafeSemiLatusRectum => h.sqrMagnitude / safeReferenceBody.gravParameter;
-
-		public bool OrbitHasChanged()
-		{
-			if (lastCheckedOrbitHash != currentOrbitHash)
-			{
-				lastCheckedOrbitHash = currentOrbitHash;
-				return true;
-			}
-			return false;
-		}
 
 		public Vector3d GetSafeTruePosition(double ut = -1.0)
 		{
@@ -87,19 +72,6 @@ namespace KERBALISM
 			// Orbit.getRelativePositionFromTrueAnomaly()
 			double costA = Math.Cos(tA);
 			return SafeSemiLatusRectum / (1.0 + eccentricity * costA) * (OrbitFrame.X * costA + OrbitFrame.Y * Math.Sin(tA));
-		}
-
-		private int GetOrbitHash() // TODO : this still doesn't work very well...
-		{
-			unchecked
-			{
-				int hash = 17;
-				hash *= 31 + (int)(argumentOfPeriapsis * 0.1); // this is quite unstable
-				hash *= 31 + (int)(LAN * 1.0); // a bit less
-				hash *= 31 + (int)(inclination * 100000.0);
-				hash *= 31 + (int)(eccentricity * 100000.0); 
-				return hash;
-			}
 		}
 	}
 }

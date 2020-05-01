@@ -26,7 +26,7 @@ namespace KERBALISM
 
 		public override SimBody ReferenceBody => SubStepSim.Bodies[referenceBodyFlightGlobalsIndex];
 
-		internal SubStepBody(CelestialBody body) : base(body)
+		public SubStepBody(CelestialBody body) : base(body)
 		{
 			// orbital properties
 			initialRotation = body.initialRotation;
@@ -40,7 +40,7 @@ namespace KERBALISM
 				orbit = new SubStepOrbit(body.orbit);
 		}
 
-		internal override void Update()
+		public override void Update()
 		{
 			base.Update();
 
@@ -50,7 +50,7 @@ namespace KERBALISM
 			lastStepIsValid = false;
 		}
 
-		internal override Vector3d GetPosition(double ut = -1)
+		public override Vector3d GetPosition(double ut = -1)
 		{
 			if (ut < 0.0)
 			{
@@ -67,7 +67,7 @@ namespace KERBALISM
 			}
 		}
 
-		internal override Vector3d GetSurfacePosition(double lat, double lon, double alt, double ut = -1)
+		public override Vector3d GetSurfacePosition(double lat, double lon, double alt, double ut = -1)
 		{
 			lat *= Math.PI / 180.0;
 			lon *= Math.PI / 180.0;

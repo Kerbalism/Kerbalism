@@ -14,20 +14,36 @@ namespace KERBALISM
 		public double vesselLongitude;
 		public double vesselAltitude;
 		public SimBody mainBody;
+		public bool soiHasChanged;
 
 		/// <summary>
 		/// Return the array of all bodies. If this instance is a :<br/>
 		/// - SimVessel : this is Sim.Bodies, an array of SimBody<br/>
 		/// - StepSimVessel : this is StepSim.Bodies, an array of StepSimBody
 		/// </summary>
-		internal virtual SimBody[] Bodies => Sim.Bodies;
+		public virtual SimBody[] Bodies => Sim.Bodies;
 
 		/// <summary>
 		/// Must be called for every simulated vessel, at the beginning of every FixedUpdate
 		/// </summary>
-		public void UpdateCurrent(VesselDataBase vdb, Vector3d position = default)
+		public void UpdatePosition(VesselDataBase vdb, Vector3d position = default)
 		{
-			mainBody = MainBody(vdb);
+			SimBody newMainBody = Bodies[vdb.MainBody.flightGlobalsIndex];
+			if (mainBody == null)
+			{
+				mainBody = newMainBody;
+				soiHasChanged = false;
+			}
+			else if (newMainBody != mainBody)
+			{
+				mainBody = newMainBody;
+				soiHasChanged = true;
+			}
+			else
+			{
+				soiHasChanged = false;
+			}
+
 			landed = vdb.EnvLanded;
 			vesselAltitude = vdb.Altitude;
 			if (vdb is VesselData vd)
@@ -43,19 +59,9 @@ namespace KERBALISM
 		/// - SimVessel : the position was calculated from UpdateCurrent() and is the last FU position <br/>
 		/// - StepSimVessel : the position is calculated from the provided step UT
 		/// </summary>
-		internal virtual Vector3d GetPosition(Step step)
+		public virtual Vector3d GetPosition(Step step)
 		{
 			return position;
-		}
-
-		/// <summary>
-		/// Return the mainbody. If this instance is a :<br/>
-		/// - SimVessel : the returned instance will be a SimBody<br/>
-		/// - StepSimVessel : the returned instance will be a StepSimBody
-		/// </summary>
-		protected SimBody MainBody(VesselDataBase vdb)
-		{
-			return Bodies[vdb.MainBody.flightGlobalsIndex];
 		}
 	}
 }

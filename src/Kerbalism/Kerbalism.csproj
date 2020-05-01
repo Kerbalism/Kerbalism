@@ -192,6 +192,7 @@
     <Compile Include="Sim\StarFlux.cs" />
     <Compile Include="Sim\SimStar.cs" />
     <Compile Include="Sim\SubStepBody.cs" />
+    <Compile Include="Sim\SubStepGlobalData.cs" />
     <Compile Include="Sim\SubStepOrbit.cs" />
     <Compile Include="Sim\SubStepVessel.cs" />
     <Compile Include="System\ErrorManager.cs" />
