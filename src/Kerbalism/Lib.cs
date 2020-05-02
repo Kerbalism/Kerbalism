@@ -214,7 +214,7 @@ namespace KERBALISM
 			double k = Vector3d.Dot(difference, rayDir);
 
 			// the ray hit the sphere if its minimal analytical distance along the ray is more than the radius
-			return k > 0.0 && (rayDir * k - difference).sqrMagnitude > sphereRadius * sphereRadius;
+			return k > 0.0 && (rayDir * k - difference).sqrMagnitude < sphereRadius * sphereRadius;
 		}
 
 		/// <summary>
@@ -1212,7 +1212,7 @@ namespace KERBALISM
 		///<summary> Pretty-print flux </summary>
 		public static string HumanReadableFlux(double flux)
 		{
-			return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
+			return flux >= 0.1 ? flux.ToString("0.0 W/m²") : flux.ToString("0.0E+0 W/m²");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>
@@ -1520,65 +1520,6 @@ namespace KERBALISM
 
 		#region BODY
 
-		/// <summary>For a given body, return the last parent body that is not a sun </summary>
-		public static CelestialBody GetParentPlanet(CelestialBody body)
-		{
-			if (Lib.IsSun(body)) return body;
-			CelestialBody checkedBody = body;
-			while (!Lib.IsSun(checkedBody.referenceBody)) checkedBody = checkedBody.referenceBody;
-			return checkedBody;
-		}
-
-		/// <summary> optimized method for getting normalized direction and distance between the surface of two bodies</summary>
-		/// <param name="direction">normalized vector 'from' body 'to' body</param>
-		/// <param name="distance">distance between the body surface</param>
-		public static void DirectionAndDistance(CelestialBody from, CelestialBody to, out Vector3d direction, out double distance)
-		{
-			Lib.DirectionAndDistance(from.position, to.position, out direction, out distance);
-			distance -= from.Radius + to.Radius;
-		}
-
-		/// <summary> optimized method for getting normalized direction and distance between a world position and the surface of a body</summary>
-		/// <param name="direction">normalized vector 'from' position 'to' body</param>
-		/// <param name="distance">distance to the body surface</param>
-		public static void DirectionAndDistance(Vector3d from, CelestialBody to, out Vector3d direction, out double distance)
-		{
-			Lib.DirectionAndDistance(from, to.position, out direction, out distance);
-			distance -= to.Radius;
-		}
-
-		/// <summary> optimized method for getting normalized direction and distance between two world positions</summary>
-		/// <param name="direction">normalized vector 'from' position 'to' position</param>
-		/// <param name="distance">distance between the body surface</param>
-		public static void DirectionAndDistance(Vector3d from, Vector3d to, out Vector3d direction, out double distance)
-		{
-			direction = to - from;
-			distance = direction.magnitude;
-			direction /= distance;
-		}
-
-		/// <summary> Is this body a sun ? </summary>
-		public static bool IsSun(CelestialBody body)
-		{
-			return Sim.suns.Exists(p => p.bodyIndex == body.flightGlobalsIndex);
-		}
-
-		/// <summary> return the first found parent sun for a given body </summary>
-		public static CelestialBody GetParentSun(CelestialBody body)
-		{
-			if (IsSun(body)) return body;
-
-			CelestialBody refBody = body.referenceBody;
-			do
-			{
-				if (IsSun(refBody)) return refBody;
-				refBody = refBody.referenceBody;
-			}
-			while (refBody != null);
-
-			return FlightGlobals.Bodies[0];
-		}
-
 		///<summary
 		/// return selected body in tracking-view/map-view
 		/// >if a vessel is selected, return its main body
@@ -1630,7 +1571,7 @@ namespace KERBALISM
 			if (Vector3d.SqrMagnitude(pos - v.mainBody.position) < 1.0)
 			{
 				// try to get it from orbit
-				pos = v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
+				pos = v.orbit.getTruePositionAtUT(Planetarium.GetUniversalTime());
 
 				// if the orbit is invalid (landed, or 1 tick after prelaunch/staging/decoupling)
 				if (double.IsNaN(pos.x))

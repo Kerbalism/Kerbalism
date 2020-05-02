@@ -139,6 +139,8 @@ namespace KERBALISM
 
 					// GameEvents callbacks
 					Callbacks = new Callbacks();
+
+					SubStepSim.Init();
 				}
 				catch (Exception e)
 				{
@@ -236,17 +238,23 @@ namespace KERBALISM
 
 		#region fixedupdate
 
+		static System.Diagnostics.Stopwatch fuWatch = new System.Diagnostics.Stopwatch();
 		public bool firstFU = true; 
 		void FixedUpdate()
 		{
+			MiniProfiler.lastKerbalismFuTicks = fuWatch.ElapsedTicks;
+			fuWatch.Restart();
 			if (firstFU)
 			{
 				Lib.LogDebug("First FixedUpdate !");
 				firstFU = false;
 			}
 
+			SubStepSim.OnFixedUpdate();
+			Sim.OnFixedUpdate();
+
 			// remove control locks in any case
- 			Misc.ClearLocks();
+			Misc.ClearLocks();
 
 			// do nothing if paused (note : this is true in the editor)
 			if (Lib.IsPaused())
@@ -282,10 +290,9 @@ namespace KERBALISM
 			foreach (Vessel v in FlightGlobals.Vessels)
 			{
 				// get vessel data
-				if (!v.TryGetVesselDataNoError(out VesselData vd))
+				if (!v.TryGetVesselData(out VesselData vd))
 				{
-					// flags have an empty Guid, we never create a VesselData and never process them
-					if (v.id == Guid.Empty)
+					if (!VesselData.VesselNeedVesselData(v.protoVessel))
 						continue;
 
 					Lib.LogDebug($"Creating VesselData for new vessel {v.vesselName}");
@@ -450,6 +457,8 @@ namespace KERBALISM
 				sd.time = 0.0;
 				storm_index = (storm_index + 1) % storm_bodies.Count;
 			}
+
+			fuWatch.Stop();
 		}
 
 		#endregion
@@ -599,7 +608,7 @@ namespace KERBALISM
 			// - avoid creating vessel data for invalid vessels
 			Vessel v = FlightGlobals.ActiveVessel;
 			if (v == null) return;
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			if (!vd.IsSimulated) return;
 
 			// call scripts with 1-5 key
@@ -694,7 +703,7 @@ namespace KERBALISM
 			if (Profile.supplies.Count > 0)
 			{
 				Supply supply = Profile.supplies[Lib.RandomInt(Profile.supplies.Count)];
-				v.TryGetVesselData(out VesselData vd);
+				v.TryGetVesselDataTemp(out VesselData vd);
 				res = vd.ResHandler.GetResource(supply.resource);
 			}
 

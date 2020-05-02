@@ -66,7 +66,7 @@ namespace KERBALISM
 			researcher_cs = new CrewSpecs(researcher);
 
 			// get ec handler
-			vessel.TryGetVesselData(out vesselData);
+			vessel.TryGetVesselDataTemp(out vesselData);
 		}
 
 		public void Update()

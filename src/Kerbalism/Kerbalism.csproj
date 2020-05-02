@@ -165,7 +165,6 @@
     <Compile Include="Database\PartData\PartRadiationData.cs" />
     <Compile Include="Database\PartData\PartResourceData.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
-    <Compile Include="Database\VesselDataComponents\VesselData.SunInfo.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
     <Compile Include="Database\VesselDataComponents\VesselHabitat.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
@@ -174,6 +173,7 @@
     <Compile Include="External\Kopernicus.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
     <Compile Include="Modules\Base\SubclassingExample.cs" />
+    <Compile Include="Modules\ModuleKsmGreenhouse.cs" />
     <Compile Include="Modules\ModuleKsmRadiationEmitter.cs" />
     <Compile Include="Modules\ModuleKsmRadiationCoil.cs" />
     <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
@@ -184,8 +184,19 @@
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
     <Compile Include="Science\ExperimentModuleDefinition.cs" />
+    <Compile Include="Sim\SimProfiler.cs" />
+    <Compile Include="Sim\SimVessel.cs" />
+    <Compile Include="Sim\SimBody.cs" />
+    <Compile Include="Sim\SimStep.cs" />
+    <Compile Include="Sim\StarFlux.cs" />
+    <Compile Include="Sim\SimStar.cs" />
+    <Compile Include="Sim\SubStepBody.cs" />
+    <Compile Include="Sim\SubStepGlobalData.cs" />
+    <Compile Include="Sim\SubStepOrbit.cs" />
+    <Compile Include="Sim\SubStepVessel.cs" />
     <Compile Include="System\ErrorManager.cs" />
     <Compile Include="System\PartPrefabsPostCompilation.cs" />
+    <Compile Include="Sim\SubStepSim.cs" />
     <Compile Include="UI\KsmGui\KsmGuiSlider.cs" />
     <Compile Include="UI\KsmGui\KsmGuiTextButton.cs" />
     <Compile Include="Database\VesselData\VesselDataShip.cs" />
@@ -271,6 +282,7 @@
     <Compile Include="UI\Science\ExperimentSubjectsList.cs" />
     <Compile Include="UI\Science\ExperimentPopup.cs" />
     <Compile Include="UI\Science\ScienceArchiveWindow.cs" />
+    <Compile Include="Utility\Collections.cs" />
     <Compile Include="Utility\GotoVessel.cs" />
     <Compile Include="System\Loader.cs" />
     <Compile Include="System\Settings.cs" />
@@ -296,7 +308,7 @@
     <Compile Include="Profile\Profile.cs" />
     <Compile Include="Profile\Supply.cs" />
     <Compile Include="Profile\Rule.cs" />
-    <Compile Include="Sim.cs" />
+    <Compile Include="Sim\Sim.cs" />
     <Compile Include="System\Features.cs" />
     <Compile Include="System\Kerbalism.cs" />
     <Compile Include="Lib.cs" />

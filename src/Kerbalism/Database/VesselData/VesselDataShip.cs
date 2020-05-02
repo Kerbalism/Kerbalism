@@ -44,6 +44,14 @@ namespace KERBALISM
 
 		public override IConnectionInfo ConnectionInfo => connection;
 
+		public override CelestialBody MainBody => body;
+
+		public override double Altitude => altitude;
+
+		public override double Latitude => latitude; public double latitude;
+
+		public override double Longitude => longitude; public double longitude;
+
 		public override int CrewCount => crewCount; public int crewCount;
 
 		public override int CrewCapacity => crewCapacity; public int crewCapacity;
@@ -62,12 +70,6 @@ namespace KERBALISM
 
 		public override bool EnvZeroG => zerog; public bool zerog;
 
-		public override double EnvAlbedoFlux => albedoFlux; public double albedoFlux;
-
-		public override double EnvBodyFlux => bodyFlux; public double bodyFlux;
-
-		public override double EnvTotalFlux => totalFlux; public double totalFlux;
-
 		public override double EnvTemperature => temperature; public double temperature;
 
 		public override double EnvTempDiff => tempDiff; public double tempDiff;
@@ -79,17 +81,6 @@ namespace KERBALISM
 		public override double EnvStormRadiation => 0.0;
 
 		public override double EnvGammaTransparency => gammaTransparency; public double gammaTransparency;
-
-		public override double EnvSolarFluxTotal => solarFlux; public double solarFlux;
-
-		// create a sun direction according to the shadows direction in the VAB / SPH
-		public override Vector3d EnvMainSunDirection => EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
-
-		public override double EnvSunlightFactor => 1.0 - shadowTime;
-
-		public override bool EnvInSunlight => sunlightState != SunlightState.Shadow;
-
-		public override bool EnvInFullShadow => sunlightState == SunlightState.Shadow;
 
 		#endregion
 
@@ -140,10 +131,10 @@ namespace KERBALISM
 
 		#region PLANNER METHODS
 
-		public void Analyze(List<Part> parts, CelestialBody body, double altitudeMult, SunlightState sunlight)
+		public void Analyze(List<Part> parts, CelestialBody body, Planner.Planner.Situation situation, SunlightState sunlight)
 		{
 			PartCache.Update(this);
-			AnalyzeEnvironment(body, altitudeMult, sunlight);
+			AnalyzeEnvironment(body, situation, sunlight);
 			AnalyzeCrew(parts);
 			AnalyzeComms();
 			ModuleDataUpdate();
@@ -151,21 +142,32 @@ namespace KERBALISM
 			AnalyzeReliability(parts);
 		}
 
-		private void AnalyzeEnvironment(CelestialBody body, double altitudeMult, SunlightState sunlight)
+		private void AnalyzeEnvironment(CelestialBody body, Planner.Planner.Situation situation, SunlightState sunlight)
 		{
 			this.body = body;
-			CelestialBody mainSun;
-			Vector3d sunDir;
-			solarFlux = Sim.SolarFluxAtBody(body, true, out mainSun, out sunDir, out sunDist);
-			altitude = body.Radius * altitudeMult;
-			landed = altitude <= double.Epsilon;
-			atmoFactor = Sim.AtmosphereFactor(body, 0.7071);
-			solarFlux = sunlight == SunlightState.Shadow ? 0.0 : solarFlux * (landed ? atmoFactor : 1.0);
+			altitude = situation.Altitude(body);
+			landed = altitude == 0.0;
+
+			// Build a vessel position according the situation altitude and if the vessel should be on night/day side
+			CelestialBody mainStarBody = Sim.GetParentStar(body);
+			Vector3d vesselPosDirection = (mainStarBody.position - body.position).normalized;
+			if (sunlight == SunlightState.Shadow)
+				vesselPosDirection *= -1.0;
+
+			Vector3d vesselPos = body.position + (vesselPosDirection * (body.Radius + altitude));
+			body.GetLatLonAlt(vesselPos, out latitude, out longitude, out double unused);
+
+			// Run the vessel sim
+			SimVessel simVessel = new SimVessel();
+			simVessel.UpdatePosition(this, vesselPos);
+			SimStep step = new SimStep();
+			step.Init(simVessel);
+			step.Evaluate();
+			ProcessSimStep(step);
+			mainStar.direction = EditorDriver.editorFacility == EditorFacility.VAB ? new Vector3d(1.0, 1.0, 0.0).normalized : new Vector3d(0.0, 1.0, -1.0).normalized;
+			atmoFactor = mainStar.directFlux / mainStar.directRawFlux;
 			breathable = Sim.Breathable(body) && landed;
-			albedoFlux = sunlight == SunlightState.Shadow ? 0.0 : Sim.AlbedoFlux(body, body.position + sunDir * (body.Radius + altitude));
-			bodyFlux = Sim.BodyFlux(body, altitude);
-			totalFlux = solarFlux + albedoFlux + bodyFlux + Sim.BackgroundFlux();
-			temperature = !landed || !body.atmosphere ? Sim.BlackBodyTemperature(totalFlux) : body.GetTemperature(0.0);
+			temperature = Sim.VesselTemperature(irradianceTotal);
 			tempDiff = Sim.TempDiff(temperature, body, landed);
 			orbitalPeriod = Sim.OrbitalPeriod(body, altitude);
 			shadowPeriod = Sim.ShadowPeriod(body, altitude);
@@ -173,7 +175,7 @@ namespace KERBALISM
 			zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
 			CelestialBody homeBody = FlightGlobals.GetHomeBody();
-			CelestialBody parentPlanet = Lib.GetParentPlanet(body);
+			CelestialBody parentPlanet = Sim.GetParentPlanet(body);
 
 			if (body == homeBody)
 			{
@@ -184,7 +186,7 @@ namespace KERBALISM
 				minHomeDistance = Sim.Periapsis(body);
 				maxHomeDistance = Sim.Apoapsis(body);
 			}
-			else if (Lib.IsSun(body))
+			else if (Sim.IsStar(body))
 			{
 				minHomeDistance = Math.Abs(altitude - Sim.Periapsis(homeBody));
 				maxHomeDistance = altitude + Sim.Apoapsis(homeBody);
@@ -196,29 +198,20 @@ namespace KERBALISM
 			}
 
 			RadiationBody rb = Radiation.Info(body);
-			RadiationBody sun_rb = Radiation.Info(mainSun); // TODO Kopernicus support: not sure if/how this work with multiple suns/stars
+			RadiationBody sun_rb = Radiation.Info(mainStarBody); // TODO Kopernicus support: not sure if/how this work with multiple suns/stars
 			gammaTransparency = Sim.GammaTransparency(body, 0.0);
 
 			// add gamma radiation emitted by body and its sun
 			var gamma_radiation = Radiation.DistanceRadiation(rb.radiation_r0, altitude) / 3600.0;
 
-#if DEBUG_RADIATION
-			Lib.Log("Planner/EA: " + body + " sun " + mainSun + " alt " + altitude + " sol flux " + solar_flux + " aalbedo flux " + albedo_flux + " body flux " + body_flux + " total flux " + total_flux);
-			Lib.Log("Planner/EA: body surface radiation " + Lib.HumanReadableRadiation(gamma_radiation, false));
-#endif
-
 			var b = body;
-			while (b != null && b.orbit != null && b != mainSun)
+			while (b != null && b.orbit != null && b != mainStarBody)
 			{
 				if (b == b.referenceBody) break;
 				var dist = b.orbit.semiMajorAxis;
 				b = b.referenceBody;
 
 				gamma_radiation += Radiation.DistanceRadiation(Radiation.Info(b).radiation_r0, dist) / 3600.0;
-#if DEBUG_RADIATION
-				Lib.Log("Planner/EA: with gamma radiation from " + b + " " + Lib.HumanReadableRadiation(gamma_radiation, false));
-				Lib.Log("Planner/EA: semi major axis " + dist);
-#endif
 			}
 
 			externRad = Settings.ExternRadiation / 3600.0;
@@ -227,17 +220,7 @@ namespace KERBALISM
 			innerRad = gamma_radiation + magnetopauseRad + rb.radiation_inner;
 			outerRad = gamma_radiation + magnetopauseRad + rb.radiation_outer;
 			surfaceRad = magnetopauseRad * gammaTransparency + rb.radiation_surface / 3600.0;
-			stormRad = heliopauseRad + PreferencesRadiation.Instance.StormRadiation * (solarFlux > double.Epsilon ? 1.0 : 0.0);
-
-#if DEBUG_RADIATION
-			Lib.Log("Planner/EA: extern_rad " + Lib.HumanReadableRadiation(extern_rad, false));
-			Lib.Log("Planner/EA: heliopause_rad " + Lib.HumanReadableRadiation(heliopause_rad, false));
-			Lib.Log("Planner/EA: magnetopause_rad " + Lib.HumanReadableRadiation(magnetopause_rad, false));
-			Lib.Log("Planner/EA: inner_rad " + Lib.HumanReadableRadiation(inner_rad, false));
-			Lib.Log("Planner/EA: outer_rad " + Lib.HumanReadableRadiation(outer_rad, false));
-			Lib.Log("Planner/EA: surface_rad " + Lib.HumanReadableRadiation(surface_rad, false));
-			Lib.Log("Planner/EA: storm_rad " + Lib.HumanReadableRadiation(storm_rad, false));
-#endif
+			stormRad = heliopauseRad + PreferencesRadiation.Instance.StormRadiation * (MainStarSunlightFactor > 0.0 ? 1.0 : 0.0);
 		}
 
 		private void AnalyzeCrew(List<Part> parts)

@@ -162,7 +162,7 @@ namespace KERBALISM
 				return;
 			}
 
-			if (!vessel.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!vessel.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return;
 
 			bool hide = hide_when_invalid && moduleData.Subject == null;
@@ -217,7 +217,7 @@ namespace KERBALISM
 
 			moduleData.shrouded = part.ShieldedFromAirstream;
 
-			if (!moduleData.IsRunningRequested || !vessel.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!moduleData.IsRunningRequested || !vessel.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return;
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");

@@ -142,8 +142,8 @@ namespace KERBALISM
 
 					case Require.VolumePerCrewMin      : TestReq((c, r) => c >= r, vd.Habitat.volumePerCrew,(double)Requires[i].value, results[i]); break;
 					case Require.VolumePerCrewMax      : TestReq((c, r) => c <= r, vd.Habitat.volumePerCrew,(double)Requires[i].value, results[i]); break;
-					case Require.SunAngleMin           : TestReq((c, r) => c >= r, vd.EnvSunBodyAngle,      (double)Requires[i].value, results[i]); break;
-					case Require.SunAngleMax           : TestReq((c, r) => c <= r, vd.EnvSunBodyAngle,      (double)Requires[i].value, results[i]); break;
+					case Require.SunAngleMin           : TestReq((c, r) => c >= r, vd.MainStarBodyAngle,      (double)Requires[i].value, results[i]); break;
+					case Require.SunAngleMax           : TestReq((c, r) => c <= r, vd.MainStarBodyAngle,      (double)Requires[i].value, results[i]); break;
 					case Require.SurfaceSpeedMin       : TestReq((c, r) => c >= r, v.srfSpeed,              (double)Requires[i].value, results[i]); break;
 					case Require.SurfaceSpeedMax       : TestReq((c, r) => c <= r, v.srfSpeed,              (double)Requires[i].value, results[i]); break;
 					case Require.VerticalSpeedMin      : TestReq((c, r) => c >= r, v.verticalSpeed,         (double)Requires[i].value, results[i]); break;
@@ -181,15 +181,15 @@ namespace KERBALISM
 					case Require.RndFacilityLevelMin     : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
 					case Require.RndFacilityLevelMax     : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
 
-					case Require.Shadow         : TestReq(() => vd.EnvInFullShadow,                                                                                  results[i]); break; 
-					case Require.Sunlight       : TestReq(() => vd.EnvInSunlight,                                                                                    results[i]); break; 
+					case Require.Shadow         : TestReq(() => vd.InFullShadow,                                                                                  results[i]); break; 
+					case Require.Sunlight       : TestReq(() => vd.InSunlight,                                                                                    results[i]); break; 
 					case Require.Greenhouse     : TestReq(() => vd.Greenhouses.Count > 0,                                                                            results[i]); break;
 					case Require.AbsoluteZero   : TestReq(() => vd.EnvTemperature < 30.0,                                                                            results[i]); break;
 					case Require.InnerBelt      : TestReq(() => vd.EnvInnerBelt,                                                                                     results[i]); break;
 					case Require.OuterBelt      : TestReq(() => vd.EnvOuterBelt,                                                                                     results[i]); break;
 					case Require.MagneticBelt   : TestReq(() => vd.EnvInnerBelt || vd.EnvOuterBelt,                                                                  results[i]); break;
 					case Require.Magnetosphere  : TestReq(() => vd.EnvMagnetosphere,                                                                                 results[i]); break;
-					case Require.InterStellar   : TestReq(() => Lib.IsSun(v.mainBody) && vd.EnvInterstellar,                                                         results[i]); break;
+					case Require.InterStellar   : TestReq(() => Sim.IsStar(v.mainBody) && vd.EnvInterstellar,                                                         results[i]); break;
 					case Require.Part           : TestReq(() => Lib.HasPart(v, (string)Requires[i].value),															 results[i]); break;
 					case Require.Module         : TestReq(() => Lib.FindModules(v.protoVessel, (string)Requires[i].value).Count > 0,								 results[i]); break;
 

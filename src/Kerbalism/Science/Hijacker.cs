@@ -58,7 +58,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					meta.vessel.TryGetVesselData(out VesselData vd);
+					meta.vessel.TryGetVesselDataTemp(out VesselData vd);
 					DriveData drive = DriveData.SampleDrive(vd, data.dataAmount, meta.subjectData);
 					if (drive != null)
 						recorded = drive.RecordSample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);
@@ -101,7 +101,7 @@ namespace KERBALISM
 		{
 			double remaining = data.dataAmount;
 
-			meta.vessel.TryGetVesselData(out VesselData vd);
+			meta.vessel.TryGetVesselDataTemp(out VesselData vd);
 			foreach (var drive in DriveData.GetDrives(vd, false))
 			{
 				var size = Math.Min(remaining, drive.FileCapacityAvailable());
@@ -209,7 +209,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				meta.vessel.TryGetVesselData(out VesselData vd);
+				meta.vessel.TryGetVesselDataTemp(out VesselData vd);
 				DriveData drive = DriveData.SampleDrive(vd, data.dataAmount, meta.subjectData);
 				if (drive != null)
 					recorded = drive.RecordSample(meta.subjectData, data.dataAmount, meta.subjectData.ExpInfo.MassPerMB * data.dataAmount, true);

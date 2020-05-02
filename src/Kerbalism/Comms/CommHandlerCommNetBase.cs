@@ -15,7 +15,7 @@ namespace KERBALISM
 		{
 			Vessel v = vd.Vessel;
 
-			if (v == null || v.connection == null || !connection.powered)
+			if (v == null || v.connection == null || !connection.powered || !v.connection.IsConnected)
 			{
 				connection.linked = false;
 				connection.Status = LinkStatus.no_link;
@@ -23,6 +23,14 @@ namespace KERBALISM
 				connection.rate = 0.0;
 				connection.target_name = string.Empty;
 				connection.control_path.Clear();
+
+				// is loss of connection due to plasma blackout
+				// calling InPlasma causes a StackOverflow :(
+				if (vd.EnvInAtmosphere && v != null && v.connection != null && Lib.ReflectionValue<bool>(v.connection, "inPlasma"))
+					connection.Status = LinkStatus.plasma;
+				else
+					connection.Status = LinkStatus.no_link;
+
 				return;
 			}
 
@@ -30,31 +38,23 @@ namespace KERBALISM
 			if (!v.loaded)
 				Lib.ReflectionValue(v.connection, "unloadedDoOnce", true);
 
-			// are we connected to DSN
-			if (v.connection.IsConnected)
+			connection.linked = true;
+			CommLink firstLink = v.connection.ControlPath.First;
+			connection.Status = firstLink.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
+			connection.strength = firstLink.signalStrength;
+
+			connection.rate = baseRate * Math.Pow(firstLink.signalStrength, Sim.DataRateDampingExponent);
+
+			connection.target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
+
+			if (connection.Status != LinkStatus.direct_link)
 			{
-				connection.linked = true;
-				var link = v.connection.ControlPath.First;
-				connection.Status = link.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
-				connection.strength = link.signalStrength;
-
-				connection.rate = baseRate * Math.Pow(link.signalStrength, Sim.DataRateDampingExponent);
-
-				connection.target_name = Lib.Ellipsis(Localizer.Format(v.connection.ControlPath.First.end.displayName).Replace("Kerbin", "DSN"), 20);
-
-				if (connection.Status != LinkStatus.direct_link)
-				{
-					Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
-					// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-					firstHop.TryGetVesselData(out VesselData vd);
-					connection.rate = Math.Min(vd.Connection.rate, connection.rate);
-				}
+				Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
+				// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
+				firstHop.TryGetVesselDataTemp(out VesselData vd);
+				connection.rate = Math.Min(vd.Connection.rate, connection.rate);
 			}
-			// is loss of connection due to plasma blackout
-			else if (Lib.ReflectionValue<bool>(v.connection, "inPlasma"))  // calling InPlasma causes a StackOverflow :(
-			{
-				connection.Status = LinkStatus.plasma;
-			}
+
 
 			connection.control_path.Clear();
 			foreach (CommLink link in v.connection.ControlPath)

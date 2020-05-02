@@ -111,7 +111,7 @@ namespace KERBALISM
 					harvester.resource,
 					AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
 					false);
-				v.TryGetVesselData(out VesselData vd);
+				v.TryGetVesselDataTemp(out VesselData vd);
 				vd.ResHandler.AddRecipe(recipe);
 			}
 		}

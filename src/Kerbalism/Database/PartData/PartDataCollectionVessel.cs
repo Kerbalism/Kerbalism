@@ -248,9 +248,12 @@ namespace KERBALISM
 
 		public void Clear(bool clearFromFlightDictionary)
 		{
-			foreach (PartData partData in partList)
+			if (clearFromFlightDictionary)
 			{
-				allFlightPartDatas.Remove(partData.flightId);
+				foreach (PartData partData in partList)
+				{
+					allFlightPartDatas.Remove(partData.flightId);
+				}
 			}
 
 			partDictionary.Clear();

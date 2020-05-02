@@ -116,7 +116,7 @@ namespace KERBALISM.Planner
 
 					if (PartModuleAPI.plannerModules.TryGetValue(m.GetType(), out Action<PartModule, CelestialBody, double, bool> apiUpdate))
 					{
-						apiUpdate(m, vd.body, vd.altitude, vd.EnvInSunlight);
+						apiUpdate(m, vd.body, vd.altitude, vd.InSunlight);
 						continue;
 					}
 				}

@@ -15,28 +15,28 @@ namespace KERBALISM
 
 			// only show if there is a selected body and that body is not the sun
 			CelestialBody body = Lib.MapViewSelectedBody();
-			if (body == null || (Lib.IsSun(body) && !Features.Radiation)) return;
+			if (body == null || (Sim.IsStar(body) && !Features.Radiation)) return;
 
 			// calculate radiation at body surface
 			double surfaceRadiation = Radiation.ComputeSurface(body, Sim.GammaTransparency(body, 0.0));
 
 			// for all bodies except sun(s)
-			if (!Lib.IsSun(body))
+			if (!Sim.IsStar(body))
 			{
 				CelestialBody mainSun;
 				Vector3d sun_dir;
 				double sun_dist;
 				double solar_flux = Sim.SolarFluxAtBody(body, false, out mainSun, out sun_dir, out sun_dist);
-				solar_flux *= Sim.AtmosphereFactor(body, 0.7071);
+				solar_flux *= 1.0; // Sim.AtmosphereFactor(body, 0.7071);
 
 				// calculate simulation values
-				double albedo_flux = Sim.AlbedoFlux(body, body.position + sun_dir * body.Radius);
-				double body_flux = Sim.BodyFlux(body, 0.0);
-				double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux();
+				double albedo_flux = 0.0; // Sim.AlbedoFlux(body, body.position + sun_dir * body.Radius);
+				double body_flux = 0.0; // Sim.BodyFlux(body, 0.0);
+				double total_flux = solar_flux + albedo_flux + body_flux + Sim.BackgroundFlux;
 				double temperature = body.atmosphere ? body.GetTemperature(0.0) : Sim.BlackBodyTemperature(total_flux);
 
 				// calculate night-side temperature
-				double total_flux_min = Sim.AlbedoFlux(body, body.position - sun_dir * body.Radius) + body_flux + Sim.BackgroundFlux();
+				double total_flux_min = 10.0; //Sim.AlbedoFlux(body, body.position - sun_dir * body.Radius) + body_flux + Sim.BackgroundFlux;
 				double temperature_min = Sim.BlackBodyTemperature(total_flux_min);
 
 				// surface panel
@@ -53,7 +53,7 @@ namespace KERBALISM
 				{
 					p.AddSection(Local.BodyInfo_ATMOSPHERE);//"ATMOSPHERE"
 					p.AddContent(Local.BodyInfo_breathable, Sim.Breathable(body) ? Local.BodyInfo_breathable_yes : Local.BodyInfo_breathable_no);//"breathable""yes""no"
-					p.AddContent(Local.BodyInfo_lightabsorption, Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));//"light absorption"
+					// p.AddContent(Local.BodyInfo_lightabsorption, Lib.HumanReadablePerc(1.0 - Sim.AtmosphereFactor(body, 0.7071)));//"light absorption"
 					if (Features.Radiation) p.AddContent(Local.BodyInfo_gammaabsorption, Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));//"gamma absorption"
 				}
 			}
@@ -106,7 +106,7 @@ namespace KERBALISM
 
 			var rb = Radiation.Info(body);
 			double rad = Settings.ExternRadiation / 3600.0;
-			var rbSun = Radiation.Info(Lib.GetParentSun(body));
+			var rbSun = Radiation.Info(Sim.GetParentStar(body));
 			rad += rbSun.radiation_pause;
 
 			if (rb.inner_visible)

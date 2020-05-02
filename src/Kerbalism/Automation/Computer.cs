@@ -58,7 +58,7 @@ namespace KERBALISM
 		public void Execute(Vessel v, ScriptType type)
 		{
 			// do nothing if there is no EC left on the vessel
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			if (!vd.ResHandler.ElectricCharge.CriticalConsumptionSatisfied) return;
 
 			// get the script
@@ -82,7 +82,7 @@ namespace KERBALISM
 		{
 			// get current states
 			VesselResource ec = resources.GetResource("ElectricCharge");
-			bool sunlight = !vd.EnvInFullShadow;
+			bool sunlight = !vd.InFullShadow;
 			bool power_low = ec.Level < 0.2;
 			bool power_high = ec.Level > 0.8;
 			bool radiation_low = vd.EnvRadiation < 0.000005552; //< 0.02 rad/h
@@ -283,7 +283,7 @@ namespace KERBALISM
 			});
 
 			// now add vessel wide devices to the end of the list
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			moduleDevices.Add(new VesselDeviceTransmit(v, vd)); // vessel wide transmission toggle
 

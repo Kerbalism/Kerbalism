@@ -63,11 +63,11 @@ namespace KERBALISM.VesselLogic
 			{
 				double lastSolarFlux = 0.0;
 
-				ve.sunsInfo = new List<SunInfo>(Sim.suns.Count);
+				ve.sunsInfo = new List<SunInfo>(Sim.stars.Count);
 				ve.solarFluxTotal = 0.0;
 				ve.rawSolarFluxTotal = 0.0;
 
-				foreach (Sim.SunData sunData in Sim.suns)
+				foreach (Sim.SunData sunData in Sim.stars)
 				{
 					SunInfo sunInfo = new SunInfo(sunData);
 

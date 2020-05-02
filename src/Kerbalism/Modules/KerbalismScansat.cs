@@ -72,7 +72,7 @@ namespace KERBALISM
 			{
 				double coverage_delta = new_coverage - body_coverage;
 				body_coverage = new_coverage;
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 
 				if (IsScanning)
 				{
