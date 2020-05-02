@@ -129,9 +129,11 @@ namespace KERBALISM
 					return Lib.BuildString
 					(
 						"<align=left />",
-						String.Format("{0,-14}\t<b>{1}</b>\n", Local.Sensor_solarflux, Lib.HumanReadableFlux(vd.DirectStarFluxTotal)),//"solar flux"
-						String.Format("{0,-14}\t<b>{1}</b>\n", Local.Sensor_albedoflux, Lib.HumanReadableFlux(vd.EnvAlbedoFlux)),//"albedo flux"
-						String.Format("{0,-14}\t<b>{1}</b>", Local.Sensor_bodyflux, Lib.HumanReadableFlux(vd.EnvBodyFlux))//"body flux"
+						String.Format("{0,-14}\t<b>{1}</b>\n", "total irradiance", Lib.HumanReadableFlux(vd.IrradianceTotal)),
+						String.Format("{0,-14}\t<b>{1}</b>\n", "solar irradiance", Lib.HumanReadableFlux(vd.IrradianceStarTotal)),
+						String.Format("{0,-14}\t<b>{1}</b>\n", "albedo irradiance", Lib.HumanReadableFlux(vd.IrradianceAlbedo)),
+						String.Format("{0,-14}\t<b>{1}</b>\n", "emissive irradiance", Lib.HumanReadableFlux(vd.IrradianceBodiesEmissive)),
+						String.Format("{0,-14}\t<b>{1}</b>", "body core irradiance", Lib.HumanReadableFlux(vd.IrradianceBodiesCore))
 					);
 
 				case "radiation":

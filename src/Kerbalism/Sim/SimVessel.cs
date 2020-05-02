@@ -46,12 +46,10 @@ namespace KERBALISM
 
 			landed = vdb.EnvLanded;
 			vesselAltitude = vdb.Altitude;
-			if (vdb is VesselData vd)
-			{
-				this.position = position;
-				vesselLatitude = vd.Vessel.latitude;
-				vesselLongitude = vd.Vessel.longitude;
-			}
+
+			this.position = position;
+			vesselLatitude = vdb.Latitude;
+			vesselLongitude = vdb.Longitude;
 		}
 
 		/// <summary>
@@ -59,7 +57,7 @@ namespace KERBALISM
 		/// - SimVessel : the position was calculated from UpdateCurrent() and is the last FU position <br/>
 		/// - StepSimVessel : the position is calculated from the provided step UT
 		/// </summary>
-		public virtual Vector3d GetPosition(Step step)
+		public virtual Vector3d GetPosition(SimStep step)
 		{
 			return position;
 		}

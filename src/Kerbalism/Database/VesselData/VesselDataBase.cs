@@ -50,6 +50,10 @@ namespace KERBALISM
 
 		public virtual double Altitude { get; }
 
+		public virtual double Latitude { get; }
+
+		public virtual double Longitude { get; }
+
 		/// <summary>number of crew on the vessel</summary>
 		public virtual int CrewCount { get; }
 
@@ -77,15 +81,6 @@ namespace KERBALISM
 		/// <summary> [environment] true if in zero g</summary>
 		public virtual bool EnvZeroG { get; }
 
-		/// <summary> [environment] solar flux reflected from the nearest body</summary>
-		public virtual double EnvAlbedoFlux { get; }
-
-		/// <summary> [environment] infrared radiative flux from the nearest body</summary>
-		public virtual double EnvBodyFlux  { get; }
-
-		/// <summary> [environment] total flux at vessel position</summary>
-		public virtual double EnvTotalFlux  { get; }
-
 		/// <summary> [environment] temperature ar vessel position</summary>
 		public virtual double EnvTemperature  { get; }
 
@@ -104,25 +99,39 @@ namespace KERBALISM
 
 		/// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>
 		public virtual double EnvGammaTransparency  { get; }
-		/// <summary>
-		///  [environment] total solar flux from all stars at vessel position in W/m², include atmospheric absorption if inside an atmosphere (atmo_factor)
-		/// <para/> zero when the vessel is in shadow while evaluation is non-analytic (low timewarp rates)
-		/// <para/> in analytic evaluation, this include fractional sunlight factor
-		/// </summary>
-		public virtual double DirectStarFluxTotal  { get; }
 
-		/// <summary> [environment] nomalized direction vector to the main sun</summary>
-		public virtual Vector3d MainStarDirection { get; }
+		/// <summary> total irradiance from all sources (W/m²) at vessel position</summary>
+		public double IrradianceTotal => irradianceTotal; protected double irradianceTotal;
 
-		/// <summary> [environment] Average time spend in sunlight, including sunlight from all suns/stars. Each sun/star influence is pondered by its flux intensity</summary>
-		public virtual double MainStarSunlightFactor  { get; }
+		/// <summary> star(s) irradiance (W/m²) reflected by the nearest body (and it's parent planet if it's a moon)</summary>
+		public double IrradianceAlbedo => irradianceAlbedo; protected double irradianceAlbedo;
 
-		/// <summary> [environment] true if the vessel is currently in sunlight, or at least half the time when in analytic mode</summary>
-		public virtual bool InSunlight  { get; }
+		/// <summary> thermal irradiance (W/m²) from the nearest body (and it's parent planet if it's a moon), induced by the star(s) heating effect on the body </summary>
+		public double IrradianceBodiesEmissive => irradianceBodiesEmissive; protected double irradianceBodiesEmissive;
 
-		/// <summary> [environment] true if the vessel is currently in shadow, or least 90% of the time when in analytic mode</summary>
-		// this threshold is also used to ignore light coming from distant/weak stars 
-		public virtual bool InFullShadow  { get; }
+		/// <summary> thermal irradiance (W/m²) from the nearest body (and it's parent planet if it's a moon), induced by the body own intrinsic sources </summary>
+		public double IrradianceBodiesCore => irradianceBodiesCore; protected double irradianceBodiesCore;
+
+		/// <summary> direct star(s) irradiance (W/m²) from all stars at vessel position, include atmospheric absorption if inside an atmosphere </summary>
+		public double IrradianceStarTotal => irradianceStarTotal; protected double irradianceStarTotal;
+
+		/// <summary> List of all stars/suns and the related data/calculations for the current vessel</summary>
+		public StarFlux[] StarsIrradiance => starsIrradiance; protected StarFlux[] starsIrradiance;
+
+		/// <summary> Star that send the highest nominal flux (in W/m²) at the vessel position (ignoring occlusion / atmo absorbtion)</summary>
+		public StarFlux MainStar => mainStar; protected StarFlux mainStar;
+
+		/// <summary> Nomalized direction vector to the main star</summary>
+		public Vector3d MainStarDirection => MainStar.direction;
+
+		/// <summary> % of time spent in the main star direct light (for the current environment update)</summary>
+		public double MainStarSunlightFactor => MainStar.sunlightFactor;
+
+		/// <summary> True if at least half of the current update was spent in the direct light of the main star</summary>
+		public bool InSunlight => MainStar.sunlightFactor > 0.45;
+
+		/// <summary> True if less than 10% of the current update was spent in the direct light of the main star</summary>
+		public bool InFullShadow => MainStar.sunlightFactor < 0.1;
 
 		#endregion
 
@@ -137,6 +146,7 @@ namespace KERBALISM
 
 			vesselProcesses = new VesselProcessCollection();
 			habitatData = new HabitatVesselData();
+			starsIrradiance = StarFlux.StarArrayFactory();
 		}
 
 		// put here the persistence that is common to VesselData and VesselDataShip to have
@@ -260,6 +270,40 @@ namespace KERBALISM
 
 			habitatData.EvaluateAfterModuleUpdate(this);
 			vesselProcesses.EvaluateAfterModuleUpdate(this);
+		}
+
+		public void ProcessSimStep(SimStep step)
+		{
+			irradianceBodiesCore = step.bodiesCoreFlux;
+
+			double directRawFluxTotal = 0.0;
+			irradianceStarTotal = 0.0;
+			mainStar = starsIrradiance[0];
+			irradianceAlbedo = 0.0;
+			irradianceBodiesEmissive = 0.0;
+
+			for (int i = 0; i < starsIrradiance.Length; i++)
+			{
+				starsIrradiance[i] = step.starFluxes[i];
+				StarFlux starFlux = starsIrradiance[i];
+
+				irradianceStarTotal += starFlux.directFlux;
+				directRawFluxTotal += starFlux.directRawFlux;
+				irradianceAlbedo += starFlux.bodiesAlbedoFlux;
+				irradianceBodiesEmissive += starFlux.bodiesEmissiveFlux;
+
+				starFlux.sunlightFactor = starFlux.directFlux > 0.0 ? 1.0 : 0.0;
+
+				if (mainStar.directFlux < starFlux.directFlux)
+					mainStar = starFlux;
+			}
+
+			foreach (StarFlux vesselStarFlux in starsIrradiance)
+			{
+				vesselStarFlux.directRawFluxProportion = vesselStarFlux.directRawFlux / directRawFluxTotal;
+			}
+
+			irradianceTotal = irradianceStarTotal + irradianceAlbedo + irradianceBodiesEmissive + irradianceBodiesCore;
 		}
 
 		#endregion

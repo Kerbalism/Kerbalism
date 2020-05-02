@@ -6,25 +6,25 @@ using System.Threading.Tasks;
 
 namespace KERBALISM
 {
-	public class Step
+	public class SimStep
 	{
-		private static List<Step> stepPool = new List<Step>(10000);
-		private static ConcurrentQueue<int> freeSteps = new ConcurrentQueue<int>();
+		private static List<SimStep> stepWorkerPool = new List<SimStep>(10000);
+		private static ConcurrentQueue<int> freeWorkerSteps = new ConcurrentQueue<int>();
 
-		public static Step GetFromWorkerPool()
+		public static SimStep GetFromWorkerPool()
 		{
-			if (freeSteps.IsEmpty)
+			if (freeWorkerSteps.IsEmpty)
 			{
-				Step newStep = new Step();
-				stepPool.Add(newStep);
-				newStep.stepPoolIndex = stepPool.Count - 1;
+				SimStep newStep = new SimStep();
+				stepWorkerPool.Add(newStep);
+				newStep.stepPoolIndex = stepWorkerPool.Count - 1;
 				return newStep;
 			}
 
-			if (freeSteps.TryDequeue(out int index))
-				return stepPool[index];
+			if (freeWorkerSteps.TryDequeue(out int index))
+				return stepWorkerPool[index];
 
-			return new Step();
+			return new SimStep();
 		}
 
 		private int stepPoolIndex;
@@ -55,7 +55,7 @@ namespace KERBALISM
 		private bool Landed => simVessel.landed;
 		private SimBody MainBody => simVessel.mainBody;
 
-		public Step()
+		public SimStep()
 		{
 			stepPoolIndex = -1;
 			starFluxes = StarFlux.StarArrayFactory();
@@ -66,20 +66,15 @@ namespace KERBALISM
 			if (stepPoolIndex < 0)
 				return;
 
-			freeSteps.Enqueue(stepPoolIndex);
+			freeWorkerSteps.Enqueue(stepPoolIndex);
 		}
 
 		public void Init(SimVessel simVessel, double ut = -1.0)
 		{
 			this.ut = ut;
 			this.simVessel = simVessel;
-			SubStepSim.prfSubStepVesselGetVesselPos.Begin();
 			vesselPosition = simVessel.GetPosition(this);
-			SubStepSim.prfSubStepVesselGetVesselPos.End();
-
-			SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
 			mainBodyPosition = MainBody.GetPosition(ut);
-			SubStepSim.prfSubStepVesselGetBodiesPos.End();
 
 			mainBodyDirection = mainBodyPosition - vesselPosition;
 			altitude = mainBodyDirection.magnitude;
@@ -88,9 +83,7 @@ namespace KERBALISM
 
 			foreach (SimBody body in Bodies)
 			{
-				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
 				body.stepCachePosition = body.GetPosition(ut);
-				SubStepSim.prfSubStepVesselGetBodiesPos.End();
 
 				// vector from ray origin to sphere center
 				body.stepCacheOcclusionDiff = body.stepCachePosition - vesselPosition;
@@ -106,9 +99,7 @@ namespace KERBALISM
 			{
 				mainPlanet = MainBody.ReferenceBody;
 				mainPlanetIsVisible = IsMainPlanetVisible();
-				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
 				mainPlanetPosition = mainPlanet.GetPosition(ut);
-				SubStepSim.prfSubStepVesselGetBodiesPos.End();
 			}
 			else
 			{
@@ -163,9 +154,7 @@ namespace KERBALISM
 			{
 				SimBody sun = Bodies[starFlux.Star.body.flightGlobalsIndex];
 
-				SubStepSim.prfSubStepVesselGetBodiesPos.Begin();
 				Vector3d sunPosition = sun.GetPosition(ut);
-				SubStepSim.prfSubStepVesselGetBodiesPos.End();
 
 				// generate ray parameters
 				starFlux.direction = sunPosition - vesselPosition;

@@ -1212,7 +1212,7 @@ namespace KERBALISM
 		///<summary> Pretty-print flux </summary>
 		public static string HumanReadableFlux(double flux)
 		{
-			return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
+			return flux >= 0.1 ? flux.ToString("0.0 W/m²") : flux.ToString("0.0E+0 W/m²");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>

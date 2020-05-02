@@ -165,7 +165,6 @@
     <Compile Include="Database\PartData\PartRadiationData.cs" />
     <Compile Include="Database\PartData\PartResourceData.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
-    <Compile Include="Database\VesselDataComponents\VesselData.SunInfo.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
     <Compile Include="Database\VesselDataComponents\VesselHabitat.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
@@ -188,7 +187,7 @@
     <Compile Include="Sim\SimProfiler.cs" />
     <Compile Include="Sim\SimVessel.cs" />
     <Compile Include="Sim\SimBody.cs" />
-    <Compile Include="Sim\Step.cs" />
+    <Compile Include="Sim\SimStep.cs" />
     <Compile Include="Sim\StarFlux.cs" />
     <Compile Include="Sim\SimStar.cs" />
     <Compile Include="Sim\SubStepBody.cs" />

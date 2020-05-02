@@ -8,19 +8,19 @@ namespace KERBALISM
 	{
 		public bool needCatchup;
 		public SubStepOrbit orbit;
-		public Deque<Step> stepsData = new Deque<Step>();
+		public Deque<SimStep> stepsData = new Deque<SimStep>();
 
 		public override SimBody[] Bodies => SubStepSim.Bodies;
 
 		public SubStepVessel(Vessel stockVessel)
 		{
-			stepsData = new Deque<Step>(SubStepSim.subStepsToCompute);
+			stepsData = new Deque<SimStep>(SubStepSim.subStepsToCompute);
 
 			if (stockVessel.orbit != null)
 				orbit = new SubStepOrbit(stockVessel.orbit);
 		}
 
-		public override Vector3d GetPosition(Step step)
+		public override Vector3d GetPosition(SimStep step)
 		{
 			if (landed)
 				return mainBody.GetSurfacePosition(vesselLatitude, vesselLongitude, step.Altitude, step.UT);
@@ -67,14 +67,9 @@ namespace KERBALISM
 
 		public void ComputeNextStep()
 		{
-			SubStepSim.prfSubStepVesselInstantiate.Begin();
-			Step step = Step.GetFromWorkerPool();
+			SimStep step = SimStep.GetFromWorkerPool();
 			step.Init(this);
-			SubStepSim.prfSubStepVesselInstantiate.End();
-
-			SubStepSim.prfSubStepVesselEvaluate.Begin();
 			step.Evaluate();
-			SubStepSim.prfSubStepVesselEvaluate.End();
 
 			stepsData.AddToBack(step);
 		}
@@ -87,7 +82,7 @@ namespace KERBALISM
 			while (stepCount < SubStepSim.stepCount)
 			{
 				double stepUT = SubStepSim.steps[stepCount].ut;
-				Step step = Step.GetFromWorkerPool();
+				SimStep step = SimStep.GetFromWorkerPool();
 				step.Init(this, stepUT);
 				step.Evaluate();
 				stepsData.AddToBack(step);

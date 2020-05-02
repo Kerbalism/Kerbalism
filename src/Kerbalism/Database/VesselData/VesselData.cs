@@ -7,7 +7,7 @@ namespace KERBALISM
 {
     public partial class VesselData : VesselDataBase
 	{
-		public List<Step> subSteps = new List<Step>();
+		public List<SimStep> subSteps = new List<SimStep>();
 		private SimVessel simVessel;
 		
 
@@ -135,6 +135,10 @@ namespace KERBALISM
 
 		public override double Altitude => altitude; double altitude;
 
+		public override double Latitude => Vessel.latitude;
+
+		public override double Longitude => Vessel.longitude;
+
 		/// <summary> [environment] true if inside ocean</summary>
 		public override bool EnvUnderwater => underwater; bool underwater;
 
@@ -155,15 +159,6 @@ namespace KERBALISM
 
         /// <summary> [environment] true if in zero g</summary>
         public override bool EnvZeroG => zeroG; bool zeroG;
-
-        /// <summary> [environment] solar flux reflected from the nearest body</summary>
-        public override double EnvAlbedoFlux => albedoFlux; double albedoFlux;
-
-        /// <summary> [environment] infrared radiative flux from the nearest body</summary>
-        public override double EnvBodyFlux => bodyFlux; double bodyFlux;
-
-        /// <summary> [environment] total flux at vessel position</summary>
-        public override double EnvTotalFlux => totalFlux; double totalFlux;
 
         /// <summary> [environment] temperature ar vessel position</summary>
         public override double EnvTemperature => temperature; double temperature;
@@ -208,31 +203,10 @@ namespace KERBALISM
         // real apparent diameters at earth : sun/moon =~ 30 arcmin, Venus =~ 1 arcmin
         public CelestialBody[] VisibleBodies => visibleBodies; CelestialBody[] visibleBodies;
 
-        /// <summary> Star that send the highest nominal flux (in W/m²) at the vessel position</summary>
-        public StarFlux MainStar => mainStar; StarFlux mainStar;
-
-		/// <summary> Normalized direction vector to the main star</summary>
-		public override Vector3d MainStarDirection => mainStar.direction;
-
-		/// <summary> Proportion of current update duration spent in the direct light of the main star</summary>
-		public override double MainStarSunlightFactor => mainStar.sunlightFactor;
-
-		/// <summary> True if at least half of the current update was spent in the direct light of the main star</summary>
-		public override bool InSunlight => mainStar.sunlightFactor > 0.45;
-
-		/// <summary> True if less than 10% of the current update was spent in the direct light of the main star</summary>
-		public override bool InFullShadow => mainStar.sunlightFactor < 0.1;
-
 		/// <summary> Angle of the main sun on the body surface over the vessel position</summary>
 		public double MainStarBodyAngle => sunBodyAngle; double sunBodyAngle;
 
-		/// <summary> Sum of the flux from all stars at vessel position in W/m² </summary>
-		public override double DirectStarFluxTotal => directStarFluxTotal; double directStarFluxTotal;
 
-		public double BodiesCoreIrradiance => bodiesCoreIrradiance; double bodiesCoreIrradiance;
-
-		/// <summary> List of all stars/suns and the related data/calculations for the current vessel</summary>
-		public StarFlux[] StarsIrradiance => starsIrradiance; StarFlux[] starsIrradiance;
 
         public VesselSituations VesselSituations => vesselSituations; VesselSituations vesselSituations;
 
@@ -442,7 +416,6 @@ namespace KERBALISM
 		private void SetInstantiateDefaults(ProtoVessel protoVessel)
 		{
 			simVessel = new SimVessel();
-			starsIrradiance = StarFlux.StarArrayFactory();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 			connection = new ConnectionInfo();
@@ -734,10 +707,10 @@ namespace KERBALISM
 					starsIrradiance[i].Reset();
 
 				double directRawFluxTotal = 0.0;
-				bodiesCoreIrradiance = 0.0;
+				irradianceBodiesCore = 0.0;
 
 				// take the "average" as the current step
-				Step currentStep = subSteps[subStepCount / 2];
+				SimStep currentStep = subSteps[subStepCount / 2];
 				for (int i = 0; i < starsIrradiance.Length; i++)
 				{
 					StarFlux vesselStarFlux = starsIrradiance[i];
@@ -748,7 +721,7 @@ namespace KERBALISM
 				int starCount = subSteps[0].starFluxes.Length;
 				for (int k = 0; k < subStepCount; k++)
 				{
-					bodiesCoreIrradiance += subSteps[k].bodiesCoreFlux;
+					irradianceBodiesCore += subSteps[k].bodiesCoreFlux;
 
 					for (int i = 0; i < starCount; i++)
 					{
@@ -771,67 +744,40 @@ namespace KERBALISM
 				subSteps.Clear();
 
 				double subStepCountD = subStepCount;
-				bodiesCoreIrradiance /= subStepCountD;
-				directStarFluxTotal = 0.0;
+				irradianceBodiesCore /= subStepCountD;
+				irradianceStarTotal = 0.0;
 				mainStar = starsIrradiance[0];
-				albedoFlux = 0.0;
-				bodyFlux = 0.0;
+				irradianceAlbedo = 0.0;
+				irradianceBodiesEmissive = 0.0;
 
 				for (int i = 0; i < starsIrradiance.Length; i++)
 				{
 					StarFlux vesselStarFlux = starsIrradiance[i];
 					vesselStarFlux.directRawFluxProportion = vesselStarFlux.directRawFlux / directRawFluxTotal;
 					vesselStarFlux.directFlux /= subStepCountD;
-					directStarFluxTotal += vesselStarFlux.directFlux;
+					irradianceStarTotal += vesselStarFlux.directFlux;
 					vesselStarFlux.directRawFlux /= subStepCountD;
 					vesselStarFlux.bodiesAlbedoFlux /= subStepCountD;
 					vesselStarFlux.bodiesEmissiveFlux /= subStepCountD;
 					vesselStarFlux.sunlightFactor /= subStepCountD;
 
-					albedoFlux += vesselStarFlux.bodiesAlbedoFlux;
-					bodyFlux += vesselStarFlux.bodiesEmissiveFlux;
+					irradianceAlbedo += vesselStarFlux.bodiesAlbedoFlux;
+					irradianceBodiesEmissive += vesselStarFlux.bodiesEmissiveFlux;
 
 					if (mainStar.directFlux < vesselStarFlux.directFlux)
 						mainStar = vesselStarFlux;
 				}
+
+				irradianceTotal = irradianceStarTotal + irradianceAlbedo + irradianceBodiesEmissive + irradianceBodiesCore;
 			}
 			else
 			{
 				subSteps.Clear();
-
 				simVessel.UpdatePosition(this, position);
-				Step step = new Step();
+				SimStep step = new SimStep();
 				step.Init(simVessel);
 				step.Evaluate();
-
-				bodiesCoreIrradiance = step.bodiesCoreFlux;
-
-				double directRawFluxTotal = 0.0;
-				directStarFluxTotal = 0.0;
-				mainStar = starsIrradiance[0];
-				albedoFlux = 0.0;
-				bodyFlux = 0.0;
-
-				for (int i = 0; i < starsIrradiance.Length; i++)
-				{
-					starsIrradiance[i] = step.starFluxes[i];
-					StarFlux starFlux = starsIrradiance[i];
-
-					directStarFluxTotal += starFlux.directFlux;
-					directRawFluxTotal += starFlux.directRawFlux;
-					albedoFlux += starFlux.bodiesAlbedoFlux;
-					bodyFlux += starFlux.bodiesEmissiveFlux;
-
-					starFlux.sunlightFactor = starFlux.directFlux > 0.0 ? 1.0 : 0.0;
-
-					if (mainStar.directFlux < starFlux.directFlux)
-						mainStar = starFlux;
-				}
-
-				foreach (StarFlux vesselStarFlux in starsIrradiance)
-				{
-					vesselStarFlux.directRawFluxProportion = vesselStarFlux.directRawFlux / directRawFluxTotal;
-				}
+				ProcessSimStep(step);
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -851,7 +797,7 @@ namespace KERBALISM
 
             // temperature at vessel position
             UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EnvTemperature");
-            temperature = Sim.Temperature(bodiesCoreIrradiance, starsIrradiance);
+            temperature = Sim.VesselTemperature(irradianceTotal);
             tempDiff = Sim.TempDiff(temperature, Vessel.mainBody, EnvLanded);
             UnityEngine.Profiling.Profiler.EndSample();
 

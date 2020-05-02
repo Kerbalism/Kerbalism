@@ -144,7 +144,7 @@ namespace KERBALISM.Planner
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 
 				// analyze using the settings from the panels user input
-				vesselData.Analyze(parts, FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
+				vesselData.Analyze(parts, FlightGlobals.Bodies[body_index], situation, sunlight);
 				EditorResourceSimulator.Analyze(parts);
 
 				// add ec panel
@@ -246,11 +246,11 @@ namespace KERBALISM.Planner
 				{ sunlight = (SunlightState)(((int)sunlight + 1) % Enum.GetValues(typeof(SunlightState)).Length); updateRequested = true; }
 
 				// situation selector
-				GUILayout.Label(new GUIContent(situations[situation_index], Local.Planner_Targetsituation), rightmenu_style);//"Target situation"
+				GUILayout.Label(new GUIContent(situation.displayName, Lib.BuildString(Local.Planner_Targetsituation, " : ", Lib.Bold(situation.AltitudeStr(FlightGlobals.Bodies[body_index])), "\n", situation.tooltip)), rightmenu_style);//"Target situation"
 				if (Lib.IsClicked())
-				{ situation_index = (situation_index + 1) % situations.Length; updateRequested = true; }
+				{ situation = situation.Next; updateRequested = true; }
 				else if (Lib.IsClicked(1))
-				{ situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; updateRequested = true; }
+				{ situation = situation.Previous; updateRequested = true; }
 
 				// end header
 				GUILayout.EndHorizontal();
@@ -486,11 +486,12 @@ namespace KERBALISM.Planner
 			(
 				"<align=left />" +
 				String.Format("<b>{0,-14}\t{1,-15}\t{2}</b>\n", Local.Planner_Source, Local.Planner_Flux, Local.Planner_Temp),//"Source""Flux""Temp"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.solarFlux > 0.0 ? Lib.HumanReadableFlux(vesselData.solarFlux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.solarFlux))),//"solar""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.albedoFlux > 0.0 ? Lib.HumanReadableFlux(vesselData.albedoFlux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.albedoFlux))),//"albedo""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.bodyFlux > 0.0 ? Lib.HumanReadableFlux(vesselData.bodyFlux) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.bodyFlux))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.IrradianceStarTotal > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceStarTotal) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceStarTotal))),//"solar""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.IrradianceAlbedo > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceAlbedo) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceAlbedo))),//"albedo""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.IrradianceBodiesEmissive > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceBodiesEmissive) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesEmissive))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "body core", vesselData.IrradianceBodiesCore > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceBodiesCore) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesCore))),//"body""none"
 				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableFlux(Sim.BackgroundFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux))),//"background"
-				String.Format("{0,-14}\t\t{1,-15}\t{2}", Local.Planner_total, Lib.HumanReadableFlux(vesselData.totalFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.totalFlux)))//"total"
+				String.Format("{0,-14}\t{1,-15}\t{2}", Local.Planner_total + "   ", Lib.HumanReadableFlux(vesselData.IrradianceTotal), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceTotal)))//"total"
 			);
 			string atmosphere_tooltip = Lib.BuildString
 			(
@@ -571,8 +572,40 @@ namespace KERBALISM.Planner
 
 		#region FIELDS_PROPERTIES
 		// store situations and altitude multipliers
-		private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
-		private static readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
+		//private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
+		//private static readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
+		private static readonly Situation situationLanded = new Situation(0, Situation.LandedAlt, "Landed", "On the body surface");
+		private static readonly Situation situationLowOrbit = new Situation(1, Situation.LowOrbitAlt, "Low Orbit", "Just above safe altitude");
+		private static readonly Situation situationMidOrbit = new Situation(2, Situation.MidOrbitAlt, "Med. Orbit", "Four times the body radius");
+		private static readonly Situation situationHighOrbit = new Situation(3, Situation.HighOrbitAlt, "High Orbit", "Half the SOI limit");
+		private static readonly Situation[] situations = { situationLanded, situationLowOrbit, situationMidOrbit, situationHighOrbit };
+
+		public class Situation
+		{
+			public int index;
+			public string displayName;
+			public string tooltip;
+			private Func<CelestialBody, double> altitudeFunc;
+
+			public Situation(int index, Func<CelestialBody, double> altitudeFunc, string displayName, string tooltip)
+			{
+				this.index = index;
+				this.altitudeFunc = altitudeFunc;
+				this.displayName = displayName;
+				this.tooltip = tooltip;
+			}
+
+			public Situation Next => situations[(index + 1) % situations.Length];
+			public Situation Previous => situations[(index == 0 ? situations.Length : index) - 1];
+			public Situation Default => situations[1];
+			public double Altitude(CelestialBody body) => altitudeFunc(body);
+			public string AltitudeStr(CelestialBody body) => Lib.HumanReadableDistance(altitudeFunc(body));
+
+			public static double LandedAlt(CelestialBody body) => 0.0;
+			public static double LowOrbitAlt(CelestialBody body) => body.atmosphereDepth + 20000.0;
+			public static double MidOrbitAlt(CelestialBody body) => body.Radius * 4.0;
+			public static double HighOrbitAlt(CelestialBody body) => double.IsInfinity(body.sphereOfInfluence) ? body.Radius * 1000.0 : body.sphereOfInfluence * 0.5;
+		}
 
 		// styles
 		private static GUIStyle devbuild_style;
@@ -593,7 +626,8 @@ namespace KERBALISM.Planner
 
 		// body/situation/sunlight indexes
 		private static int body_index;
-		private static int situation_index = 2;     // orbit
+		//private static int situation_index = 2;     // orbit
+		private static Situation situation = situationLowOrbit;
 		public enum SunlightState { SunlightNominal = 0, SunlightSimulated = 1, Shadow = 2 }
 		private static SunlightState sunlight = SunlightState.SunlightSimulated;
 		public static SunlightState Sunlight => sunlight;

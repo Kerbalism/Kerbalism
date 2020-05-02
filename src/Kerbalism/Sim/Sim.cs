@@ -434,17 +434,14 @@ namespace KERBALISM
 			return Math.Pow(temperature, 4.0) * PhysicsGlobals.StefanBoltzmanConstant;
 		}
 
-		public static double Temperature(double bodiesCoreIrradiance, StarFlux[] starsIrradiance)
+		// TODO : move this to the step sim and :
+		// - scale BackgroundFlux with atmo absorbtion
+		// - assuming this is a surface temperature, this doesn't really make sense,
+		//   we can't just add everything and ignore each irradiance component direction
+		//   ex : albedo will usually be directed toward the "dark side" of the vessel
+		public static double VesselTemperature(double irradiance)
 		{
-			double totalFlux = BackgroundFlux;
-			totalFlux += bodiesCoreIrradiance;
-			foreach (StarFlux star in starsIrradiance)
-			{
-				totalFlux += star.directFlux;
-				totalFlux += star.bodiesAlbedoFlux;
-				totalFlux += star.bodiesEmissiveFlux;
-			}
-			return BlackBodyTemperature(totalFlux);
+			return BlackBodyTemperature(irradiance + BackgroundFlux);
 		}
 
 		// return temperature of a vessel

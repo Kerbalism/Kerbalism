@@ -10,8 +10,6 @@ using UnityEngine.Profiling;
 
 namespace KERBALISM
 {
-
-
 	public static class SubStepSim
 	{
 		private static int maxWarpRateIndex;
@@ -22,7 +20,6 @@ namespace KERBALISM
 		// Lower values give a more precise simulation (more sampling points)
 		// Higher values will reduce the amount of substeps consumed per FixedUpdate, preventing the simulation
 		// from falling behind when there is a large number of vessels or if higher than stock timewarp rates are used.
-
 
 		private static Planetarium.CelestialFrame currentZup;
 		private static double currentInverseRotAngle;
@@ -43,8 +40,6 @@ namespace KERBALISM
 		public static double subStepInterval;
 		public static int subStepsAtMaxWarp;
 		public static int subStepsToCompute;
-
-
 
 		public static Queue<SubStepVessel> vesselsInNeedOfCatchup = new Queue<SubStepVessel>();
 
@@ -314,16 +309,6 @@ namespace KERBALISM
 			}
 		}
 
-
-		static ProfilerMarker prfSubStep;
-		static ProfilerMarker prfSubStepCatchup;
-		static ProfilerMarker prfNewStepGlobalData;
-		static ProfilerMarker prfSubStepBodyCompute;
-		static ProfilerMarker prfSubStepVesselCompute;
-		public static ProfilerMarker prfSubStepVesselInstantiate;
-		public static ProfilerMarker prfSubStepVesselEvaluate;
-		public static ProfilerMarker prfSubStepVesselGetVesselPos;
-		public static ProfilerMarker prfSubStepVesselGetBodiesPos;
 		static Stopwatch fuWatch = new Stopwatch();
 		static Stopwatch workerWatch = new Stopwatch();
 
@@ -331,17 +316,6 @@ namespace KERBALISM
 
 		public static void WorkerLoop()
 		{
-
-			prfSubStep = new ProfilerMarker("Kerbalism.SubStep");
-			prfSubStepCatchup = new ProfilerMarker("Kerbalism.SubStepCatchup");
-			prfNewStepGlobalData = new ProfilerMarker("Kerbalism.NewStepGlobalData");
-			prfSubStepBodyCompute = new ProfilerMarker("Kerbalism.SubStepBodyCompute");
-			prfSubStepVesselCompute = new ProfilerMarker("Kerbalism.SubStepVesselCompute");
-			prfSubStepVesselInstantiate = new ProfilerMarker("Kerbalism.SubStepVesselInstantiate");
-			prfSubStepVesselEvaluate = new ProfilerMarker("Kerbalism.SubStepVesselEvaluate");
-			prfSubStepVesselGetVesselPos = new ProfilerMarker("Kerbalism.SubStepVesselGetVesselPos");
-			prfSubStepVesselGetBodiesPos = new ProfilerMarker("Kerbalism.SubStepVesselGetBodiesPos");
-
 			while (true)
 			{
 				if (!workerIsAlive)
@@ -360,6 +334,14 @@ namespace KERBALISM
 					if (__lockWasTaken) System.Threading.Monitor.Exit(__lockObj);
 				}
 
+				// Let the CPU breathe a bit. I'm not sure this is strictly needed, but it seems that not
+				// doing it can cause other threads to hang. In particular, KSP + a running unity profiler will 
+				// hang if this isn't called. It doesn't seem to affect the performance of the worker thread.
+				// From the Thread.Sleep() docs :
+				// If the value of the millisecondsTimeout argument is zero, the thread relinquishes
+				// the remainder of its time slice to any thread of equal priority that is ready to run.
+				// If there are no other threads of equal priority that are ready to run, execution of
+				// the current thread is not suspended.
 				Thread.Sleep(0);
 			}
 		}
@@ -368,17 +350,14 @@ namespace KERBALISM
 		{
 			if (lastStepUT < maxUT)
 			{
-				prfSubStep.Begin();
 				workerWatch.Restart();
 				ComputeNextStep();
 				workerWatch.Stop();
 				currentWorkerTicks += workerWatch.ElapsedTicks;
-				prfSubStep.End();
 			}
 
 			if (vesselsInNeedOfCatchup.Count > 0)
 			{
-				prfSubStepCatchup.Begin();
 				workerWatch.Restart();
 
 				if (vesselsInNeedOfCatchup.Peek().TryComputeMissingSteps())
@@ -386,7 +365,6 @@ namespace KERBALISM
 
 				workerWatch.Stop();
 				currentWorkerTicks += workerWatch.ElapsedTicks;
-				prfSubStepCatchup.End();
 			}
 		}
 
@@ -395,26 +373,20 @@ namespace KERBALISM
 			stepCount++;
 			lastStepUT = currentUT + (stepCount * subStepInterval);
 
-			prfNewStepGlobalData.Begin();
 			lastStep = SubStepGlobalData.GetFromPool();
 			lastStep.ut = lastStepUT;
 			lastStep.inverseRotAngle = currentInverseRotAngle;
 			lastStep.zup = currentZup;
 			steps.Enqueue(lastStep);
-			prfNewStepGlobalData.End();
 
 			foreach (SubStepBody body in Bodies)
 			{
-				prfSubStepBodyCompute.Begin();
 				body.ComputeNextStep();
-				prfSubStepBodyCompute.End();
 			}
 
 			foreach (SubStepVessel vessel in vessels.Values)
 			{
-				prfSubStepVesselCompute.Begin();
 				vessel.ComputeNextStep();
-				prfSubStepVesselCompute.End();
 			}
 		}
 	}
