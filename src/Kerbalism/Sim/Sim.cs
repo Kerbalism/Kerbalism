@@ -694,7 +694,7 @@ namespace KERBALISM
 			}
 		}
 
-		private static double SignalStrength(double maxRange, double distance)
+		public static double SignalStrength(double maxRange, double distance)
 		{
 			if (distance > maxRange)
 				return 0.0;
