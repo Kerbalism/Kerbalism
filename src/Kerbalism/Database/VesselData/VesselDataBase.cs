@@ -274,7 +274,7 @@ namespace KERBALISM
 
 		public void ProcessSimStep(SimStep step)
 		{
-			irradianceBodiesCore = step.bodiesCoreFlux;
+			irradianceBodiesCore = step.bodiesCoreIrradiance;
 
 			double directRawFluxTotal = 0.0;
 			irradianceStarTotal = 0.0;

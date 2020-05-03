@@ -742,7 +742,7 @@ namespace KERBALISM
 				int starCount = subSteps[0].starFluxes.Length;
 				for (int k = 0; k < subStepCount; k++)
 				{
-					irradianceBodiesCore += subSteps[k].bodiesCoreFlux;
+					irradianceBodiesCore += subSteps[k].bodiesCoreIrradiance;
 
 					for (int i = 0; i < starCount; i++)
 					{

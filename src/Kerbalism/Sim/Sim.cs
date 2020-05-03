@@ -88,6 +88,11 @@ namespace KERBALISM
 				Bodies[star.body.flightGlobalsIndex].isSun = true;
 			}
 
+			foreach (SimBody simBody in Bodies)
+			{
+				simBody.Init();
+			}
+
 
 			// get scaled space planetary layer for physic raytracing
 			planetaryLayerMask = 1 << LayerMask.NameToLayer("Scaled Scenery");
@@ -433,6 +438,73 @@ namespace KERBALISM
 		{
 			return Math.Pow(temperature, 4.0) * PhysicsGlobals.StefanBoltzmanConstant;
 		}
+
+		/// <summary> return equilibrium temperature in K for a body </summary>
+		/// <param name="irradiance">star irradiance in W/m² </param>
+		public static double BodyEquilibriumTemperature(double irradiance, double albedo)
+		{
+			return Math.Pow(irradiance * (1.0 - albedo) / (4.0 * PhysicsGlobals.StefanBoltzmanConstant), 0.25);
+		}
+
+		/// <summary> return equilibrium temperature in K for a body </summary>
+		/// <param name="irradiance">star irradiance in W/m² </param>
+		public static void GetBodyThermalStats(CelestialBody body, out double dayTemperature, out double nightTemperature, out double equilibriumTemperature, out double irradiance)
+		{
+			List<CelestialBody> visibleBodies = GetLargeBodies(body.position);
+			SimStar parentStar = GetParentStarData(body);
+			Vector3d parentStarDirection = parentStar.body.position - body.position;
+			double parentStarDistance = parentStarDirection.magnitude;
+			parentStarDirection /= parentStarDistance;
+
+			irradiance = 0.0;
+			foreach (SimStar star in stars)
+			{
+				Vector3d starDirection;
+				double starDistance;
+				if (star != parentStar)
+				{
+					starDirection = star.body.position - body.position;
+					starDistance = starDirection.magnitude;
+					starDirection /= starDistance;
+					if (Vector3d.Dot(starDirection, parentStarDirection) < 0.75 || Math.Abs(starDistance - parentStarDistance) > 1e+12)
+						continue;
+				}
+				else
+				{
+					starDirection = parentStarDirection;
+					starDistance = parentStarDistance;
+				}
+
+				bool isOccluded = false;
+				foreach (CelestialBody occludingBody in visibleBodies)
+				{
+					if (!RayAvoidBody(body.position, starDirection, starDistance, occludingBody))
+					{
+						isOccluded = true;
+						break;
+					}
+				}
+				if (isOccluded)
+					break;
+
+				irradiance += star.SolarFlux(starDistance);
+			}
+
+			equilibriumTemperature = Math.Pow(irradiance * (1.0 - body.albedo) / (4.0 * PhysicsGlobals.StefanBoltzmanConstant), 0.25);
+			if (body.atmosphere)
+			{
+
+			}
+			dayTemperature = 0.0;
+			nightTemperature = 0.0;
+
+		}
+
+
+
+
+
+
 
 		// TODO : move this to the step sim and :
 		// - scale BackgroundFlux with atmo absorbtion

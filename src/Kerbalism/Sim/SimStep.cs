@@ -30,7 +30,8 @@ namespace KERBALISM
 		private int stepPoolIndex;
 
 		// step results
-		public double bodiesCoreFlux;
+		public double thermalFlux;
+		public double bodiesCoreIrradiance;
 		public StarFlux[] starFluxes;
 
 		// step parameters
@@ -111,6 +112,7 @@ namespace KERBALISM
 		{
 			AnalyzeSunFluxes();
 			AnalyzeBodiesCoreFluxes();
+			AnalyzeThermalFlux();
 		}
 
 		private bool IsMainBodyVisible()
@@ -267,16 +269,19 @@ namespace KERBALISM
 				// In addition of the crescent-shaped illuminated portion making the angle/flux relation non-linear,
 				// the flux isn't scattered uniformely but tend to be reflected back in the sun direction,
 				// especially on non atmospheric bodies, see https://en.wikipedia.org/wiki/Opposition_surge
-				// We do some square scaling to approximate those effects, the choosen exponents seems to give results that 
-				// aren't too far from RL data given by the JPL-HORIZONS data set : https://ssd.jpl.nasa.gov/horizons.cgi
+				// The albedo value when in direct opposition is the geometric albedo, as opposed to the bond albedo
+				// which is the global value. We assume that the stock value is a bond albedo :
+				// - For atmospheric bodies, we assume that the geometric albedo = 1.15 * bond albedo
+				// - For airless bodies, we assume that the geometric albedo = 1.50 * bond albedo
+				// We do some square scaling to approximate those effects end to ensure that the total flux
+				// stay the same we check that the surface area under the curve stay the same :
+				// - [0,1] integral of y = x is 0.5
+				// - [0,1] integral of y = (x * 1.113)^1.3 is ~0.5
+				// - [0,1] integral of y = (x * 1.225)^2.0 is ~0.5
 				if (body.hasAtmosphere)
-				{
-					albedoFlux *= Math.Pow(anglefactor * 1.1, 2.0);
-				}
+					albedoFlux *= Math.Pow(anglefactor * 1.113, 1.3);
 				else
-				{
-					albedoFlux *= Math.Pow(anglefactor * 1.25, 3.0);
-				}
+					albedoFlux *= Math.Pow(anglefactor * 1.225, 2.0);
 			}
 
 			// THERMAL RE-EMISSION
@@ -306,16 +311,17 @@ namespace KERBALISM
 
 		private void AnalyzeBodiesCoreFluxes()
 		{
-			bodiesCoreFlux = 0.0;
+			bodiesCoreIrradiance = 0.0;
+
 			if (MainBody.isSun)
 				return;
 
 			if (mainBodyIsVisible)
-				bodiesCoreFlux += BodyCoreFlux(MainBody);
+				bodiesCoreIrradiance += BodyCoreFlux(MainBody);
 
 			// if main body is a moon, also consider core flux from the planet
 			if (mainBodyIsMoon && mainPlanetIsVisible)
-				bodiesCoreFlux += BodyCoreFlux(mainPlanet);
+				bodiesCoreIrradiance += BodyCoreFlux(mainPlanet);
 		}
 
 		/// <summary>
@@ -335,6 +341,42 @@ namespace KERBALISM
 			// Resulting in the simplified formula :
 			// (coreFluxAtSurface * r²) / (r + a)²
 			return (body.coreThermalFlux * Math.Pow(body.radius, 2.0)) / Math.Pow(body.radius + altitude, 2.0);
+		}
+
+		// Note : we currently ignore the fact that the "main planet" irradiance can (and will) have a completly different direction.
+		// Should we do it ? Do we care ? I don't know.
+		// In the end I'm not sure the inclusion of the main planet in the whole sim is really relevant.
+		// That would require some testing to see if the flux are high enough for it to really matter
+		// Can't decide now. With some chance I will just forget about it and leave it as it is.
+		private void AnalyzeThermalFlux()
+		{
+			thermalFlux = 0.0;
+			foreach (StarFlux star in starFluxes)
+			{
+				// get a [0 : 1] factor for the [0° : 180°] angle between the main body, the vessel and the sun
+				double mainBodyVesselSunAngle = (Vector3d.Dot(star.direction, mainBodyDirection) + 1.0) * 0.5;
+
+				// irradiance for the portion of the 360° angle that is exposed to both the sun and the main body
+				double sunAndBodyFaceEe = star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + bodiesCoreIrradiance + Sim.BackgroundFlux;
+				sunAndBodyFaceEe *= (1.0 - mainBodyVesselSunAngle) * 0.5;
+
+				// irradiance for the portion of the 360° angle that is exposed only to the main body
+				// Note : ideally we should still use Sim.BackgroundFlux here but scale it down with the body distance.
+				// But it doesn't matter much and I'm lazy.
+				double bodiesFaceEe = star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + bodiesCoreIrradiance;
+				bodiesFaceEe *= mainBodyVesselSunAngle * 0.5;
+
+				// irradiance for the portion of the 360° angle that is exposed only to the sun
+				double sunFaceEe = star.directFlux + Sim.BackgroundFlux;
+				sunFaceEe *= mainBodyVesselSunAngle * 0.5;
+
+				// irradiance for the portion of the 360° angle that is neither exposed to the sun nor to the main body
+				double darkFaceEe = Sim.BackgroundFlux * (1.0 - mainBodyVesselSunAngle) * 0.5;
+
+				// sum of the irradiance
+				// note : this need to be scaled down by the surface Absorptance factor
+				thermalFlux += sunAndBodyFaceEe + bodiesFaceEe + sunFaceEe + darkFaceEe;
+			}
 		}
 	}
 }

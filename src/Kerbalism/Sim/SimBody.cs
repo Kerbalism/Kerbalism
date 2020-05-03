@@ -46,6 +46,11 @@ namespace KERBALISM
 		public bool canRotate;
 		public bool isSun;
 		public double surfaceGravity;
+		public double atmoSurfaceTemperature;
+		public double atmoTempPolarOffset;
+		public double atmoTempDayOffset;
+		public double atmoTempNightOffset;
+
 
 		// step cache
 		public bool stepCacheIsOccluding;
@@ -101,6 +106,20 @@ namespace KERBALISM
 			coreThermalFlux = Sim.BlackBodyFlux(body.coreTemperatureOffset);
 
 			surfaceGravity = body.gravParameter / (body.Radius * body.Radius);
+		}
+
+		public virtual void Init()
+		{
+			if (hasAtmosphere)
+			{
+				atmoSurfaceTemperature = GetTemperature(0.0);
+				CelestialBody parentStar = Sim.GetParentStar(stockBody);
+				Vector3d bodyToStar = (parentStar.position - stockBody.position).normalized;
+
+				atmoTempPolarOffset = GetAtmoSurfaceTemperature(parentStar, stockBody.position + (Vector3d.up * radius)) - atmoSurfaceTemperature;
+				atmoTempDayOffset = GetAtmoSurfaceTemperature(parentStar, stockBody.position + (bodyToStar * radius)) - atmoSurfaceTemperature;
+				atmoTempNightOffset = GetAtmoSurfaceTemperature(parentStar, stockBody.position + (bodyToStar * radius * -1.0)) - atmoSurfaceTemperature;
+			}
 		}
 
 		public virtual SimBody ReferenceBody => Sim.Bodies[referenceBodyFlightGlobalsIndex];
@@ -165,6 +184,15 @@ namespace KERBALISM
 				return atmosphereTemperatureCurve.Evaluate((float)altitude);
 			}
 			return atmosphereTemperatureSeaLevel - atmosphereTemperatureLapseRate * altitude;
+		}
+
+		private double GetAtmoSurfaceTemperature(CelestialBody parentStar, Vector3d worldPos)
+		{
+			Vector3d starDir = (parentStar.position - worldPos).normalized;
+			Vector3d upAxis = FlightGlobals.getUpAxis(stockBody, worldPos);
+			double starDot = Vector3d.Dot(starDir, upAxis);
+			stockBody.GetAtmoThermalStats(false, parentStar, starDir, starDot, upAxis, 0.0, out double atmosphereTemperatureOffset, out double nope1, out double nope2);
+			return stockBody.GetFullTemperature(0.0, atmosphereTemperatureOffset);
 		}
 	}
 }
