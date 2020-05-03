@@ -200,14 +200,46 @@ namespace KERBALISM
 				return;
 			}
 
-			// TODO : this fail (hard) when called from the launchpad interface crew transfer dialog
-			// The vessel doesn't exists there, and doesn't look there is any built-in reference to the shipconstruct / saved data
-			// So this is gonna be tricky to handle.
-			// Side note : check how mods that launch vessels from other places than the editor are handling that (KCT ? EPL ?)
+			bool fromVesselSpawnDialog = VesselSpawnDialog.Instance != null;
+			HashSet<uint> enabledHabsPartId = new HashSet<uint>();
 
-			if (KSP.UI.Screens.VesselSpawnDialog.Instance != null)
+			// Note : the check won't work on imported crafts, as our data will not be serialized here.
+			// This is quite a corner case so I don't care, but if the need arise, a solution could be to check the default enabled value on the part prefab.
+			if (fromVesselSpawnDialog)
 			{
-				return;
+				try
+				{
+					object vesselDataItem = typeof(VesselSpawnDialog).GetField("selectedDataItem", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(VesselSpawnDialog.Instance);
+					ConfigNode vesselNode = (ConfigNode)vesselDataItem.GetType().GetProperty("configNode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public).GetValue(vesselDataItem);
+					ConfigNode kerbalismDataNode = vesselNode.nodes[0].GetNode(VesselDataBase.NODENAME_VESSEL);
+
+					HashSet<int> enabledHabsShipIds = new HashSet<int>();
+					foreach (ConfigNode moduleDataNode in kerbalismDataNode.GetNode(VesselDataBase.NODENAME_MODULE).nodes)
+					{
+						if (moduleDataNode.name.Split('@')[1] == nameof(HabitatData) && Lib.ConfigValue(moduleDataNode, "habitatEnabled", false))
+						{
+							enabledHabsShipIds.Add(Lib.ConfigValue(moduleDataNode, ModuleData.VALUENAME_SHIPID, 0));
+						}
+					}
+
+					foreach (ConfigNode partNode in vesselNode.nodes)
+					{
+						ConfigNode habitatModuleNode = partNode.GetNode("MODULE", "name", nameof(ModuleKsmHabitat));
+						if (habitatModuleNode == null)
+							continue;
+
+						int dataShipId = Lib.ConfigValue(habitatModuleNode, KsmPartModule.VALUENAME_SHIPID, 0);
+						if (dataShipId != 0 && enabledHabsShipIds.Contains(dataShipId))
+						{
+							uint partCraftId = uint.Parse(partNode.GetValue("part").Split('_')[1]);
+							enabledHabsPartId.Add(partCraftId);
+						}
+					}
+				}
+				catch (Exception)
+				{
+					return;
+				}
 			}
 
 			bool needRefresh = false;
@@ -216,42 +248,64 @@ namespace KERBALISM
 				if (partManifest.NoSeats())
 					continue;
 
-				ModuleKsmHabitat habitat = EditorLogic.fetch.ship.parts.Find(p => p.craftID == partManifest.PartID)?.FindModuleImplementing<ModuleKsmHabitat>();
-
-				if (habitat == null || habitat.moduleData == null)
-					continue;
-
-				HabitatData habData = habitat.moduleData;
-
-				if (!habData.isEnabled)
+				if (fromVesselSpawnDialog)
 				{
-					habData.crewCount = 0;
-
-					foreach (ProtoCrewMember crew in partManifest.GetPartCrew())
-						if (crew != null)
-							Message.Post($"Can't put {Lib.Bold(crew.displayName)} in {Lib.Bold(habitat.part.partInfo.title)}", "Habitat is disabled !");
-
-					for (int i = 0; i < partManifest.partCrew.Length; i++)
+					if (!enabledHabsPartId.Contains(partManifest.PartID))
 					{
-						if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
-						{
-							partManifest.RemoveCrewFromSeat(i);
+						foreach (ProtoCrewMember crew in partManifest.GetPartCrew())
+							if (crew != null)
+								Message.Post($"Can't put {Lib.Bold(crew.displayName)} in {Lib.Bold(partManifest.PartInfo.title)}", "Habitat is disabled !");
 
-							needRefresh |= true;
+						for (int i = 0; i < partManifest.partCrew.Length; i++)
+						{
+							if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+							{
+								partManifest.RemoveCrewFromSeat(i);
+
+								needRefresh |= true;
+							}
 						}
 					}
 				}
 				else
 				{
-					int crewCount = 0;
-					for (int i = 0; i < partManifest.partCrew.Length; i++)
+					ModuleKsmHabitat habitat = EditorLogic.fetch.ship.parts.Find(p => p.craftID == partManifest.PartID)?.FindModuleImplementing<ModuleKsmHabitat>();
+
+					if (habitat == null || habitat.moduleData == null)
+						continue;
+
+					HabitatData habData = habitat.moduleData;
+
+					if (!habData.isEnabled)
 					{
-						if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+						habData.crewCount = 0;
+
+						foreach (ProtoCrewMember crew in partManifest.GetPartCrew())
+							if (crew != null)
+								Message.Post($"Can't put {Lib.Bold(crew.displayName)} in {Lib.Bold(habitat.part.partInfo.title)}", "Habitat is disabled !");
+
+						for (int i = 0; i < partManifest.partCrew.Length; i++)
 						{
-							crewCount++;
+							if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+							{
+								partManifest.RemoveCrewFromSeat(i);
+
+								needRefresh |= true;
+							}
 						}
 					}
-					habData.crewCount = crewCount;
+					else
+					{
+						int crewCount = 0;
+						for (int i = 0; i < partManifest.partCrew.Length; i++)
+						{
+							if (!string.IsNullOrEmpty(partManifest.partCrew[i]))
+							{
+								crewCount++;
+							}
+						}
+						habData.crewCount = crewCount;
+					}
 				}
 			}
 
@@ -259,7 +313,7 @@ namespace KERBALISM
 			{
 				// RefreshCrewLists() will call the current method trough the EditorCrewChanged event, so avoid an useless recursion.
 				crewAssignementRefreshWasJustFiredFromCrewChanged = true;
-				CrewAssignmentDialog.Instance.RefreshCrewLists(ShipConstruction.ShipManifest, false, true);
+				CrewAssignmentDialog.Instance.RefreshCrewLists(crewManifest, false, true);
 			}
 		}
 
