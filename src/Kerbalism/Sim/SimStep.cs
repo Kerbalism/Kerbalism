@@ -188,7 +188,7 @@ namespace KERBALISM
 					starFlux.directFlux = starFlux.directRawFlux;
 
 					if (MainBody.hasAtmosphere && altitude < MainBody.atmosphereDepth)
-						starFlux.directFlux *= Sim.AtmosphereFactor(MainBody, mainBodyPosition, starFlux.direction, vesselPosition, altitude);
+						starFlux.directFlux *= MainBody.LightTransparencyFactor(mainBodyPosition, starFlux.direction, vesselPosition, altitude);
 				}
 
 				// get indirect fluxes from bodies
@@ -266,22 +266,7 @@ namespace KERBALISM
 				Vector3d bodyToSun = (sunPosition - bodyPosition).normalized;
 				Vector3d bodyToVessel = (vesselPosition - bodyPosition).normalized;
 				double anglefactor = (Vector3d.Dot(bodyToSun, bodyToVessel) + 1.0) / 2.0;
-				// In addition of the crescent-shaped illuminated portion making the angle/flux relation non-linear,
-				// the flux isn't scattered uniformely but tend to be reflected back in the sun direction,
-				// especially on non atmospheric bodies, see https://en.wikipedia.org/wiki/Opposition_surge
-				// The albedo value when in direct opposition is the geometric albedo, as opposed to the bond albedo
-				// which is the global value. We assume that the stock value is a bond albedo :
-				// - For atmospheric bodies, we assume that the geometric albedo = 1.15 * bond albedo
-				// - For airless bodies, we assume that the geometric albedo = 1.50 * bond albedo
-				// We do some square scaling to approximate those effects end to ensure that the total flux
-				// stay the same we check that the surface area under the curve stay the same :
-				// - [0,1] integral of y = x is 0.5
-				// - [0,1] integral of y = (x * 1.113)^1.3 is ~0.5
-				// - [0,1] integral of y = (x * 1.225)^2.0 is ~0.5
-				if (body.hasAtmosphere)
-					albedoFlux *= Math.Pow(anglefactor * 1.113, 1.3);
-				else
-					albedoFlux *= Math.Pow(anglefactor * 1.225, 2.0);
+				albedoFlux *= body.GeometricAlbedoFactor(anglefactor);
 			}
 
 			// THERMAL RE-EMISSION
@@ -299,7 +284,7 @@ namespace KERBALISM
 			// are quite complex, this is a first approximation.
 			if (body.hasAtmosphere && altitude < body.atmosphereDepth)
 			{
-				double atmoFactor = Sim.AtmosphereFactor(body, altitude);
+				double atmoFactor = body.LightTransparencyFactor(altitude);
 				albedoFlux *= atmoFactor;
 				emissiveFlux *= atmoFactor;
 			}

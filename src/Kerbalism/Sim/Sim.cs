@@ -272,56 +272,6 @@ namespace KERBALISM
 			return stars.FirstOrDefault();
 		}
 
-		/// <summary>Estimated solar flux from the first parent sun of the given body, including other neighbouring stars/suns (binary systems handling)</summary>
-		/// <param name="body"></param>
-		/// <param name="worstCase">if true, we use the largest distance between the body and the sun</param>
-		/// <param name="mainSun"></param>
-		/// <param name="mainStarDirection"></param>
-		/// <param name="mainSunDistance"></param>
-		/// <returns></returns>
-		public static double SolarFluxAtBody(CelestialBody body, bool worstCase, out CelestialBody mainStar, out Vector3d mainStarDirection, out double mainStarDistance)
-		{
-			// get first parent sun
-			SimStar mainStarData = GetParentStarData(body);
-			mainStar = mainStarData.body;
-
-			// get direction and distance
-			mainStarDirection = mainStar.position - body.position;
-			mainStarDistance = mainStarDirection.magnitude;
-			mainStarDirection /= mainStarDistance;
-
-			if (worstCase)
-				mainStarDistance = Apoapsis(GetParentPlanet(body));
-
-			mainStarDistance -= body.Radius;
-
-			// get solar flux
-			double solarFlux = mainStarData.SolarFlux(mainStarDistance);
-			// multiple suns handling (binary systems...)
-			foreach (SimStar otherStar in stars)
-			{
-				if (otherStar.body == mainStar)
-					continue;
-
-				// get direction and distance
-				Vector3d otherStarDirection = otherStar.body.position - body.position;
-				double otherStarDistance = otherStarDirection.magnitude;
-				otherStarDirection /= otherStarDistance;
-
-				// account only for other suns that have approximatively the same direction (+/- 30°), discard the others
-				if (Vector3d.Angle(otherStarDirection, mainStarDirection) > 30.0)
-					continue;
-
-				if (worstCase)
-					otherStarDistance = Apoapsis(GetParentPlanet(body));
-
-				otherStarDistance -= body.Radius;
-
-				solarFlux += otherStar.SolarFlux(otherStarDistance);
-			}
-			return solarFlux;
-		}
-
 		public static double SunBodyAngle(Vessel vessel, Vector3d vesselPos, CelestialBody sun)
 		{
 			// orbit around sun?
@@ -439,73 +389,6 @@ namespace KERBALISM
 			return Math.Pow(temperature, 4.0) * PhysicsGlobals.StefanBoltzmanConstant;
 		}
 
-		/// <summary> return equilibrium temperature in K for a body </summary>
-		/// <param name="irradiance">star irradiance in W/m² </param>
-		public static double BodyEquilibriumTemperature(double irradiance, double albedo)
-		{
-			return Math.Pow(irradiance * (1.0 - albedo) / (4.0 * PhysicsGlobals.StefanBoltzmanConstant), 0.25);
-		}
-
-		/// <summary> return equilibrium temperature in K for a body </summary>
-		/// <param name="irradiance">star irradiance in W/m² </param>
-		public static void GetBodyThermalStats(CelestialBody body, out double dayTemperature, out double nightTemperature, out double equilibriumTemperature, out double irradiance)
-		{
-			List<CelestialBody> visibleBodies = GetLargeBodies(body.position);
-			SimStar parentStar = GetParentStarData(body);
-			Vector3d parentStarDirection = parentStar.body.position - body.position;
-			double parentStarDistance = parentStarDirection.magnitude;
-			parentStarDirection /= parentStarDistance;
-
-			irradiance = 0.0;
-			foreach (SimStar star in stars)
-			{
-				Vector3d starDirection;
-				double starDistance;
-				if (star != parentStar)
-				{
-					starDirection = star.body.position - body.position;
-					starDistance = starDirection.magnitude;
-					starDirection /= starDistance;
-					if (Vector3d.Dot(starDirection, parentStarDirection) < 0.75 || Math.Abs(starDistance - parentStarDistance) > 1e+12)
-						continue;
-				}
-				else
-				{
-					starDirection = parentStarDirection;
-					starDistance = parentStarDistance;
-				}
-
-				bool isOccluded = false;
-				foreach (CelestialBody occludingBody in visibleBodies)
-				{
-					if (!RayAvoidBody(body.position, starDirection, starDistance, occludingBody))
-					{
-						isOccluded = true;
-						break;
-					}
-				}
-				if (isOccluded)
-					break;
-
-				irradiance += star.SolarFlux(starDistance);
-			}
-
-			equilibriumTemperature = Math.Pow(irradiance * (1.0 - body.albedo) / (4.0 * PhysicsGlobals.StefanBoltzmanConstant), 0.25);
-			if (body.atmosphere)
-			{
-
-			}
-			dayTemperature = 0.0;
-			nightTemperature = 0.0;
-
-		}
-
-
-
-
-
-
-
 		// TODO : move this to the step sim and :
 		// - scale BackgroundFlux with atmo absorbtion
 		// - assuming this is a surface temperature, this doesn't really make sense,
@@ -514,38 +397,6 @@ namespace KERBALISM
 		public static double VesselTemperature(double irradiance)
 		{
 			return BlackBodyTemperature(irradiance + BackgroundFlux);
-		}
-
-		// return temperature of a vessel
-		public static double Temperature(Vessel v, Vector3d position, double solar_flux, out double albedo_flux, out double body_flux, out double total_flux)
-		{
-			// get vessel body
-			CelestialBody body = v.mainBody;
-
-			// get albedo radiation
-			albedo_flux = IsStar(body) ? 0.0 : 0.0;//AlbedoFlux(body, position);
-
-			// get cooling radiation from the body
-			body_flux = IsStar(body) ? 0.0 : 0.0; // BodyFlux(body, v.altitude);
-
-			// calculate total flux
-			total_flux = solar_flux + albedo_flux + body_flux + BackgroundFlux;
-
-			// calculate temperature
-			double temp = BlackBodyTemperature(total_flux);
-
-			// if inside atmosphere
-			if (body.atmosphere && v.altitude < body.atmosphereDepth)
-			{
-				// get atmospheric temperature
-				double atmo_temp = body.GetTemperature(v.altitude);
-
-				// mix between our temperature and the stock atmospheric model
-				temp = Lib.Mix(atmo_temp, temp, Lib.Clamp(v.altitude / body.atmosphereDepth, 0.0, 1.0));
-			}
-
-			// finally, return the temperature
-			return temp;
 		}
 
 		// return difference from survival temperature
@@ -567,49 +418,7 @@ namespace KERBALISM
 			return num2 / (num2 + density * PhysicsGlobals.SolarInsolationAtHome);
 		}
 
-		/// <summary>
-		/// return proportion of flux not blocked by atmosphere, for a flux going straight up
-		/// </summary>
-		public static double AtmosphereFactor(SimBody body, double altitude)
-		{
-			double staticPressure = body.GetPressure(altitude);
 
-			if (staticPressure > 0.0)
-			{
-				double density = body.GetDensity(staticPressure, body.GetTemperature(altitude));
-
-				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-				double Ra = body.radius + altitude;
-				double Ya = body.atmosphereDepth - altitude;
-				double path = Math.Sqrt(Ra * Ra + 2.0 * Ra * Ya + Ya * Ya) - Ra;
-				return GetSolarPowerFactor(density) * Ya / path;
-			}
-			return 1.0;
-		}
-
-		/// <summary>
-		/// return proportion of flux not blocked by atmosphere, for the given flux direction
-		/// </summary>
-		public static double AtmosphereFactor(SimBody body, Vector3d bodyPosition, Vector3d fluxDir, Vector3d vesselPosition, double altitude)
-		{
-			// get up vector
-			Vector3d up = (vesselPosition - bodyPosition).normalized;
-
-			double staticPressure = body.GetPressure(altitude);
-
-			if (staticPressure > 0.0)
-			{
-				double density = body.GetDensity(staticPressure, body.GetTemperature(altitude));
-
-				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-				double Ra = body.radius + altitude;
-				double Ya = body.atmosphereDepth - altitude;
-				double q = Ra * Math.Max(0.0, Vector3d.Dot(up, fluxDir));
-				double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
-				return GetSolarPowerFactor(density) * Ya / path;
-			}
-			return 1.0;
-		}
 
 
 
