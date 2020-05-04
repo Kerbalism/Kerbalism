@@ -78,16 +78,16 @@ namespace KERBALISM
 
 			connection.maxRange = Math.Sqrt(connection.basePower * dsnPower);
 
-			connection.minDistanceStrength = GetSignalStrength(connection.maxRange, connection.minDsnDistance);
-			connection.maxDistanceStrength = GetSignalStrength(connection.maxRange, connection.maxDsnDistance);
+			connection.minDistanceStrength = Sim.SignalStrength(connection.maxRange, connection.minDsnDistance);
+			connection.maxDistanceStrength = Sim.SignalStrength(connection.maxRange, connection.maxDsnDistance);
 
 			if (transmitterCount > 1)
 				connection.baseRate = Math.Pow(connection.baseRate, 1.0 / transmitterCount);
 			else if (transmitterCount == 0)
 				connection.baseRate = 0.0;
 
-			connection.minDistanceRate = connection.baseRate * Math.Pow(connection.minDistanceStrength, Settings.DataRateDampingExponent);
-			connection.maxDistanceRate = connection.baseRate * Math.Pow(connection.maxDistanceStrength, Settings.DataRateDampingExponent);
+			connection.minDistanceRate = connection.baseRate * Math.Pow(connection.minDistanceStrength, Sim.DataRateDampingExponent);
+			connection.maxDistanceRate = connection.baseRate * Math.Pow(connection.maxDistanceStrength, Sim.DataRateDampingExponent);
 
 			// set minimal data rate to what is defined in Settings (1 bit/s by default) 
 			if (connection.minDistanceRate > 0.0 && connection.minDistanceRate * Lib.bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
@@ -125,20 +125,6 @@ namespace KERBALISM
 					}
 				}
 			}
-		}
-
-		private double GetSignalStrength(double maxRange, double distance)
-		{
-			if (distance > maxRange)
-				return 0.0;
-
-			double relativeDistance = 1.0 - (distance / maxRange);
-			double strength = (3.0 - (2.0 * relativeDistance)) * (relativeDistance * relativeDistance);
-
-			if (strength < 0)
-				return 0.0;
-
-			return strength;
 		}
 	}
 }

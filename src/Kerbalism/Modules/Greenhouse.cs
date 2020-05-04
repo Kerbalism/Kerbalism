@@ -136,7 +136,7 @@ namespace KERBALISM
 			{
 				// get vessel info from the cache
 				// - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 
 				// get resource cache
 				VesselResHandler resources = vd.ResHandler;
@@ -146,7 +146,7 @@ namespace KERBALISM
 				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
 
 				// calculate natural and artificial lighting
-				natural = vd.EnvSolarFluxTotal;
+				natural = vd.IrradianceStarTotal;
 				artificial = Math.Max(light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
@@ -254,7 +254,7 @@ namespace KERBALISM
 				VesselKSPResource ec = resources.ElectricCharge;
 
 				// calculate natural and artificial lighting
-				double natural = vd.EnvSolarFluxTotal;
+				double natural = vd.IrradianceStarTotal;
 				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 
 				// consume EC for the lamps, scaled by artificial light intensity
@@ -366,7 +366,7 @@ namespace KERBALISM
 			VesselResource res = resHandler.GetResource(crop_resource);
 
 			// calculate natural and artificial lighting
-			double natural = vesselData.solarFlux;
+			double natural = vesselData.IrradianceStarTotal;
 			double artificial = Math.Max(light_tolerance - natural, 0.0);
 
 			// if lamps are on and artificial lighting is required
@@ -445,7 +445,7 @@ namespace KERBALISM
 			if (v == null || EVA.IsDead(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResHandler.Produce(crop_resource, crop_size, ResourceBroker.Greenhouse);
 
 			// reset growth
@@ -467,7 +467,7 @@ namespace KERBALISM
 			double reduced_harvest = crop_size * growth * 0.5;
 
 			// produce reduced quantity of food, proportional to current growth
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResHandler.Produce(crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
 
 			// reset growth

@@ -100,7 +100,7 @@ namespace KERBALISM
 		public double shieldingAmount = 0.0;
 
 		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
-		public double animTimer = 0.0;
+		public float animTimer = 0f;
 
 		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
 
@@ -336,6 +336,7 @@ namespace KERBALISM
 			atmoAmount = Lib.ConfigValue(node, "atmoAmount", atmoAmount);
 			wasteLevel = Lib.ConfigValue(node, "wasteLevel", wasteLevel);
 			shieldingAmount = Lib.ConfigValue(node, "shieldingAmount", shieldingAmount);
+			animTimer = Lib.ConfigValue(node, "animTimer", animTimer);
 
 			sunRadiationOccluders.Clear();
 			foreach (ConfigNode occluderNode in node.GetNodes("OCCLUDER"))
@@ -358,6 +359,7 @@ namespace KERBALISM
 			node.AddValue("atmoAmount", atmoAmount);
 			node.AddValue("wasteLevel", wasteLevel);
 			node.AddValue("shieldingAmount", shieldingAmount);
+			node.AddValue("animTimer", animTimer);
 
 			foreach (SunRadiationOccluder occluder in sunRadiationOccluders)
 			{

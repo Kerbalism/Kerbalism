@@ -273,7 +273,7 @@ namespace KERBALISM
 				sb.AppendInfo(Local.Module_Experiment_Specifics_info4, Lib.HumanReadableSampleSize(expSize));//"Sample size"
 				sb.AppendInfo(Local.Module_Experiment_Specifics_info5, Lib.HumanReadableMass(Info.SampleMass));//"Sample mass"
 				if (Info.SampleMass > 0.0 && !SampleCollecting)
-					sb.AppendInfo(Local.Module_Experiment_Specifics_info6, Samples.ToString("F2"));//"Samples"
+					sb.AppendInfo(Local.Module_Experiment_Specifics_info6, Lib.BuildString(Samples.ToString("F2"), " (", Lib.HumanReadableMass(Info.SampleMass * Samples), ")"));//"Samples"
 				if (Duration > 0)
 					sb.AppendInfo(Local.Module_Experiment_Specifics_info7_sample, Lib.HumanReadableDuration(Duration));
 			}

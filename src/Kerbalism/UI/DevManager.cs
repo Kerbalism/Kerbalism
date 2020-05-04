@@ -19,7 +19,7 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get data
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;

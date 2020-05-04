@@ -41,7 +41,7 @@ namespace KERBALISM
 		/// </summary>
 		/// <param name="inReverse">false : play from start to end then fire the callback <para/>true : fire the callback then play from end to start</param>
 		/// <param name="loop">if true, animation will keep playing from start to end</param>
-		public void Play(bool inReverse, bool loop, Action callback = null, float speed = 1f)
+		public void Play(bool inReverse, bool loop, Action callback = null, float speed = 1f, float fromTime = 0f)
 		{
 			isLoopStopping = false;
 
@@ -54,13 +54,16 @@ namespace KERBALISM
 			Kerbalism.Fetch.StartCoroutine(PlayCoroutine(inReverse, loop, callback, speed));
 		}
 
-		private IEnumerator PlayCoroutine(bool inReverse, bool loop, Action callback = null, float speed = 1f)
+		private IEnumerator PlayCoroutine(bool inReverse, bool loop, Action callback = null, float speed = 1f, float fromTime = 0f)
 		{
 			bool towardStart = invertPlayDirection ^ inReverse;
 
 			// if the animation is already playing in the same direction, do nothing.
 			if (anim.IsPlaying(name) && ((towardStart && anim[name].speed < 0f) || (!towardStart && anim[name].speed > 0f)))
 				yield break;
+
+			if (fromTime == 0f)
+				fromTime = float.Epsilon; // just so we don't fire the callback immediatly
 
 			// if playing toward the start, fire the callback immediately
 			if (inReverse && callback != null) callback();
@@ -72,9 +75,9 @@ namespace KERBALISM
 
 			// normalizedTime is always reset to 0 when animation end is reached, so set it back manually to 1 to play backward
 			if (towardStart && anim[name].normalizedTime == 0f)
-				anim[name].normalizedTime = 1f; 
+				anim[name].normalizedTime = 1f - fromTime; 
 			else if (anim[name].normalizedTime == 0f)
-				anim[name].normalizedTime = float.Epsilon; // just so we don't fire the callback immediatly
+				anim[name].normalizedTime = fromTime; 
 
 			anim.Play(name);
 

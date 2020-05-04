@@ -19,7 +19,7 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get vessel data
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;
@@ -72,6 +72,8 @@ namespace KERBALISM
 			readings.Remove(string.Empty);
 
 			p.AddSection(Local.TELEMETRY_ENVIRONMENT);//"ENVIRONMENT"
+
+			//p.AddContent("exposure", (vd.timeInSunlight / vd.timeEvaluated).ToString("P2"));
 
 			if (vd.SolarPanelsAverageExposure >= 0.0)
 			{

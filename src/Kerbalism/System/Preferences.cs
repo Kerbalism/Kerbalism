@@ -49,7 +49,7 @@ namespace KERBALISM
 					shieldingEfficiency = Lib.Clamp(Settings.ShieldingEfficiency, 0.0f, 0.99f);
 					break;
 				case GameParameters.Preset.Moderate:
-					lifetime = false;
+					lifetime = true;
 					stormFrequency = Settings.StormFrequency * 1.3f;
 					stormRadiation = Settings.StormRadiation * 1.2f;
 					shieldingEfficiency = Lib.Clamp(Settings.ShieldingEfficiency * 0.9f, 0.0f, 0.99f);
@@ -223,11 +223,11 @@ namespace KERBALISM
 					transmitFactor = 2f;
 					break;
 				case GameParameters.Preset.Normal:
-					sampleTransfer = false;
+					sampleTransfer = true;
 					transmitFactor = 1.5f;
 					break;
 				case GameParameters.Preset.Moderate:
-					sampleTransfer = false;
+					sampleTransfer = true;
 					transmitFactor = 1.2f;
 					break;
 				case GameParameters.Preset.Hard:

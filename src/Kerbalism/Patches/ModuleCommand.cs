@@ -67,7 +67,7 @@ namespace KERBALISM
 			if (Lib.IsEditor)
 				return;
 
-			__instance.vessel.TryGetVesselData(out VesselData vd);
+			__instance.vessel.TryGetVesselDataTemp(out VesselData vd);
 			if (!__instance.hibernation)
 				vd.hasNonHibernatingCommandModules = true;
 

@@ -137,7 +137,7 @@ namespace KERBALISM
 				return false;
 
 			ignitions++;
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResetReliabilityStatus();
 
 			bool fail = false;
@@ -250,7 +250,7 @@ namespace KERBALISM
 
 					if (rated_radiation > 0)
 					{
-						vessel.TryGetVesselData(out VesselData vd);
+						vessel.TryGetVesselDataTemp(out VesselData vd);
 						var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
 						var current = vd.EnvRadiation * 3600.0;
 						if (rated < current)
@@ -348,7 +348,7 @@ namespace KERBALISM
 #endif
 				}
 
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 
 				var decay = RadiationDecay(quality, vd.EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
 				next -= decay;
@@ -389,7 +389,7 @@ namespace KERBALISM
 			{
 				var duration = now - lastRunningCheck;
 				operation_duration += duration;
-				vessel.TryGetVesselData(out VesselData vd);
+				vessel.TryGetVesselDataTemp(out VesselData vd);
 				vd.ResetReliabilityStatus();
 
 				if (fail_duration <= 0)
@@ -467,7 +467,7 @@ namespace KERBALISM
 #endif
 			}
 
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			var rad = vd.EnvRadiation;
 			var decay = RadiationDecay(quality, rad, elapsed_s, reliability.rated_radiation, reliability.radiation_decay_rate);
 			if (decay > 0)
@@ -521,7 +521,7 @@ namespace KERBALISM
 			if (rated_ignitions > 0 && ignitions >= Math.Ceiling(EffectiveIgnitions(quality, rated_ignitions) * 0.4)) needMaintenance = true;
 			if (rated_operation_duration > 0 && operation_duration >= EffectiveDuration(quality, rated_operation_duration) * 0.4) needMaintenance = true;
 
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResetReliabilityStatus();
 
 			// notify user
@@ -584,7 +584,7 @@ namespace KERBALISM
 			operation_duration = 0;
 			ignitions = 0;
 			fail_duration = 0;
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResetReliabilityStatus();
 
 			if (broken)
@@ -632,7 +632,7 @@ namespace KERBALISM
 #endif
 		public void Break()
 		{
-			vessel.TryGetVesselData(out VesselData vd);
+			vessel.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResetReliabilityStatus();
 
 			if (broken) return;
@@ -676,7 +676,7 @@ namespace KERBALISM
 
 		public static void ProtoBreak(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
 		{
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			vd.ResetReliabilityStatus();
 
 			// get reliability module prefab
@@ -1021,7 +1021,7 @@ namespace KERBALISM
 		// set highlighting
 		static void Highlight(Part p)
 		{
-			if (p.vessel.TryGetVesselData(out VesselData vd) && vd.cfg_highlights)
+			if (p.vessel.TryGetVesselDataTemp(out VesselData vd) && vd.cfg_highlights)
 			{
 				// get state among all reliability components in the part
 				bool broken = false;
@@ -1042,7 +1042,7 @@ namespace KERBALISM
 
 		static void Broken_msg(Vessel v, string title, bool critical)
 		{
-			if (v.TryGetVesselData(out VesselData vd) && vd.cfg_malfunction)
+			if (v.TryGetVesselDataTemp(out VesselData vd) && vd.cfg_malfunction)
 			{
 				if (!critical)
 				{

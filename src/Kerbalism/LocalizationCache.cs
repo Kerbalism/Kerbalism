@@ -627,6 +627,8 @@ namespace KERBALISM
 		public static string VESSELCONFIG_script = GetLoc("VESSELCONFIG_script"); // "Script"
 		public static string VESSELCONFIG_ShowVessel = GetLoc("VESSELCONFIG_ShowVessel"); // "Show in vessels list"
 		public static string VESSELCONFIG_ShowVessel_desc = GetLoc("VESSELCONFIG_ShowVessel_desc"); // "Show this vessel in the vessels list"
+		public static string VESSELCONFIG_ShowOrbit = GetLoc("VESSELCONFIG_ShowOrbit"); // "Show orbit in map view"
+		public static string VESSELCONFIG_ShowOrbit_desc = GetLoc("VESSELCONFIG_ShowOrbit_desc"); // "Show or hide the orbit line for this vessel in map view"
 
 
 		////////////////////////////////////////////////////////////////////
