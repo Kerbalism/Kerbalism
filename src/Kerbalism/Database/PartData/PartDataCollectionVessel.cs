@@ -268,6 +268,7 @@ namespace KERBALISM
 		{
 			foreach (PartData partData in other)
 			{
+				partData.vesselData = vesselData;
 				Add(partData);
 			}
 

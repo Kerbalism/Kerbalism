@@ -180,7 +180,7 @@ namespace KERBALISM
 
 		public float AnimDuration => IsDefined ? anim[name].length : 0f;
 
-		public bool Playing => IsDefined ? (anim[name].speed != 0f) && anim.IsPlaying(name) : false;
+		public bool Playing => IsDefined ? anim.IsPlaying(name) : false;
 
 		public float NormalizedTime
 		{

@@ -176,7 +176,7 @@
     <Compile Include="Modules\ModuleKsmGreenhouse.cs" />
     <Compile Include="Modules\ModuleKsmRadiationEmitter.cs" />
     <Compile Include="Modules\ModuleKsmRadiationCoil.cs" />
-    <Compile Include="Patches\InternalModel_SpawnCrew.cs" />
+    <Compile Include="Patches\InternalModelAndHelmets.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="Patches\ShipConstruct.cs" />
