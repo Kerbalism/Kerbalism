@@ -191,7 +191,7 @@ namespace KERBALISM
 		/// Is the habitat pressurized above the pressure threshold
 		/// Note that when false, it doesn't mean kerbals need to be in their suits if they are in breathable atmosphere.
 		/// </summary>
-		public bool IsPressurized
+		public bool IsPressurizedAboveThreshold
 		{
 			get
 			{
@@ -213,7 +213,6 @@ namespace KERBALISM
 				switch (pressureState)
 				{
 					case PressureState.Pressurized:
-					case PressureState.Depressurized:
 					case PressureState.Pressurizing:
 						return true;
 					default:
@@ -244,7 +243,7 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Are suits required. Note that this doesn't mean the habitat is depressurized.
+		/// Is the habitat at zero pressure ?
 		/// </summary>
 		public bool IsFullyDepressurized
 		{
@@ -253,7 +252,6 @@ namespace KERBALISM
 				switch (pressureState)
 				{
 					case PressureState.AlwaysDepressurized:
-					case PressureState.Breatheable:
 					case PressureState.Depressurized:
 						return true;
 					default:

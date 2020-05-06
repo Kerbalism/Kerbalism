@@ -9,6 +9,7 @@ namespace KERBALISM
 		public bool needCatchup;
 		public SubStepOrbit orbit;
 		public Deque<SimStep> stepsData = new Deque<SimStep>();
+		private int nextStepToRecompute = -1;
 
 		public override SimBody[] Bodies => SubStepSim.Bodies;
 
@@ -48,26 +49,30 @@ namespace KERBALISM
 				vd.subSteps.Add(stepsData.RemoveFromFront());
 			}
 
-			if (soiHasChanged && stepsData.Count > 1)
+			if (soiHasChanged)
 			{
 				// always recompute all steps for vessels that just changed SOI
 				Lib.LogDebug($"{vd.VesselName} SOI has changed, clearing substeps");
+				foreach (SimStep step in stepsData)
+					step.ReleaseToPool();
+
 				stepsData.Clear();
+				nextStepToRecompute = -1;
 				SubStepSim.vesselsInNeedOfCatchup.Enqueue(this);
 			}
-			else if (vessel.loaded && stepsToConsume == 0)
+			else if (vessel.loaded && stepsToConsume == 0 && stepsData.Count > 0)
 			{
 				// on loaded vessels, the orbit can change at any time unless we are timewarping
 				// if we aren't timewarping (no steps consumed), the worker thread will be mostly idle
 				// so take advantage of that and always recompute all steps between every FixedUpdate
-				stepsData.Clear();
+				nextStepToRecompute = (nextStepToRecompute + 1) % stepsData.Count;
 				SubStepSim.vesselsInNeedOfCatchup.Enqueue(this);
 			}
 		}
 
 		public void ComputeNextStep()
 		{
-			SimStep step = SimStep.GetFromWorkerPool();
+			SimStep step = SimStep.GetFromPool();
 			step.Init(this);
 			step.Evaluate();
 
@@ -82,7 +87,7 @@ namespace KERBALISM
 			while (stepCount < SubStepSim.stepCount)
 			{
 				double stepUT = SubStepSim.steps[stepCount].ut;
-				SimStep step = SimStep.GetFromWorkerPool();
+				SimStep step = SimStep.GetFromPool();
 				step.Init(this, stepUT);
 				step.Evaluate();
 				stepsData.AddToBack(step);
@@ -90,6 +95,14 @@ namespace KERBALISM
 
 				if (stepCount > maxSteps)
 					return false;
+			}
+
+			if (nextStepToRecompute >= 0 && nextStepToRecompute < stepCount)
+			{
+				double stepUT = SubStepSim.steps[nextStepToRecompute].ut;
+				SimStep step = stepsData[nextStepToRecompute];
+				step.Init(this, stepUT);
+				step.Evaluate();
 			}
 
 			return true;

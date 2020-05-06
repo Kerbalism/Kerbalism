@@ -9,6 +9,7 @@ namespace KERBALISM
 		public abstract double Amount { get; set; }
 		public abstract double Capacity { get; set; }
 		public abstract bool FlowState { get; set; }
+		public double Level => Capacity > 0.0 ? Amount / Capacity : 0.0;
 	}
 
 	public class LoadedPartResourceWrapper : PartResourceWrapper

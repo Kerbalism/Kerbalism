@@ -759,7 +759,7 @@ namespace KERBALISM
 							vesselStarFlux.sunlightFactor += 1.0;
 					}
 
-					subSteps[k].ReleaseToWorkerPool();
+					subSteps[k].ReleaseToPool();
 				}
 
 				subSteps.Clear();
@@ -793,12 +793,17 @@ namespace KERBALISM
 			}
 			else
 			{
+				foreach (SimStep discardedStep in subSteps)
+					discardedStep.ReleaseToPool();
+
 				subSteps.Clear();
+
 				simVessel.UpdatePosition(this, position);
-				SimStep step = new SimStep();
+				SimStep step = SimStep.GetFromPool();
 				step.Init(simVessel);
 				step.Evaluate();
 				ProcessSimStep(step);
+				step.ReleaseToPool();
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();

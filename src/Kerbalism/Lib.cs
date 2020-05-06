@@ -1906,7 +1906,8 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Rebuild the IVAs and and Kerbal portrait gallery. Called from the habitat module in conjunction
-		/// with the InternalModel_SpawnCrew patch to make kerbals put/take off their helmets. 
+		/// with the InternalModel_SpawnCrew patch to make kerbals put/take off their helmets. <br/>
+		/// Note : depreciated in favor of InternalModel/Kerbal patches
 		/// </summary>
 		public static void RefreshIVAAndPortraits()
 		{
@@ -1956,7 +1957,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
 		public static void EnablePartCrewTransfer(Part part, bool enable)
 		{
 			part.crewTransferAvailable = enable;

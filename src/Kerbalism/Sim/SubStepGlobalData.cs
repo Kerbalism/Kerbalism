@@ -4,37 +4,23 @@ namespace KERBALISM
 {
 	public class SubStepGlobalData
 	{
-		private static List<SubStepGlobalData> stepPool = new List<SubStepGlobalData>(200);
-		private static Queue<int> freeSteps = new Queue<int>(200);
+		private static Queue<SubStepGlobalData> globalStepPool = new Queue<SubStepGlobalData>(200);
 
 		public static SubStepGlobalData GetFromPool()
 		{
-			if (freeSteps.TryDequeue(out int index))
-			{
-				return stepPool[index];
-			}
-			else
-			{
-				SubStepGlobalData newStep = new SubStepGlobalData(stepPool.Count);
-				stepPool.Add(newStep);
-				return newStep;
-			}
-		}
+			if (globalStepPool.TryDequeue(out SubStepGlobalData step))
+				return step;
 
-		private readonly int stepPoolIndex;
+			return new SubStepGlobalData();
+		}
 
 		public double ut;
 		public double inverseRotAngle; // Planetarium.InverseRotAngle
 		public Planetarium.CelestialFrame zup; // Planetarium.Zup;
 
-		private SubStepGlobalData(int stepPoolIndex)
-		{
-			this.stepPoolIndex = stepPoolIndex;
-		}
-
 		public void ReleaseToPool()
 		{
-			freeSteps.Enqueue(stepPoolIndex);
+			globalStepPool.Enqueue(this);
 		}
 	}
 }

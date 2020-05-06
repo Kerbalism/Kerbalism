@@ -24,26 +24,45 @@ namespace KERBALISM
 		private static Planetarium.CelestialFrame currentZup;
 		private static double currentInverseRotAngle;
 
-		public static Thread worker;
-		public static bool workerIsAlive;
-		public static double maxUT;
-		public static double currentUT;
-		public static int bodyCount;
-		public static int stepCount;
-		public static double lastStepUT;
+		private const int maxSubSteps = 100; // max amount of substeps, no matter the interval and max timewarp rate
+		private const int subStepsMargin = 25; // substep "buffer"
+		private const double minInterval = 30.0; // in seconds
+		private const double maxInterval = 120.0; // in seconds
+		private const double intervalChange = 15.0; // in seconds
 
-		public static Dictionary<Guid, SubStepVessel> vessels = new Dictionary<Guid, SubStepVessel>();
+		private const int fuLagCheckFrequency = 50; // 1 second
+		private const int maxLaggingFu = 2;
+		private const int minNonLaggingFu = 20;
+		private const int lagChecksForDecision = 5;
+		private const int lagChecksReset = 25;
+
+		private static int fuCounter;
+		private static int laggingFuCount;
+		private static int nonLaggingFuCount;
+
+		private static int lagChecksCount;
+		private static int lagCheckResultsCount;
+		private static int laggingLagChecks;
+		private static int nonLaggingLagChecks;
+
+		private static Thread worker;
+		private static readonly object workerLock = new object();
+		private static bool workerIsAlive;
+		private static double maxUT;
+		private static double currentUT;
+		private static int bodyCount;
+		private static double lastStepUT;
+		private static Dictionary<Guid, SubStepVessel> vessels = new Dictionary<Guid, SubStepVessel>();
+		private static List<Guid> subStepVesselIds = new List<Guid>();
+
+		public static double subStepInterval;
+		public static int subStepsToCompute;
+		public static int subStepsAtMaxWarp;
+		public static int stepCount;
 		public static SubStepBody[] Bodies { get; private set; }
 		public static IndexedQueue<SubStepGlobalData> steps = new IndexedQueue<SubStepGlobalData>();
 		public static SubStepGlobalData lastStep;
-
-		public static double subStepInterval;
-		public static int subStepsAtMaxWarp;
-		public static int subStepsToCompute;
-
 		public static Queue<SubStepVessel> vesselsInNeedOfCatchup = new Queue<SubStepVessel>();
-
-		private static readonly object workerLock = new object();
 
 		public static void Init()
 		{
@@ -75,28 +94,6 @@ namespace KERBALISM
 		{
 			node.AddValue(nameof(subStepInterval), subStepInterval);
 		}
-
-		private const int maxSubSteps = 100; // max amount of substeps, no matter the interval and max timewarp rate
-		private const int subStepsMargin = 25; // substep "buffer"
-		private const double minInterval = 30.0; // in seconds
-		private const double maxInterval = 120.0; // in seconds
-		private const double intervalChange = 15.0; // in seconds
-
-		private const int fuLagCheckFrequency = 50 ; // 1 second
-		private const int maxLaggingFu = 2;
-		private const int minNonLaggingFu = 20;
-		private const int lagChecksForDecision = 5;
-		private const int lagChecksReset = 25;
-
-
-		private static int fuCounter;
-		private static int laggingFuCount;
-		private static int nonLaggingFuCount;
-
-		private static int lagChecksCount;
-		private static int lagCheckResultsCount;
-		private static int laggingLagChecks;
-		private static int nonLaggingLagChecks;
 
 		private static void WorkerLoadCheck()
 		{
@@ -288,7 +285,7 @@ namespace KERBALISM
 					{
 						vessel = new SubStepVessel(vd.Vessel);
 						vessels.Add(vd.VesselId, vessel);
-						vesselsInNeedOfCatchup.Enqueue(vessel);
+						subStepVesselIds.Add(vd.VesselId);
 					}
 					else
 					{
@@ -300,12 +297,25 @@ namespace KERBALISM
 					if (!vd.IsSimulated)
 					{
 						vessels.Remove(vd.VesselId);
+						subStepVesselIds.Remove(vd.VesselId);
+						foreach (SimStep step in vd.subSteps)
+							step.ReleaseToPool();
+						vd.subSteps.Clear();
 						continue;
 					}
 				}
 
 				vessel.UpdatePosition(vd);
 				vessel.Synchronize(vd, stepsToConsume);
+			}
+
+			for (int i = subStepVesselIds.Count - 1; i >= 0; i--)
+			{
+				if (!DB.VesselExist(subStepVesselIds[i]))
+				{
+					vessels.Remove(subStepVesselIds[i]);
+					subStepVesselIds.RemoveAt(i);
+				}
 			}
 		}
 

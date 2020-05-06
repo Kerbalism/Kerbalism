@@ -126,8 +126,8 @@ namespace KERBALISM
 			if (!TrySetupDefinition(modulePrefab.moduleDefinition))
 				moduleIsEnabled = false;
 
-			if(!Lib.IsEditor)
-				API.OnExperimentStateChanged.Notify(((VesselData)partData.vesselData).VesselId, ExperimentID, status);
+			if(partData.vesselData is VesselData vesselData)
+				API.OnExperimentStateChanged.Notify(vesselData.VesselId, ExperimentID, status);
 		}
 
 		public bool TrySetupDefinition(string definitionId)
