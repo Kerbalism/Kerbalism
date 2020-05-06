@@ -32,6 +32,7 @@ namespace KERBALISM
 		public static Dictionary<string, KerbalData> Kerbals => kerbals;
 		public static UIData UiData => uiData;
 		public static Dictionary<Guid, VesselData>.ValueCollection VesselDatas => vessels.Values;
+		public static bool VesselExist(Guid guid) => vessels.ContainsKey(guid);
 
 		#region LOAD/SAVE
 

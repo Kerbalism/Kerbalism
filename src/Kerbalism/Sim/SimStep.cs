@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KERBALISM.Collections;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
@@ -8,26 +9,17 @@ namespace KERBALISM
 {
 	public class SimStep
 	{
-		private static List<SimStep> stepWorkerPool = new List<SimStep>(10000);
-		private static ConcurrentQueue<int> freeWorkerSteps = new ConcurrentQueue<int>();
+		private static readonly ConcurrentBag<SimStep> simStepPool = new ConcurrentBag<SimStep>();
+		private static int stepsCreated = 0;
 
-		public static SimStep GetFromWorkerPool()
+		public static SimStep GetFromPool()
 		{
-			if (freeWorkerSteps.IsEmpty)
-			{
-				SimStep newStep = new SimStep();
-				stepWorkerPool.Add(newStep);
-				newStep.stepPoolIndex = stepWorkerPool.Count - 1;
-				return newStep;
-			}
+			if (simStepPool.TryTake(out SimStep step))
+				return step;
 
-			if (freeWorkerSteps.TryDequeue(out int index))
-				return stepWorkerPool[index];
-
+			stepsCreated++;
 			return new SimStep();
 		}
-
-		private int stepPoolIndex;
 
 		// step results
 		public double thermalFlux;
@@ -58,16 +50,12 @@ namespace KERBALISM
 
 		public SimStep()
 		{
-			stepPoolIndex = -1;
 			starFluxes = StarFlux.StarArrayFactory();
 		}
 
-		public void ReleaseToWorkerPool()
+		public void ReleaseToPool()
 		{
-			if (stepPoolIndex < 0)
-				return;
-
-			freeWorkerSteps.Enqueue(stepPoolIndex);
+			simStepPool.Add(this);
 		}
 
 		public void Init(SimVessel simVessel, double ut = -1.0)
