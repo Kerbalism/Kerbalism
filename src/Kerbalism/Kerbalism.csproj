@@ -164,6 +164,9 @@
     <Compile Include="Database\PartData\PartDataCollectionShip.cs" />
     <Compile Include="Database\PartData\PartRadiationData.cs" />
     <Compile Include="Database\PartData\PartResourceData.cs" />
+    <Compile Include="Database\PartData\PartResourceDataCollection.cs" />
+    <Compile Include="Database\PartData\PartThermalData.cs" />
+    <Compile Include="Database\PartVolumeAndSurface.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
     <Compile Include="Database\VesselDataComponents\VesselHabitat.cs" />
@@ -171,6 +174,7 @@
     <Compile Include="Database\VesselDataComponents\VesselProcessCollection.cs" />
     <Compile Include="External\B9PartSwitch.cs" />
     <Compile Include="External\Kopernicus.cs" />
+    <Compile Include="Modules\Base\IVolumeAndSurfaceModule.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
     <Compile Include="Modules\Base\SubclassingExample.cs" />
     <Compile Include="Modules\ModuleKsmGreenhouse.cs" />
@@ -179,10 +183,11 @@
     <Compile Include="Patches\InternalModelAndHelmets.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />
+    <Compile Include="Patches\PartLoader.cs" />
     <Compile Include="Patches\ShipConstruct.cs" />
-    <Compile Include="ResourceSim\PartVirtualResource.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
+    <Compile Include="ResourceSim\VesselVirtualPartResource.cs" />
     <Compile Include="Science\ExperimentModuleDefinition.cs" />
     <Compile Include="Sim\SimProfiler.cs" />
     <Compile Include="Sim\SimVessel.cs" />

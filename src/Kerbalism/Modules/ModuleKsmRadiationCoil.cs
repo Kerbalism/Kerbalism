@@ -12,7 +12,7 @@ namespace KERBALISM
 		public class ArrayEffectData
 		{
 			public string chargeId;
-			public PartVirtualResource charge;
+			public VesselVirtualPartResource charge;
 			public double chargeRate;
 			public double maxRadiation;
 			public bool charging;
@@ -23,13 +23,11 @@ namespace KERBALISM
 			public ArrayEffectData(ModuleKsmRadiationCoil masterModule, List<ModuleKsmRadiationCoil> coilModules)
 			{
 				chargeId = Guid.NewGuid().ToString();
-				charge = new PartVirtualResource(chargeId);
-				charge.SetCapacity(0.0);
-				masterModule.moduleData.VesselData.ResHandler.AddPartVirtualResource(charge);
+				charge = masterModule.moduleData.VesselData.ResHandler.CreateVirtualResource<VesselVirtualPartResource>(chargeId);
 
 				foreach (ModuleKsmRadiationCoil coilModule in coilModules)
 				{
-					coilModule.moduleData.CreateChargeResource(chargeId);
+					coilModule.moduleData.CreateChargeResource(charge);
 				}
 
 				chargeRate = coilModules.Count * masterModule.ecChargeRate;
@@ -106,23 +104,18 @@ namespace KERBALISM
 		{
 			if (effectData != null)
 			{
-				effectData.charge = (PartVirtualResource)VesselData.ResHandler.GetResource(effectData.chargeId);
+				VesselData.ResHandler.TryGetResource(effectData.chargeId, out effectData.charge);
 			}
 		}
 
-		public void CreateChargeResource(string chargeId)
+		public void CreateChargeResource(VesselVirtualPartResource resource)
 		{
-			// create the virtual resource capacity on the part
-			PartResourceData chargeRes = new PartResourceData(VesselData, chargeId, 0.0, loadedModule.ecChargeRequired);
-			partData.virtualResources.Add(chargeRes);
+			partData.virtualResources.AddResource(resource, 0.0, loadedModule.ecChargeRequired);
 		}
 
 		public void RemoveChargeResource(string chargeId)
 		{
-			// remove the virtual resource capacity on the part
-			int resIndex = partData.virtualResources.FindIndex(p => p.Resource.Name == chargeId);
-			partData.virtualResources[resIndex].Remove();
-			partData.virtualResources.RemoveAt(resIndex);
+			partData.virtualResources.RemoveResource(chargeId);
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -228,7 +221,7 @@ namespace KERBALISM
 						foreach (PartModule module in part.Modules)
 						{
 							if (module is ModuleKsmRadiationCoil coilModule
-								&& coilModule.moduleData.partData.virtualResources.Exists(p => p.Resource.Name == existingEffect.chargeId))
+								&& coilModule.moduleData.partData.virtualResources.Contains(existingEffect.chargeId))
 							{
 								effectParts.Add(part);
 								break;
@@ -582,14 +575,7 @@ namespace KERBALISM
 				// if the array wasn't found or has changed, remove the charge resource
 				foreach (RadiationCoilData coil in moduleData.VesselData.Parts.AllModulesOfType<RadiationCoilData>())
 				{
-					for (int i = coil.partData.virtualResources.Count - 1; i >= 0; i--)
-					{
-						if (coil.partData.virtualResources[i].Resource.Name == moduleData.effectData.chargeId)
-						{
-							coil.partData.virtualResources[i].Remove();
-							coil.partData.virtualResources.RemoveAt(i);
-						}
-					}
+					coil.partData.virtualResources.RemoveResource(moduleData.effectData.chargeId);
 				}
 				moduleData.effectData = null;
 			}

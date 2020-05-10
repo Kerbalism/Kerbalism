@@ -62,6 +62,8 @@ namespace KERBALISM
 
 	public class VesselResHandler
 	{
+		private const string NODENAME_VIRTUAL_RESOURCES = "VIRTUAL_RESOURCES";
+
 		public enum VesselState { Loaded, Unloaded, EditorInit, EditorStep, EditorFinalize}
 		private VesselState currentState;
 
@@ -69,19 +71,19 @@ namespace KERBALISM
 
 		public Dictionary<string, double> APIResources = new Dictionary<string, double>();
 
-		private static List<string> allResourceNames;
-		private static List<string> AllResourceNames
+		private static List<string> allKSPResourceNames;
+		private static List<string> AllKSPResourceNames
 		{
 			get
 			{
-				if (allResourceNames == null)
+				if (allKSPResourceNames == null)
 				{
-					allResourceNames = new List<string>();
+					allKSPResourceNames = new List<string>();
 					foreach (PartResourceDefinition resDefinition in PartResourceLibrary.Instance.resourceDefinitions)
-						if (!allResourceNames.Contains(resDefinition.name))
-							allResourceNames.Add(resDefinition.name);
+						if (!allKSPResourceNames.Contains(resDefinition.name))
+							allKSPResourceNames.Add(resDefinition.name);
 				}
-				return allResourceNames;
+				return allKSPResourceNames;
 			}
 		}
 
@@ -96,7 +98,7 @@ namespace KERBALISM
 			switch (state)
 			{
 				case VesselState.Loaded:
-					foreach (string resourceName in AllResourceNames)
+					foreach (string resourceName in AllKSPResourceNames)
 					{
 						ResourceWrapper resourceWrapper = new LoadedResourceWrapper(resourceName);
 						resourceWrappers.Add(resourceName, resourceWrapper);
@@ -104,7 +106,7 @@ namespace KERBALISM
 					}
 					break;
 				case VesselState.Unloaded:
-					foreach (string resourceName in AllResourceNames)
+					foreach (string resourceName in AllKSPResourceNames)
 					{
 						ResourceWrapper resourceWrapper = new ProtoResourceWrapper(resourceName);
 						resourceWrappers.Add(resourceName, resourceWrapper);
@@ -114,7 +116,7 @@ namespace KERBALISM
 				case VesselState.EditorStep:
 				case VesselState.EditorInit:
 				case VesselState.EditorFinalize:
-					foreach (string resourceName in AllResourceNames)
+					foreach (string resourceName in AllKSPResourceNames)
 					{
 						ResourceWrapper resourceWrapper = new EditorResourceWrapper(resourceName);
 						resourceWrappers.Add(resourceName, resourceWrapper);
@@ -148,7 +150,7 @@ namespace KERBALISM
 			}
 		}
 
-		/// <summary>return the VesselResource for this resource or create a VirtualResource if the resource doesn't exists</summary>
+		/// <summary>return the VesselResource for this resource or create a VesselVirtualResource if the resource doesn't exists</summary>
 		public VesselResource GetResource(string resourceName)
 		{
 			// try to get existing entry if any
@@ -165,37 +167,50 @@ namespace KERBALISM
 			return resource;
 		}
 
-		public bool TryGetPartVirtualResource(string name, out PartVirtualResource resource)
+		public bool TryGetResource<T>(string resourceName, out T resource) where T : VesselResource
 		{
-			if (resources.TryGetValue(name, out VesselResource vesselResource) && vesselResource is PartVirtualResource)
+			if (resources.TryGetValue(resourceName, out VesselResource baseResource))
 			{
-				resource = (PartVirtualResource)vesselResource;
-				return true;
+				resource = baseResource as T;
+				return resource != null;
 			}
 			resource = null;
 			return false;
 		}
 
-		public bool AddPartVirtualResource(PartVirtualResource resource)
+		/// <summary> Get-or-create a VesselVirtualPartResource or VesselVirtualResource with the specified name </summary>
+		public T CreateVirtualResource<T>(string name) where T : VesselResource
 		{
-			if (resources.ContainsKey(resource.Name))
-				return false;
+			if (resources.TryGetValue(name, out VesselResource baseExistingResource))
+			{
+				if (!(baseExistingResource is T existingResource))
+				{
+					Lib.Log($"Can't create the {typeof(T).Name} `{name}`, a VesselResource of type {baseExistingResource.GetType().Name} with that name exists already", Lib.LogLevel.Error);
+					return null;
+				}
+				else
+				{
+					return existingResource;
+				}
+			}
+			else
+			{
+				VesselResource resource;
+				if (typeof(T) == typeof(VesselVirtualResource))
+				{
+					resource = new VesselVirtualResource(name);
+					resources.Add(name, resource);
+				}
+				else
+				{
+					VirtualResourceWrapper wrapper = new VirtualResourceWrapper(name);
+					resource = new VesselVirtualPartResource(wrapper);
+					resourceWrappers.Add(name, wrapper);
+					resources.Add(name, resource);
+				}
 
-			resources.Add(resource.Name, resource);
-			return true;
-		}
-
-		/// <summary>
-		/// Get all virtual resources that exist on the vessel. Quite slow, don't use this in update/fixedupdate.
-		/// Note that it isn't garanteed that these resources are still present/used on the vessel.
-		/// </summary>
-		public List<VesselVirtualResource> GetVirtualResources()
-		{
-			List<VesselVirtualResource> virtualResources = new List<VesselVirtualResource>();
-			foreach (VesselResource res in resources.Values)
-				if (res is VesselVirtualResource) virtualResources.Add((VesselVirtualResource)res);
-
-			return virtualResources;
+				return (T)resource;
+			}
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>
@@ -247,7 +262,7 @@ namespace KERBALISM
 			{
 				Lib.LogDebug($"State changed for {(vessel != null ? vessel.vesselName : protoVessel?.vesselName)} from {currentState.ToString()} to {state.ToString()}, rebuilding resource wrappers");
 				currentState = state;
-				foreach (string resourceName in AllResourceNames)
+				foreach (string resourceName in AllKSPResourceNames)
 				{
 					ResourceWrapper oldWrapper = resourceWrappers[resourceName];
 					ResourceWrapper newWrapper;
@@ -275,6 +290,8 @@ namespace KERBALISM
 				foreach (ResourceWrapper resourceWrapper in resourceWrappers.Values)
 					resourceWrapper.ClearPartResources(state != VesselState.EditorStep);
 			}
+
+			SyncVirtualResources(vd);
 
 			switch (state)
 			{
@@ -311,7 +328,7 @@ namespace KERBALISM
 
 		public void ConvertShipHandlerToVesselHandler()
 		{
-			foreach (string resourceName in AllResourceNames)
+			foreach (string resourceName in AllKSPResourceNames)
 			{
 				ResourceWrapper newWrapper = new LoadedResourceWrapper(resourceWrappers[resourceName]);
 				resourceWrappers[resourceName] = newWrapper;
@@ -379,6 +396,20 @@ namespace KERBALISM
 						continue;
 
 					((ProtoResourceWrapper)resourceWrappers[r.resourceName]).AddPartresources(r);
+				}
+			}
+		}
+
+		private void SyncVirtualResources(VesselDataBase vd)
+		{
+			foreach (PartData pd in vd.Parts)
+			{
+				foreach (PartResourceData prd in pd.virtualResources)
+				{
+					//if (!r.flowState)
+					//	continue;
+
+					((VirtualResourceWrapper)resourceWrappers[prd.Resource.Name]).AddPartresources(prd);
 				}
 			}
 		}

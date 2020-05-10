@@ -200,4 +200,52 @@ namespace KERBALISM
 
 		public override void SyncToPartResources(double deferred, bool equalizeMode) { }
 	}
+
+	public class VirtualResourceWrapper : ResourceWrapper<PartResourceData>
+	{
+		public VirtualResourceWrapper(string name) : base(name) { }
+
+		public override void AddPartresources(PartResourceData partResource)
+		{
+			if (partResource.Capacity == 0.0)
+				return;
+
+			partResources.Add(partResource);
+			amount += partResource.Amount;
+			capacity += partResource.Capacity;
+		}
+
+		public override void SyncToPartResources(double deferred, bool equalizeMode)
+		{
+			if (equalizeMode)
+			{
+				// apply deferred consumption/production to all parts,
+				// equally balancing the total amount amongst all parts
+				foreach (PartResourceData partResource in partResources)
+				{
+					partResource.Amount = (amount + deferred) * (partResource.Capacity / capacity);
+				}
+			}
+			else
+			{
+				// apply deferred consumption/production to all parts, simulating ALL_VESSEL_BALANCED
+				// avoid very small values in deferred consumption/production
+				if (Math.Abs(deferred) > 1e-16)
+				{
+					foreach (PartResourceData partResource in partResources)
+					{
+						// calculate consumption/production coefficient for the part
+						double k;
+						if (deferred < 0.0)
+							k = partResource.Amount / amount;
+						else
+							k = (partResource.Capacity - partResource.Amount) / (capacity - amount);
+
+						// apply deferred consumption/production
+						partResource.Amount += deferred * k;
+					}
+				}
+			}
+		}
+	}
 }

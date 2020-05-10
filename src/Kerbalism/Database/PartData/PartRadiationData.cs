@@ -174,7 +174,7 @@ namespace KERBALISM
 				partData.PartPrefab.physicalSignificance == Part.PhysicalSignificance.FULL
 				&& partData.PartPrefab.attachMode == AttachModes.STACK
 				&& partData.PartPrefab.mass + partData.PartPrefab.GetResourceMass() > 0.25
-				&& Lib.PartBoundsVolume(partData.PartPrefab, false) > 0.25;
+				&& PartVolumeAndSurface.PartBoundsVolume(partData.PartPrefab, false) > 0.25;
 		}
 
 		public static void LoadRadiationData(PartData partData, ConfigNode partDataNode)
@@ -382,11 +382,11 @@ namespace KERBALISM
 			// - doesn't work for ingame shape-changing parts : mesh-switched, procedural or tweakscaled.
 			// an alternate real-time friendly solution could be to use the drag cube surface,
 			// and linearly scaling down the bb derived thickness by comparing the bb surface and the drag cube surface.
-			Bounds partBounds = Lib.GetPartBounds(partData.PartPrefab);
+			Bounds partBounds = PartVolumeAndSurface.GetPartBounds(partData.PartPrefab);
 			// part thickness is approximated as the length of the cube whose volume is the voume of the cylinder fitting in it's bounding box volume.
-			bbThickness = Mathf.Pow((float)(Lib.BoundsVolume(partBounds) * Lib.boundsCylinderVolumeFactor), 1f / 3f);
+			bbThickness = Mathf.Pow((float)(PartVolumeAndSurface.BoundsVolume(partBounds) * PartVolumeAndSurface.boundsCylinderVolumeFactor), 1f / 3f);
 			// same for surface
-			bbSurface = Lib.BoundsSurface(partBounds) * Lib.boundsCylinderSurfaceFactor;
+			bbSurface = PartVolumeAndSurface.BoundsSurface(partBounds) * PartVolumeAndSurface.boundsCylinderSurfaceFactor;
 
 			// thickness = volume / surface
 

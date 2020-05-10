@@ -383,11 +383,18 @@ namespace KERBALISM
 			return Math.Pow(flux / PhysicsGlobals.StefanBoltzmanConstant, 0.25);
 		}
 
-		/// <summary> return irradiance in W/m2 from temperature in K, as per Stefan-Boltzmann equation </summary>
-		public static double BlackBodyFlux(double temperature)
+		/// <summary> return radiosity (flux leaving the surface) in W/m2 from temperature in K, as per Stefan-Boltzmann equation, for a perfect blackbody (emissivity = 1.0) </summary>
+		public static double BlackBodyRadiosity(double temperature)
 		{
 			return Math.Pow(temperature, 4.0) * PhysicsGlobals.StefanBoltzmanConstant;
 		}
+
+		/// <summary> return radiosity (flux leaving the surface) in W/m2 from temperature in K, as per Stefan-Boltzmann equation, for a "grey" body </summary>
+		public static double GreyBodyRadiosity(double temperature, double emissivity)
+		{
+			return Math.Pow(temperature, 4.0) * PhysicsGlobals.StefanBoltzmanConstant * emissivity;
+		}
+
 
 		// TODO : move this to the step sim and :
 		// - scale BackgroundFlux with atmo absorbtion

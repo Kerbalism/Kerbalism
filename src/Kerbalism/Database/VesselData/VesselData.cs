@@ -140,6 +140,9 @@ namespace KERBALISM
 
 		public override double Longitude => Vessel.longitude;
 
+		// TODO : persist this for thermal calcs
+		public override double AngularVelocity => Vessel.angularVelocityD.magnitude;
+
 		/// <summary> [environment] true if inside ocean</summary>
 		public override bool EnvUnderwater => underwater; bool underwater;
 
@@ -318,7 +321,7 @@ namespace KERBALISM
 			SetInstantiateDefaults(vessel.protoVessel);
 		}
 
-		/// <summary> This ctor is to be used for newly created vessels, either from ship construction or for  </summary>
+		/// <summary> This ctor is to be used for newly created vessels, from ship construction or after undocking/decoupling</summary>
 		public VesselData(Vessel vessel, List<PartData> partDatas = null)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
@@ -651,6 +654,8 @@ namespace KERBALISM
 					radiationData.Update();
 
 				}
+
+				Parts[i].thermalData.Update(elapsedSec);
 			}
 
 			partToUpdate = (partToUpdate + 1) % Parts.Count;
@@ -753,6 +758,7 @@ namespace KERBALISM
 						vesselStarFlux.directRawFlux += stepStarFlux.directRawFlux;
 						vesselStarFlux.bodiesAlbedoFlux += stepStarFlux.bodiesAlbedoFlux;
 						vesselStarFlux.bodiesEmissiveFlux += stepStarFlux.bodiesEmissiveFlux;
+						vesselStarFlux.mainBodyVesselStarAngle += stepStarFlux.mainBodyVesselStarAngle;
 						directRawFluxTotal += stepStarFlux.directRawFlux;
 
 						if (vesselStarFlux.directFlux > 0.0)
@@ -780,6 +786,7 @@ namespace KERBALISM
 					vesselStarFlux.directRawFlux /= subStepCountD;
 					vesselStarFlux.bodiesAlbedoFlux /= subStepCountD;
 					vesselStarFlux.bodiesEmissiveFlux /= subStepCountD;
+					vesselStarFlux.mainBodyVesselStarAngle /= subStepCountD;
 					vesselStarFlux.sunlightFactor /= subStepCountD;
 
 					irradianceAlbedo += vesselStarFlux.bodiesAlbedoFlux;

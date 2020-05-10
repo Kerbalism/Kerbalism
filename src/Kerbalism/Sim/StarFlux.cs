@@ -17,6 +17,9 @@ namespace KERBALISM
 		/// <summary> distance from vessel to sun center</summary>
 		public double distance;
 
+		/// <summary> [0 : 1] factor for the [0° : 180°] angle between the main body, the vessel and the sun</summary>
+		public double mainBodyVesselStarAngle;
+
 		/// <summary>
 		/// return 1.0 when the vessel is in direct sunlight, 0.0 when in shadow
 		/// <para/> in analytic evaluation, this is a scalar of representing the fraction of time spent in sunlight
@@ -61,6 +64,7 @@ namespace KERBALISM
 			bodiesAlbedoFlux = 0.0;
 			bodiesEmissiveFlux = 0.0;
 			directRawFluxProportion = 0.0;
+			mainBodyVesselStarAngle = 0.0;
 		}
 	}
 }

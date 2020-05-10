@@ -40,7 +40,9 @@ namespace KERBALISM
 		public Part LoadedPart { get; private set; }
 
 		public PartRadiationData radiationData;
-		public List<PartResourceData> virtualResources = new List<PartResourceData>();
+		public PartThermalData thermalData;
+		public PartVolumeAndSurface.Info volumeAndSurface;
+		public PartResourceDataCollection virtualResources = new PartResourceDataCollection();
 		public List<ModuleData> modules = new List<ModuleData>();
 
 		/// <summary> Localized part title </summary>
@@ -60,9 +62,11 @@ namespace KERBALISM
 			flightId = part.flightID;
 			partInfo = part.partInfo;
 			PartPrefab = GetPartPrefab(part.partInfo);
+			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
 			radiationData = new PartRadiationData(this);
+			thermalData = new PartThermalData(this);
 		}
 
 		public PartData(VesselDataBase vesselData, ProtoPartSnapshot protopart)
@@ -71,7 +75,9 @@ namespace KERBALISM
 			flightId = protopart.flightID;
 			partInfo = protopart.partInfo;
 			PartPrefab = GetPartPrefab(protopart.partInfo);
+			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
+			thermalData = new PartThermalData(this);
 		}
 
 		public void SetLoadedPartReference(Part part)
@@ -98,8 +104,7 @@ namespace KERBALISM
 		// The kerbalEVA part variants (vintage/future) prefabs are created in some weird way
 		// causing the PartModules from the base KerbalEVA definition to not exist on them, depending
 		// on what DLCs are installed (!). The issue with that is that we rely on the prefab modules
-		// for ModuleData instantiation, so in those specific cases we return the base kerbalEVA
-		// prefab
+		// for ModuleData instantiation, so in those specific cases we return the base kerbalEVA prefab
 		private Part GetPartPrefab(AvailablePart partInfo)
 		{
 			switch (partInfo.name)

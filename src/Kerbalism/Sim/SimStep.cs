@@ -327,28 +327,9 @@ namespace KERBALISM
 			foreach (StarFlux star in starFluxes)
 			{
 				// get a [0 : 1] factor for the [0° : 180°] angle between the main body, the vessel and the sun
-				double mainBodyVesselSunAngle = (Vector3d.Dot(star.direction, mainBodyDirection) + 1.0) * 0.5;
+				star.mainBodyVesselStarAngle = (Vector3d.Dot(star.direction, mainBodyDirection) + 1.0) * 0.5;
 
-				// irradiance for the portion of the 360° angle that is exposed to both the sun and the main body
-				double sunAndBodyFaceEe = star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + bodiesCoreIrradiance + Sim.BackgroundFlux;
-				sunAndBodyFaceEe *= (1.0 - mainBodyVesselSunAngle) * 0.5;
 
-				// irradiance for the portion of the 360° angle that is exposed only to the main body
-				// Note : ideally we should still use Sim.BackgroundFlux here but scale it down with the body distance.
-				// But it doesn't matter much and I'm lazy.
-				double bodiesFaceEe = star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + bodiesCoreIrradiance;
-				bodiesFaceEe *= mainBodyVesselSunAngle * 0.5;
-
-				// irradiance for the portion of the 360° angle that is exposed only to the sun
-				double sunFaceEe = star.directFlux + Sim.BackgroundFlux;
-				sunFaceEe *= mainBodyVesselSunAngle * 0.5;
-
-				// irradiance for the portion of the 360° angle that is neither exposed to the sun nor to the main body
-				double darkFaceEe = Sim.BackgroundFlux * (1.0 - mainBodyVesselSunAngle) * 0.5;
-
-				// sum of the irradiance
-				// note : this need to be scaled down by the surface Absorptance factor
-				thermalFlux += sunAndBodyFaceEe + bodiesFaceEe + sunFaceEe + darkFaceEe;
 			}
 		}
 	}

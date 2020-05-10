@@ -8,7 +8,7 @@ namespace KERBALISM
 	/// <summary>
 	/// loaded/unloaded/editor state independant persisted data and logic used by the ModuleKsmHabitat module.
 	/// </summary>
-	public class HabitatData : ModuleData<ModuleKsmHabitat, HabitatData>, IRadiationReceiver
+	public class HabitatData : ModuleData<ModuleKsmHabitat, HabitatData>, IRadiationReceiver, IThermalModule
 	{
 		#region ENUMS AND TYPES
 
@@ -80,12 +80,6 @@ namespace KERBALISM
 		public PressureState pressureState = PressureState.AlwaysDepressurized;
 
 		public AnimState animState = AnimState.Retracted;
-
-		/// <summary> if deployable, is the habitat deployed ? </summary>
-		//public bool isDeployed = false;
-
-		///// <summary> if centrifuge, is the centrifuge spinning ? </summary>
-		//public bool isRotating = false;
 
 		/// <summary> crew count </summary>
 		public int crewCount = 0;
@@ -278,6 +272,11 @@ namespace KERBALISM
 		}
 
 		public PartRadiationData RadiationData => partData.radiationData;
+
+		public double PartSkinSurface => modulePrefab.surface;
+		public double OperatingTemperature => 295.0;
+		public double InternalHeatProduction => crewCount * 30.0;
+		public double ThermalMass => partData.PartPrefab.mass * 0.25 * PartThermalData.partSpecificHeat;
 
 		#endregion
 

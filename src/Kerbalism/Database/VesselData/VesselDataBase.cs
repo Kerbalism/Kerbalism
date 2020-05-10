@@ -48,11 +48,17 @@ namespace KERBALISM
 
 		public virtual CelestialBody MainBody { get; }
 
+		/// <summary>in meters</summary>
 		public virtual double Altitude { get; }
 
+		/// <summary>in degree</summary>
 		public virtual double Latitude { get; }
 
+		/// <summary>in degree</summary>
 		public virtual double Longitude { get; }
+
+		/// <summary>in rad/s</summary>
+		public virtual double AngularVelocity { get; }
 
 		/// <summary>number of crew on the vessel</summary>
 		public virtual int CrewCount { get; }
@@ -293,6 +299,7 @@ namespace KERBALISM
 				starFlux.directRawFlux = stepStarFlux.directRawFlux;
 				starFlux.bodiesAlbedoFlux = stepStarFlux.bodiesAlbedoFlux;
 				starFlux.bodiesEmissiveFlux = stepStarFlux.bodiesEmissiveFlux;
+				starFlux.mainBodyVesselStarAngle = stepStarFlux.mainBodyVesselStarAngle;
 
 				irradianceStarTotal += stepStarFlux.directFlux;
 				directRawFluxTotal += stepStarFlux.directRawFlux;

@@ -21,4 +21,12 @@ namespace KERBALISM
 		bool IsActive { get; }
 		PartRadiationData RadiationData { get; }
 	}
+
+	public interface IThermalModule
+	{
+		double PartSkinSurface { get; }
+		double OperatingTemperature { get; } // Kelvin
+		double InternalHeatProduction { get; } // Watts
+		double ThermalMass { get; } // Joules/Kelvin
+	}
 }

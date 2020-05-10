@@ -111,7 +111,7 @@ namespace KERBALISM
 				&& (!body.tidallyLocked || (body.orbit != null && body.orbit.period != 0.0));
 
 			// thermal flux in W/m2 intrinsincly emitted by this body at surface level
-			coreThermalFlux = Sim.BlackBodyFlux(body.coreTemperatureOffset);
+			coreThermalFlux = Sim.BlackBodyRadiosity(body.coreTemperatureOffset);
 
 			surfaceGravity = body.gravParameter / (body.Radius * body.Radius);
 		}

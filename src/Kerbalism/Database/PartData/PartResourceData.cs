@@ -10,8 +10,8 @@ namespace KERBALISM
 	{
 		public const string NODENAME_RESOURCES = "RESOURCES";
 
-		private PartVirtualResource resource;
-		public PartVirtualResource Resource => resource;
+		private VesselVirtualPartResource resource;
+		public VesselVirtualPartResource Resource => resource;
 
 		private double amount;
 		public double Amount
@@ -19,10 +19,7 @@ namespace KERBALISM
 			get => amount;
 			set
 			{
-				double newAmount = Math.Min(value, capacity);
-				double diff = newAmount - amount;
-				amount = newAmount;
-				resource.SetAmount(Resource.Amount + diff);
+				amount = value < 0.0 ? 0.0 : value > capacity ? capacity : value;
 			}
 		}
 
@@ -32,27 +29,21 @@ namespace KERBALISM
 			get => capacity;
 			set
 			{
-				double diff = value - capacity;
+				if (value < 0.0)
+					value = 0.0;
+
+				if (value > amount)
+					amount = value;
+
 				capacity = value;
-				resource.SetCapacity(Resource.Capacity + diff);
-				amount = Math.Min(amount, capacity);
 			}
 		}
 
-		public void SetSyncedAmount(double amount)
-		{
-			this.amount = amount;
-		}
+		public double Level => capacity > 0.0 ? amount / capacity : 0.0;
 
-		public PartResourceData(VesselDataBase vd, string name, double amount, double capacity)
+		public PartResourceData(VesselVirtualPartResource vesselVirtualPartResource, double amount = 0.0, double capacity = 0.0)
 		{
-			if (!vd.ResHandler.TryGetPartVirtualResource(name, out resource))
-			{
-				resource = new PartVirtualResource(name);
-				resource.SetCapacity(0.0);
-				vd.ResHandler.AddPartVirtualResource(resource);
-			}
-				
+			resource = vesselVirtualPartResource;
 			Capacity = capacity;
 			Amount = amount;
 		}
@@ -65,13 +56,14 @@ namespace KERBALISM
 
 			foreach (ConfigNode node in resTopNode.nodes)
 			{
-				PartResourceData res = new PartResourceData(
-					pd.vesselData,
-					node.name,
+				VesselVirtualPartResource res = pd.vesselData.ResHandler.CreateVirtualResource<VesselVirtualPartResource>(node.name);
+
+				if (res == null)
+					continue;
+
+				pd.virtualResources.AddResource(res,
 					Lib.ConfigValue(node, "amount", 0.0),
 					Lib.ConfigValue(node, "capacity", 0.0));
-
-				pd.virtualResources.Add(res);
 			}
 		}
 
@@ -89,12 +81,6 @@ namespace KERBALISM
 				resNode.AddValue("capacity", res.capacity);
 			}
 			return true;
-		}
-
-		public void Remove()
-		{
-			Resource.SetAmount(Resource.Amount - amount);
-			Resource.SetCapacity(Resource.Capacity - capacity);
 		}
 	}
 }
