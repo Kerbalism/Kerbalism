@@ -8,7 +8,13 @@ namespace KERBALISM
 	[HarmonyPatch(typeof(DeployedScienceExperiment))]
 	[HarmonyPatch("SendDataToComms")]
 	class DeployedScienceExperiment_SendDataToComms {
-		static bool Prefix(DeployedScienceExperiment __instance, ref bool __result) {
+		static bool Prefix(DeployedScienceExperiment __instance, ref bool __result)
+		{
+
+			// Don't mess with anything is science is disabled
+			if (!Features.Science)
+				return true;
+
 			// get private vars
 			ScienceSubject subject = Lib.ReflectionValue<ScienceSubject>(__instance, "subject");
 			float storedScienceData = Lib.ReflectionValue<float>(__instance, "storedScienceData");
