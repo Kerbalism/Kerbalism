@@ -233,7 +233,7 @@ namespace KERBALISM
 				// with a = altitude,
 				// - The total energy received by the exposed surface area (disc) of the body is :
 				// sunFluxAtBody * π * r²
-				// - Assuming re-emitted power is spread over **one hemisphere**, that is a solid angle of :
+				// - Assuming re-emitted power is spread over one hemisphere, that is a solid angle of :
 				// 2 * π steradians
 				// - So the energy emitted in watts per steradian can be expressed as :
 				// sunFluxAtBody * π * r² / (2 * π * steradian)
@@ -253,7 +253,7 @@ namespace KERBALISM
 				// down to zero on the night side.
 				Vector3d bodyToSun = (sunPosition - bodyPosition).normalized;
 				Vector3d bodyToVessel = (vesselPosition - bodyPosition).normalized;
-				double anglefactor = (Vector3d.Dot(bodyToSun, bodyToVessel) + 1.0) / 2.0;
+				double anglefactor = Lib.Clamp((Vector3d.Dot(bodyToSun, bodyToVessel) + 1.0) / 2.0, 0.0, 1.0);
 				albedoFlux *= body.GeometricAlbedoFactor(anglefactor);
 			}
 
@@ -326,10 +326,38 @@ namespace KERBALISM
 			thermalFlux = 0.0;
 			foreach (StarFlux star in starFluxes)
 			{
+
+				// irradiance for the portion of the 360° angle that is exposed to both the sun and the main body
+				double sunAndBodyFaceEe = star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + bodiesCoreIrradiance + Sim.BackgroundFlux;
+				star.sunAndBodyFaceSkinTemp = Sim.BlackBodyTemperature(sunAndBodyFaceEe);
+				double sunAndBodyFaceJe = Sim.GreyBodyRadiosity(star.sunAndBodyFaceSkinTemp, simVessel.emissivity);
+
+				// irradiance for the portion of the 360° angle that is exposed only to the main body
+				// Note : ideally we should still use Sim.BackgroundFlux here but scale it down with the body distance.
+				// But it doesn't matter much and I'm lazy.
+				double bodiesFaceEe = star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + bodiesCoreIrradiance;
+				star.bodiesFaceSkinTemp = Sim.BlackBodyTemperature(bodiesFaceEe);
+				double bodiesFaceJe = Sim.GreyBodyRadiosity(star.bodiesFaceSkinTemp, simVessel.emissivity);
+
+				// irradiance for the portion of the 360° angle that is exposed only to the sun
+				double sunFaceEe = star.directFlux + Sim.BackgroundFlux;
+				star.sunFaceSkinTemp = Sim.BlackBodyTemperature(sunFaceEe);
+				double sunFaceJe = Sim.GreyBodyRadiosity(star.sunFaceSkinTemp, simVessel.emissivity);
+
+				// irradiance for the portion of the 360° angle that is neither exposed to the sun nor to the main body
+				double darkFaceEe = Sim.BackgroundFlux;
+				star.darkFaceSkinTemp = Sim.BlackBodyTemperature(darkFaceEe);
+				double darkFaceJe = Sim.GreyBodyRadiosity(star.darkFaceSkinTemp, simVessel.emissivity);
+
 				// get a [0 : 1] factor for the [0° : 180°] angle between the main body, the vessel and the sun
 				star.mainBodyVesselStarAngle = (Vector3d.Dot(star.direction, mainBodyDirection) + 1.0) * 0.5;
 
+				double SBAndDSurfFactor = (1.0 - star.mainBodyVesselStarAngle) * 0.5;
+				double SAndBSurfFactor = star.mainBodyVesselStarAngle * 0.5;
 
+				star.skinIrradiance = ((sunAndBodyFaceEe + darkFaceEe) * SBAndDSurfFactor) + ((bodiesFaceEe + sunFaceEe) * SAndBSurfFactor);
+
+				star.skinRadiosity = ((sunAndBodyFaceJe + darkFaceJe) * SBAndDSurfFactor) + ((bodiesFaceJe + sunFaceJe) * SAndBSurfFactor);
 			}
 		}
 	}

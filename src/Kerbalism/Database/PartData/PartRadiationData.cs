@@ -169,12 +169,7 @@ namespace KERBALISM
 		public PartRadiationData(PartData partData)
 		{
 			this.partData = partData;
-
-			IsOccluder =
-				partData.PartPrefab.physicalSignificance == Part.PhysicalSignificance.FULL
-				&& partData.PartPrefab.attachMode == AttachModes.STACK
-				&& partData.PartPrefab.mass + partData.PartPrefab.GetResourceMass() > 0.25
-				&& PartVolumeAndSurface.PartBoundsVolume(partData.PartPrefab, false) > 0.25;
+			IsOccluder = partData.volumeAndSurface != null;
 		}
 
 		public static void LoadRadiationData(PartData partData, ConfigNode partDataNode)

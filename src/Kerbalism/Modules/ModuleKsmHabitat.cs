@@ -169,6 +169,9 @@ namespace KERBALISM
 			if (volume <= 0.0) volume = calcVolume;
 			if (surface <= 0.0) surface = calcSurface;
 
+			result.volume = volume;
+			result.surface = surface;
+
 			// use config defined depressurization duration or fallback to the default setting
 			if (depressurizationSpeed > 0.0)
 				depressurizationSpeed = M3ToL(volume) / depressurizationSpeed;
@@ -314,6 +317,8 @@ namespace KERBALISM
 
 			// PAW setup
 
+
+
 			// synchronize PAW state with data state
 			habitatEnabled = moduleData.isEnabled;
 			pressureEnabled = moduleData.IsPressurizationRequested;
@@ -328,30 +333,42 @@ namespace KERBALISM
 			deployField = Fields["deployEnabled"];
 			rotateField = Fields["rotationEnabled"];
 
-			// add value modified callbacks to the toggles
-			enableField.OnValueModified += OnToggleHabitat;
-			pressureField.OnValueModified += OnTogglePressure;
-			deployField.OnValueModified += OnToggleDeploy;
-			rotateField.OnValueModified += OnToggleRotation;
+			if (vessel != null && vessel.isEVA)
+			{
+				mainInfoField.guiActive = false;
+				secInfoField.guiActive = false;
+				enableField.guiActive = false;
+				pressureField.guiActive = false;
+				deployField.guiActive = false;
+				rotateField.guiActive = false;
+			}
+			else
+			{
+				// add value modified callbacks to the toggles
+				enableField.OnValueModified += OnToggleHabitat;
+				pressureField.OnValueModified += OnTogglePressure;
+				deployField.OnValueModified += OnToggleDeploy;
+				rotateField.OnValueModified += OnToggleRotation;
 
-			// set visibility
-			mainInfoField.guiActive = mainInfoField.guiActiveEditor = true;
-			secInfoField.guiActive = secInfoField.guiActiveEditor = IsSecInfoVisible;
-			enableField.guiActive = enableField.guiActiveEditor = CanToggleHabitat;
-			pressureField.guiActive = pressureField.guiActiveEditor = CanTogglePressure;
-			deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
-			rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
+				// set visibility
+				mainInfoField.guiActive = mainInfoField.guiActiveEditor = true;
+				secInfoField.guiActive = secInfoField.guiActiveEditor = IsSecInfoVisible;
+				enableField.guiActive = enableField.guiActiveEditor = CanToggleHabitat;
+				pressureField.guiActive = pressureField.guiActiveEditor = CanTogglePressure;
+				deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
+				rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
 
-			// set names
-			mainInfoField.guiName = "Pressure";
-			enableField.guiName = "Habitat";
-			pressureField.guiName = "Pressure";
-			deployField.guiName = "Deployement";
+				// set names
+				mainInfoField.guiName = "Pressure";
+				enableField.guiName = "Habitat";
+				pressureField.guiName = "Pressure";
+				deployField.guiName = "Deployement";
 
-			((UI_Toggle)enableField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
-			((UI_Toggle)enableField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
-			((UI_Toggle)enableField.uiControlEditor).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
-			((UI_Toggle)enableField.uiControlEditor).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+				((UI_Toggle)enableField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+				((UI_Toggle)enableField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+				((UI_Toggle)enableField.uiControlEditor).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+				((UI_Toggle)enableField.uiControlEditor).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+			}
 
 #if DEBUG
 			Events["LogVolumeAndSurface"].guiActiveEditor = true;
@@ -424,7 +441,10 @@ namespace KERBALISM
 
 		public void Update()
 		{
-			// TODO : Find a reliable way to have that f**** PAW correctly updated when we change guiActive...
+			if (vessel != null && vessel.isEVA)
+				return;
+
+				// TODO : Find a reliable way to have that f**** PAW correctly updated when we change guiActive...
 			switch (moduleData.animState)
 			{
 				case AnimState.Accelerating:

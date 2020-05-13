@@ -184,6 +184,9 @@ namespace KERBALISM
 		{
 			public Method bestMethod = Method.Best;
 
+			public double volume = 0.0;
+			public double surface = 0.0;
+
 			public double boundsVolume = 0.0;
 			public double boundsSurface = 0.0;
 

@@ -120,17 +120,17 @@ namespace KERBALISM
 {
 	public class PartThermalData
 	{
-		public static double defaultEmissivity = 0.4;
-		public static double defaultAbsorptance = 0.3;
+		public static double defaultEmissivity = 0.25;
+		public static double defaultInternalTransfer = 0.1;
 
 		public const string belowThEnergyResName = "belowThEnergyRes";
 		public const string aboveThEnergyResName = "aboveThEnergyRes";
 
-		// specific heats in J/t/K
-		public const double specifHeatAluminum = 0.897 * 1e6;
-		public const double specifHeatSteel = 0.466 * 1e6;
-		public const double specifHeatTitanium = 0.523 * 1e6;
-		public const double specifHeatPolyethylene = 2.303 * 1e6;
+		// specific heats in kJ/t/K
+		public const double specifHeatAluminum = 0.897 * 1e3;
+		public const double specifHeatSteel = 0.466 * 1e3;
+		public const double specifHeatTitanium = 0.523 * 1e3;
+		public const double specifHeatPolyethylene = 2.303 * 1e3;
 		public const double partSpecificHeat =
 			specifHeatAluminum * 0.5
 			+ specifHeatTitanium * 0.3
@@ -142,88 +142,185 @@ namespace KERBALISM
 		private PartResourceData belowThEnergy;
 		private double energyPerKelvin;
 
-		//private double defaultEmissivity = 0.3; // [0;1] factor for the out flux in the grey body equation
-		//private double defaultAbsorptance = 0.3; // [0,1] factor for proportion of external radiation transmitted to interiorof the vessel
+		// TODO : persistence for those !
+		public float insulation = 0.9f;
+		public float emissivity = 0.25f;
+		public string pawInfo;
+		public double currentFlux;
 
 		public double Temperature => temperature;
 		private double temperature;
 
-		private List<IThermalModule> thermalModules = new List<IThermalModule>();
+		public List<IThermalModule> thermalModules = new List<IThermalModule>();
 
 		//debug
-		public double sunAndBodyFaceSkinTemp;
-		public double bodiesFaceSkinTemp;
-		public double sunFaceSkinTemp;
-		public double darkFaceSkinTemp;
 		public double envFlux;
+		public double skinIrradiance;
+		public double skinRadiosity;
+		public double internalFlux;
 
-		public PartThermalData(PartData partData)
+		private PartThermalData(PartData partData)
 		{
 			this.partData = partData;
-			energyPerKelvin = partData.PartPrefab.mass * partSpecificHeat;
 		}
 
-		private double SurfaceTemperature(double irradiance, double angularVelFactor, double averageTemperature)
+		public static PartThermalData Setup(PartData partData)
 		{
-			double insulation = 1.0 - defaultAbsorptance;
-			return ((Sim.BlackBodyTemperature(irradiance) * angularVelFactor) + (averageTemperature * insulation)) / (angularVelFactor + insulation);
+			if (partData.volumeAndSurface == null)
+				return null;
+
+			PartThermalData thermalData = null;
+			foreach (ModuleData moduleData in partData.modules)
+			{
+				if (moduleData is IThermalModule thModule)
+				{
+					if (thermalData == null)
+						thermalData = new PartThermalData(partData);
+
+					thermalData.thermalModules.Add(thModule);
+				}
+			}
+
+			if (thermalData == null)
+				return null;
+
+			IThermalModule masterModule = null;
+			thermalData.energyPerKelvin = 0.0;
+			foreach (IThermalModule thModule in thermalData.thermalModules)
+			{
+				if (thModule.IsAlwaysMaster || masterModule == null)
+					masterModule = thModule;
+
+				thermalData.energyPerKelvin += thModule.ThermalMass * partSpecificHeat;
+			}
+
+			if (thermalData.energyPerKelvin <= 0.0)
+				return null;
+
+			if (partData.virtualResources.Contains(belowThEnergyResName))
+			{
+				partData.virtualResources.TryGet(belowThEnergyResName, out thermalData.belowThEnergy);
+				partData.virtualResources.TryGet(aboveThEnergyResName, out thermalData.aboveThEnergy);
+			}
+			else
+			{
+				VesselVirtualPartResource belowThRes = partData.vesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(belowThEnergyResName);
+				VesselVirtualPartResource aboveThRes = partData.vesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(aboveThEnergyResName);
+				double targetTempEnergy = thermalData.energyPerKelvin * masterModule.OperatingTemperature;
+				thermalData.belowThEnergy = partData.virtualResources.AddResource(belowThRes, targetTempEnergy, targetTempEnergy);
+				thermalData.aboveThEnergy = partData.virtualResources.AddResource(aboveThRes, 0.0, targetTempEnergy * 3.0);
+			}
+
+			if (partData.LoadedPart != null)
+			{
+				BasePAWGroup pawGroup = new BasePAWGroup("Thermal", "Systems thermal control", true);
+				System.Reflection.BindingFlags npFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+
+				Type dataType = typeof(PartThermalData);
+
+				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(envFlux)), thermalData));
+				partData.LoadedPart.Fields[nameof(envFlux)].guiFormat = "F3";
+				partData.LoadedPart.Fields[nameof(envFlux)].guiUnits = "kW";
+				partData.LoadedPart.Fields[nameof(envFlux)].group = pawGroup;
+				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(skinIrradiance)), thermalData));
+				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiFormat = "F3";
+				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiUnits = "kW/m²";
+				partData.LoadedPart.Fields[nameof(skinIrradiance)].group = pawGroup;
+				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(skinRadiosity)), thermalData));
+				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiFormat = "F3";
+				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiUnits = "kW/m²";
+				partData.LoadedPart.Fields[nameof(skinRadiosity)].group = pawGroup;
+
+				BaseField temperatureField = new BaseField(new UI_Label(), dataType.GetField(nameof(temperature), npFlags), thermalData);
+				temperatureField.guiName = "Current T°";
+				temperatureField.guiFormat = "F2";
+				temperatureField.guiUnits = "K";
+				temperatureField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(temperatureField);
+
+				BaseField internalFluxField = new BaseField(new UI_Label(), dataType.GetField(nameof(internalFlux)), thermalData);
+				internalFluxField.guiActiveEditor = true;
+				internalFluxField.guiName = "Internal production";
+				internalFluxField.guiFormat = "F3";
+				internalFluxField.guiUnits = " kWth";
+				internalFluxField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(internalFluxField);
+
+				BaseField fluxField = new BaseField(new UI_Label(), dataType.GetField(nameof(currentFlux)), thermalData);
+				fluxField.guiActiveEditor = true;
+				fluxField.guiName = Lib.IsEditor ? "Estimated balance" : "Current balance";
+				fluxField.guiFormat = "F3";
+				fluxField.guiUnits = " kWth";
+				fluxField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(fluxField);
+
+				BaseField pawInfoField = new BaseField(new UI_Label(), dataType.GetField(nameof(pawInfo)), thermalData);
+				pawInfoField.guiActiveEditor = true;
+				pawInfoField.guiName = "Operating T°";
+				pawInfoField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(pawInfoField);
+
+				thermalData.pawInfo = Lib.BuildString(
+					Lib.HumanReadableTemp(masterModule.OperatingTemperature), ", ",
+					"Th. mass", ": ", Lib.HumanReadableMass(thermalData.energyPerKelvin / partSpecificHeat));
+
+				UI_FloatRange insulationFR = new UI_FloatRange();
+				insulationFR.minValue = 0.8f;
+				insulationFR.maxValue = 0.975f;
+				insulationFR.stepIncrement = 0.005f;
+				insulationFR.onFieldChanged = (a, b) => thermalData.PlannerUpdate();
+				BaseField insulationField = new BaseField(insulationFR, dataType.GetField(nameof(insulation)), thermalData);
+				insulationField.uiControlEditor = insulationFR;
+				insulationField.guiActiveEditor = true;
+				insulationField.guiName = "Internal insulation";
+				insulationField.guiFormat = "P1";
+				insulationField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(insulationField);
+
+				UI_FloatRange emissivityFR = new UI_FloatRange();
+				emissivityFR.minValue = 0.10f;
+				emissivityFR.maxValue = 0.75f;
+				emissivityFR.stepIncrement = 0.01f;
+				emissivityFR.onFieldChanged = (a, b) => thermalData.PlannerUpdate();
+				BaseField emissivityField = new BaseField(emissivityFR, dataType.GetField(nameof(emissivity)), thermalData);
+				emissivityField.uiControlEditor = emissivityFR;
+				emissivityField.guiActiveEditor = true;
+				emissivityField.guiName = "Surface emissivity";
+				emissivityField.guiFormat = "P1";
+				emissivityField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(emissivityField);
+
+
+			}
+
+			return thermalData;
+		}
+
+		public void PlannerUpdate()
+		{
+			ResetTemperature();
+			Update(1.0);
+		}
+
+		private void ResetTemperature()
+		{
+			belowThEnergy.Amount = belowThEnergy.Capacity;
+			aboveThEnergy.Amount = 0.0;
 		}
 
 		public void Update(double elapsedSec)
 		{
 			VesselDataBase vdb = partData.vesselData;
 
-			if (belowThEnergy == null || aboveThEnergy == null)
-			{
-				if (partData.virtualResources.Contains(belowThEnergyResName))
-				{
-					partData.virtualResources.TryGet(belowThEnergyResName, out belowThEnergy);
-					partData.virtualResources.TryGet(aboveThEnergyResName, out aboveThEnergy);
-				}
-				else
-				{
-					VesselVirtualPartResource belowThRes = partData.vesselData.ResHandler.CreateVirtualResource<VesselVirtualPartResource>(belowThEnergyResName);
-					VesselVirtualPartResource aboveThRes = partData.vesselData.ResHandler.CreateVirtualResource<VesselVirtualPartResource>(aboveThEnergyResName);
-					double targetTempEnergy = energyPerKelvin * 273.0; // temporary
-					belowThEnergy = partData.virtualResources.AddResource(belowThRes, targetTempEnergy, targetTempEnergy);
-					double maxAboveTempEnergy = (energyPerKelvin * partData.PartPrefab.maxTemp) - targetTempEnergy;
-					aboveThEnergy = partData.virtualResources.AddResource(aboveThRes, 0.0, maxAboveTempEnergy);
-				}
-
-				if (partData.LoadedPart != null)
-				{
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(temperature), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic), this));
-					partData.LoadedPart.Fields[nameof(temperature)].guiName = "Temperature";
-					partData.LoadedPart.Fields[nameof(temperature)].guiFormat = "F2";
-					partData.LoadedPart.Fields[nameof(temperature)].guiUnits = "K";
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(envFlux)), this));
-					partData.LoadedPart.Fields[nameof(envFlux)].guiFormat = "F2";
-					partData.LoadedPart.Fields[nameof(envFlux)].guiUnits = "W";
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(sunAndBodyFaceSkinTemp)), this));
-					partData.LoadedPart.Fields[nameof(sunAndBodyFaceSkinTemp)].guiFormat = "F2";
-					partData.LoadedPart.Fields[nameof(sunAndBodyFaceSkinTemp)].guiUnits = "K";
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(bodiesFaceSkinTemp)), this));
-					partData.LoadedPart.Fields[nameof(bodiesFaceSkinTemp)].guiFormat = "F2";
-					partData.LoadedPart.Fields[nameof(bodiesFaceSkinTemp)].guiUnits = "K";
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(sunFaceSkinTemp)), this));
-					partData.LoadedPart.Fields[nameof(sunFaceSkinTemp)].guiFormat = "F2";
-					partData.LoadedPart.Fields[nameof(sunFaceSkinTemp)].guiUnits = "K";
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(darkFaceSkinTemp)), this));
-					partData.LoadedPart.Fields[nameof(darkFaceSkinTemp)].guiFormat = "F2";
-					partData.LoadedPart.Fields[nameof(darkFaceSkinTemp)].guiUnits = "K";
-				}
-			}
-
 			temperature = (belowThEnergy.Amount + aboveThEnergy.Amount) / energyPerKelvin;
 
-			// for loaded vessels flying in atmosphere, blend in the stock skin temperature
-			double baseSkinTemperature;
+			
+			double skinTemperature;
 			double atmoConvectionFlux = 0.0;
+			// for loaded vessels flying in atmosphere, plug into the stock temperature
 			if (vdb.EnvInAtmosphere && !vdb.EnvLanded && vdb.LoadedOrEditor && partData.LoadedPart.vessel != null)
 			{
-				// TODO : include our own atmospheric temperature model for conduction while landed
-
-				baseSkinTemperature = (temperature + partData.LoadedPart.skinTemperature) * 0.5;
+				skinTemperature = (temperature + partData.LoadedPart.skinTemperature) * 0.5;
 				double internalTempChange = partData.LoadedPart.temperature - partData.LoadedPart.ptd.previousTemperature;
 				atmoConvectionFlux = energyPerKelvin * internalTempChange / TimeWarp.fixedDeltaTime;
 				if (atmoConvectionFlux < 0.0 && temperature < partData.LoadedPart.temperature)
@@ -232,71 +329,48 @@ namespace KERBALISM
 					atmoConvectionFlux = 0.0;
 				atmoConvectionFlux = Math.Pow(atmoConvectionFlux, 0.5); // try to balance the stock stupidly high internal temperatures
 			}
+			// TODO : include our own atmospheric temperature model for conduction while landed
 			else
 			{
-				baseSkinTemperature = temperature;
+				skinTemperature = temperature;
 			}
 
-			// 5°/s = max factor
-			double angularVelFactor = 1.0 - Math.Min(vdb.AngularVelocity * 0.0873, 1.0);
-			double perStarBodiesCoreIrradiance = vdb.IrradianceBodiesCore / vdb.StarsIrradiance.Length;
-			
 			// TODO : aggregate (but not here, at the sim level) "close" stars (Kopernicus binary systems handling)
 			StarFlux star = vdb.MainStar;
 
-			// irradiance for the portion of the 360° angle that is exposed to both the sun and the main body
-			double sunAndBodyFaceEe = star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + perStarBodiesCoreIrradiance + Sim.BackgroundFlux;
-			sunAndBodyFaceSkinTemp = SurfaceTemperature(sunAndBodyFaceEe, angularVelFactor, baseSkinTemperature);
-			double sunAndBodyFaceJe = Sim.GreyBodyRadiosity(sunAndBodyFaceSkinTemp, defaultEmissivity);
+			skinIrradiance = ((star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + vdb.IrradianceBodiesCore) * 0.25) + Sim.BackgroundFlux;
 
-			// irradiance for the portion of the 360° angle that is exposed only to the main body
-			// Note : ideally we should still use Sim.BackgroundFlux here but scale it down with the body distance.
-			// But it doesn't matter much and I'm lazy.
-			double bodiesFaceEe = star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + perStarBodiesCoreIrradiance;
-			bodiesFaceSkinTemp = SurfaceTemperature(bodiesFaceEe, angularVelFactor, baseSkinTemperature);
-			double bodiesFaceJe = Sim.GreyBodyRadiosity(bodiesFaceSkinTemp, defaultEmissivity);
+			double hottestSkinTemperature = skinTemperature + Sim.BlackBodyTemperature(skinIrradiance);
+			double coldestSkinTemperature = Sim.BlackBodyTemperature(Sim.BackgroundFlux);
+			skinRadiosity =
+				  (0.250 * Sim.GreyBodyRadiosity(hottestSkinTemperature, emissivity))
+				+ (0.375 * Sim.GreyBodyRadiosity(skinTemperature, emissivity))
+				+ (0.375 * Sim.GreyBodyRadiosity(coldestSkinTemperature, emissivity));
 
-			// irradiance for the portion of the 360° angle that is exposed only to the sun
-			double sunFaceEe = star.directFlux + Sim.BackgroundFlux;
-			sunFaceSkinTemp = SurfaceTemperature(sunFaceEe, angularVelFactor, baseSkinTemperature);
-			double sunFaceJe = Sim.GreyBodyRadiosity(sunFaceSkinTemp, defaultEmissivity);
-
-			// irradiance for the portion of the 360° angle that is neither exposed to the sun nor to the main body
-			double darkFaceEe = Sim.BackgroundFlux;
-			darkFaceSkinTemp = SurfaceTemperature(darkFaceEe, angularVelFactor, baseSkinTemperature);
-			double darkFaceJe = Sim.GreyBodyRadiosity(darkFaceSkinTemp, defaultEmissivity);
-
-			double surface;
-			if (partData.volumeAndSurface != null)
-				surface = partData.volumeAndSurface.GetBestSurface();
-			else
-				surface = PartVolumeAndSurface.PartBoundsSurface(partData.PartPrefab, true); // temporary for testing
-
-			double SBAndDSurfFactor = (1.0 - star.mainBodyVesselStarAngle) * 0.5;
-			double SAndBSurfFactor = star.mainBodyVesselStarAngle * 0.5;
+			skinRadiosity /= 1000.0; // W/m² -> kW/m²
+			skinIrradiance /= 1000.0; // W/m² -> kW/m² 
 
 			envFlux =
-				((
-					  (sunAndBodyFaceEe * SBAndDSurfFactor)
-					+ (bodiesFaceEe * SAndBSurfFactor)
-					+ (sunFaceEe * SAndBSurfFactor)
-					+ (darkFaceEe * SBAndDSurfFactor)
-				) * defaultAbsorptance * surface)
-				-
-				((
-					  (sunAndBodyFaceJe * SBAndDSurfFactor)
-					+ (bodiesFaceJe * SAndBSurfFactor)
-					+ (sunFaceJe * SAndBSurfFactor)
-					+ (darkFaceJe * SBAndDSurfFactor)
-				) * surface)
-				+
-				atmoConvectionFlux;
+				atmoConvectionFlux
+				+ (skinIrradiance * partData.volumeAndSurface.surface)
+				- (skinRadiosity * partData.volumeAndSurface.surface);
 
-			double energyChange = envFlux * elapsedSec;
+			envFlux *= 1f - insulation;
+
+			internalFlux = 0.0;
+			foreach (IThermalModule thModule in thermalModules)
+			{
+				internalFlux += thModule.InternalHeatProduction;
+			}
+
+			currentFlux = envFlux + internalFlux;
+
+			double energyChange = currentFlux * elapsedSec;
 			double belowThEnergyChange = Math.Min(belowThEnergy.Capacity - belowThEnergy.Amount, energyChange + aboveThEnergy.Amount);
 			double aboveThEnergyChange = energyChange - belowThEnergyChange;
 			belowThEnergy.Amount += belowThEnergyChange;
 			aboveThEnergy.Amount += aboveThEnergyChange;
+
 		}
 	}
 }

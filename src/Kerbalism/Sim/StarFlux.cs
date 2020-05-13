@@ -41,6 +41,15 @@ namespace KERBALISM
 		/// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmosphere and occlusion) </summary>
 		public double directRawFluxProportion;
 
+
+		public double sunAndBodyFaceSkinTemp;
+		public double bodiesFaceSkinTemp;
+		public double sunFaceSkinTemp;
+		public double darkFaceSkinTemp;
+		public double skinIrradiance;
+		public double skinRadiosity;
+
+
 		public StarFlux(SimStar star)
 		{
 			this.star = star;
@@ -64,7 +73,14 @@ namespace KERBALISM
 			bodiesAlbedoFlux = 0.0;
 			bodiesEmissiveFlux = 0.0;
 			directRawFluxProportion = 0.0;
+
 			mainBodyVesselStarAngle = 0.0;
-		}
+			sunAndBodyFaceSkinTemp = 0.0;
+			bodiesFaceSkinTemp = 0.0;
+			sunFaceSkinTemp = 0.0;
+			darkFaceSkinTemp = 0.0;
+			skinIrradiance = 0.0;
+			skinRadiosity = 0.0;
+	}
 	}
 }

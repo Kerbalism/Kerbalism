@@ -64,8 +64,10 @@ namespace KERBALISM
 						ModuleData.New(ksmPM, i, partData, true);
 					}
 				}
+				partData.PostInstantiateSetup();
 			}
-				
+
+
 		}
 
 		public PartDataCollectionVessel(VesselDataBase vesselData, ProtoVessel protoVessel, ConfigNode vesselDataNode)

@@ -16,6 +16,8 @@ namespace KERBALISM
 		public SimBody mainBody;
 		public bool soiHasChanged;
 
+		public double emissivity = 0.5;
+
 		/// <summary>
 		/// Return the array of all bodies. If this instance is a :<br/>
 		/// - SimVessel : this is Sim.Bodies, an array of SimBody<br/>

@@ -80,6 +80,9 @@ namespace KERBALISM
 		public bool canToggle;                        // defines if this process can be toggled
 		public List<Input> inputs;
 		public List<Output> outputs;
+		public double heatProduction = 0.01;
+		public double operatingTemperature = 295.0;
+		public double thermalMass = 0.010;
 
 		public ResourceBroker broker;
 		public bool hasModifier;
@@ -170,13 +173,16 @@ namespace KERBALISM
 
 			foreach (Output output in outputs)
 			{
-				if (vesselProcess != null && vesselProcess.dumpedOutputs.Contains(output.name))
-					recipe.AddOutput(output.name, output.rate * k * elapsed_s, true);
+				if (vesselProcess != null)
+					recipe.AddOutput(output.name, output.rate * k * elapsed_s, vesselProcess.dumpedOutputs.Contains(output.name));
 				else
 					recipe.AddOutput(output.name, output.rate * k * elapsed_s, output.dumpByDefault);
 			}
 
 			vd.ResHandler.AddRecipe(recipe);
+
+			if (vesselProcess != null)
+				vesselProcess.lastRecipe = recipe;
 		}
 
 		public string GetInfo(double capacity, bool includeDescription)

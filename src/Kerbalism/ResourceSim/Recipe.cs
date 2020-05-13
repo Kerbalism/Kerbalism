@@ -52,6 +52,8 @@ namespace KERBALISM
 		private List<Entry> outputs;  // set of output resources
 		private double left;     // what proportion of the recipe is left to execute
 
+		public double UtilizationFactor => 1.0 - left;
+
 		private ResourceBroker broker;
 
 		public Recipe(ResourceBroker broker)

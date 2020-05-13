@@ -62,11 +62,10 @@ namespace KERBALISM
 			flightId = part.flightID;
 			partInfo = part.partInfo;
 			PartPrefab = GetPartPrefab(part.partInfo);
-			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
+			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
-			thermalData = new PartThermalData(this);
 		}
 
 		public PartData(VesselDataBase vesselData, ProtoPartSnapshot protopart)
@@ -77,13 +76,18 @@ namespace KERBALISM
 			PartPrefab = GetPartPrefab(protopart.partInfo);
 			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
-			thermalData = new PartThermalData(this);
 		}
 
 		public void SetLoadedPartReference(Part part)
 		{
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
+		}
+
+		public void PostInstantiateSetup()
+		{
+			if (thermalData == null)
+				thermalData = PartThermalData.Setup(this);
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>

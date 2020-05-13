@@ -64,6 +64,12 @@ namespace KERBALISM
 	{
 		private const string NODENAME_VIRTUAL_RESOURCES = "VIRTUAL_RESOURCES";
 
+		private static readonly List<string> defaultVirtualPartResources = new List<string>()
+		{
+			PartThermalData.aboveThEnergyResName,
+			PartThermalData.belowThEnergyResName
+		};
+
 		public enum VesselState { Loaded, Unloaded, EditorInit, EditorStep, EditorFinalize}
 		private VesselState currentState;
 
@@ -125,6 +131,11 @@ namespace KERBALISM
 					break;
 			}
 
+			foreach (string defaultVirtualPartResource in defaultVirtualPartResources)
+			{
+				GetOrCreateVirtualResource<VesselVirtualPartResource>(defaultVirtualPartResource);
+			}
+
 			switch (state)
 			{
 				case VesselState.Loaded:
@@ -148,6 +159,11 @@ namespace KERBALISM
 
 				APIResources.Add(resource.Name, resource.Amount);
 			}
+		}
+
+		public void FirstSync(object vesselOrProtoVessel, VesselState state)
+		{
+
 		}
 
 		/// <summary>return the VesselResource for this resource or create a VesselVirtualResource if the resource doesn't exists</summary>
@@ -179,7 +195,7 @@ namespace KERBALISM
 		}
 
 		/// <summary> Get-or-create a VesselVirtualPartResource or VesselVirtualResource with the specified name </summary>
-		public T CreateVirtualResource<T>(string name) where T : VesselResource
+		public T GetOrCreateVirtualResource<T>(string name) where T : VesselResource
 		{
 			if (resources.TryGetValue(name, out VesselResource baseExistingResource))
 			{

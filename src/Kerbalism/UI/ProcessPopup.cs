@@ -12,7 +12,7 @@ namespace KERBALISM
 {
 	public class ProcessPopup
 	{
-		VesselData vd;
+		VesselDataBase vd;
 		VesselProcess vesselProcess;
 
 		// UI references
@@ -27,7 +27,7 @@ namespace KERBALISM
 		private static List<string> activePopups = new List<string>();
 		private string popupId;
 
-		public ProcessPopup(VesselProcess vesselProcess, VesselData vd)
+		public ProcessPopup(VesselProcess vesselProcess, VesselDataBase vd)
 		{
 			popupId = vesselProcess.ProcessName;
 
@@ -47,6 +47,7 @@ namespace KERBALISM
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(window, vesselProcess.process.title, default, 120);
+			if (vd.VesselName.Length > 0) topHeader.TextObject.SetTooltipText(Lib.BuildString(Local.SCIENCEARCHIVE_onvessel, " : ", Lib.Bold(vd.VesselName)));
 			new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderClose, () => window.Close(), Local.SCIENCEARCHIVE_closebutton);//"close"
 
 			// content panel
@@ -314,9 +315,9 @@ namespace KERBALISM
 			KsmGuiText resCapText;
 			KsmGuiTextButton resToggleText;
 			ProcessControllerData data;
-			VesselData vd;
+			VesselDataBase vd;
 
-			public PartEntry(KsmGuiBase parent, string partTitle, ProcessControllerData data, VesselData vd) : base(parent)
+			public PartEntry(KsmGuiBase parent, string partTitle, ProcessControllerData data, VesselDataBase vd) : base(parent)
 			{
 				this.data = data;
 				this.vd = vd;
@@ -360,7 +361,7 @@ namespace KERBALISM
 
 			private void OnTogglePart()
 			{
-				ModuleKsmProcessController.Toggle(data, vd.Vessel.loaded);
+				ModuleKsmProcessController.Toggle(data, vd.LoadedOrEditor);
 			}
 		}
 	}

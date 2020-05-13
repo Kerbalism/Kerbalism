@@ -23,7 +23,7 @@ namespace KERBALISM
 			public ArrayEffectData(ModuleKsmRadiationCoil masterModule, List<ModuleKsmRadiationCoil> coilModules)
 			{
 				chargeId = Guid.NewGuid().ToString();
-				charge = masterModule.moduleData.VesselData.ResHandler.CreateVirtualResource<VesselVirtualPartResource>(chargeId);
+				charge = masterModule.moduleData.VesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(chargeId);
 
 				foreach (ModuleKsmRadiationCoil coilModule in coilModules)
 				{

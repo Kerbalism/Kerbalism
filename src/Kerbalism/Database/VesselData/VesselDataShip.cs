@@ -308,6 +308,7 @@ namespace KERBALISM
 		//	}
 		//}
 
+
 		private void AnalyzeReliability(List<Part> parts)
 		{
 			// reset data

@@ -4,13 +4,34 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public class ProcessControllerData : ModuleData<ModuleKsmProcessController, ProcessControllerData>
+	public class ProcessControllerData : ModuleData<ModuleKsmProcessController, ProcessControllerData>, IThermalModule
 	{
 		public string processName;		// internal name of the process (i.e. "scrubber" or "sabatier")
 		public double processCapacity;	// this part modules capacity to run this process
 		public bool isRunning;  // true/false, if process controller is turned on or not
 		public bool isBroken;   // true if process controller is broken
 		public Process Process { get; private set; } // the process associated with the process name, for convenience
+
+
+		public bool IsAlwaysMaster => false;
+
+		public double OperatingTemperature => Process.operatingTemperature;
+
+		public double InternalHeatProduction
+		{
+			get
+			{
+				if (!moduleIsEnabled || isBroken || Process.heatProduction == 0.0)
+					return 0.0;
+
+				if (!VesselData.VesselProcesses.TryGetProcessData(processName, out VesselProcess vesselProcess))
+					return 0.0;
+
+				return vesselProcess.AvailableCapacityPercent * vesselProcess.UtilizationFactor * processCapacity * Process.heatProduction;
+			}
+		}
+
+		public double ThermalMass => Process != null ? Process.thermalMass * processCapacity : 0.0;
 
 		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
 		{

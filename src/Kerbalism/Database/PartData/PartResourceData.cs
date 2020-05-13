@@ -56,7 +56,7 @@ namespace KERBALISM
 
 			foreach (ConfigNode node in resTopNode.nodes)
 			{
-				VesselVirtualPartResource res = pd.vesselData.ResHandler.CreateVirtualResource<VesselVirtualPartResource>(node.name);
+				VesselVirtualPartResource res = pd.vesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(node.name);
 
 				if (res == null)
 					continue;

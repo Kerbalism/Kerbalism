@@ -255,6 +255,7 @@ namespace KERBALISM
 						}
 					}
 				}
+				partData.PostInstantiateSetup();
 			}
 		}
 
@@ -300,6 +301,14 @@ namespace KERBALISM
 				starFlux.bodiesAlbedoFlux = stepStarFlux.bodiesAlbedoFlux;
 				starFlux.bodiesEmissiveFlux = stepStarFlux.bodiesEmissiveFlux;
 				starFlux.mainBodyVesselStarAngle = stepStarFlux.mainBodyVesselStarAngle;
+
+				starFlux.mainBodyVesselStarAngle = stepStarFlux.mainBodyVesselStarAngle;
+				starFlux.sunAndBodyFaceSkinTemp = stepStarFlux.sunAndBodyFaceSkinTemp;
+				starFlux.bodiesFaceSkinTemp = stepStarFlux.bodiesFaceSkinTemp;
+				starFlux.sunFaceSkinTemp = stepStarFlux.sunFaceSkinTemp;
+				starFlux.darkFaceSkinTemp = stepStarFlux.darkFaceSkinTemp;
+				starFlux.skinIrradiance = stepStarFlux.skinIrradiance;
+				starFlux.skinRadiosity = stepStarFlux.skinRadiosity;
 
 				irradianceStarTotal += stepStarFlux.directFlux;
 				directRawFluxTotal += stepStarFlux.directRawFlux;

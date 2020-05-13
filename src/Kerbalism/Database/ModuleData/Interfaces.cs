@@ -24,9 +24,9 @@ namespace KERBALISM
 
 	public interface IThermalModule
 	{
-		double PartSkinSurface { get; }
+		bool IsAlwaysMaster { get; }
 		double OperatingTemperature { get; } // Kelvin
-		double InternalHeatProduction { get; } // Watts
-		double ThermalMass { get; } // Joules/Kelvin
+		double InternalHeatProduction { get; } // KiloWatts
+		double ThermalMass { get; } // Tons
 	}
 }

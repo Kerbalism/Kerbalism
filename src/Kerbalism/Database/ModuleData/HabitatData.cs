@@ -273,10 +273,10 @@ namespace KERBALISM
 
 		public PartRadiationData RadiationData => partData.radiationData;
 
-		public double PartSkinSurface => modulePrefab.surface;
+		public bool IsAlwaysMaster => true;
 		public double OperatingTemperature => 295.0;
-		public double InternalHeatProduction => crewCount * 30.0;
-		public double ThermalMass => partData.PartPrefab.mass * 0.25 * PartThermalData.partSpecificHeat;
+		public double InternalHeatProduction => crewCount * 0.03; // 30 W / kerbal
+		public double ThermalMass => partData.PartPrefab.mass * 0.25;
 
 		#endregion
 

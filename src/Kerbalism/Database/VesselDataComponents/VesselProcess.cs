@@ -35,7 +35,11 @@ namespace KERBALISM
 		public double MaxCapacity { get; private set; } = 0.0;
 
 		/// <summary> final current capacity with enabled/enabledFactor applied</summary>
-		public double AvailableCapacity => enabled ? enabledCapacity * enabledFactor : 0.0;
+		public double AvailableCapacity { get; private set; }
+		public double AvailableCapacityPercent { get; private set; }
+
+		public Recipe lastRecipe;
+		public double UtilizationFactor { get; private set; }
 
 		public bool CanToggle => process.canToggle;
 		public string ProcessName => process.name;
@@ -69,11 +73,24 @@ namespace KERBALISM
 
 		public void Evaluate(VesselDataBase vd)
 		{
+			if (lastRecipe != null)
+			{
+				UtilizationFactor = lastRecipe.UtilizationFactor;
+				lastRecipe = null;
+			}
+			else
+			{
+				UtilizationFactor = 0.0;
+			}
+
 			MaxCapacity = newTotalCapacity;
 			newTotalCapacity = 0.0;
 
 			enabledCapacity = newEnabledCapacity;
 			newEnabledCapacity = 0.0;
+
+			AvailableCapacity = enabled ? enabledCapacity * enabledFactor : 0.0;
+			AvailableCapacityPercent = enabledCapacity > 0.0 ? AvailableCapacity / enabledCapacity : 0.0;
 
 			VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.pseudoResourceName);
 			processRes.SetCapacity(enabledCapacity);
