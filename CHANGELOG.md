@@ -1,3 +1,11 @@
+## v3.8 for all versions of KSP from 1.5.0 to 1.9.x
+
+ - 2020-05-13
+
+### Changes since the last release
+
+* Fix #635 : NaN propagation happening (usually) on SOI changes.
+
 ## v3.7 for all versions of KSP from 1.5.0 to 1.9.x
 
  - 2020-02-21

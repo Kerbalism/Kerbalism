@@ -149,7 +149,17 @@ namespace KERBALISM
 			// f.i. a very eccentric orbit with the apoapsis above one of the
 			// poles won't be assumed to spend most of the time in shadow.
 			if (Td > v.orbit.period / 2)
-				return v.orbit.period - Td;
+				Td = v.orbit.period - Td;
+
+			// fix #635 : some orbit parameters will be NaN (or 0, IDK) on some occasions.
+			// Since this code is going away in 4.0 anyway, I won't bother fixing it properly, 
+			// just fallback to the the old circular orbit method if the result is NaN.
+			if (double.IsNaN(Td))
+			{
+				double Ra2 = v.altitude + v.mainBody.Radius;
+				double h2 = Math.Sqrt(Ra2 * v.mainBody.gravParameter);
+				Td = (2.0 * Ra2 * Ra2 / h2) * Math.Asin(v.mainBody.Radius / Ra2);
+			}
 
 			return Td;
 		}
