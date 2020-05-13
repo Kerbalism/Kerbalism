@@ -237,25 +237,16 @@ namespace KERBALISM
 		{
 			Vessel vessel = null;
 			ProtoVessel protoVessel = null;
-
-			// execute all recorded recipes
 			switch (state)
 			{
 				case VesselState.Loaded:
 					vessel = (Vessel)vesselOrProtoVessel;
-					Recipe.ExecuteRecipes(this, recipes, vessel);
 					break;
 				case VesselState.Unloaded:
 					protoVessel = (ProtoVessel)vesselOrProtoVessel;
-					Recipe.ExecuteRecipes(this, recipes, protoVessel.vesselRef);
-					break;
-				case VesselState.EditorStep:
-					Recipe.ExecuteRecipes(this, recipes, null);
 					break;
 			}
 
-			// forget the recipes
-			recipes.Clear();
 
 			// if the vessel state has changed between loaded and unloaded, rebuild the resource wrappers
 			if ((state == VesselState.Loaded || state == VesselState.Unloaded) && state != currentState)
@@ -308,6 +299,23 @@ namespace KERBALISM
 					SyncEditorPartResources(EditorLogic.fetch.ship.parts);
 					return;
 			}
+
+			// execute all recorded recipes
+			switch (state)
+			{
+				case VesselState.Loaded:
+					Recipe.ExecuteRecipes(this, recipes, vessel);
+					break;
+				case VesselState.Unloaded:
+					Recipe.ExecuteRecipes(this, recipes, protoVessel.vesselRef);
+					break;
+				case VesselState.EditorStep:
+					Recipe.ExecuteRecipes(this, recipes, null);
+					break;
+			}
+
+			// forget the recipes
+			recipes.Clear();
 
 			// apply all deferred requests and synchronize to vessel
 			foreach (VesselResource resource in resources.Values)
