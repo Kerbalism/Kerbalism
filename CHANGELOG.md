@@ -5,6 +5,13 @@
 ### Changes since the last release
 
 * Fix #635 : NaN propagation happening (usually) on SOI changes.
+* Fixed deployed science experiments giving the full science value on the first transmission event
+* Mark DeepFreeze as incompatible, see issue #620
+* Fix #618 : Fix for Kopernicus 1.8+ MM patching system for solar panels 
+* Fix #628 : Ground experiments does not work with "Science = false"
+* Fix #630 (Bureaucracy support) : Pass a very small positive number as science value when a subject is completed to preserve stock contract functionality.
+* Fix for TU support configs (LiOn)
+* Korean localization (Vannadin)
 
 ## v3.7 for all versions of KSP from 1.5.0 to 1.9.x
 
