@@ -147,7 +147,7 @@
     <Compile Include="Database\PartData.cs" />
     <Compile Include="Database\RuleData.cs" />
     <Compile Include="Database\VesselSituations.cs" />
-    <Compile Include="External\DeepFreeze.cs" />
+    <Compile Include="External\BackgroundResources.cs" />
     <Compile Include="LocalizationCache.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />
