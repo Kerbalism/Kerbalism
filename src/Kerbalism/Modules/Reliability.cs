@@ -499,9 +499,9 @@ namespace KERBALISM
 		}
 
 #if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
+		[KSPEvent(guiActiveUnfocused = true, unfocusedRange = 3.5f, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
+		[KSPEvent(guiActiveUnfocused = true, unfocusedRange = 3.5f, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 #endif
 		// show a message with some hint on time to next failure
 		public void Inspect()
@@ -544,9 +544,9 @@ namespace KERBALISM
 		}
 
 #if KSP15_16
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false)]
+		[KSPEvent(guiActiveUnfocused = true, unfocusedRange = 3.5f, guiName = "_", active = false)]
 #else
-		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
+		[KSPEvent(guiActiveUnfocused = true, unfocusedRange = 3.5f, guiName = "_", active = false, groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
 #endif
 		// repair malfunctioned component
 		public void Repair()
