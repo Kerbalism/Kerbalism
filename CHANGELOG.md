@@ -1,3 +1,11 @@
+## v3.9 for all versions of KSP from 1.5.0 to 1.9.x
+
+ - 2020-05-15
+
+### Changes since the last release
+
+* Fix missing closing bracket causing reliability configs to not be applied
+
 ## v3.8 for all versions of KSP from 1.5.0 to 1.9.x
 
  - 2020-05-13
