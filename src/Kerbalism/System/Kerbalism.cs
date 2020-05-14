@@ -166,6 +166,8 @@ namespace KERBALISM
 						Storm_data sd = new Storm_data { body = body };
 						storm_bodies.Add(sd);
 					}
+
+					BackgroundResources.DisableBackgroundResources();
 				}
 				catch (Exception e)
 				{

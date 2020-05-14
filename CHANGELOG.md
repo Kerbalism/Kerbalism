@@ -6,12 +6,16 @@
 
 * Fix #635 : NaN propagation happening (usually) on SOI changes.
 * Fixed deployed science experiments giving the full science value on the first transmission event
-* Mark DeepFreeze as incompatible, see issue #620
-* Fix #618 : Fix for Kopernicus 1.8+ MM patching system for solar panels 
+* Fix #620 : Allow DeepFreeze (and TACLS) compatibility by disabling their background processing difficulty setting
+* Fix #618 : Use the new Kopernicus 1.8+ MM variable for disabling the Kopernicus solar panel module
 * Fix #628 : Ground experiments does not work with "Science = false"
-* Fix #630 (Bureaucracy support) : Pass a very small positive number as science value when a subject is completed to preserve stock contract functionality.
+* Fix #630 : (Bureaucracy support) Pass a very small positive number as science value when a subject is completed to preserve stock contract functionality.
+* Fix #625 : TestFlight no longer is hard coded to disable reliability, this is done via configuration instead
+* Fix #610 : Fixed BIRDIE experiment requirement so it can be done
 * Fix for TU support configs (LiOn)
 * Korean localization (Vannadin)
+* Reduced radiation damage on some equipments (solar panels, transmitters and antennas)
+* Remove engine failures if EngineIgnitor or PayToPlay is installed
 
 ## v3.7 for all versions of KSP from 1.5.0 to 1.9.x
 
