@@ -170,6 +170,7 @@
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcessCollection.cs" />
     <Compile Include="External\B9PartSwitch.cs" />
+    <Compile Include="External\BackgroundRessources.cs" />
     <Compile Include="External\Kopernicus.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
     <Compile Include="Modules\Base\SubclassingExample.cs" />
