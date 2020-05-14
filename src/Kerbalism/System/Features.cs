@@ -17,9 +17,6 @@ namespace KERBALISM
 			SpaceWeather = Settings.SpaceWeather;
 			Automation = Settings.Automation;
 
-			// force-disable some features based on mods detected
-			Reliability &= !Lib.HasAssembly("TestFlight");
-
 			// detect all modifiers in use by current profile
 			HashSet<string> modifiers = new HashSet<string>();
 			foreach (Rule rule in Profile.rules)
