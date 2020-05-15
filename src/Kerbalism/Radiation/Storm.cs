@@ -8,8 +8,7 @@ namespace KERBALISM
 {
     public static class Storm
     {
-        // TODO multi sun support?
-        public static float sun_observation_quality = 1.0f;
+        public readonly static Dictionary<int, float> sunObservationQuality = new Dictionary<int, float>();
 
         internal static void CreateStorm(StormData bd, CelestialBody body, double distanceToSun)
         {
@@ -44,11 +43,11 @@ namespace KERBALISM
                     bd.storm_generation += bd.storm_duration;
 
                     // add a random error to the estimated storm duration if we don't observe the sun too well
-                    var error = bd.storm_duration * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
+                    var error = bd.storm_duration * 3 * Lib.RandomDouble() * (1 - SunObservationQuality(sun));
                     bd.displayed_duration = bd.storm_duration + error;
 
                     // show warning message only if you're lucky...
-                    bd.display_warning = Lib.RandomFloat() < sun_observation_quality;
+                    bd.display_warning = Lib.RandomFloat() < SunObservationQuality(sun);
 
 
 #if DEBUG_RADIATION
@@ -249,6 +248,18 @@ namespace KERBALISM
 			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 2;
         }
-    }
+
+		internal static float SunObservationQuality(CelestialBody sun)
+		{
+            if (!sunObservationQuality.ContainsKey(sun.flightGlobalsIndex))
+                sunObservationQuality[sun.flightGlobalsIndex] = 1;
+            return sunObservationQuality[sun.flightGlobalsIndex];
+		}
+
+		internal static void SetSunObservationQuality(CelestialBody sun, float quality)
+		{
+            sunObservationQuality[sun.flightGlobalsIndex] = quality;
+		}
+	}
 
 } // KERBALISM
