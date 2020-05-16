@@ -11,14 +11,17 @@ namespace KERBALISM
 	/// </summary>
 	public class VesselKSPResource : VesselResource
 	{
+		private int stockId;
+
 		/// <summary> Associated resource name</summary>
-		public override string Name => resourceWrapper.name;
+		public override string Name => name;
+		private string name;
 
 		/// <summary> Shortcut to the resource definition "displayName" </summary>
-		public override string Title => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].displayName;
+		public override string Title => PartResourceLibrary.Instance.resourceDefinitions[stockId].displayName;
 
 		/// <summary> Shortcut to the resource definition "isVisible" </summary>
-		public override bool Visible => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].isVisible;
+		public override bool Visible => PartResourceLibrary.Instance.resourceDefinitions[stockId].isVisible;
 
 		/// <summary> Amount of resource</summary>
 		public override double Amount => resourceWrapper.amount;
@@ -29,17 +32,19 @@ namespace KERBALISM
 		public override bool NeedUpdate => availabilityFactor != 0.0 || deferred != 0.0 || Capacity != 0.0 || resourceBrokers.Count != 0;
 
 		/// <summary> Shortcut to the resource definition "abbreviation" </summary>
-		public string Abbreviation => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].abbreviation;
+		public string Abbreviation => PartResourceLibrary.Instance.resourceDefinitions[stockId].abbreviation;
 
 		/// <summary> Shortcut to the resource definition "density" </summary>
-		public float Density => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].density;
+		public float Density => PartResourceLibrary.Instance.resourceDefinitions[stockId].density;
 
 		/// <summary> Shortcut to the resource definition "unitCost" </summary>
-		public float UnitCost => PartResourceLibrary.Instance.resourceDefinitions[resourceWrapper.name].unitCost;
+		public float UnitCost => PartResourceLibrary.Instance.resourceDefinitions[stockId].unitCost;
 
 		/// <summary>Ctor</summary>
-		public VesselKSPResource(ResourceWrapper resourceWrapper)
+		public VesselKSPResource(string name, int id, ResourceWrapper resourceWrapper)
 		{
+			this.stockId = id;
+			this.name = name;
 			this.resourceWrapper = resourceWrapper;
 			resourceBrokers = new List<ResourceBrokerRate>();
 			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();

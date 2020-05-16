@@ -185,6 +185,7 @@
     <Compile Include="API\PartModuleAPI.cs" />
     <Compile Include="Patches\PartLoader.cs" />
     <Compile Include="Patches\ShipConstruct.cs" />
+    <Compile Include="ResourceSim\VirtualResourceDefinition.cs" />
     <Compile Include="ResourceSim\ResourceWrapper.cs" />
     <Compile Include="Modules\Base\IPlannerModule.cs" />
     <Compile Include="ResourceSim\VesselVirtualPartResource.cs" />

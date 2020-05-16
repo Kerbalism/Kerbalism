@@ -21,18 +21,18 @@ namespace KERBALISM
 		public bool TryGet(string resourceName, out PartResourceData res) => resourcesDict.TryGetValue(resourceName, out res);
 		public int Count => resources.Count;
 
-		public PartResourceData AddResource(VesselVirtualPartResource resource, double amount, double capacity)
+		public PartResourceData AddResource(string resourceName, double amount, double capacity)
 		{
-			if (resourcesDict.TryGetValue(resource.Name, out PartResourceData partRes))
+			if (resourcesDict.TryGetValue(resourceName, out PartResourceData partRes))
 			{
 				partRes.Capacity = capacity;
 				partRes.Amount = amount;
 				return partRes;
 			}
 
-			partRes = new PartResourceData(resource, amount, capacity);
+			partRes = new PartResourceData(resourceName, amount, capacity);
 			resources.Add(partRes);
-			resourcesDict.Add(resource.Name, partRes);
+			resourcesDict.Add(resourceName, partRes);
 			return partRes;
 		}
 

@@ -316,8 +316,8 @@ namespace KERBALISM
 				  "<align=left />",
 				  Local.TELEMETRY_timetoharvest, "\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
 				  Local.TELEMETRY_growth, "\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
-				  Local.TELEMETRY_naturallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
-				  Local.TELEMETRY_artificiallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
+				  Local.TELEMETRY_naturallighting, "\t<b>", Lib.HumanReadableIrradiance(greenhouse.natural), "</b>\n",//"natural lighting"
+				  Local.TELEMETRY_artificiallighting, "\t<b>", Lib.HumanReadableIrradiance(greenhouse.artificial), "</b>"//"artificial lighting"
 				) : string.Empty;
 
 				// render it

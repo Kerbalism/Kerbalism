@@ -69,6 +69,8 @@ namespace KERBALISM
 		protected double currentConsumeRequests;
 		protected double currentConsumeCriticalRequests;
 		protected double currentProduceRequests;
+
+		public double UnknownBrokersRate => unknownBrokersRate;
 		protected double unknownBrokersRate;
 
 		/// <summary>Dictionary of all consumers and producers (key) and how much amount they did add/remove (value).</summary>
@@ -276,51 +278,58 @@ namespace KERBALISM
 			return $"{Name} : {Lib.HumanReadableStorage(Amount, Capacity)} ({Rate.ToString("+0.#######/s;-0.#######/s")})";
 		}
 
-		public string BrokersListTooltip()
+		public string BrokersListTooltip(bool showSummary = true)
 		{
 			sb.Length = 0;
 
 			sb.Append(Lib.Color(Title, Lib.Kolor.Yellow, true));
-			sb.Append("\n");
 			sb.Append("<align=left />");
-			if (Rate != 0.0)
+			if (showSummary)
 			{
-				sb.Append(Lib.Color(Rate > 0.0,
-					Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(Rate))), Lib.Kolor.PosRate,
-					Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(Rate))), Lib.Kolor.NegRate,
-					true));
-			}
-			else
-			{
-				sb.Append("<b>");
-				sb.Append(Local.TELEMETRY_nochange);//no change
-				sb.Append("</b>");
+				sb.Append("\n");
+				if (Rate != 0.0)
+				{
+					sb.Append(Lib.Color(Rate > 0.0,
+						Lib.BuildString("+", Lib.HumanReadableRate(Math.Abs(Rate))), Lib.Kolor.PosRate,
+						Lib.BuildString("-", Lib.HumanReadableRate(Math.Abs(Rate))), Lib.Kolor.NegRate,
+						true));
+				}
+				else
+				{
+					sb.Append("<b>");
+					sb.Append(Local.TELEMETRY_nochange);//no change
+					sb.Append("</b>");
+				}
+
+				if (Rate < 0.0 && Level < 0.0001)
+				{
+					sb.Append(" <i>");
+					sb.Append(Local.TELEMETRY_empty);//(empty)
+					sb.Append("</i>");
+				}
+				else if (Rate > 0.0 && Level > 0.9999)
+				{
+					sb.Append(" <i>");
+					sb.Append(Local.TELEMETRY_full);//(full)
+					sb.Append("</i>");
+
+				}
+				else sb.Append("   "); // spaces to prevent alignement issues
+
+				sb.Append("\t");
+				sb.Append(Lib.HumanReadableStorage(Amount, Capacity));
+				sb.Append(" (");
+				sb.Append(Level.ToString("P0"));
+				sb.Append(")");
 			}
 
-			if (Rate < 0.0 && Level < 0.0001)
-			{
-				sb.Append(" <i>");
-				sb.Append(Local.TELEMETRY_empty);//(empty)
-				sb.Append("</i>");
-			}
-			else if (Rate > 0.0 && Level > 0.9999)
-			{
-				sb.Append(" <i>");
-				sb.Append(Local.TELEMETRY_full);//(full)
-				sb.Append("</i>");
-
-			}
-			else sb.Append("   "); // spaces to prevent alignement issues
-
-			sb.Append("\t");
-			sb.Append(Lib.HumanReadableStorage(Amount, Capacity));
-			sb.Append(" (");
-			sb.Append(Level.ToString("P0"));
-			sb.Append(")");
 
 			if (ResourceBrokers.Count > 0)
 			{
-				sb.Append("\n<b>------------    \t------------</b>");
+				if (showSummary)
+				{
+					sb.Append("\n<b>------------    \t------------</b>");
+				}
 				foreach (ResourceBrokerRate rb in ResourceBrokers)
 				{
 					// exclude very tiny rates to avoid the ui flickering
@@ -340,36 +349,44 @@ namespace KERBALISM
 			return sb.ToString();
 		}
 
-		public string BrokerListTooltipTMP()
+		public string BrokerListTooltipTMP(bool showSummary = true)
 		{
 			sb.Length = 0;
 
 			sb.Append(Lib.Color(Title, Lib.Kolor.Yellow, true));
-			sb.Append("\n");
 			sb.Append("<align=\"left\">");
-			if (Rate != 0.0)
-			{
-				sb.Append(Lib.Color(Rate > 0.0,
-					Lib.HumanReadableRate(Rate, "F3", "", true), Lib.Kolor.PosRate,
-					Lib.HumanReadableRate(Rate, "F3", "", true), Lib.Kolor.NegRate,
-					true));
-			}
-			else
-			{
-				sb.Append("<b>");
-				sb.Append(Local.TELEMETRY_nochange);//no change
-				sb.Append("</b>");
-			}
 
-			sb.Append("<pos=80px>");
-			sb.Append(Lib.HumanReadableStorage(Amount, Capacity));
-			sb.Append(" (");
-			sb.Append(Level.ToString("P0"));
-			sb.Append(")");
+			if (showSummary)
+			{
+				sb.Append("\n");
+				if (Rate != 0.0)
+				{
+					sb.Append(Lib.Color(Rate > 0.0,
+						Lib.HumanReadableRate(Rate, "F3", "", true), Lib.Kolor.PosRate,
+						Lib.HumanReadableRate(Rate, "F3", "", true), Lib.Kolor.NegRate,
+						true));
+				}
+				else
+				{
+					sb.Append("<b>");
+					sb.Append(Local.TELEMETRY_nochange);//no change
+					sb.Append("</b>");
+				}
+
+				sb.Append("<pos=80px>");
+				sb.Append(Lib.HumanReadableStorage(Amount, Capacity));
+				sb.Append(" (");
+				sb.Append(Level.ToString("P0"));
+				sb.Append(")");
+			}
 
 			if (ResourceBrokers.Count > 0)
 			{
-				sb.Append("\n<b>------------<pos=80px>------------</b>");
+				if (showSummary)
+				{
+					sb.Append("\n<b>------------<pos=80px>------------</b>");
+				}
+				
 				foreach (ResourceBrokerRate rb in ResourceBrokers)
 				{
 					// exclude very tiny rates to avoid the ui flickering

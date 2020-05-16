@@ -10,8 +10,9 @@ namespace KERBALISM
 	{
 		public const string NODENAME_RESOURCES = "RESOURCES";
 
-		private VesselVirtualPartResource resource;
-		public VesselVirtualPartResource Resource => resource;
+		public string ResourceName { get; private set; }
+
+		public int? resourceId = null;
 
 		private double amount;
 		public double Amount
@@ -39,11 +40,13 @@ namespace KERBALISM
 			}
 		}
 
+		public bool flowState = true;
+
 		public double Level => capacity > 0.0 ? amount / capacity : 0.0;
 
-		public PartResourceData(VesselVirtualPartResource vesselVirtualPartResource, double amount = 0.0, double capacity = 0.0)
+		public PartResourceData(string resourceName, double amount = 0.0, double capacity = 0.0)
 		{
-			resource = vesselVirtualPartResource;
+			ResourceName = resourceName;
 			Capacity = capacity;
 			Amount = amount;
 		}
@@ -56,12 +59,7 @@ namespace KERBALISM
 
 			foreach (ConfigNode node in resTopNode.nodes)
 			{
-				VesselVirtualPartResource res = pd.vesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(node.name);
-
-				if (res == null)
-					continue;
-
-				pd.virtualResources.AddResource(res,
+				pd.virtualResources.AddResource(node.name,
 					Lib.ConfigValue(node, "amount", 0.0),
 					Lib.ConfigValue(node, "capacity", 0.0));
 			}
@@ -76,7 +74,7 @@ namespace KERBALISM
 
 			foreach (PartResourceData res in pd.virtualResources)
 			{
-				ConfigNode resNode = resTopNode.AddNode(res.resource.Name);
+				ConfigNode resNode = resTopNode.AddNode(res.ResourceName);
 				resNode.AddValue("amount", res.amount);
 				resNode.AddValue("capacity", res.capacity);
 			}

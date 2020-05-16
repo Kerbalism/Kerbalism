@@ -172,7 +172,7 @@ namespace KERBALISM
 			IsOccluder = partData.volumeAndSurface != null;
 		}
 
-		public static void LoadRadiationData(PartData partData, ConfigNode partDataNode)
+		public static void Load(PartData partData, ConfigNode partDataNode)
 		{
 			ConfigNode radNode = partDataNode.GetNode(NODENAME_RADIATION);
 			if (radNode == null)
@@ -193,7 +193,7 @@ namespace KERBALISM
 			}
 		}
 
-		public static bool SaveRadiationData(PartData partData, ConfigNode partDataNode)
+		public static bool Save(PartData partData, ConfigNode partDataNode)
 		{
 			if (!partData.radiationData.IsReceiver)
 				return false;

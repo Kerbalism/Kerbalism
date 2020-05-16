@@ -40,7 +40,7 @@ namespace KERBALISM.Planner
 			}
 
 			// set back all resources amounts to the stored amounts
-			// this is for visualisation purposes, so the displayed amounts match the current values and not the resul of the simulation
+			// this is for visualisation purposes, so the displayed amounts match the current values and not the results of the simulation
 			handler.ResourceUpdate(vd, null, VesselResHandler.VesselState.EditorFinalize, 1.0);
 		}
 

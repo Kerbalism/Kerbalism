@@ -90,7 +90,8 @@ namespace KERBALISM
 				ConfigNode partNode = new ConfigNode(partData.LoadedPart.craftID.ToString());
 
 				isPersistent |= PartResourceData.SavePartResources(partData, partNode);
-				isPersistent |= PartRadiationData.SaveRadiationData(partData, partNode);
+				isPersistent |= PartRadiationData.Save(partData, partNode);
+				isPersistent |= PartThermalData.Save(partData, partNode);
 
 				if (isPersistent)
 					partsNode.AddNode(partNode);
@@ -119,7 +120,8 @@ namespace KERBALISM
 					continue;
 
 				PartResourceData.LoadPartResources(partData, partNode);
-				PartRadiationData.LoadRadiationData(partData, partNode);
+				PartRadiationData.Load(partData, partNode);
+				PartThermalData.Load(partData, partNode);
 			}
 		}
 	}

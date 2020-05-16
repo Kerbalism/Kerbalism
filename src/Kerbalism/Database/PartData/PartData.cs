@@ -38,11 +38,12 @@ namespace KERBALISM
 		private AvailablePart partInfo;
 		public Part PartPrefab { get; private set; }
 		public Part LoadedPart { get; private set; }
+		private bool initialized = false;
 
 		public PartRadiationData radiationData;
 		public PartThermalData thermalData;
 		public PartVolumeAndSurface.Info volumeAndSurface;
-		public PartResourceDataCollection virtualResources = new PartResourceDataCollection();
+		public PartResourceDataCollection virtualResources;
 		public List<ModuleData> modules = new List<ModuleData>();
 
 		/// <summary> Localized part title </summary>
@@ -53,8 +54,6 @@ namespace KERBALISM
 
 		public override string ToString() => Title;
 
-
-
 		public PartData(VesselDataBase vesselData, Part part)
 		{
 			this.vesselData = vesselData;
@@ -64,6 +63,7 @@ namespace KERBALISM
 			PartPrefab = GetPartPrefab(part.partInfo);
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
+			virtualResources = new PartResourceDataCollection();
 			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
 		}
@@ -74,6 +74,7 @@ namespace KERBALISM
 			flightId = protopart.flightID;
 			partInfo = protopart.partInfo;
 			PartPrefab = GetPartPrefab(protopart.partInfo);
+			virtualResources = new PartResourceDataCollection();
 			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
 		}
@@ -86,8 +87,11 @@ namespace KERBALISM
 
 		public void PostInstantiateSetup()
 		{
-			if (thermalData == null)
-				thermalData = PartThermalData.Setup(this);
+			if (initialized)
+				return;
+
+			thermalData = PartThermalData.Setup(this);
+			initialized = true;
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>

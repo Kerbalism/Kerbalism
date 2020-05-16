@@ -99,6 +99,10 @@ namespace KERBALISM
 			DepressuriationDefaultDuration = Lib.ConfigDuration(cfg, "DepressuriationDefaultDuration", false, "5m");
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
 
+			// thermal system
+			belowThEnergyRes = Lib.ConfigValue(cfg, "belowThEnergyRes", "belowThEnergyRes");
+			aboveThEnergyRes = Lib.ConfigValue(cfg, "aboveThEnergyRes", "aboveThEnergyRes");
+
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
 			PoisoningThreshold = Lib.ConfigValue(cfg, "PoisoningThreshold", 0.02);
@@ -237,6 +241,11 @@ namespace KERBALISM
 		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets.
 																// also determine the altitude at which non-pressurized habitats can use the external air.
 																// note that while ingame we display hab pressure as % with no unit, 100 % = 1 atm = 101.325 kPa for all internal calculations
+
+		// thermal system
+		public static string belowThEnergyRes;
+		public static string aboveThEnergyRes;
+
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
 		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status

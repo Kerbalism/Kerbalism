@@ -120,11 +120,16 @@ namespace KERBALISM
 {
 	public class PartThermalData
 	{
-		public static double defaultEmissivity = 0.25;
-		public static double defaultInternalTransfer = 0.1;
+		public const string NODENAME_THERMAL = "THERMAL";
 
-		public const string belowThEnergyResName = "belowThEnergyRes";
-		public const string aboveThEnergyResName = "aboveThEnergyRes";
+		public static VirtualResourceDefinition belowThDef;
+		public static VirtualResourceDefinition aboveThDef;
+
+		public static void SetupVirtualResources()
+		{
+			belowThDef = VirtualResourceDefinition.GetOrCreateDefinition(Settings.belowThEnergyRes, true, VirtualResourceDefinition.ResType.PartResource, "Heating control");
+			aboveThDef = VirtualResourceDefinition.GetOrCreateDefinition(Settings.aboveThEnergyRes, true, VirtualResourceDefinition.ResType.PartResource, "Cooling control");
+		}
 
 		// specific heats in kJ/t/K
 		public const double specifHeatAluminum = 0.897 * 1e3;
@@ -142,9 +147,12 @@ namespace KERBALISM
 		private PartResourceData belowThEnergy;
 		private double energyPerKelvin;
 
-		// TODO : persistence for those !
+		public enum FlowState { allowBoth, allowCooling, allowHeating, deny }
+
 		public float insulation = 0.9f;
 		public float emissivity = 0.25f;
+		public FlowState flowState = FlowState.allowBoth;
+
 		public string pawInfo;
 		public double currentFlux;
 
@@ -159,7 +167,7 @@ namespace KERBALISM
 		public double skinRadiosity;
 		public double internalFlux;
 
-		private PartThermalData(PartData partData)
+		public PartThermalData(PartData partData)
 		{
 			this.partData = partData;
 		}
@@ -169,7 +177,7 @@ namespace KERBALISM
 			if (partData.volumeAndSurface == null)
 				return null;
 
-			PartThermalData thermalData = null;
+			PartThermalData thermalData = partData.thermalData;
 			foreach (ModuleData moduleData in partData.modules)
 			{
 				if (moduleData is IThermalModule thModule)
@@ -197,18 +205,16 @@ namespace KERBALISM
 			if (thermalData.energyPerKelvin <= 0.0)
 				return null;
 
-			if (partData.virtualResources.Contains(belowThEnergyResName))
+			if (partData.virtualResources.Contains(belowThDef.name))
 			{
-				partData.virtualResources.TryGet(belowThEnergyResName, out thermalData.belowThEnergy);
-				partData.virtualResources.TryGet(aboveThEnergyResName, out thermalData.aboveThEnergy);
+				partData.virtualResources.TryGet(belowThDef.name, out thermalData.belowThEnergy);
+				partData.virtualResources.TryGet(aboveThDef.name, out thermalData.aboveThEnergy);
 			}
 			else
 			{
-				VesselVirtualPartResource belowThRes = partData.vesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(belowThEnergyResName);
-				VesselVirtualPartResource aboveThRes = partData.vesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(aboveThEnergyResName);
 				double targetTempEnergy = thermalData.energyPerKelvin * masterModule.OperatingTemperature;
-				thermalData.belowThEnergy = partData.virtualResources.AddResource(belowThRes, targetTempEnergy, targetTempEnergy);
-				thermalData.aboveThEnergy = partData.virtualResources.AddResource(aboveThRes, 0.0, targetTempEnergy * 3.0);
+				thermalData.belowThEnergy = partData.virtualResources.AddResource(belowThDef.name, targetTempEnergy, targetTempEnergy);
+				thermalData.aboveThEnergy = partData.virtualResources.AddResource(aboveThDef.name, 0.0, targetTempEnergy * 3.0);
 			}
 
 			if (partData.LoadedPart != null)
@@ -223,12 +229,12 @@ namespace KERBALISM
 				partData.LoadedPart.Fields[nameof(envFlux)].guiUnits = "kW";
 				partData.LoadedPart.Fields[nameof(envFlux)].group = pawGroup;
 				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(skinIrradiance)), thermalData));
-				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiFormat = "F3";
-				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiUnits = "kW/m²";
+				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiFormat = "F1";
+				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiUnits = "W/m²";
 				partData.LoadedPart.Fields[nameof(skinIrradiance)].group = pawGroup;
 				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(skinRadiosity)), thermalData));
-				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiFormat = "F3";
-				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiUnits = "kW/m²";
+				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiFormat = "F1";
+				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiUnits = "W/m²";
 				partData.LoadedPart.Fields[nameof(skinRadiosity)].group = pawGroup;
 
 				BaseField temperatureField = new BaseField(new UI_Label(), dataType.GetField(nameof(temperature), npFlags), thermalData);
@@ -290,10 +296,52 @@ namespace KERBALISM
 				emissivityField.group = pawGroup;
 				partData.LoadedPart.Fields.Add(emissivityField);
 
+				UI_Cycle flowStateCycle = new UI_Cycle();
+				flowStateCycle.stateNames = new string[]
+				{
+					Lib.Color("enabled", Lib.Kolor.Green),
+					Lib.Color("cooling only", Lib.Kolor.Cyan),
+					Lib.Color("heating only", Lib.Kolor.Orange),
+					Lib.Color("disabled", Lib.Kolor.Yellow)
+				};
 
+				flowStateCycle.onFieldChanged = (a, b) => thermalData.SetFlow();
+				BaseField flowStateField = new BaseField(flowStateCycle, dataType.GetField(nameof(flowState)), thermalData);
+				flowStateField.uiControlEditor = flowStateCycle;
+				flowStateField.uiControlFlight = flowStateCycle;
+				flowStateField.guiActiveEditor = true;
+				flowStateField.guiName = "Heat exchange";
+				flowStateField.group = pawGroup;
+				partData.LoadedPart.Fields.Add(flowStateField);
 			}
 
 			return thermalData;
+		}
+
+		public static void Load(PartData partData, ConfigNode partDataNode)
+		{
+			ConfigNode thermalNode = partDataNode.GetNode(NODENAME_THERMAL);
+			if (thermalNode == null)
+				return;
+
+			if (partData.thermalData == null)
+				partData.thermalData = new PartThermalData(partData);
+
+			partData.thermalData.insulation = Lib.ConfigValue(partDataNode, "insulation", 0.9f);
+			partData.thermalData.emissivity = Lib.ConfigValue(partDataNode, "emissivity", 0.25f);
+			partData.thermalData.flowState = Lib.ConfigValue(partDataNode, "flowState", FlowState.allowBoth);
+		}
+
+		public static bool Save(PartData partData, ConfigNode partDataNode)
+		{
+			if (partData.thermalData == null)
+				return false;
+
+			ConfigNode thermalNode = partDataNode.AddNode(NODENAME_THERMAL);
+			thermalNode.AddValue("insulation", partData.thermalData.insulation);
+			thermalNode.AddValue("emissivity", partData.thermalData.emissivity);
+			thermalNode.AddValue("flowState", partData.thermalData.flowState);
+			return true;
 		}
 
 		public void PlannerUpdate()
@@ -306,6 +354,32 @@ namespace KERBALISM
 		{
 			belowThEnergy.Amount = belowThEnergy.Capacity;
 			aboveThEnergy.Amount = 0.0;
+		}
+
+		private void SetFlow()
+		{
+			switch (flowState)
+			{
+				case FlowState.allowBoth:
+					belowThEnergy.flowState = true;
+					aboveThEnergy.flowState = true;
+					break;
+				case FlowState.allowCooling:
+					belowThEnergy.flowState = false;
+					aboveThEnergy.flowState = true;
+					break;
+				case FlowState.allowHeating:
+					belowThEnergy.flowState = true;
+					aboveThEnergy.flowState = false;
+					break;
+				case FlowState.deny:
+					belowThEnergy.flowState = false;
+					aboveThEnergy.flowState = false;
+					break;
+			}
+
+			if (Lib.IsEditor)
+				PlannerUpdate();
 		}
 
 		public void Update(double elapsedSec)
@@ -347,13 +421,10 @@ namespace KERBALISM
 				+ (0.375 * Sim.GreyBodyRadiosity(skinTemperature, emissivity))
 				+ (0.375 * Sim.GreyBodyRadiosity(coldestSkinTemperature, emissivity));
 
-			skinRadiosity /= 1000.0; // W/m² -> kW/m²
-			skinIrradiance /= 1000.0; // W/m² -> kW/m² 
-
 			envFlux =
 				atmoConvectionFlux
-				+ (skinIrradiance * partData.volumeAndSurface.surface)
-				- (skinRadiosity * partData.volumeAndSurface.surface);
+				+ (skinIrradiance * 1e-3 * partData.volumeAndSurface.surface) // skinIrradiance W/m² -> kW/m²
+				- (skinRadiosity * 1e-3 * partData.volumeAndSurface.surface); // skinRadiosity W/m² -> kW/m²
 
 			envFlux *= 1f - insulation;
 
@@ -370,6 +441,8 @@ namespace KERBALISM
 			double aboveThEnergyChange = energyChange - belowThEnergyChange;
 			belowThEnergy.Amount += belowThEnergyChange;
 			aboveThEnergy.Amount += aboveThEnergyChange;
+
+
 
 		}
 	}

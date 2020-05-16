@@ -12,13 +12,15 @@ namespace KERBALISM
 	public class VesselVirtualResource : VesselResource
 	{
 		/// <summary> Virtual resource name. Use an unique name to avoid it being shared. </summary>
-		public override string Name => name;
-		protected string name;
+		public override string Name => definition.name;
 
-		public override string Title => title;
-		protected string title;
+		public override string Title => definition.title;
 
-		public override bool Visible => false;
+		public override bool Visible => definition.isVisible;
+
+		public bool IsValid => definition != null;
+
+		private VirtualResourceDefinition definition;
 
 		/// <summary> Amount of virtual resource. This can be set directly if needed.</summary>
 		public override double Amount => amount;
@@ -59,10 +61,21 @@ namespace KERBALISM
 		public override bool NeedUpdate => true;
 
 		/// <summary>Don't use this to create a virtual resource, use the VesselResHandler.CreateVirtualResource() method</summary>
-		public VesselVirtualResource(string name)
+		public VesselVirtualResource(string name, bool isVisible = false, string title = null)
 		{
-			this.name = name;
-			title = name;
+			definition = VirtualResourceDefinition.GetOrCreateDefinition(name, isVisible, VirtualResourceDefinition.ResType.VesselResource, title);
+			amount = 0.0;
+			capacity = double.MaxValue;
+			deferred = 0.0;
+			level = 0.0;
+			resourceBrokers = new List<ResourceBrokerRate>();
+			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
+		}
+
+		/// <summary>Don't use this to create a virtual resource, use the VesselResHandler.CreateVirtualResource() method</summary>
+		public VesselVirtualResource(VirtualResourceDefinition definition)
+		{
+			this.definition = definition;
 			amount = 0.0;
 			capacity = double.MaxValue;
 			deferred = 0.0;

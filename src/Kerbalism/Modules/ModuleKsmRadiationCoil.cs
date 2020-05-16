@@ -22,12 +22,12 @@ namespace KERBALISM
 
 			public ArrayEffectData(ModuleKsmRadiationCoil masterModule, List<ModuleKsmRadiationCoil> coilModules)
 			{
-				chargeId = Guid.NewGuid().ToString();
-				charge = masterModule.moduleData.VesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>(chargeId);
+				charge = masterModule.moduleData.VesselData.ResHandler.GetOrCreateVirtualResource<VesselVirtualPartResource>();
+				chargeId = charge.Name;
 
 				foreach (ModuleKsmRadiationCoil coilModule in coilModules)
 				{
-					coilModule.moduleData.CreateChargeResource(charge);
+					coilModule.moduleData.CreateChargeResource(chargeId);
 				}
 
 				chargeRate = coilModules.Count * masterModule.ecChargeRate;
@@ -108,9 +108,9 @@ namespace KERBALISM
 			}
 		}
 
-		public void CreateChargeResource(VesselVirtualPartResource resource)
+		public void CreateChargeResource(string chargeId)
 		{
-			partData.virtualResources.AddResource(resource, 0.0, loadedModule.ecChargeRequired);
+			partData.virtualResources.AddResource(chargeId, 0.0, loadedModule.ecChargeRequired);
 		}
 
 		public void RemoveChargeResource(string chargeId)

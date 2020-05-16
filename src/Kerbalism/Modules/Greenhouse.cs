@@ -109,8 +109,8 @@ namespace KERBALISM
 				Fields["status_natural"].guiActive = active && growth < 0.99;
 				Fields["status_artificial"].guiActive = active && growth < 0.99;
 				Fields["status_tta"].guiActive = active && growth < 0.99;
-				status_natural = Lib.HumanReadableFlux(natural);
-				status_artificial = Lib.HumanReadableFlux(artificial);
+				status_natural = Lib.HumanReadableIrradiance(natural);
+				status_artificial = Lib.HumanReadableIrradiance(artificial);
 				status_tta = Lib.HumanReadableDuration(tta);
 
 				// show/hide harvest buttons
@@ -498,7 +498,7 @@ namespace KERBALISM
 
 			specs.Add(Local.Greenhouse_info1, Lib.HumanReadableAmount(crop_size, " " + crop_resource));//"Harvest size"
 			specs.Add(Local.Greenhouse_info2, Lib.HumanReadableDuration(1.0 / crop_rate));//"Harvest time"
-			specs.Add(Local.Greenhouse_info3, Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
+			specs.Add(Local.Greenhouse_info3, Lib.HumanReadableIrradiance(light_tolerance));//"Lighting tolerance"
 			if (pressure_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info4, Lib.HumanReadablePressure(Sim.PressureAtSeaLevel * pressure_tolerance));//"Pressure tolerance"
 			if (radiation_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info5, Lib.HumanReadableRadiation(radiation_tolerance));//"Radiation tolerance"
 			specs.Add(Local.Greenhouse_info6, Lib.HumanReadableRate(ec_rate));//"Lamps EC rate"

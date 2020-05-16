@@ -35,6 +35,8 @@ namespace KERBALISM.Planner
 			if (Features.Failures)
 				panel_special.Add("reliability");
 
+			panel_special.Add("thermal");
+
 			// environment panels
 			if (Features.LifeSupport)
 				panel_environment.Add("habitat");
@@ -176,6 +178,9 @@ namespace KERBALISM.Planner
 							break;
 						case "reliability":
 							AddSubPanelReliability(panel);
+							break;
+						case "thermal":
+							AddSubPanelThermal(panel);
 							break;
 					}
 				}
@@ -480,18 +485,78 @@ namespace KERBALISM.Planner
 		}
 
 		///<summary> Add environment sub-panel, including tooltips </summary>
+		private static void AddSubPanelThermal(Panel p)
+		{
+			double internalHeatProduction = 0.0;
+			double environmentExchange = 0.0;
+			double skinIrradiance = 0.0;
+			double skinRadiosity = 0.0;
+			double thermalPartsCount = 0.0;
+			foreach (PartData partData in VesselDataShip.Instance.Parts)
+			{
+				if (partData.thermalData == null)
+					continue;
+
+				internalHeatProduction += partData.thermalData.internalFlux;
+				environmentExchange += partData.thermalData.envFlux;
+				skinIrradiance += partData.thermalData.skinIrradiance;
+				skinRadiosity += partData.thermalData.skinRadiosity;
+				thermalPartsCount++;
+			}
+
+			if (thermalPartsCount > 1.0)
+			{
+				skinIrradiance /= thermalPartsCount;
+				skinRadiosity /= thermalPartsCount;
+			}
+
+			string envFluxTooltip = Lib.BuildString
+			(
+				"<align=left />",
+				String.Format("{0,-20}\t<b>{1}</b>\n", "Average irradiance", Lib.HumanReadableIrradiance(skinIrradiance)),
+				String.Format("{0,-20}\t<b>{1}</b>", "Average radiosity", Lib.HumanReadableIrradiance(skinRadiosity))
+			);
+
+			VesselResource belowThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData.belowThDef.name);
+			string heatingControl;
+			if (Math.Abs(belowThEnergyRes.ProduceRequests + belowThEnergyRes.UnknownBrokersRate) < 1e-03)
+				heatingControl = Lib.HumanReadableSmallNumber(belowThEnergyRes.ProduceRequests) + " / " + Lib.HumanReadableThermalFlux(-belowThEnergyRes.UnknownBrokersRate);
+			else
+				heatingControl = Lib.Color(Lib.HumanReadableSmallNumber(belowThEnergyRes.ProduceRequests), Lib.Kolor.Orange) + " / " + Lib.HumanReadableThermalFlux(-belowThEnergyRes.UnknownBrokersRate);
+
+			VesselResource aboveThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData.aboveThDef.name);
+			double coolingNeeded = Math.Max(aboveThEnergyRes.Amount, aboveThEnergyRes.UnknownBrokersRate);
+			string coolingControl;
+			if (Math.Abs(aboveThEnergyRes.ConsumeRequests - coolingNeeded) < 1e-03)
+				coolingControl = Lib.HumanReadableSmallNumber(aboveThEnergyRes.ConsumeRequests) + " / " + Lib.HumanReadableThermalFlux(coolingNeeded);
+			else
+				coolingControl = Lib.Color(Lib.HumanReadableSmallNumber(aboveThEnergyRes.ConsumeRequests), Lib.Kolor.Orange) + " / " + Lib.HumanReadableThermalFlux(coolingNeeded);
+
+			// render panel
+			p.AddSection("THERMAL CONTROL", string.Empty,
+				() => { p.Prev(ref special_index, panel_special.Count); updateRequested = true; },
+				() => { p.Next(ref special_index, panel_special.Count); updateRequested = true; });
+			p.AddContent("Environment balance", Lib.HumanReadableThermalFlux(environmentExchange), envFluxTooltip);
+			p.AddContent("Internal waste heat", Lib.HumanReadableThermalFlux(internalHeatProduction));
+			p.AddContent("Heating control", heatingControl, belowThEnergyRes.BrokersListTooltip(false));
+			p.AddContent("Cooling control", coolingControl, aboveThEnergyRes.BrokersListTooltip(false));
+		}
+
+		
+
+		///<summary> Add environment sub-panel, including tooltips </summary>
 		private static void AddSubPanelEnvironment(Panel p)
 		{
 			string flux_tooltip = Lib.BuildString
 			(
 				"<align=left />" +
 				String.Format("<b>{0,-14}\t{1,-15}\t{2}</b>\n", Local.Planner_Source, Local.Planner_Flux, Local.Planner_Temp),//"Source""Flux""Temp"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.IrradianceStarTotal > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceStarTotal) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceStarTotal))),//"solar""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.IrradianceAlbedo > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceAlbedo) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceAlbedo))),//"albedo""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.IrradianceBodiesEmissive > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceBodiesEmissive) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesEmissive))),//"body""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", "body core", vesselData.IrradianceBodiesCore > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceBodiesCore) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesCore))),//"body""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableFlux(Sim.BackgroundFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux))),//"background"
-				String.Format("{0,-14}\t{1,-15}\t{2}", Local.Planner_total + "   ", Lib.HumanReadableFlux(vesselData.IrradianceTotal), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceTotal)))//"total"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.IrradianceStarTotal > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceStarTotal) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceStarTotal))),//"solar""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.IrradianceAlbedo > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceAlbedo) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceAlbedo))),//"albedo""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.IrradianceBodiesEmissive > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceBodiesEmissive) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesEmissive))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "body core", vesselData.IrradianceBodiesCore > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceBodiesCore) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesCore))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableIrradiance(Sim.BackgroundFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux))),//"background"
+				String.Format("{0,-14}\t{1,-15}\t{2}", Local.Planner_total + "   ", Lib.HumanReadableIrradiance(vesselData.IrradianceTotal), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceTotal)))//"total"
 			);
 			string atmosphere_tooltip = Lib.BuildString
 			(

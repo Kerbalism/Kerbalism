@@ -410,6 +410,12 @@ namespace KERBALISM
 		static System.Random rng = new System.Random();
 
 		///<summary>return random integer</summary>
+		public static int RandomInt()
+		{
+			return rng.Next(int.MinValue, int.MaxValue);
+		}
+
+		///<summary>return random positive integer</summary>
 		public static int RandomInt(int max_value)
 		{
 			return rng.Next(max_value);
@@ -1209,10 +1215,22 @@ namespace KERBALISM
 			return BuildString(angle >= 0.0001 ? angle.ToString("F1") : "0", " °");
 		}
 
-		///<summary> Pretty-print flux </summary>
-		public static string HumanReadableFlux(double flux)
+		///<summary> Pretty-print irrandiance (W/m²) </summary>
+		public static string HumanReadableIrradiance(double irradiance)
 		{
-			return flux >= 0.1 ? flux.ToString("0.0 W/m²") : flux.ToString("0.0E+0 W/m²");
+			return (irradiance >= 0.1 || irradiance == 0.0) ? irradiance.ToString("0.0 W/m²") : irradiance.ToString("0.0E+0 W/m²");
+		}
+
+		///<summary> Pretty-print thermal flux (kW)</summary>
+		public static string HumanReadableThermalFlux(double flux)
+		{
+			return (flux <= -0.001 || flux >= 0.001 || flux == 0.0) ? flux.ToString("0.000 kWth") : flux.ToString("0.0E+0 kWth");
+		}
+
+		///<summary> Pretty-print a number using the "0.000" format, or using the "0.0E+0" scientific notation is below 0.001 or above -0.001 </summary>
+		public static string HumanReadableSmallNumber(double number)
+		{
+			return (number <= -0.001 || number >= 0.001 || number == 0.0) ? number.ToString("0.000") : number.ToString("0.0E+0");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>
@@ -1520,6 +1538,14 @@ namespace KERBALISM
 
 		#region BODY
 
+		/// <summary>
+		/// return the body localized display name (without the "^n" string)
+		/// </summary>
+		public static string LocalizedDisplayName(this CelestialBody body)
+		{
+			return body.displayName.LocalizeRemoveGender();
+		}
+
 		///<summary
 		/// return selected body in tracking-view/map-view
 		/// >if a vessel is selected, return its main body
@@ -1678,67 +1704,14 @@ namespace KERBALISM
 
 		public static Guid VesselID(Vessel v)
 		{
-			// Lesson learned: v.persistendId is not unique. Far from it, in fact.
-
-			// neither is this ----vvv (see https://github.com/steamp0rt/Kerbalism/issues/370)
-			//byte[] b = v.id.ToByteArray();
-			//UInt64 result = BitConverter.ToUInt64(b, 0);
-			//result ^= BitConverter.ToUInt64(b, 8);
-			//return result;
-			// --------------------^^^
-
-			// maybe this?
-			// return RootID(v); // <-- nope. not unique.
 			return v.id;
 		}
 
 		public static Guid VesselID(ProtoVessel pv)
 		{
-			// nope
-			//byte[] b = pv.vesselID.ToByteArray();
-			//UInt64 result = BitConverter.ToUInt64(b, 0);
-			//result ^= BitConverter.ToUInt64(b, 8);
-			//return result;
-			//return pv.protoPartSnapshots[pv.rootIndex].flightID;
 			return pv.vesselID;
 		}
 
-		public static Vessel CommNodeToVessel(CommNode node)
-		{
-			// Iterating over all vessels will work for recovering the vessel from a CommNode.However,
-			// since CommNodes are created when Vessels are, you can almost certainly cache this in a
-			// reasonable manner.
-			// (Vessel creates a CommNetVessel which creates the CommNode.They're established no
-			// later than OnStart())
-			// We would either need something to monitor new Vessel creation (ie after staging events)
-			// OR you want a fallback for cache misses.
-
-			// Is is home return null
-			if (node.isHome) return null;
-
-			foreach (Vessel v in FlightGlobals.Vessels)
-			{
-				if (!IsVessel(v)) continue;
-
-				if (AreSame(node, v.connection.Comm))
-				{
-					return v;
-				}
-			}
-
-			Log("The node " + node.name + " is not valid.");
-			return null;
-		}
-
-		public static bool AreSame(CommNode a, CommNode b)
-		{
-			if (a == null || b == null)
-			{
-				return false;
-			}
-
-			return a.precisePosition == b.precisePosition;
-		}
 		#endregion
 
 		#region PART

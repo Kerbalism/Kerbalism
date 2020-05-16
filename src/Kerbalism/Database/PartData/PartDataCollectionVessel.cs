@@ -64,7 +64,6 @@ namespace KERBALISM
 						ModuleData.New(ksmPM, i, partData, true);
 					}
 				}
-				partData.PostInstantiateSetup();
 			}
 
 
@@ -134,7 +133,8 @@ namespace KERBALISM
 				ConfigNode partNode = new ConfigNode(partData.flightId.ToString());
 
 				isPersistent |= PartResourceData.SavePartResources(partData, partNode);
-				isPersistent |= PartRadiationData.SaveRadiationData(partData, partNode);
+				isPersistent |= PartRadiationData.Save(partData, partNode);
+				isPersistent |= PartThermalData.Save(partData, partNode);
 
 				if (isPersistent)
 					partsNode.AddNode(partNode);
@@ -160,7 +160,8 @@ namespace KERBALISM
 				}
 
 				PartResourceData.LoadPartResources(partData, partNode);
-				PartRadiationData.LoadRadiationData(partData, partNode);
+				PartRadiationData.Load(partData, partNode);
+				PartThermalData.Load(partData, partNode);
 			}
 		}
 

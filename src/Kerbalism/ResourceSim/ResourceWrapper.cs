@@ -9,8 +9,6 @@ namespace KERBALISM
 	/// </summary>
 	public abstract class ResourceWrapper
 	{
-		/// <summary> resource name </summary>
-		public string name;
 
 		/// <summary> current amount </summary>
 		public double amount;
@@ -25,9 +23,8 @@ namespace KERBALISM
 		public double oldCapacity;
 
 		/// <summary> default ctor, to be used when the VesselReshandler is instantiated</summary>
-		public ResourceWrapper(string name)
+		public ResourceWrapper()
 		{
-			this.name = name;
 			amount = 0.0;
 			capacity = 0.0;
 			oldAmount = 0.0;
@@ -37,7 +34,6 @@ namespace KERBALISM
 		/// <summary> ctor for switching the wrapper between the loaded and unloaded types without loosing the amount/capacity </summary>
 		public ResourceWrapper(ResourceWrapper previousWrapper)
 		{
-			name = previousWrapper.name;
 			amount = 0.0;
 			capacity = 0.0;
 			oldAmount = previousWrapper.amount;
@@ -58,7 +54,7 @@ namespace KERBALISM
 
 		public override string ToString()
 		{
-			return $"{name} : {amount.ToString("F1")} / {capacity.ToString("F1")}";
+			return $"{amount.ToString("F1")} / {capacity.ToString("F1")}";
 		}
 	}
 
@@ -66,7 +62,7 @@ namespace KERBALISM
 	{
 		protected List<T> partResources = new List<T>();
 
-		public ResourceWrapper(string name) : base(name) {}
+		public ResourceWrapper() : base() {}
 		public ResourceWrapper(ResourceWrapper previousWrapper) : base(previousWrapper) {}
 
 		public override void ClearPartResources(bool doReset = true)
@@ -86,7 +82,7 @@ namespace KERBALISM
 
 	public class LoadedResourceWrapper : ResourceWrapper<PartResource>
 	{
-		public LoadedResourceWrapper(string name) : base(name) { }
+		public LoadedResourceWrapper() : base() { }
 		public LoadedResourceWrapper(ResourceWrapper previousWrapper) : base(previousWrapper) { }
 
 		public override void AddPartresources(PartResource partResource)
@@ -135,7 +131,7 @@ namespace KERBALISM
 
 	public class ProtoResourceWrapper : ResourceWrapper<ProtoPartResourceSnapshot>
 	{
-		public ProtoResourceWrapper(string name) : base(name) { }
+		public ProtoResourceWrapper() : base() { }
 		public ProtoResourceWrapper(ResourceWrapper previousWrapper) : base(previousWrapper) { }
 
 		public override void AddPartresources(ProtoPartResourceSnapshot partResource)
@@ -187,7 +183,7 @@ namespace KERBALISM
 	/// </summary>
 	public class EditorResourceWrapper : ResourceWrapper<PartResource>
 	{
-		public EditorResourceWrapper(string name) : base(name) { }
+		public EditorResourceWrapper() : base() { }
 
 		public override void AddPartresources(PartResource partResource)
 		{
@@ -203,7 +199,18 @@ namespace KERBALISM
 
 	public class VirtualResourceWrapper : ResourceWrapper<PartResourceData>
 	{
-		public VirtualResourceWrapper(string name) : base(name) { }
+		public VirtualResourceWrapper() : base() { }
+
+		// Note : this override is here because the base implementation that doesn't reset amount/capacity/parts on editor steps doesn't work
+		// for the thermal system. See also the comment in VesselresHandler, ideally we need to get ride of that whole editor hack.
+		public override void ClearPartResources(bool doReset = true)
+		{
+			oldAmount = amount;
+			oldCapacity = capacity;
+			amount = 0.0;
+			capacity = 0.0;
+			partResources.Clear();
+		}
 
 		public override void AddPartresources(PartResourceData partResource)
 		{

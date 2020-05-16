@@ -21,7 +21,7 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (!moduleIsEnabled || isBroken || Process.heatProduction == 0.0)
+				if (!isRunning || !moduleIsEnabled || isBroken || Process.heatProduction == 0.0)
 					return 0.0;
 
 				if (!VesselData.VesselProcesses.TryGetProcessData(processName, out VesselProcess vesselProcess))

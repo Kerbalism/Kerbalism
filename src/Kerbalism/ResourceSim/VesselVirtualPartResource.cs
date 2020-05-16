@@ -15,20 +15,11 @@ namespace KERBALISM
 	/// </summary>
 	public class VesselVirtualPartResource : VesselResource
 	{
-		public override string Name => name;
-		private string name;
+		public override string Name => Definition.name;
 
-		public override string Title => name;
+		public override string Title => Definition.title;
 
-		public override bool Visible => false;
-
-		// Note : managing "metadata" about the resource is problematic from a persistence POV
-		// and since for now we don't really need it, I'm not gonna bother with that.
-		//public override string Title => title;
-		//private string title;
-
-		//public override bool Visible => visible;
-		//private bool visible;
+		public override bool Visible => Definition.isVisible;
 
 		public override double Amount => resourceWrapper.amount;
 
@@ -36,15 +27,26 @@ namespace KERBALISM
 
 		public override bool NeedUpdate => true;
 
+		public bool IsValid => Definition != null;
+
+		public VirtualResourceDefinition Definition { get; private set; }
+
 		/// <summary> Don't use this directly, use the VesselResHandler.CreateVirtualPartResource() method </summary>
-		public VesselVirtualPartResource(VirtualResourceWrapper resourceWrapper)
+		public VesselVirtualPartResource(VirtualResourceWrapper resourceWrapper, VirtualResourceDefinition definition)
 		{
+			this.Definition = definition;
 			this.resourceWrapper = resourceWrapper;
-			name = resourceWrapper.name;
 			resourceBrokers = new List<ResourceBrokerRate>();
 			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
-			//this.title = title;
-			//this.visible = visible;
+		}
+
+		/// <summary> Don't use this directly, use the VesselResHandler.CreateVirtualPartResource() method </summary>
+		public VesselVirtualPartResource(VirtualResourceWrapper resourceWrapper, string name, bool isVisible = false, string title = null)
+		{
+			Definition = VirtualResourceDefinition.GetOrCreateDefinition(name, isVisible, VirtualResourceDefinition.ResType.PartResource, title);
+			this.resourceWrapper = resourceWrapper;
+			resourceBrokers = new List<ResourceBrokerRate>();
+			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
 		}
 	}
 }
