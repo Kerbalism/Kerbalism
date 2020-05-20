@@ -155,7 +155,7 @@ namespace KERBALISM
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
-			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
+			EnableOrbitLineTweaks = Lib.ConfigValue(cfg, "EnableOrbitLineTweaks", true);
 
 			// debug / logging
 			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
@@ -294,12 +294,11 @@ namespace KERBALISM
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad
 
-		public static bool UseSamplingSunFactor;
-
 		// debug / logging
 		public static bool VolumeAndSurfaceLogging;
 
 		public static bool loaded { get; private set; } = false;
+		public static bool EnableOrbitLineTweaks = true;
     }
 
 } // KERBALISM

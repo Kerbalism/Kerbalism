@@ -498,6 +498,9 @@ namespace KERBALISM
 
 		public void SetOrbitVisible(bool visible)
 		{
+			if (!Settings.EnableOrbitLineTweaks)
+				return;
+
 			cfg_orbit = visible;
 
 			if (Vessel == null || Vessel.loaded)
