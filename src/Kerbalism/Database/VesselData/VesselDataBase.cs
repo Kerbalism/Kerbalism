@@ -265,6 +265,12 @@ namespace KERBALISM
 
 		public void ModuleDataUpdate()
 		{
+			if (LoadedOrEditor && Parts[0].LoadedPart == null)
+			{
+				Lib.LogDebug($"Skipping loaded vessel ModuleDataUpdate (part references not set yet) on {VesselName}");
+				return;
+			}
+
 			habitatData.ResetBeforeModulesUpdate(this);
 
 			foreach (PartData partData in Parts)

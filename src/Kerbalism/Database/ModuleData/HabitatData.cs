@@ -273,10 +273,13 @@ namespace KERBALISM
 
 		public PartRadiationData RadiationData => partData.radiationData;
 
-		public bool IsAlwaysMaster => true;
+		public bool IsThermalEnabled => true;
 		public double OperatingTemperature => 295.0;
-		public double InternalHeatProduction => crewCount * 0.03; // 30 W / kerbal
+		public double HeatProduction => crewCount * 0.03; // 30 W / kerbal
 		public double ThermalMass => partData.PartPrefab.mass * 0.25;
+		public string ModuleId => "Habitat";
+		public double SurfaceFactor => 0.5;
+		public ModuleThermalData ThermalData { get; set; }
 
 		#endregion
 
@@ -342,6 +345,8 @@ namespace KERBALISM
 				float thickness = Lib.ConfigValue(occluderNode, "thickness", 1f);
 				sunRadiationOccluders.Add(new SunRadiationOccluder(distance, thickness));
 			}
+
+			ModuleThermalData.Load(ThermalData, node);
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -363,7 +368,9 @@ namespace KERBALISM
 				ConfigNode occluderNode = node.AddNode("OCCLUDER");
 				occluderNode.AddValue("distance", occluder.distance);
 				occluderNode.AddValue("thickness", occluder.thickness);
-			};
+			}
+
+			ThermalData.Save(node);
 		}
 
 		#endregion

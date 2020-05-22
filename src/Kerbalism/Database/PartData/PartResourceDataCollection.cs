@@ -10,48 +10,39 @@ namespace KERBALISM
 	public class PartResourceDataCollection : IEnumerable<PartResourceData>
 	{
 		private List<PartResourceData> resources = new List<PartResourceData>();
-		private Dictionary<string, PartResourceData> resourcesDict = new Dictionary<string, PartResourceData>();
 
 		public IEnumerator<PartResourceData> GetEnumerator() => resources.GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => resources.GetEnumerator();
-
-		public bool Contains(VesselVirtualPartResource resource) => resourcesDict.ContainsKey(resource.Name);
-		public bool Contains(string resourceName) => resourcesDict.ContainsKey(resourceName);
-		public bool TryGet(VesselVirtualPartResource resource, out PartResourceData res) => resourcesDict.TryGetValue(resource.Name, out res);
-		public bool TryGet(string resourceName, out PartResourceData res) => resourcesDict.TryGetValue(resourceName, out res);
+		public bool Contains(string resourceName) => resources.Exists(p => p.ResourceName == resourceName);
 		public int Count => resources.Count;
 
-		public PartResourceData AddResource(string resourceName, double amount, double capacity)
+		public PartResourceData AddResource(string resourceName, double amount, double capacity, string containerId = null)
 		{
-			if (resourcesDict.TryGetValue(resourceName, out PartResourceData partRes))
+			foreach (PartResourceData existingRes in resources)
 			{
-				partRes.Capacity = capacity;
-				partRes.Amount = amount;
-				return partRes;
+				if (existingRes.ResourceName == resourceName && existingRes.ContainerId == containerId)
+				{
+					existingRes.Capacity = capacity;
+					existingRes.Amount = amount;
+					return existingRes;
+				}
 			}
 
-			partRes = new PartResourceData(resourceName, amount, capacity);
-			resources.Add(partRes);
-			resourcesDict.Add(resourceName, partRes);
-			return partRes;
+			PartResourceData res = new PartResourceData(resourceName, amount, capacity, containerId);
+			resources.Add(res);
+			return res;
 		}
 
-		public void RemoveResource(VesselVirtualPartResource resource)
+		/// <summary> remove all resources with the specified name and container id</summary>
+		public void RemoveResource(string resourceName, string containerId = null)
 		{
-			if (resourcesDict.TryGetValue(resource.Name, out PartResourceData partRes))
-			{
-				resources.Remove(partRes);
-				resourcesDict.Remove(resource.Name);
-			}
+			resources.RemoveAll(p => p.ResourceName == resourceName && p.ContainerId == containerId);
 		}
 
+		/// <summary> remove all resources with the specified name, regardless of their container id</summary>
 		public void RemoveResource(string resourceName)
 		{
-			if (resourcesDict.TryGetValue(resourceName, out PartResourceData partRes))
-			{
-				resources.Remove(partRes);
-				resourcesDict.Remove(resourceName);
-			}
+			resources.RemoveAll(p => p.ResourceName == resourceName);
 		}
 	}
 }

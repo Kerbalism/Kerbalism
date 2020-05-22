@@ -116,16 +116,14 @@ Implementation :
 		- A "temperature efficiency factor" : capacity is scaled by the current temperature
 */
 
-	/*
 namespace KERBALISM
 {
-	public class PartThermalData
+	public class PartThermalData2
 	{
 		public const string NODENAME_THERMAL = "THERMAL";
 
 		public static VirtualResourceDefinition belowThDef;
 		public static VirtualResourceDefinition aboveThDef;
-		public static BasePAWGroup pawGroup;
 
 		public static void SetupVirtualResources()
 		{
@@ -144,48 +142,56 @@ namespace KERBALISM
 			+ specifHeatSteel * 0.1
 			+ specifHeatPolyethylene * 0.1;
 
+		public const double surfaceThickness = 0.03;
+		public const double surfaceDensity = 2.7;
+
 		private PartData partData;
-		private PartResourceData aboveThEnergy;
-		private PartResourceData belowThEnergy;
 		private double energyPerKelvin;
+		private double storedEnergy = -1.0;
 
-		public enum FlowState { allowBoth, allowCooling, allowHeating, deny }
-
-		public float insulation = 0.9f;
-		public float emissivity = 0.25f;
-		public FlowState flowState = FlowState.allowBoth;
-
-		public string pawInfo;
-		public double currentFlux;
+		public float emissivity = 0.35f;
 
 		public double Temperature => temperature;
 		private double temperature;
+
+		public string pawInfo; // Surface: 295.0K, -0.045 kWth
 
 		public List<IThermalModule> thermalModules = new List<IThermalModule>();
 
 		//debug
 		public double envFlux;
-		public double skinIrradiance;
-		public double skinRadiosity;
+		public double irradiance;
+		public double radiosity;
 		public double internalFlux;
 
-		public PartThermalData(PartData partData)
+		public PartThermalData2(PartData partData)
 		{
 			this.partData = partData;
 		}
 
-		public static PartThermalData Setup(PartData partData)
+		public static PartThermalData2 Setup(PartData partData)
 		{
+			if (!Features.Thermal)
+				return null;
+
 			if (partData.volumeAndSurface == null)
 				return null;
 
-			PartThermalData thermalData = partData.thermalData;
+			PartThermalData2 thermalData = partData.thermalData;
 			foreach (ModuleData moduleData in partData.modules)
 			{
 				if (moduleData is IThermalModule thModule)
 				{
 					if (thermalData == null)
-						thermalData = new PartThermalData(partData);
+						thermalData = new PartThermalData2(partData);
+
+					if (!thModule.IsThermalEnabled)
+						continue;
+
+					if (thModule.ThermalData == null)
+						thModule.ThermalData = new ModuleThermalData();
+
+					thModule.ThermalData.Setup(partData, thModule);
 
 					thermalData.thermalModules.Add(thModule);
 				}
@@ -194,30 +200,10 @@ namespace KERBALISM
 			if (thermalData == null)
 				return null;
 
-			IThermalModule masterModule = null;
-			thermalData.energyPerKelvin = 0.0;
-			foreach (IThermalModule thModule in thermalData.thermalModules)
+			thermalData.energyPerKelvin = partData.volumeAndSurface.surface * surfaceThickness * surfaceDensity * specifHeatAluminum;
+			if (thermalData.storedEnergy < 0.0)
 			{
-				if (thModule.IsAlwaysMaster || masterModule == null)
-					masterModule = thModule;
-
-				thermalData.energyPerKelvin += thModule.ThermalMass * partSpecificHeat;
-			}
-
-			if (thermalData.energyPerKelvin <= 0.0)
-				return null;
-
-			if (partData.virtualResources.Contains(belowThDef.name))
-			{
-				partData.virtualResources.TryGet(belowThDef.name, out thermalData.belowThEnergy);
-				partData.virtualResources.TryGet(aboveThDef.name, out thermalData.aboveThEnergy);
-			}
-			else
-			{
-				double targetTempEnergy = thermalData.energyPerKelvin * masterModule.OperatingTemperature;
-				double maxEnergy = targetTempEnergy * 2.0; // we simulate the temperature up to 3x the operating temperature
-				thermalData.belowThEnergy = partData.virtualResources.AddResource(belowThDef.name, targetTempEnergy, targetTempEnergy);
-				thermalData.aboveThEnergy = partData.virtualResources.AddResource(aboveThDef.name, 0.0, maxEnergy);
+				thermalData.storedEnergy = 295.0 * thermalData.energyPerKelvin;
 			}
 
 			if (partData.LoadedPart != null)
@@ -225,66 +211,31 @@ namespace KERBALISM
 				BasePAWGroup pawGroup = new BasePAWGroup("Thermal", "Systems thermal control", true);
 				System.Reflection.BindingFlags npFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
 
-				Type dataType = typeof(PartThermalData);
+				Type dataType = typeof(PartThermalData2);
 
 				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(envFlux)), thermalData));
+				partData.LoadedPart.Fields[nameof(envFlux)].guiActiveEditor = true;
 				partData.LoadedPart.Fields[nameof(envFlux)].guiFormat = "F3";
 				partData.LoadedPart.Fields[nameof(envFlux)].guiUnits = "kW";
 				partData.LoadedPart.Fields[nameof(envFlux)].group = pawGroup;
-				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(skinIrradiance)), thermalData));
-				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiFormat = "F1";
-				partData.LoadedPart.Fields[nameof(skinIrradiance)].guiUnits = "W/m²";
-				partData.LoadedPart.Fields[nameof(skinIrradiance)].group = pawGroup;
-				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(skinRadiosity)), thermalData));
-				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiFormat = "F1";
-				partData.LoadedPart.Fields[nameof(skinRadiosity)].guiUnits = "W/m²";
-				partData.LoadedPart.Fields[nameof(skinRadiosity)].group = pawGroup;
+				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(irradiance)), thermalData));
+				partData.LoadedPart.Fields[nameof(irradiance)].guiActiveEditor = true;
+				partData.LoadedPart.Fields[nameof(irradiance)].guiFormat = "F3";
+				partData.LoadedPart.Fields[nameof(irradiance)].guiUnits = "kW";
+				partData.LoadedPart.Fields[nameof(irradiance)].group = pawGroup;
+				partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), dataType.GetField(nameof(radiosity)), thermalData));
+				partData.LoadedPart.Fields[nameof(radiosity)].guiActiveEditor = true;
+				partData.LoadedPart.Fields[nameof(radiosity)].guiFormat = "F3";
+				partData.LoadedPart.Fields[nameof(radiosity)].guiUnits = "kW";
+				partData.LoadedPart.Fields[nameof(radiosity)].group = pawGroup;
 
 				BaseField temperatureField = new BaseField(new UI_Label(), dataType.GetField(nameof(temperature), npFlags), thermalData);
-				temperatureField.guiName = "Current T°";
+				temperatureField.guiActiveEditor = true;
+				temperatureField.guiName = "Hull T°";
 				temperatureField.guiFormat = "F2";
 				temperatureField.guiUnits = "K";
 				temperatureField.group = pawGroup;
 				partData.LoadedPart.Fields.Add(temperatureField);
-
-				BaseField internalFluxField = new BaseField(new UI_Label(), dataType.GetField(nameof(internalFlux)), thermalData);
-				internalFluxField.guiActiveEditor = true;
-				internalFluxField.guiName = "Internal production";
-				internalFluxField.guiFormat = "F3";
-				internalFluxField.guiUnits = " kWth";
-				internalFluxField.group = pawGroup;
-				partData.LoadedPart.Fields.Add(internalFluxField);
-
-				BaseField fluxField = new BaseField(new UI_Label(), dataType.GetField(nameof(currentFlux)), thermalData);
-				fluxField.guiActiveEditor = true;
-				fluxField.guiName = Lib.IsEditor ? "Estimated balance" : "Current balance";
-				fluxField.guiFormat = "F3";
-				fluxField.guiUnits = " kWth";
-				fluxField.group = pawGroup;
-				partData.LoadedPart.Fields.Add(fluxField);
-
-				BaseField pawInfoField = new BaseField(new UI_Label(), dataType.GetField(nameof(pawInfo)), thermalData);
-				pawInfoField.guiActiveEditor = true;
-				pawInfoField.guiName = "Operating T°";
-				pawInfoField.group = pawGroup;
-				partData.LoadedPart.Fields.Add(pawInfoField);
-
-				thermalData.pawInfo = Lib.BuildString(
-					Lib.HumanReadableTemp(masterModule.OperatingTemperature), ", ",
-					"Th. mass", ": ", Lib.HumanReadableMass(thermalData.energyPerKelvin / partSpecificHeat));
-
-				UI_FloatRange insulationFR = new UI_FloatRange();
-				insulationFR.minValue = 0.8f;
-				insulationFR.maxValue = 0.975f;
-				insulationFR.stepIncrement = 0.005f;
-				insulationFR.onFieldChanged = (a, b) => thermalData.PlannerUpdate();
-				BaseField insulationField = new BaseField(insulationFR, dataType.GetField(nameof(insulation)), thermalData);
-				insulationField.uiControlEditor = insulationFR;
-				insulationField.guiActiveEditor = true;
-				insulationField.guiName = "Internal insulation";
-				insulationField.guiFormat = "P1";
-				insulationField.group = pawGroup;
-				partData.LoadedPart.Fields.Add(insulationField);
 
 				UI_FloatRange emissivityFR = new UI_FloatRange();
 				emissivityFR.minValue = 0.10f;
@@ -294,31 +245,121 @@ namespace KERBALISM
 				BaseField emissivityField = new BaseField(emissivityFR, dataType.GetField(nameof(emissivity)), thermalData);
 				emissivityField.uiControlEditor = emissivityFR;
 				emissivityField.guiActiveEditor = true;
-				emissivityField.guiName = "Surface emissivity";
+				emissivityField.guiName = "Hull emissivity";
 				emissivityField.guiFormat = "P1";
 				emissivityField.group = pawGroup;
 				partData.LoadedPart.Fields.Add(emissivityField);
 
-				UI_Cycle flowStateCycle = new UI_Cycle();
-				flowStateCycle.stateNames = new string[]
-				{
-					Lib.Color("enabled", Lib.Kolor.Green),
-					Lib.Color("cooling only", Lib.Kolor.Cyan),
-					Lib.Color("heating only", Lib.Kolor.Orange),
-					Lib.Color("disabled", Lib.Kolor.Yellow)
-				};
 
-				flowStateCycle.onFieldChanged = (a, b) => thermalData.SetFlow();
-				BaseField flowStateField = new BaseField(flowStateCycle, dataType.GetField(nameof(flowState)), thermalData);
-				flowStateField.uiControlEditor = flowStateCycle;
-				flowStateField.uiControlFlight = flowStateCycle;
-				flowStateField.guiActiveEditor = true;
-				flowStateField.guiName = "Heat exchange";
-				flowStateField.group = pawGroup;
-				partData.LoadedPart.Fields.Add(flowStateField);
 			}
 
 			return thermalData;
+		}
+
+		static double shadowCorrectionFactor = 1.3;
+		public void PlannerUpdate()
+		{
+			temperature = 295.0;
+			storedEnergy = temperature * energyPerKelvin;
+
+			foreach (IThermalModule thermalModule in thermalModules)
+			{
+				thermalModule.ThermalData.ResetTemperature();
+			}
+
+			double oldTemperature;
+			double timestep = 60.0;
+			
+			VesselDataShip vds = (VesselDataShip)partData.vesselData;
+			double correctedShadowTime = Math.Min(vds.shadowTime * shadowCorrectionFactor, 1.0);
+			do
+			{
+				oldTemperature = temperature;
+				UpdateSkinTemperature(timestep * (1.0 - correctedShadowTime), false);
+				UpdateSkinTemperature(timestep * correctedShadowTime, true);
+
+				if (Math.Abs(oldTemperature - temperature) < 0.01)
+					timestep -= 1.0;
+				
+			} while (timestep > 0.0);
+
+			UpdateModules(1.0);
+
+		}
+
+
+
+		private void UpdateSkinTemperature(double elapsedSec, bool forceInShadow = false)
+		{
+			VesselDataBase vdb = partData.vesselData;
+
+			// TODO : aggregate (but not here, at the sim level) "close" stars (Kopernicus binary systems handling)
+			StarFlux star = vdb.MainStar;
+			//skinIrradiance = ((star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + vdb.IrradianceBodiesCore) * 0.25) + Sim.BackgroundFlux;
+			////temperature = Math.Pow(skinIrradiance / (PhysicsGlobals.StefanBoltzmanConstant * emissivity), 0.25);
+			////skinRadiosity = Sim.GreyBodyRadiosity(temperature, emissivity);
+			//double hottestSkinTemperature = temperature + Sim.BlackBodyTemperature(skinIrradiance);
+			//double coldestSkinTemperature = Sim.BlackBodyTemperature(Sim.BackgroundFlux);
+			//skinRadiosity =
+			//	  (0.250 * Sim.GreyBodyRadiosity(hottestSkinTemperature, emissivity))
+			//	+ (0.375 * Sim.GreyBodyRadiosity(temperature, emissivity))
+			//	+ (0.375 * Sim.GreyBodyRadiosity(coldestSkinTemperature, emissivity));
+
+			double reflectivity = 1.0 - emissivity;
+			double skinIrradiance;
+			if (forceInShadow)
+			{
+				skinIrradiance = (star.bodiesEmissiveFlux + vdb.IrradianceBodiesCore) * reflectivity;
+			}
+			else
+			{
+				skinIrradiance = (star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + vdb.IrradianceBodiesCore) * reflectivity;
+			}
+
+			double hottestSkinTemperature = (temperature + Sim.BlackBodyTemperature(skinIrradiance)) * 0.5;
+			double coldestSkinTemperature = (temperature + Sim.BlackBodyTemperature(Sim.BackgroundFlux)) * 0.5;
+			double skinRadiosity =
+				  (0.25 * Sim.GreyBodyRadiosity(hottestSkinTemperature, emissivity))
+				+ (0.50 * Sim.GreyBodyRadiosity(temperature, emissivity))
+				+ (0.25 * Sim.GreyBodyRadiosity(coldestSkinTemperature, emissivity));
+
+			irradiance = ((skinIrradiance * 0.25) + (Sim.BackgroundFlux * reflectivity)) * 1e-3 * partData.volumeAndSurface.surface; // skinIrradiance W/m² -> kW/m²
+			radiosity = skinRadiosity * 1e-3 * partData.volumeAndSurface.surface; // skinRadiosity W/m² -> kW/m²
+
+			double skinConvectionFlux = 0.0; // TODO : atmo transfers
+			//if (vdb.EnvInAtmosphere && !vdb.EnvLanded && vdb.LoadedOrEditor && partData.LoadedPart.vessel != null)
+			//{
+			//	skinTemperature = (temperature + partData.LoadedPart.skinTemperature) * 0.5;
+			//	double internalTempChange = partData.LoadedPart.temperature - partData.LoadedPart.ptd.previousTemperature;
+			//	atmoConvectionFlux = energyPerKelvin * internalTempChange / TimeWarp.fixedDeltaTime;
+			//	if (atmoConvectionFlux < 0.0 && temperature < partData.LoadedPart.temperature)
+			//		atmoConvectionFlux = 0.0;
+			//	else if (atmoConvectionFlux > 0.0 && temperature > partData.LoadedPart.temperature)
+			//		atmoConvectionFlux = 0.0;
+			//	atmoConvectionFlux = Math.Pow(atmoConvectionFlux, 0.5); // try to balance the stock stupidly high internal temperatures
+			//}
+
+			envFlux = skinConvectionFlux + irradiance - radiosity;
+
+			double flux = envFlux * elapsedSec;
+			storedEnergy = Math.Max(storedEnergy + flux, 0.0);
+			temperature = storedEnergy / energyPerKelvin;
+
+		}
+
+		private void UpdateModules(double elapsedSec)
+		{
+			double internalToSkinTotal = 0.0;
+			foreach (IThermalModule thermalModule in thermalModules)
+			{
+				internalToSkinTotal += thermalModule.ThermalData.Update(elapsedSec, partData.volumeAndSurface.surface, temperature);
+			}
+		}
+
+		public void Update(double elapsedSec)
+		{
+			UpdateSkinTemperature(elapsedSec);
+			UpdateModules(elapsedSec);
 		}
 
 		public static void Load(PartData partData, ConfigNode partDataNode)
@@ -328,11 +369,10 @@ namespace KERBALISM
 				return;
 
 			if (partData.thermalData == null)
-				partData.thermalData = new PartThermalData(partData);
+				partData.thermalData = new PartThermalData2(partData);
 
-			partData.thermalData.insulation = Lib.ConfigValue(partDataNode, "insulation", 0.9f);
-			partData.thermalData.emissivity = Lib.ConfigValue(partDataNode, "emissivity", 0.25f);
-			partData.thermalData.flowState = Lib.ConfigValue(partDataNode, "flowState", FlowState.allowBoth);
+			partData.thermalData.emissivity = Lib.ConfigValue(thermalNode, "emissivity", 0.25f);
+			partData.thermalData.storedEnergy = Lib.ConfigValue(thermalNode, "storedEnergy", -1.0);
 		}
 
 		public static bool Save(PartData partData, ConfigNode partDataNode)
@@ -341,113 +381,9 @@ namespace KERBALISM
 				return false;
 
 			ConfigNode thermalNode = partDataNode.AddNode(NODENAME_THERMAL);
-			thermalNode.AddValue("insulation", partData.thermalData.insulation);
 			thermalNode.AddValue("emissivity", partData.thermalData.emissivity);
-			thermalNode.AddValue("flowState", partData.thermalData.flowState);
+			thermalNode.AddValue("storedEnergy", partData.thermalData.storedEnergy);
 			return true;
-		}
-
-		public void PlannerUpdate()
-		{
-			ResetTemperature();
-			Update(1.0);
-		}
-
-		private void ResetTemperature()
-		{
-			belowThEnergy.Amount = belowThEnergy.Capacity;
-			aboveThEnergy.Amount = 0.0;
-		}
-
-		private void SetFlow()
-		{
-			switch (flowState)
-			{
-				case FlowState.allowBoth:
-					belowThEnergy.flowState = true;
-					aboveThEnergy.flowState = true;
-					break;
-				case FlowState.allowCooling:
-					belowThEnergy.flowState = false;
-					aboveThEnergy.flowState = true;
-					break;
-				case FlowState.allowHeating:
-					belowThEnergy.flowState = true;
-					aboveThEnergy.flowState = false;
-					break;
-				case FlowState.deny:
-					belowThEnergy.flowState = false;
-					aboveThEnergy.flowState = false;
-					break;
-			}
-
-			if (Lib.IsEditor)
-				PlannerUpdate();
-		}
-
-		public void Update(double elapsedSec)
-		{
-			VesselDataBase vdb = partData.vesselData;
-
-			temperature = (belowThEnergy.Amount + aboveThEnergy.Amount) / energyPerKelvin;
-
-			
-			double skinTemperature;
-			double atmoConvectionFlux = 0.0;
-			// for loaded vessels flying in atmosphere, plug into the stock temperature
-			if (vdb.EnvInAtmosphere && !vdb.EnvLanded && vdb.LoadedOrEditor && partData.LoadedPart.vessel != null)
-			{
-				skinTemperature = (temperature + partData.LoadedPart.skinTemperature) * 0.5;
-				double internalTempChange = partData.LoadedPart.temperature - partData.LoadedPart.ptd.previousTemperature;
-				atmoConvectionFlux = energyPerKelvin * internalTempChange / TimeWarp.fixedDeltaTime;
-				if (atmoConvectionFlux < 0.0 && temperature < partData.LoadedPart.temperature)
-					atmoConvectionFlux = 0.0;
-				else if (atmoConvectionFlux > 0.0 && temperature > partData.LoadedPart.temperature)
-					atmoConvectionFlux = 0.0;
-				atmoConvectionFlux = Math.Pow(atmoConvectionFlux, 0.5); // try to balance the stock stupidly high internal temperatures
-			}
-			// TODO : include our own atmospheric temperature model for conduction while landed
-			else
-			{
-				skinTemperature = temperature;
-			}
-
-			// TODO : aggregate (but not here, at the sim level) "close" stars (Kopernicus binary systems handling)
-			StarFlux star = vdb.MainStar;
-
-			skinIrradiance = ((star.directFlux + star.bodiesAlbedoFlux + star.bodiesEmissiveFlux + vdb.IrradianceBodiesCore) * 0.25) + Sim.BackgroundFlux;
-
-			double hottestSkinTemperature = skinTemperature + Sim.BlackBodyTemperature(skinIrradiance);
-			double coldestSkinTemperature = Sim.BlackBodyTemperature(Sim.BackgroundFlux);
-			skinRadiosity =
-				  (0.250 * Sim.GreyBodyRadiosity(hottestSkinTemperature, emissivity))
-				+ (0.375 * Sim.GreyBodyRadiosity(skinTemperature, emissivity))
-				+ (0.375 * Sim.GreyBodyRadiosity(coldestSkinTemperature, emissivity));
-
-			envFlux =
-				atmoConvectionFlux
-				+ (skinIrradiance * 1e-3 * partData.volumeAndSurface.surface) // skinIrradiance W/m² -> kW/m²
-				- (skinRadiosity * 1e-3 * partData.volumeAndSurface.surface); // skinRadiosity W/m² -> kW/m²
-
-			envFlux *= 1f - insulation;
-
-			internalFlux = 0.0;
-			foreach (IThermalModule thModule in thermalModules)
-			{
-				internalFlux += thModule.InternalHeatProduction;
-			}
-
-			currentFlux = envFlux + internalFlux;
-
-			double energyChange = currentFlux * elapsedSec;
-			double belowThEnergyChange = Math.Min(belowThEnergy.Capacity - belowThEnergy.Amount, energyChange + aboveThEnergy.Amount);
-			double aboveThEnergyChange = energyChange - belowThEnergyChange;
-			belowThEnergy.Amount += belowThEnergyChange;
-			aboveThEnergy.Amount += aboveThEnergyChange;
-
-
-
 		}
 	}
 }
-*/

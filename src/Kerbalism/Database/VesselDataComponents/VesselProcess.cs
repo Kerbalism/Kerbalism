@@ -39,7 +39,7 @@ namespace KERBALISM
 		public double AvailableCapacityPercent { get; private set; }
 
 		public Recipe lastRecipe;
-		public double UtilizationFactor { get; private set; }
+		public double AvailableCapacityUtilization { get; private set; }
 
 		public bool CanToggle => process.canToggle;
 		public string ProcessName => process.name;
@@ -75,12 +75,12 @@ namespace KERBALISM
 		{
 			if (lastRecipe != null)
 			{
-				UtilizationFactor = lastRecipe.UtilizationFactor;
+				AvailableCapacityUtilization = lastRecipe.UtilizationFactor;
 				lastRecipe = null;
 			}
 			else
 			{
-				UtilizationFactor = 0.0;
+				AvailableCapacityUtilization = 0.0;
 			}
 
 			MaxCapacity = newTotalCapacity;

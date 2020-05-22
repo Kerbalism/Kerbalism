@@ -598,6 +598,7 @@ namespace KERBALISM
 			{
 				EnvironmentUpdate(secSinceLastEval);
 				StateUpdate();
+				CheckPartStart();
 				ModuleDataUpdate();
 				secSinceLastEval = 0.0;
 			}
@@ -605,12 +606,31 @@ namespace KERBALISM
 			FixedUpdate(elapsedSeconds);
 		}
 
+		private void CheckPartStart()
+		{
+			if (!modulesStarted)
+			{
+				modulesStarted = true;
+
+				if (LoadedOrEditor)
+					return;
+
+				foreach (PartData part in Parts)
+				{
+					foreach (ModuleData module in part.modules)
+					{
+						Lib.LogDebug($"Starting {module.GetType().Name} on {VesselName}");
+						module.OnStart();
+					}
+					part.PostInstantiateSetup();
+				}
+			}
+		}
+
 		private int partToUpdate = 1;
 		private bool modulesStarted = false;
 		private void FixedUpdate(double elapsedSec)
 		{
-			
-
 			// On loaded vessels, don't call this before the loaded part / modules 
 			// references have been set (happen in the Part.Start() prefix, usually called)
 			if (LoadedOrEditor)
@@ -623,17 +643,21 @@ namespace KERBALISM
 			}
 			else if (!modulesStarted)
 			{
-				modulesStarted = true;
-				foreach (PartData part in Parts)
-				{
-					foreach (ModuleData module in part.modules)
-					{
-						Lib.LogDebug($"Starting {module.GetType().Name} on {VesselName}");
-						module.OnStart();
-					}
-					part.PostInstantiateSetup();
-				}
+				return;
 			}
+			//else if (!modulesStarted)
+			//{
+			//	modulesStarted = true;
+			//	foreach (PartData part in Parts)
+			//	{
+			//		foreach (ModuleData module in part.modules)
+			//		{
+			//			Lib.LogDebug($"Starting {module.GetType().Name} on {VesselName}");
+			//			module.OnStart();
+			//		}
+			//		part.PostInstantiateSetup();
+			//	}
+			//}
 				
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.PartRadiationUpdate");
 

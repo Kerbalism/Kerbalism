@@ -499,8 +499,8 @@ namespace KERBALISM.Planner
 
 				internalHeatProduction += partData.thermalData.internalFlux;
 				environmentExchange += partData.thermalData.envFlux;
-				skinIrradiance += partData.thermalData.skinIrradiance;
-				skinRadiosity += partData.thermalData.skinRadiosity;
+				skinIrradiance += partData.thermalData.irradiance;
+				skinRadiosity += partData.thermalData.radiosity;
 				thermalPartsCount++;
 			}
 
@@ -517,14 +517,14 @@ namespace KERBALISM.Planner
 				String.Format("{0,-20}\t<b>{1}</b>", "Average radiosity", Lib.HumanReadableIrradiance(skinRadiosity))
 			);
 
-			VesselResource belowThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData.belowThDef.name);
+			VesselResource belowThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData2.belowThDef.name);
 			string heatingControl;
 			if (Math.Abs(belowThEnergyRes.ProduceRequests + belowThEnergyRes.UnknownBrokersRate) < 1e-03)
 				heatingControl = Lib.HumanReadableSmallNumber(belowThEnergyRes.ProduceRequests) + " / " + Lib.HumanReadableThermalFlux(-belowThEnergyRes.UnknownBrokersRate);
 			else
 				heatingControl = Lib.Color(Lib.HumanReadableSmallNumber(belowThEnergyRes.ProduceRequests), Lib.Kolor.Orange) + " / " + Lib.HumanReadableThermalFlux(-belowThEnergyRes.UnknownBrokersRate);
 
-			VesselResource aboveThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData.aboveThDef.name);
+			VesselResource aboveThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData2.aboveThDef.name);
 			double coolingNeeded = Math.Max(aboveThEnergyRes.Amount, aboveThEnergyRes.UnknownBrokersRate);
 			string coolingControl;
 			if (Math.Abs(aboveThEnergyRes.ConsumeRequests - coolingNeeded) < 1e-03)

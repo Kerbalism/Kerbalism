@@ -155,8 +155,8 @@ namespace KERBALISM
 			// determine worst output ratio
 			// - pure output recipes can just overflow
 			double worst_output = left;
-			if (inputs.Count > 0)
-			{
+			//if (inputs.Count > 0)
+			//{
 				for (int i = 0; i < outputs.Count; ++i)
 				{
 					Entry e = outputs[i];
@@ -166,7 +166,7 @@ namespace KERBALISM
 						worst_output = Lib.Clamp((res.Capacity - (res.Amount + res.Deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
-			}
+			//}
 
 			// determine worst-io
 			double worst_io = Math.Min(worst_input, worst_output);
