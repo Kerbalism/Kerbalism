@@ -302,9 +302,12 @@ namespace KERBALISM
 		/// the probability that the player will get a warning for an incoming CME
 		/// </summary>
 		/// <returns>The observation quality.</returns>
-		public static float StormObservationQuality()
+		public static float StormObservationQuality(CelestialBody sun)
 		{
-			return Storm.sun_observation_quality;
+			if(!Sim.IsStar(sun))
+				return 0;
+
+			return Storm.SunObservationQuality(sun);
 		}
 
 		/// <summary>
@@ -312,9 +315,12 @@ namespace KERBALISM
 		/// the probability that the player will get a warning for an incoming CME
 		/// </summary>
 		/// <param name="quality">Quality.</param>
-		public static void SetStormObservationQuality(float quality)
+		public static void SetStormObservationQuality(CelestialBody sun, float quality)
 		{
-			Storm.sun_observation_quality = Lib.Clamp(quality, 0.0f, 1.0f);
+			if (!Sim.IsStar(sun))
+				return;
+
+			Storm.SetSunObservationQuality(sun, Lib.Clamp(quality, 0.0f, 1.0f));
 		}
 
 		#endregion

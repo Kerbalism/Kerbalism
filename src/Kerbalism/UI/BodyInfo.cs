@@ -21,7 +21,8 @@ namespace KERBALISM
 			double surfaceRadiation = Radiation.ComputeSurface(body, Sim.GammaTransparency(body, 0.0));
 
 			// for all bodies except sun(s)
-			if (!Sim.IsStar(body))
+			bool isStar = Sim.IsStar(body);
+			if (!isStar)
 			{
 				SimBody simBody = Sim.Bodies[body.flightGlobalsIndex];
 
@@ -62,7 +63,6 @@ namespace KERBALISM
 				}
 			}
 
-			// radiation panel
 			if (Features.Radiation)
 			{
 				p.AddSection(Local.BodyInfo_RADIATION);//"RADIATION"
@@ -71,20 +71,26 @@ namespace KERBALISM
 				double activity, cycle;
 				RadiationLevels(body, out inner, out outer, out pause, out activity, out cycle);
 
-				if (Storm.sun_observation_quality > 0.5 && activity > -1)
+				if (isStar)
 				{
-					string title = Local.BodyInfo_solaractivity;//"solar activity"
+					var quality = Storm.SunObservationQuality(body);
 
-					if(Storm.sun_observation_quality > 0.7)
+					if (quality > 0.6 && activity > -1)
 					{
-						title = Lib.BuildString(title, ": ", Lib.Color(Local.BodyInfo_stormcycle.Format(Lib.HumanReadableDuration(cycle)), Lib.Kolor.LightGrey));// <<1>> cycle
+						string title = Local.BodyInfo_solaractivity;//"solar activity"
+
+						if (quality > 0.8)
+							title = Lib.BuildString(title, ": ", Lib.Color(Local.BodyInfo_stormcycle.Format(Lib.HumanReadableDuration(cycle)), Lib.Kolor.LightGrey));// <<1>> cycle
+
+						p.AddContent(title, Lib.HumanReadablePerc(activity));
 					}
 
-					p.AddContent(title, Lib.HumanReadablePerc(activity));
+					if (quality > 0.9)
+						p.AddContent(Local.BodyInfo_radiationonsurface, Lib.HumanReadableRadiation(surfaceRadiation));//"radiation on surface:"
 				}
-
-				if (Storm.sun_observation_quality > 0.8)
+				else
 				{
+					// TODO show this only if we've landed on the body
 					p.AddContent(Local.BodyInfo_radiationonsurface, Lib.HumanReadableRadiation(surfaceRadiation));//"radiation on surface:"
 				}
 
@@ -93,11 +99,13 @@ namespace KERBALISM
 					p.AddContent(Lib.BuildString(Local.BodyInfo_innerbelt, "\t", Lib.Bold(inner)),//"inner belt: "
 					Radiation.show_inner ? Lib.Color(Local.BodyInfo_show, Lib.Kolor.Green) : Lib.Color(Local.BodyInfo_hide, Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_inner));//"show""hide"
 				}
+
 				if (outer.Length > 0)
 				{
 					p.AddContent(Lib.BuildString(Local.BodyInfo_outerbelt, "\t", Lib.Bold(outer)),//"outer belt: "
 					Radiation.show_outer ? Lib.Color(Local.BodyInfo_show, Lib.Kolor.Green) : Lib.Color(Local.BodyInfo_hide, Lib.Kolor.Red), string.Empty, () => p.Toggle(ref Radiation.show_outer));//"show""hide"
 				}
+
 				if (pause.Length > 0)
 				{
 					p.AddContent(Lib.BuildString(Local.BodyInfo_magnetopause, "\t", Lib.Bold(pause)),//"magnetopause: "

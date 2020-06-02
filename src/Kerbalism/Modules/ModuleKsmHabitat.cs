@@ -501,13 +501,10 @@ namespace KERBALISM
 					case PressureState.Pressurized:
 					case PressureState.DepressurizingAboveThreshold:
 					case PressureState.DepressurizingBelowThreshold:
-						secInfoField.guiName = "Depressurization";
 						double reclaimedResAmount = Math.Max(atmoRes.Amount - (atmoRes.Capacity * (1.0 - reclaimFactor)), 0.0);
-						secPAWInfo = Lib.BuildString(
-							Lib.HumanReadableCountdown(atmoRes.Amount / depressurizationSpeed), ", +",
-							Lib.HumanReadableAmountCompact(reclaimedResAmount), " ", reclaimResAbbr);
+						secInfoField.guiName = Lib.BuildString(Lib.HumanReadableCountdown(atmoRes.Amount / depressurizationSpeed, true), " ", "for depressurization");
+						secPAWInfo = Lib.BuildString("+", Lib.HumanReadableAmountCompact(reclaimedResAmount), " ", reclaimResAbbr);
 						break;
-
 					case PressureState.Depressurized:
 					case PressureState.Pressurizing:
 						secInfoField.guiName = "Pressurization";

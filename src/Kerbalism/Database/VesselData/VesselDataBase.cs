@@ -284,13 +284,20 @@ namespace KERBALISM
 
 			for (int i = 0; i < starsIrradiance.Length; i++)
 			{
-				starsIrradiance[i] = step.starFluxes[i];
 				StarFlux starFlux = starsIrradiance[i];
+				StarFlux stepStarFlux = step.starFluxes[i];
 
-				irradianceStarTotal += starFlux.directFlux;
-				directRawFluxTotal += starFlux.directRawFlux;
-				irradianceAlbedo += starFlux.bodiesAlbedoFlux;
-				irradianceBodiesEmissive += starFlux.bodiesEmissiveFlux;
+				starFlux.direction = stepStarFlux.direction;
+				starFlux.distance = stepStarFlux.distance;
+				starFlux.directFlux = stepStarFlux.directFlux;
+				starFlux.directRawFlux = stepStarFlux.directRawFlux;
+				starFlux.bodiesAlbedoFlux = stepStarFlux.bodiesAlbedoFlux;
+				starFlux.bodiesEmissiveFlux = stepStarFlux.bodiesEmissiveFlux;
+
+				irradianceStarTotal += stepStarFlux.directFlux;
+				directRawFluxTotal += stepStarFlux.directRawFlux;
+				irradianceAlbedo += stepStarFlux.bodiesAlbedoFlux;
+				irradianceBodiesEmissive += stepStarFlux.bodiesEmissiveFlux;
 
 				starFlux.sunlightFactor = starFlux.directFlux > 0.0 ? 1.0 : 0.0;
 

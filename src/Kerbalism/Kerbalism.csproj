@@ -170,6 +170,7 @@
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcessCollection.cs" />
     <Compile Include="External\B9PartSwitch.cs" />
+    <Compile Include="External\BackgroundRessources.cs" />
     <Compile Include="External\Kopernicus.cs" />
     <Compile Include="Modules\Base\KsmPartModule.cs" />
     <Compile Include="Modules\Base\SubclassingExample.cs" />
@@ -335,7 +336,6 @@
     <Compile Include="Database\ReliabilityInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Patches\TooltipController_CrewAC_SetTooltip.cs" />
-    <Compile Include="Modules\PassiveShield.cs" />
     <Compile Include="Modules\Base\IBackgroundModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
     <Compile Include="Modules\ModuleKsmProcessController.cs" />

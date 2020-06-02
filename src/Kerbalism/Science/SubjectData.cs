@@ -286,8 +286,14 @@ namespace KERBALISM
 		{
 			// fire science transmission game event. This is used by stock contracts and a few other things.
 			// note : in stock, it is fired with a null protovessel in some cases, so doing it should be safe.
+
 			if (API.preventScienceCrediting)
-				GameEvents.OnScienceRecieved.Fire(0f, RnDSubject, fromVessel, false);
+			{
+				// passing 0 as a value breaks the stock "recover science from Kerbin" contracts (one of the
+				// fist 4 contracts at the beginning of the game). Bureaucracy ignores all values < 0.1, so passing
+				// 0.01 here should be OK (see https://github.com/Kerbalism/Kerbalism/issues/630)
+				GameEvents.OnScienceRecieved.Fire(0.01f, RnDSubject, fromVessel, false);
+			}
 			else
 				GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
 

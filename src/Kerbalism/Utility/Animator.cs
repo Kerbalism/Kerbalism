@@ -41,7 +41,7 @@ namespace KERBALISM
 		/// </summary>
 		/// <param name="inReverse">false : play from start to end then fire the callback <para/>true : fire the callback then play from end to start</param>
 		/// <param name="loop">if true, animation will keep playing from start to end</param>
-		public void Play(bool inReverse, bool loop, Action callback = null, float speed = 1f, float fromTime = 0f)
+		public void Play(bool inReverse, bool loop, Action callback = null, float speed = 1f)
 		{
 			isLoopStopping = false;
 
@@ -54,16 +54,13 @@ namespace KERBALISM
 			Kerbalism.Fetch.StartCoroutine(PlayCoroutine(inReverse, loop, callback, speed));
 		}
 
-		private IEnumerator PlayCoroutine(bool inReverse, bool loop, Action callback = null, float speed = 1f, float fromTime = 0f)
+		private IEnumerator PlayCoroutine(bool inReverse, bool loop, Action callback = null, float speed = 1f)
 		{
 			bool towardStart = invertPlayDirection ^ inReverse;
 
 			// if the animation is already playing in the same direction, do nothing.
 			if (anim.IsPlaying(name) && ((towardStart && anim[name].speed < 0f) || (!towardStart && anim[name].speed > 0f)))
 				yield break;
-
-			if (fromTime == 0f)
-				fromTime = float.Epsilon; // just so we don't fire the callback immediatly
 
 			// if playing toward the start, fire the callback immediately
 			if (inReverse && callback != null) callback();
@@ -75,9 +72,9 @@ namespace KERBALISM
 
 			// normalizedTime is always reset to 0 when animation end is reached, so set it back manually to 1 to play backward
 			if (towardStart && anim[name].normalizedTime == 0f)
-				anim[name].normalizedTime = 1f - fromTime; 
+				anim[name].normalizedTime = 1f; 
 			else if (anim[name].normalizedTime == 0f)
-				anim[name].normalizedTime = fromTime; 
+				anim[name].normalizedTime = float.Epsilon; // just so we don't fire the callback immediatly
 
 			anim.Play(name);
 
@@ -174,13 +171,17 @@ namespace KERBALISM
 		{
 			if (IsDefined && anim.IsPlaying(name))
 			{
-				anim[name].speed = playingSpeed * normalizedSpeed;
+				float newSpeed = playingSpeed * normalizedSpeed;
+				// never go to zero speed, to keep the Playing property returning true
+				if (newSpeed == 0f)
+					newSpeed = playingSpeed > 0f ? float.Epsilon : -float.Epsilon; 
+				anim[name].speed = newSpeed;
 			}
 		}
 
 		public float AnimDuration => IsDefined ? anim[name].length : 0f;
 
-		public bool Playing => IsDefined ? anim.IsPlaying(name) : false;
+		public bool Playing => IsDefined ? (anim[name].speed != 0f) && anim.IsPlaying(name) : false;
 
 		public float NormalizedTime
 		{

@@ -156,6 +156,7 @@ namespace KERBALISM
 				{
 					Message.Clear();
 					Cache.Init();
+					BackgroundResources.DisableBackgroundResources();
 
 					// prepare storm data
 					foreach (CelestialBody body in FlightGlobals.Bodies)

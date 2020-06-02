@@ -29,20 +29,12 @@ namespace KERBALISM
 		public void UpdatePosition(VesselDataBase vdb, Vector3d position = default)
 		{
 			SimBody newMainBody = Bodies[vdb.MainBody.flightGlobalsIndex];
-			if (mainBody == null)
-			{
-				mainBody = newMainBody;
-				soiHasChanged = false;
-			}
-			else if (newMainBody != mainBody)
-			{
-				mainBody = newMainBody;
+			if (mainBody != null && newMainBody != mainBody)
 				soiHasChanged = true;
-			}
 			else
-			{
 				soiHasChanged = false;
-			}
+
+			mainBody = newMainBody;
 
 			landed = vdb.EnvLanded;
 			vesselAltitude = vdb.Altitude;
