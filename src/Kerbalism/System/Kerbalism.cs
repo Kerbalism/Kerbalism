@@ -742,7 +742,7 @@ namespace KERBALISM
 					break;
 				case KerbalBreakdown.wrong_valve:
 					text = Local.Kerbalwrongvalve;//"$ON_VESSEL$KERBAL opened the wrong valve"
-					subtext = res.Name + " " + Local.Kerbalwrongvalve_subtext;//has been lost"
+					subtext = res.Title + " " + Local.Kerbalwrongvalve_subtext;//has been lost"
 					break;
 			}
 

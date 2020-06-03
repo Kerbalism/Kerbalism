@@ -1459,5 +1459,13 @@ namespace KERBALISM
 		public static string ProcessPopup_EnabledCapacity = GetLoc("ProcessPopup_EnabledCapacity"); // "Enabled capacity"
 		public static string ProcessPopup_CapacityUsed = GetLoc("ProcessPopup_CapacityUsed"); // "Capacity used"
 		public static string ProcessPopup_TITLE = GetLoc("ProcessPopup_TITLE"); // "OUTPUTS / INPUTS"
+
+		//Coherency Warning Message
+		//On VESSELNAME.
+		//The producer of RESOURCE has
+		//incoherent behavior at high warp speed.
+		//Unload the vessel before warping
+		public static ParamString String_ActiveVessel = new ParamString("String_ActiveVessel"); // "On <b><<1>></b>.\n"
+		public static ParamString CoherencyWarning = new ParamString("CoherencyWarning"); // "The producer of <b><<1:resource>></b> has\nincoherent behavior at high warp speed.\n<i>Unload the vessel before warping</i>"
 	}
 }

@@ -302,7 +302,7 @@ namespace KERBALISM
 					continue;
 
 				if (resource.ExecuteAndSyncToParts(vd, elapsed_s) && vessel != null && vessel.loaded)
-					CoherencyWarning(vessel, resource.Name);
+					CoherencyWarning(vessel, resource.Title);
 
 				APIResources[resource.Name] = resource.Amount;
 			}
@@ -393,10 +393,8 @@ namespace KERBALISM
 				Severity.warning,
 				Lib.BuildString
 				(
-				!v.isActiveVessel ? Lib.BuildString("On <b>", v.vesselName, "</b>\na ") : "A ",
-				"producer of <b>", resourceName, "</b> has\n",
-				"incoherent behavior at high warp speed.\n",
-				"<i>Unload the vessel before warping</i>"
+				!v.isActiveVessel ? Local.String_ActiveVessel.Format(v.vesselName) : "",//Lib.BuildString("On <b>", v.vesselName, "</b>.\n ")
+				Local.CoherencyWarning.Format(resourceName)//"The producer of <b>", resourceName, "</b> has\nincoherent behavior at high warp speed.\n<i>Unload the vessel before warping</i>"
 				)
 			);
 			Lib.StopWarp(5);
