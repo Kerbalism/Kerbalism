@@ -147,7 +147,7 @@ namespace KERBALISM
 				else
 				{
 					// get a [0 ; 1] factor representing the [0 ; 360]° angle from the start position to the current position
-					Vector3 eulerAngle = Vector3.Scale(rotateTransform.localRotation.eulerAngles + transformInitialRotation.eulerAngles, rotateAxis);
+					Vector3 eulerAngle = Vector3.Scale(rotateTransform.localRotation.eulerAngles + transformInitialRotation.eulerAngles, rotateTransform.localRotation * rotateAxis);
 					currentNormalizedTime = ((eulerAngle.x + eulerAngle.y + eulerAngle.z) % 360f) / 360f;
 				}
 					

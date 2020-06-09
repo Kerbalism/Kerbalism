@@ -13,6 +13,7 @@ using KSP.UI;
 using KSP.UI.Screens.Flight;
 using System.Collections;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace KERBALISM
 {
@@ -213,7 +214,7 @@ namespace KERBALISM
 			double k = Vector3d.Dot(difference, rayDir);
 
 			// the ray hit the sphere if its minimal analytical distance along the ray is more than the radius
-			return k > 0.0 && (rayDir * k - difference).sqrMagnitude > sphereRadius * sphereRadius;
+			return k > 0.0 && (rayDir * k - difference).sqrMagnitude < sphereRadius * sphereRadius;
 		}
 
 		/// <summary>
@@ -881,13 +882,11 @@ namespace KERBALISM
 			return s.Replace('_', ' ');
 		}
 
-
 		///<summary>select a string at random</summary>
 		public static string TextVariant(params string[] list)
 		{
 			return list.Length == 0 ? string.Empty : list[RandomInt(list.Length)];
 		}
-
 
 		/// <summary> insert lines break to have a max line length of 'maxCharPerLine' characters </summary>
 		public static string WordWrapAtLength(string longText, int maxCharPerLine)
@@ -925,6 +924,12 @@ namespace KERBALISM
 			}
 			return longText;
 
+		}
+
+		/// <summary> Remove all rtf/html tags </summary>
+		public static string RemoveTags(string text)
+		{
+			return Regex.Replace(text, "<.*?>", string.Empty);
 		}
 		#endregion
 
@@ -1207,7 +1212,7 @@ namespace KERBALISM
 		///<summary> Pretty-print flux </summary>
 		public static string HumanReadableFlux(double flux)
 		{
-			return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
+			return flux >= 0.1 ? flux.ToString("0.0 W/m²") : flux.ToString("0.0E+0 W/m²");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>
@@ -1515,65 +1520,6 @@ namespace KERBALISM
 
 		#region BODY
 
-		/// <summary>For a given body, return the last parent body that is not a sun </summary>
-		public static CelestialBody GetParentPlanet(CelestialBody body)
-		{
-			if (Lib.IsSun(body)) return body;
-			CelestialBody checkedBody = body;
-			while (!Lib.IsSun(checkedBody.referenceBody)) checkedBody = checkedBody.referenceBody;
-			return checkedBody;
-		}
-
-		/// <summary> optimized method for getting normalized direction and distance between the surface of two bodies</summary>
-		/// <param name="direction">normalized vector 'from' body 'to' body</param>
-		/// <param name="distance">distance between the body surface</param>
-		public static void DirectionAndDistance(CelestialBody from, CelestialBody to, out Vector3d direction, out double distance)
-		{
-			Lib.DirectionAndDistance(from.position, to.position, out direction, out distance);
-			distance -= from.Radius + to.Radius;
-		}
-
-		/// <summary> optimized method for getting normalized direction and distance between a world position and the surface of a body</summary>
-		/// <param name="direction">normalized vector 'from' position 'to' body</param>
-		/// <param name="distance">distance to the body surface</param>
-		public static void DirectionAndDistance(Vector3d from, CelestialBody to, out Vector3d direction, out double distance)
-		{
-			Lib.DirectionAndDistance(from, to.position, out direction, out distance);
-			distance -= to.Radius;
-		}
-
-		/// <summary> optimized method for getting normalized direction and distance between two world positions</summary>
-		/// <param name="direction">normalized vector 'from' position 'to' position</param>
-		/// <param name="distance">distance between the body surface</param>
-		public static void DirectionAndDistance(Vector3d from, Vector3d to, out Vector3d direction, out double distance)
-		{
-			direction = to - from;
-			distance = direction.magnitude;
-			direction /= distance;
-		}
-
-		/// <summary> Is this body a sun ? </summary>
-		public static bool IsSun(CelestialBody body)
-		{
-			return Sim.suns.Exists(p => p.bodyIndex == body.flightGlobalsIndex);
-		}
-
-		/// <summary> return the first found parent sun for a given body </summary>
-		public static CelestialBody GetParentSun(CelestialBody body)
-		{
-			if (IsSun(body)) return body;
-
-			CelestialBody refBody = body.referenceBody;
-			do
-			{
-				if (IsSun(refBody)) return refBody;
-				refBody = refBody.referenceBody;
-			}
-			while (refBody != null);
-
-			return FlightGlobals.Bodies[0];
-		}
-
 		///<summary
 		/// return selected body in tracking-view/map-view
 		/// >if a vessel is selected, return its main body
@@ -1625,7 +1571,7 @@ namespace KERBALISM
 			if (Vector3d.SqrMagnitude(pos - v.mainBody.position) < 1.0)
 			{
 				// try to get it from orbit
-				pos = v.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
+				pos = v.orbit.getTruePositionAtUT(Planetarium.GetUniversalTime());
 
 				// if the orbit is invalid (landed, or 1 tick after prelaunch/staging/decoupling)
 				if (double.IsNaN(pos.x))
@@ -1960,7 +1906,8 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Rebuild the IVAs and and Kerbal portrait gallery. Called from the habitat module in conjunction
-		/// with the InternalModel_SpawnCrew patch to make kerbals put/take off their helmets. 
+		/// with the InternalModel_SpawnCrew patch to make kerbals put/take off their helmets. <br/>
+		/// Note : depreciated in favor of InternalModel/Kerbal patches
 		/// </summary>
 		public static void RefreshIVAAndPortraits()
 		{
@@ -2010,7 +1957,6 @@ namespace KERBALISM
 				}
 			}
 		}
-
 		public static void EnablePartCrewTransfer(Part part, bool enable)
 		{
 			part.crewTransferAvailable = enable;
@@ -3358,6 +3304,29 @@ namespace KERBALISM
 			return def_value;
 		}
 
+		public static double ConfigDuration(ConfigNode cfg, string key, bool applyTimeMultiplier, string defaultValue)
+		{
+			string durationStr = cfg.GetValue(key);
+			if (string.IsNullOrEmpty(durationStr) || !TryParseDuration(durationStr, applyTimeMultiplier, out double duration))
+			{
+				TryParseDuration(defaultValue, applyTimeMultiplier, out duration);
+			}
+
+			return duration;
+		}
+
+		public static bool ConfigDuration(ConfigNode cfg, string key, bool applyTimeMultiplier, out double duration)
+		{
+			string durationStr = cfg.GetValue(key);
+			if (string.IsNullOrEmpty(durationStr) || !TryParseDuration(durationStr, applyTimeMultiplier, out duration))
+			{
+				duration = 1.0;
+				return false;
+			}
+
+			return true;
+		}
+
 		///<summary>parse a serialized (config) value. Supports all value types including enums and common KSP/Unity types (vector, quaternion, color, matrix4x4...)</summary>
 		public static bool TryParseValue(string strValue, Type typeOfValue, out object value)
 		{
@@ -3477,10 +3446,12 @@ namespace KERBALISM
 			return false;
 		}
 
+
+
 		/// <summary> Parse a duration "3y120d5h2m93s into seconds </summary>
-		public static double ParseConfigDuration(string durationString, bool applyTimeMultiplier = true)
+		public static bool TryParseDuration(string durationString, bool applyTimeMultiplier, out double result)
 		{
-			double result = 0;
+			result = 0.0;
 
 			string str = durationString.ToLower();
 			int p = str.IndexOf('y');
@@ -3534,11 +3505,12 @@ namespace KERBALISM
 				result *= Settings.ConfigsDurationMultiplier;
 			}
 				
-			return result;
+			return true;
 
 			error:;
 			Log($"Couldn't parse misformatted duration : {durationString}", LogLevel.Error);
-			return 1.0;
+			result = 1.0;
+			return false;
 		}
 		#endregion
 

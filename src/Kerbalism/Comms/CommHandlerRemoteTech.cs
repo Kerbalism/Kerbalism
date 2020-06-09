@@ -68,7 +68,7 @@ namespace KERBALISM
 					double dist = RemoteTech.GetCommsDistance(vd.VesselId, controlPath[0]);
 					double maxDist = RemoteTech.GetCommsMaxDistance(vd.VesselId, controlPath[0]);
 					connection.strength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
-					connection.strength = Math.Pow(connection.strength, Settings.DataRateDampingExponentRT);
+					connection.strength = Math.Pow(connection.strength, Sim.DataRateDampingExponentRT);
 
 					connection.rate = baseRate * connection.strength;
 
@@ -76,7 +76,7 @@ namespace KERBALISM
 					if (connection.Status != LinkStatus.direct_link)
 					{
 						Vessel target = FlightGlobals.FindVessel(controlPath[0]);
-						target.TryGetVesselData(out VesselData vd);
+						target.TryGetVesselDataTemp(out VesselData vd);
 						ConnectionInfo ci = vd.Connection;
 						connection.strength *= ci.strength;
 						connection.rate = Math.Min(ci.rate, connection.rate);

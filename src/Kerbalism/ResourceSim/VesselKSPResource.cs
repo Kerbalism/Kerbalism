@@ -53,7 +53,7 @@ namespace KERBALISM
 
 		/// <summary> [0 ; 1] availability factor that will be applied to every Consume() call in the next simulation step</summary>
 		public override double AvailabilityFactor => availabilityFactor;
-		private double availabilityFactor = 1.0;
+		private double availabilityFactor = 0.0;
 
 		/// <summary> true if all critical Consume() calls have been satisfied in the last sim step</summary>
 		public bool CriticalConsumptionSatisfied { get; private set; }
@@ -73,7 +73,7 @@ namespace KERBALISM
 
 		public override List<ResourceBrokerRate> ResourceBrokers => resourceBrokers;  List<ResourceBrokerRate>resourceBrokers;
 
-		public override bool NeedUpdate => !(Capacity == 0.0 && deferred == 0.0 && resourceBrokers.Count == 0);
+		public override bool NeedUpdate => availabilityFactor != 0.0 || deferred != 0.0 || Capacity != 0.0 || resourceBrokers.Count != 0;
 
 		/// <summary>Ctor</summary>
 		public VesselKSPResource(ResourceWrapper resourceWrapper)

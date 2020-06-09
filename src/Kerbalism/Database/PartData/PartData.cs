@@ -83,11 +83,15 @@ namespace KERBALISM
 		/// <summary> Must be called if the part is destroyed </summary>
 		public void PartWillDie()
 		{
-			loadedPartDatas.Remove(LoadedPart.GetInstanceID());
-			LoadedPart = null;
 			foreach (ModuleData moduleData in modules)
 			{
 				moduleData.PartWillDie();
+			}
+
+			if (LoadedPart != null)
+			{
+				loadedPartDatas.Remove(LoadedPart.GetInstanceID());
+				LoadedPart = null;
 			}
 		}
 

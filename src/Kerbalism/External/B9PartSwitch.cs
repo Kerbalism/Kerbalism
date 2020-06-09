@@ -20,6 +20,9 @@ namespace KERBALISM
 
 	public static class B9PartSwitch
 	{
+		private static Version moduleMatcherMinVersion = new Version(2, 16, 0, 0);
+		private static bool isV216Plus;
+
 		public const string moduleName = "ModuleB9PartSwitch";
 		private static Type moduleType;
 		private static FieldInfo moduleSubtypesField;
@@ -34,9 +37,14 @@ namespace KERBALISM
 		private static FieldInfo moduleModifierIdentifierNodeField;
 		private static FieldInfo moduleModifierDataNodeField;
 		private static FieldInfo moduleModifierModuleActiveField;
-		private static MethodInfo moduleModifierFindModuleMethod;
 
-		
+		// 2.16+
+		private static Type moduleMatcherType;
+		private static ConstructorInfo moduleMatcherCtor;
+		private static MethodInfo moduleMatcherFindModuleMethod;
+
+		// 2.15-
+		private static MethodInfo moduleModifierFindModuleMethod;
 
 		public static void Init(HarmonyInstance harmony)
 		{
@@ -44,6 +52,9 @@ namespace KERBALISM
 			{
 				if (a.name == "B9PartSwitch")
 				{
+					Version loadedVersion = a.assembly.GetName().Version;
+					isV216Plus = loadedVersion >= moduleMatcherMinVersion;
+
 					moduleType = a.assembly.GetType("B9PartSwitch.ModuleB9PartSwitch");
 					moduleSubtypesField = moduleType.GetField("subtypes");
 
@@ -58,9 +69,24 @@ namespace KERBALISM
 					moduleModifierDataNodeField = moduleModifierInfoType.GetField("dataNode");
 					moduleModifierModuleActiveField = moduleModifierInfoType.GetField("moduleActive");
 
-					// private PartModule FindModule(Part part, PartModule parentModule, string moduleName)
-					Type[] findModuleArgs = new Type[] { typeof(Part), typeof(PartModule), typeof(string) };
-					moduleModifierFindModuleMethod = moduleModifierInfoType.GetMethod("FindModule", BindingFlags.Instance | BindingFlags.NonPublic, null, findModuleArgs, null);
+					if (isV216Plus)
+					{
+						moduleMatcherType = a.assembly.GetType("B9PartSwitch.ModuleMatcher");
+
+						// public ModuleMatcher(ConfigNode identifierNode)
+						Type[] moduleMatcherCtorArgs = new Type[] { typeof(ConfigNode) };
+						moduleMatcherCtor = moduleMatcherType.GetConstructor(new Type[] { typeof(ConfigNode) });
+
+						// public PartModule FindModule(Part part)
+						Type[] findModuleArgs = new Type[] { typeof(Part) };
+						moduleMatcherFindModuleMethod = moduleMatcherType.GetMethod("FindModule", findModuleArgs);
+					}
+					else
+					{
+						// private PartModule FindModule(Part part, PartModule parentModule, string moduleName)
+						Type[] findModuleArgs = new Type[] { typeof(Part), typeof(PartModule), typeof(string) };
+						moduleModifierFindModuleMethod = moduleModifierInfoType.GetMethod("FindModule", BindingFlags.Instance | BindingFlags.NonPublic, null, findModuleArgs, null);
+					}
 
 					Type moduleDataHandlerBasic = a.assembly.GetType("B9PartSwitch.PartSwitch.PartModifiers.ModuleDataHandlerBasic");
 					
@@ -158,6 +184,7 @@ namespace KERBALISM
 
 			public void SetSubTypeDescriptionDetail(string descriptionDetail)
 			{
+				descriptionDetail = descriptionDetail.TrimStart().TrimEnd(); // stop B9PS complaining about trailing "\n"
 				subtypeDescriptionDetailField.SetValue(instance, descriptionDetail);
 			}
 		}
@@ -170,11 +197,25 @@ namespace KERBALISM
 
 			public ModuleModifierWrapper(PartModule moduleB9PartSwitch, object moduleModifier)
 			{
-				// private PartModule FindModule(Part part, PartModule parentModule, string moduleName)
 				ConfigNode identiferNode = (ConfigNode)moduleModifierIdentifierNodeField.GetValue(moduleModifier);
-				string moduleName = Lib.ConfigValue(identiferNode, "name", string.Empty);
-				object[] findModuleParams = new object[] { moduleB9PartSwitch.part, moduleB9PartSwitch, moduleName };
-				PartModule = (PartModule)moduleModifierFindModuleMethod.Invoke(moduleModifier, findModuleParams);
+
+				if (isV216Plus)
+				{
+					// public ModuleMatcher(ConfigNode identifierNode)
+					object[] moduleMatcherCtorParams = new object[] { identiferNode };
+					object moduleMatcher = moduleMatcherCtor.Invoke(moduleMatcherCtorParams);
+
+					// public PartModule FindModule(Part part)
+					object[] moduleMatcherFindModuleMethodParams = new object[] { moduleB9PartSwitch.part };
+					PartModule = (PartModule)moduleMatcherFindModuleMethod.Invoke(moduleMatcher, moduleMatcherFindModuleMethodParams);
+				}
+				else
+				{
+					// private PartModule FindModule(Part part, PartModule parentModule, string moduleName)
+					string moduleName = Lib.ConfigValue(identiferNode, "name", string.Empty);
+					object[] findModuleParams = new object[] { moduleB9PartSwitch.part, moduleB9PartSwitch, moduleName };
+					PartModule = (PartModule)moduleModifierFindModuleMethod.Invoke(moduleModifier, findModuleParams);
+				}
 
 				ModuleActive = (bool)moduleModifierModuleActiveField.GetValue(moduleModifier);
 				DataNode = (ConfigNode)moduleModifierDataNodeField.GetValue(moduleModifier);

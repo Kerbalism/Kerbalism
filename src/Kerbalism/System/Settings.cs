@@ -96,8 +96,7 @@ namespace KERBALISM
 			HabitatWasteResource = Lib.ConfigValue(cfg, "HabitatWasteResource", "KsmWasteAtmosphere");
 			HabitatBreathableResource = Lib.ConfigValue(cfg, "HabitatBreathableResource", "Oxygen");
 			HabitatBreathableResourceRate = Lib.ConfigValue(cfg, "HabitatBreathableResourceRate", 0.00172379825);
-			DepressuriationDefaultRate = Lib.ConfigValue(cfg, "DepressuriationDefaultRate", 10.0);
-			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
+			DepressuriationDefaultDuration = Lib.ConfigDuration(cfg, "DepressuriationDefaultDuration", false, "5m");
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.3);
 
 			// poisoning
@@ -107,11 +106,10 @@ namespace KERBALISM
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
 			DataRateMinimumBitsPerSecond = Lib.ConfigValue(cfg, "DataRateMinimumBitsPerSecond", 1.0);
-			DataRateDampingExponent = Lib.ConfigValue(cfg, "DataRateDampingExponent", 6.0f);
-			DataRateDampingExponentRT = Lib.ConfigValue(cfg, "DataRateDampingExponentRT", 6.0f);
 			DataRateSurfaceExperiment = Lib.ConfigValue(cfg, "DataRateSurfaceExperiment", 0.3f);
 			TransmitterActiveEcFactor = Lib.ConfigValue(cfg, "TransmitterActiveEcFactor", 1.5);
 			TransmitterPassiveEcFactor = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactor", 0.04);
+			DampingExponentOverride = Lib.ConfigValue(cfg, "DampingExponentOverride", 0.0);
 
 			// science
 			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
@@ -157,7 +155,7 @@ namespace KERBALISM
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
-			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
+			EnableOrbitLineTweaks = Lib.ConfigValue(cfg, "EnableOrbitLineTweaks", true);
 
 			// debug / logging
 			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
@@ -235,10 +233,10 @@ namespace KERBALISM
 		public static string HabitatWasteResource;              // resource used to manage habitat CO2 level (poisoning)
 		public static string HabitatBreathableResource;         // resource automagically produced when the habitat is under breathable external conditions (Oxygen in the default profile)
 		public static double HabitatBreathableResourceRate;     // per second, per kerbal production of the breathable resource. Should match the consumption defined in the breathing rule. Set it to 0 to disable it entirely.
-		public static double DepressuriationDefaultRate;        // liters / second / √(m3) of habitat volume
-		public static double PressureFactor;                    // penalty multiplier applied to the "pressure" modifier when the vessel is fully depressurized
-		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets
-																// also determine the altitude threshold at which non-pressurized habitats can use the external air
+		public static double DepressuriationDefaultDuration;    // seconds / m3 of habitat volume
+		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets.
+																// also determine the altitude at which non-pressurized habitats can use the external air.
+																// note that while ingame we display hab pressure as % with no unit, 100 % = 1 atm = 101.325 kPa for all internal calculations
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
 		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status
@@ -246,11 +244,10 @@ namespace KERBALISM
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
 		public static double DataRateMinimumBitsPerSecond;      // as long as there is a control connection, the science data rate will never go below this.
-		public static float DataRateDampingExponent;            // how much to damp data rate. stock is equivalent to 1, 6 gives nice values, RSS would use 4
-		public static float DataRateDampingExponentRT;          // same for RemoteTech
 		public static float DataRateSurfaceExperiment;          // transmission rate for surface experiments (Serenity DLC)
 		public static double TransmitterActiveEcFactor;         // how much of the configured EC rate is used while transmitter is active
 		public static double TransmitterPassiveEcFactor;        // how much of the configured EC rate is used while transmitter is passive
+		public static double DampingExponentOverride;           // Kerbalism will calculate a damping exponent to achieve good data communication rates (see log file, search for DataRateDampingExponent). If the calculated value is not good for you, you can set your own.
 
 		// science
 		public static bool ScienceDialog;                       // keep showing the stock science dialog
@@ -297,13 +294,11 @@ namespace KERBALISM
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad
 
-		public static bool UseSamplingSunFactor;
-
 		// debug / logging
 		public static bool VolumeAndSurfaceLogging;
 
 		public static bool loaded { get; private set; } = false;
-	}
-
+		public static bool EnableOrbitLineTweaks = true;
+    }
 
 } // KERBALISM

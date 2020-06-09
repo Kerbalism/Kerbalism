@@ -58,8 +58,8 @@ namespace KERBALISM
 
 		public double ScienceCap => stockDef.scienceCap * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 
-		/// <summary> Cache the information returned by GetInfo() in the first found module using that experiment</summary>
-		public string ModuleInfo { get; private set; } = string.Empty;
+		/// <summary> List of all module definitions, and the parts on which they are used. Warning : can be very long</summary>
+		public string ModuleDefinitionsInfo { get; private set; }
 
 		/// <summary> If true, subject completion will enable the stock resource map for the corresponding body</summary>
 		public bool UnlockResourceSurvey { get; private set; }
@@ -370,6 +370,41 @@ namespace KERBALISM
 			return result;
 		}
 
+		public void CompileModuleDefinitionsInfo()
+		{
+			ExpInfoSB.Clear();
+			if (!string.IsNullOrEmpty(Description))
+			{
+				ExpInfoSB.AppendKSPLine(Lib.Italic(Description));
+				ExpInfoSB.AppendKSPNewLine();
+			}
+			
+			for (int i = 0; i < ExperimentModuleDefinitions.Count; i++)
+			{
+				ExperimentModuleDefinition definition = ExperimentModuleDefinitions[i];
+
+				if (i == 0)
+				{
+					ExpInfoSB.Append(definition.ModuleInfo(false, false));
+				}
+				else
+				{
+					ExpInfoSB.AppendKSPNewLine();
+					ExpInfoSB.AppendKSPLine(Lib.Color("Variant :", Lib.Kolor.Yellow, true));
+					ExpInfoSB.Append(definition.ModuleInfo(false, true));
+				}
+
+				if (!string.IsNullOrEmpty(definition.AvailableOnPartsList))
+				{
+					ExpInfoSB.AppendKSPNewLine();
+					ExpInfoSB.AppendKSPLine(definition.AvailableOnPartsList);
+				}
+			}
+
+			ModuleDefinitionsInfo = ExpInfoSB.ToString();
+		}
+
+
 		public class BodyConditions
 		{
 			private static string typeNamePlus = typeof(BodyConditions).FullName + "+";
@@ -515,19 +550,19 @@ namespace KERBALISM
 
 			private class Planets : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && Lib.IsSun(body.referenceBody);
+				public override bool TestCondition(CelestialBody body) => !Sim.IsStar(body) && Sim.IsStar(body.referenceBody);
 				public override string Title => Local.Experimentinfo_BodyCondition8;//"planets"
 			}
 
 			private class Moons : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => !Lib.IsSun(body) && !Lib.IsSun(body.referenceBody);
+				public override bool TestCondition(CelestialBody body) => !Sim.IsStar(body) && !Sim.IsStar(body.referenceBody);
 				public override string Title => Local.Experimentinfo_BodyCondition9;//"moons"
 			}
 
 			private class Suns : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => Lib.IsSun(body);
+				public override bool TestCondition(CelestialBody body) => Sim.IsStar(body);
 				public override string Title => Local.Experimentinfo_BodyCondition10;//"suns"
 			}
 

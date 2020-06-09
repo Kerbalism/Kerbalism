@@ -96,6 +96,11 @@ namespace KERBALISM
 			{
 				expDef.PopulateSpecIfUndefined();
 			}
+
+			foreach (ExperimentInfo expInfo in ScienceDB.ExperimentInfos)
+			{
+				expInfo.CompileModuleDefinitionsInfo();
+			}
 		}
 
 		#region EDITOR PART LIST TWEAKS

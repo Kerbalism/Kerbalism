@@ -19,7 +19,7 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get vessel data
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;
@@ -73,6 +73,8 @@ namespace KERBALISM
 
 			p.AddSection(Local.TELEMETRY_ENVIRONMENT);//"ENVIRONMENT"
 
+			//p.AddContent("exposure", (vd.timeInSunlight / vd.timeEvaluated).ToString("P2"));
+
 			if (vd.SolarPanelsAverageExposure >= 0.0)
 			{
 				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
@@ -106,7 +108,7 @@ namespace KERBALISM
 			p.AddContent("livingSpaceModifier", vd.Habitat.livingSpaceFactor.ToString("F2"));
 			p.AddContent("pressurizedSurface", vd.Habitat.pressurizedSurface.ToString("0.00 m2"));
 			p.AddContent("pressurizedVolume", vd.Habitat.pressurizedVolume.ToString("0.00 m3"));
-			p.AddContent("pressureAtm", vd.Habitat.pressureAtm.ToString("0.00 atm"));
+			p.AddContent("pressureAtm", vd.Habitat.pressure.ToString("0.00 atm"));
 			p.AddContent("pressureModifier", vd.Habitat.pressureFactor.ToString("F2"));
 
 			p.AddContent("shieldingSurface", vd.Habitat.shieldingSurface.ToString("0.00 m2"));

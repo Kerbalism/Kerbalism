@@ -18,7 +18,7 @@ namespace KERBALISM
 			KerbalEVA kerbal = Lib.FindModules<KerbalEVA>(v)[0];
 
 			// get resource handler
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 			VesselKSPResource ec = vd.ResHandler.ElectricCharge;
 
 			// determine if headlamps need ec

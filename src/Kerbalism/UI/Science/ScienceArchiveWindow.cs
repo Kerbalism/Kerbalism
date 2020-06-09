@@ -117,7 +117,7 @@ namespace KERBALISM
 			new KsmGuiHeader(expInfoColumn, Local.SCIENCEARCHIVE_EXPERIMENTINFO);//"EXPERIMENT INFO"
 			KsmGuiVerticalScrollView expInfoScrollView = new KsmGuiVerticalScrollView(expInfoColumn);
 			expInfoScrollView.SetLayoutElement(false, true, 200);
-			expInfoText = new KsmGuiText(expInfoScrollView, currentExperiment.expInfo.ModuleInfo);
+			expInfoText = new KsmGuiText(expInfoScrollView, currentExperiment.expInfo.ModuleDefinitionsInfo);
 			expInfoText.SetLayoutElement(true, true);
 
 			foreach (ExperimentInfo experimentInfo in ScienceDB.ExperimentInfos)
@@ -176,7 +176,7 @@ namespace KERBALISM
 			expInfoAndSubjects.experimentSubjectList.KnownSubjectsToggle.SetOnState(currentExperiment.experimentSubjectList.KnownSubjectsToggle.IsOn, true);
 			currentExperiment = expInfoAndSubjects;
 			expInfoAndSubjects.experimentSubjectList.Enabled = true;
-			expInfoText.Text = expInfoAndSubjects.expInfo.ModuleInfo;
+			expInfoText.Text = expInfoAndSubjects.expInfo.ModuleDefinitionsInfo;
 			window.RebuildLayout();
 		}
 
@@ -301,48 +301,15 @@ namespace KERBALISM
 		{
 			researchedExpInfos.Clear();
 
-			ExperimentInfo asteroidSample = ScienceDB.GetExperimentInfo("asteroidSample");
-			if (asteroidSample != null)
-				researchedExpInfos.Add(asteroidSample);
-
-			foreach (AvailablePart availablePart in PartLoader.LoadedPartsList)
+			foreach (ExperimentInfo expInfo in ScienceDB.ExperimentInfos)
 			{
-				// EVA kerbals have no tech required
-				if (!string.IsNullOrEmpty(availablePart.TechRequired) && !ResearchAndDevelopment.PartModelPurchased(availablePart))
-					continue;
-
-				foreach (PartModule partModule in availablePart.partPrefab.Modules)
+				foreach (ExperimentModuleDefinition definition in expInfo.ExperimentModuleDefinitions)
 				{
-					if (partModule is ModuleKsmExperiment experiment)
+					if (definition.IsResearched())
 					{
-						// TODO : this probably doesn't work anymore
-						if (experiment.moduleData.ModuleDefinition == null || researchedExpInfos.Contains(experiment.moduleData.ModuleDefinition.Info))
-							continue;
-
-						if (experiment.moduleData.ModuleDefinition.Requirements.TestProgressionRequirements())
-							researchedExpInfos.Add(experiment.moduleData.ModuleDefinition.Info);
+						researchedExpInfos.Add(expInfo);
+						break;
 					}
-					else if (partModule is ModuleScienceExperiment stockExperiment)
-					{
-						ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(stockExperiment.experimentID);
-						if (expInfo != null)
-							researchedExpInfos.Add(expInfo);
-					}
-					else if (partModule is ModuleGroundExperiment groundExp)
-					{
-						ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(groundExp.experimentId);
-						if (expInfo != null)
-							researchedExpInfos.Add(expInfo);
-					}
-				}
-			}
-
-			// ROCs are always researched
-			foreach (ExperimentInfo experimentInfo in ScienceDB.ExperimentInfos)
-			{
-				if (experimentInfo.IsROC)
-				{
-					researchedExpInfos.Add(experimentInfo);
 				}
 			}
 		}

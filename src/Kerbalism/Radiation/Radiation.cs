@@ -575,7 +575,7 @@ namespace KERBALISM
 			double D;
 			double r;
 
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			// accumulate radiation
 			double radiation = 0.0;
@@ -630,8 +630,8 @@ namespace KERBALISM
 
 						radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
 
-						magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
-						interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
+						magnetosphere |= D < 0.0f && !Sim.IsStar(rb.body); //< ignore heliopause
+						interstellar |= D > 0.0f && Sim.IsStar(rb.body); //< outside heliopause
 					}
 				}
 
@@ -640,7 +640,7 @@ namespace KERBALISM
 					Vector3d direction;
 					double distance;
 					
-					if (Sim.IsBodyVisible(v, position, body, vd.EnvVisibleBodies, out direction, out distance))
+					if (Sim.IsBodyVisible(v, position, body, vd.VisibleBodies, out direction, out distance))
 					{
 						var r0 = RadiationR0(rb);
 						var r1 = DistanceRadiation(r0, distance);
@@ -671,7 +671,7 @@ namespace KERBALISM
 			if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
 #endif
 			// add surface radiation of the body itself
-			if (Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius) // ???!!???
+			if (Sim.IsStar(v.mainBody) && v.altitude < v.mainBody.Radius) // ???!!???
 			{
 				if (v.altitude > v.mainBody.Radius) // ??!??!???
 				{

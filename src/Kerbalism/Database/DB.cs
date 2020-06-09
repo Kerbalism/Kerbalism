@@ -32,6 +32,7 @@ namespace KERBALISM
 		public static Dictionary<string, KerbalData> Kerbals => kerbals;
 		public static UIData UiData => uiData;
 		public static Dictionary<Guid, VesselData>.ValueCollection VesselDatas => vessels.Values;
+		public static bool VesselExist(Guid guid) => vessels.ContainsKey(guid);
 
 		#region LOAD/SAVE
 
@@ -85,12 +86,8 @@ namespace KERBALISM
 				// the first OnLoad in a new game.
 				foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
 				{
-					if (pv.vesselID == Guid.Empty)
-					{
-						// Flags are saved with an empty GUID (?!!?). skip them.
-						Lib.LogDebug("Skipping VesselData load for vessel with empty GUID :" + pv.vesselName);
+					if (!VesselData.VesselNeedVesselData(pv))
 						continue;
-					}
 
 					VesselData vd = new VesselData(pv, vesselsNode.GetNode(pv.vesselID.ToString()));
 					vessels.Add(pv.vesselID, vd);
@@ -119,6 +116,8 @@ namespace KERBALISM
 				uiData = new UIData();
             }
 
+			SubStepSim.Load(node);
+
 			// if an old savegame was imported, log some debug info
 			if (version != Lib.KerbalismVersion) Lib.Log("savegame converted from version " + version + " to " + Lib.KerbalismVersion);
         }
@@ -144,16 +143,7 @@ namespace KERBALISM
 			ConfigNode vesselsNode = node.AddNode(NODENAME_VESSELS);
 			foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
 			{
-				if (pv.vesselID == Guid.Empty)
-				{
-					// It seems flags are saved with an empty GUID. skip them.
-					Lib.LogDebug("Skipping VesselData save for vessel with empty GUID :" + pv.vesselName);
-					continue;
-				}
-
-                // TODO we currently save vessel data even for asteroids. save only
-				// vessels with hard drives?
-                if (pv.TryGetVesselData(out VesselData vd))
+                if (pv.TryGetVesselDataNoError(out VesselData vd))
 				{
 					ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
 					vd.Save(vesselNode);
@@ -173,7 +163,9 @@ namespace KERBALISM
 
 			// save ui data
 			uiData.Save(node.AddNode(NODENAME_GUI));
-        }
+
+			SubStepSim.Save(node);
+		}
 
 		/// <summary> Avoid leading and trailing spaces from being removed when saving a string to a ConfigNode value</summary>
 		public static string ToSafeKey(string key) => key.Replace(" ", "___");
@@ -205,7 +197,7 @@ namespace KERBALISM
 			vessels.Add(vd.VesselId, vd);
 		}
 
-		public static bool TryGetVesselData(this Vessel vessel, out VesselData vesselData)
+		public static bool TryGetVesselDataTemp(this Vessel vessel, out VesselData vesselData)
 		{
 			if (!vessels.TryGetValue(vessel.id, out vesselData))
 			{
@@ -215,19 +207,21 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static bool TryGetVesselDataNoError(this Vessel vessel, out VesselData vesselData)
+		/// <summary>
+		/// Get the VesselData for this vessel, if it exists. Typically, you will need this in a Foreach on FlightGlobals.Vessels
+		/// </summary>
+		public static bool TryGetVesselData(this Vessel vessel, out VesselData vesselData)
 		{
 			if (!vessels.TryGetValue(vessel.id, out vesselData))
-			{
-				Lib.LogDebug($"Could not get VesselData for vessel {vessel.vesselName} (this is normal)");
 				return false;
-			}
+
 			return true;
 		}
 
 		/// <summary>
 		/// Get the VesselData for this vessel. Will return null if that vessel isn't yet created in the DB, which can happen if this is called too early. <br/>
-		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()
+		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()<br/>
+		/// Also, don't use this in a Foreach on FlightGlobals.Vessels, check the result of TryGetVesselData() instead
 		/// </summary>
 		public static VesselData GetVesselData(this Vessel vessel)
 		{
@@ -239,31 +233,10 @@ namespace KERBALISM
 			return vesselData;
 		}
 
-		public static bool TryGetVesselData(this ProtoVessel protoVessel, out VesselData vesselData)
+		public static bool TryGetVesselDataNoError(this ProtoVessel protoVessel, out VesselData vesselData)
 		{
-			if (!vessels.TryGetValue(protoVessel.vesselID, out vesselData))
-			{
-				Lib.LogStack($"Could not get VesselData for vessel {protoVessel.vesselName}", Lib.LogLevel.Error);
-				return false;
-			}
-			return true;
+			return vessels.TryGetValue(protoVessel.vesselID, out vesselData);
 		}
-		//{
-		//	VesselData vd;
-		//	if (!vessels.TryGetValue(protoVessel.vesselID, out vd))
-		//	{
-		//		Lib.Log("VesselData for protovessel " + protoVessel.vesselName + ", ID=" + protoVessel.vesselID + " doesn't exist !", Lib.LogLevel.Warning);
-		//		vd = new VesselData(protoVessel, null);
-		//		vessels.Add(protoVessel.vesselID, vd);
-		//	}
-		//	return vd;
-		//}
-
-		/// <summary>shortcut for VesselData.IsValid. False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-		//public static bool KerbalismIsValid(this Vessel vessel)
-		//      {
-		//          return TryGetVesselData(vessel).IsSimulated;
-		//      }
 
 		#endregion
 

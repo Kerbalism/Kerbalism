@@ -47,10 +47,12 @@ namespace KERBALISM
 		public static ResourceBroker Harvester = GetOrCreate("Harvester", BrokerCategory.Harvester, Local.Brokers_Harvester);
 		public static ResourceBroker Radiator = GetOrCreate("Radiator", BrokerCategory.Radiator, Local.Brokers_Radiator);
 		public static ResourceBroker Habitat = GetOrCreate("Habitat", BrokerCategory.VesselSystem, Local.Habitat);
+		public static ResourceBroker Depressurization = GetOrCreate("Depressurization", BrokerCategory.VesselSystem, "Hab depressurization");
+		public static ResourceBroker Deployment = GetOrCreate("Deployment", BrokerCategory.VesselSystem, "Deployment");
 		public static ResourceBroker Environment = GetOrCreate("Environment", BrokerCategory.Unknown, Local.Sensor_environment);
-		public static ResourceBroker Wheel = GetOrCreate("Wheel", BrokerCategory.VesselSystem, "wheel");
-		public static ResourceBroker Engine = GetOrCreate("Engine", BrokerCategory.VesselSystem, "engine");
-		public static ResourceBroker PassiveShield = GetOrCreate("PassiveShield", BrokerCategory.VesselSystem, "passive shield");
+		public static ResourceBroker Wheel = GetOrCreate("Wheel", BrokerCategory.VesselSystem, "Wheel");
+		public static ResourceBroker Engine = GetOrCreate("Engine", BrokerCategory.VesselSystem, "Engine");
+		public static ResourceBroker PassiveShield = GetOrCreate("PassiveShield", BrokerCategory.VesselSystem, "Passive shield");
 		public static ResourceBroker CoilArray = GetOrCreate("CoilArray", BrokerCategory.VesselSystem, "Active radiation shield");
 
 		public string Id { get; private set; }

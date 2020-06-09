@@ -84,8 +84,8 @@ namespace KERBALISM
 		// return true if the vessel specified is in sunlight
 		public static bool InSunlight(Vessel v)
 		{
-			if (v.TryGetVesselData(out VesselData vd))
-				return vd.EnvInFullShadow;
+			if (v.TryGetVesselDataTemp(out VesselData vd))
+				return vd.InFullShadow;
 
 			return false;
 		}
@@ -93,7 +93,7 @@ namespace KERBALISM
 		// return true if the vessel specified is inside a breathable atmosphere
 		public static bool Breathable(Vessel v)
 		{
-			if (v.TryGetVesselData(out VesselData vd))
+			if (v.TryGetVesselDataTemp(out VesselData vd))
 				return vd.EnvInBreathableAtmosphere;
 
 			return false;
@@ -112,7 +112,7 @@ namespace KERBALISM
 		/// <summary>return amount of environment radiation at the position of the specified vessel</summary>
 		public static double Radiation(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.EnvRadiation;
@@ -121,7 +121,7 @@ namespace KERBALISM
 		/// <summary>return amount of environment effective in the habitats of the given vessel</summary>
 		public static double HabitatRadiation(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.radiationRate;
@@ -130,7 +130,7 @@ namespace KERBALISM
 		/// <summary>return true if the vessel is inside the magnetopause of some body (except the sun)</summary>
 		public static bool Magnetosphere(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.EnvMagnetosphere;
@@ -139,7 +139,7 @@ namespace KERBALISM
 		/// <summary>return true if the vessel is inside the radiation belt of some body</summary>
 		public static bool InnerBelt(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.EnvInnerBelt;
@@ -148,7 +148,7 @@ namespace KERBALISM
 		/// <summary>return true if the vessel is inside the radiation belt of some body</summary>
 		public static bool OuterBelt(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.EnvOuterBelt;
@@ -273,7 +273,7 @@ namespace KERBALISM
 		// return true if a solar storm is incoming at the vessel position
 		public static bool StormIncoming(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.IsSimulated && Storm.Incoming(v);
@@ -282,7 +282,7 @@ namespace KERBALISM
 		// return true if a solar storm is in progress at the vessel position
 		public static bool StormInProgress(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.IsSimulated && vd.EnvStorm;
@@ -291,7 +291,7 @@ namespace KERBALISM
 		// return true if the vessel is subject to a signal blackout
 		public static bool Blackout(Vessel v)
 		{
-			if (!Features.Radiation || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Radiation || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.EnvBlackout;
@@ -302,9 +302,12 @@ namespace KERBALISM
 		/// the probability that the player will get a warning for an incoming CME
 		/// </summary>
 		/// <returns>The observation quality.</returns>
-		public static float StormObservationQuality()
+		public static float StormObservationQuality(CelestialBody sun)
 		{
-			return Storm.sun_observation_quality;
+			if(!Sim.IsStar(sun))
+				return 0;
+
+			return Storm.SunObservationQuality(sun);
 		}
 
 		/// <summary>
@@ -312,9 +315,12 @@ namespace KERBALISM
 		/// the probability that the player will get a warning for an incoming CME
 		/// </summary>
 		/// <param name="quality">Quality.</param>
-		public static void SetStormObservationQuality(float quality)
+		public static void SetStormObservationQuality(CelestialBody sun, float quality)
 		{
-			Storm.sun_observation_quality = Lib.Clamp(quality, 0.0f, 1.0f);
+			if (!Sim.IsStar(sun))
+				return;
+
+			Storm.SetSunObservationQuality(sun, Lib.Clamp(quality, 0.0f, 1.0f));
 		}
 
 		#endregion
@@ -324,7 +330,7 @@ namespace KERBALISM
 		// return true if at least a component has malfunctioned, or had a critical failure
 		public static bool Malfunction(Vessel v)
 		{
-			if (!Features.Failures || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Failures || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.Malfunction;
@@ -333,7 +339,7 @@ namespace KERBALISM
 		// return true if at least a componet had a critical failure
 		public static bool Critical(Vessel v)
 		{
-			if (!Features.Failures || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.Failures || !v.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			return vd.Critical;
@@ -395,7 +401,7 @@ namespace KERBALISM
 		// return volume of internal habitat in m^3
 		public static double Volume(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.livingVolume;
@@ -404,7 +410,7 @@ namespace KERBALISM
 		// return surface of internal habitat in m^2
 		public static double Surface(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.shieldingSurface;
@@ -413,16 +419,16 @@ namespace KERBALISM
 		// return normalized pressure of internal habitat
 		public static double Pressure(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
-			return vd.Habitat.pressureAtm;
+			return vd.Habitat.pressure;
 		}
 
 		// return level of co2 of internal habitat
 		public static double Poisoning(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.poisoningLevel;
@@ -431,7 +437,7 @@ namespace KERBALISM
 		// return proportion of radiation blocked by shielding
 		public static double Shielding(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.shieldingModifier;
@@ -440,7 +446,7 @@ namespace KERBALISM
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.livingSpaceFactor;
@@ -449,7 +455,7 @@ namespace KERBALISM
 		// return comfort factor
 		public static double Comfort(Vessel v)
 		{
-			if (!Features.LifeSupport || !v.TryGetVesselData(out VesselData vd))
+			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
 				return 0.0;
 
 			return vd.Habitat.comfortFactor;
@@ -458,6 +464,17 @@ namespace KERBALISM
 		#endregion
 
 		#region RESOURCE SIM
+
+		/// <summary> Test if a vessel has electricity or not. This is faster than ResourceAmount(v, "ElectricCharge") and should be preferred.</summary>
+		/// <param name="v">the vessel to test for power</param>
+		/// <returns>true if there is electricity</returns>
+		public static bool IsPowered(Vessel v)
+		{
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
+				return false;
+
+			return vd.Powered;
+		}
 
 		/// <summary> Consume a resource through the kerbalism resource simulation, available for loaded and unloaded vessels </summary>
 		/// <param name="v">the vessel to consume the resource on</param>
@@ -468,7 +485,7 @@ namespace KERBALISM
 		/// <param name="title">origin of the resource consumer (shown in the UI)</param>
 		public static void ConsumeResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return;
 
 			vd.ResHandler.Consume(resource_name, quantity, ResourceBroker.GetOrCreate(title));
@@ -483,7 +500,7 @@ namespace KERBALISM
 		/// <param name="title">origin of the resource producer (shown in the UI)</param>
 		public static void ProduceResource(Vessel v, string resource_name, double quantity, string title)
 		{
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return;
 
 			vd.ResHandler.Produce(resource_name, quantity, ResourceBroker.GetOrCreate(title));
@@ -504,7 +521,7 @@ namespace KERBALISM
 		/// <param name="title">origin of the recipe (shown in the UI)</param>
 		public static void AddResourceRecipe(Vessel v, string[] resources, double[] rates, bool[] dump, string title)
 		{
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return;
 
 			Recipe recipe = new Recipe(ResourceBroker.GetOrCreate(title));
@@ -522,7 +539,7 @@ namespace KERBALISM
 
 		public static double ResourceAmount(Vessel v, string resource_name)
 		{
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return 0.0;
 
 			return vd.ResHandler.GetResource(resource_name).Amount;
@@ -530,7 +547,7 @@ namespace KERBALISM
 
 		public static double ResourceCapacity(Vessel v, string resource_name)
 		{
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return 0.0;
 
 			return vd.ResHandler.GetResource(resource_name).Capacity;
@@ -538,7 +555,7 @@ namespace KERBALISM
 
 		public static double ResourceAvailability(Vessel v, string resource_name)
 		{
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return 0.0;
 
 			return vd.ResHandler.GetResource(resource_name).AvailabilityFactor;
@@ -559,7 +576,7 @@ namespace KERBALISM
 		{
 			apiBrokers.Clear();
 
-			if (!v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return apiBrokers;
 
 			List<ResourceBrokerRate> brokers = vd.ResHandler.GetResource(resource_name).ResourceBrokers;
@@ -666,7 +683,7 @@ namespace KERBALISM
 			if (!Features.Science)
 				return false;
 
-			if (!vessel.TryGetVesselData(out VesselData vd))
+			if (!vessel.TryGetVesselDataTemp(out VesselData vd))
 				return false;
 
 			foreach (ExperimentData expData in vd.Parts.AllModulesOfType<ExperimentData>())
@@ -686,7 +703,7 @@ namespace KERBALISM
 
 		public static double VesselConnectionRate(Vessel v)
 		{
-			if (!Features.Science || !v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!Features.Science || !v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return 0.0;
 
 			return vd.Connection.rate;
@@ -694,7 +711,7 @@ namespace KERBALISM
 
 		public static bool VesselConnectionLinked(Vessel v)
 		{
-			if (!Features.Science || !v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!Features.Science || !v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return false;
 
 			return vd.Connection.linked;
@@ -702,7 +719,7 @@ namespace KERBALISM
 
 		public static int VesselConnectionTransmitting(Vessel v)
 		{
-			if (!Features.Science || !v.TryGetVesselData(out VesselData vd) || !vd.IsSimulated)
+			if (!Features.Science || !v.TryGetVesselDataTemp(out VesselData vd) || !vd.IsSimulated)
 				return 0;
 
 			return vd.filesTransmitted.Count;

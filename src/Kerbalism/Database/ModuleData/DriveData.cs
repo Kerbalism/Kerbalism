@@ -561,7 +561,7 @@ namespace KERBALISM
 		/// <summary> delete all files/samples in the vessel drives</summary>
 		public static void DeleteDrivesData(Vessel vessel)
 		{
-			if (vessel.TryGetVesselData(out VesselData vd))
+			if (vessel.TryGetVesselDataTemp(out VesselData vd))
 			{
 				foreach (DriveData driveData in vd.Parts.AllModulesOfType<DriveData>())
 				{
@@ -584,7 +584,7 @@ namespace KERBALISM
 
 		public static IEnumerable<DriveData> GetDrives(Vessel v, bool includePrivate = false)
 		{
-			if (v.TryGetVesselData(out VesselData vd))
+			if (v.TryGetVesselDataTemp(out VesselData vd))
 			{
 				return GetDrives(vd, includePrivate);
 			}
@@ -594,7 +594,7 @@ namespace KERBALISM
 
 		public static IEnumerable<DriveData> GetDrives(ProtoVessel pv, bool includePrivate = false)
 		{
-			if (pv.TryGetVesselData(out VesselData vd))
+			if (pv.TryGetVesselDataNoError(out VesselData vd))
 			{
 				return GetDrives(vd, includePrivate);
 			}

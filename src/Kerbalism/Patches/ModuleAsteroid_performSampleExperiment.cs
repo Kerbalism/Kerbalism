@@ -63,7 +63,7 @@ namespace KERBALISM
 			// put the data on the EVA kerbal drive.
 			if (FlightGlobals.ActiveVessel == null) return false;
 			double size = ___experiment.baseValue * ___experiment.dataScale;
-			FlightGlobals.ActiveVessel.TryGetVesselData(out VesselData vd);
+			FlightGlobals.ActiveVessel.TryGetVesselDataTemp(out VesselData vd);
 			DriveData drive = DriveData.SampleDrive(vd, size);
 			if (drive != null)
 			{

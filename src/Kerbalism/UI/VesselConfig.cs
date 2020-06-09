@@ -17,7 +17,7 @@ namespace KERBALISM
 			if (v == null) return;
 
 			// get vessel data
-			v.TryGetVesselData(out VesselData vd);
+			v.TryGetVesselDataTemp(out VesselData vd);
 
 			// if not a valid vessel, leave the panel empty
 			if (!vd.IsSimulated) return;
@@ -32,6 +32,9 @@ namespace KERBALISM
 			p.AddCheckbox(vd.cfg_show, Local.VESSELCONFIG_ShowVessel, Local.VESSELCONFIG_ShowVessel_desc, click: () => p.Toggle(ref vd.cfg_show));
 			if (Features.Failures)
 				p.AddCheckbox(vd.cfg_highlights, Local.VESSELCONFIG_Highlightfailed, Local.VESSELCONFIG_Highlightfailed_desc, click: () => p.Toggle(ref vd.cfg_highlights));
+
+			if (Settings.EnableOrbitLineTweaks)
+				p.AddCheckbox(vd.cfg_orbit, Local.VESSELCONFIG_ShowOrbit, Local.VESSELCONFIG_ShowOrbit_desc, click: () => vd.SetOrbitVisible(!vd.cfg_orbit));
 
 			// toggle messages
 			p.AddSection(Local.VESSELCONFIG_MESSAGES);//"MESSAGES"

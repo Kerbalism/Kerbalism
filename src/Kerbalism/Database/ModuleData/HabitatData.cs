@@ -100,7 +100,7 @@ namespace KERBALISM
 		public double shieldingAmount = 0.0;
 
 		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
-		public double animTimer = 0.0;
+		public float animTimer = 0f;
 
 		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
 
@@ -116,6 +116,26 @@ namespace KERBALISM
 			{
 				switch (animState)
 				{
+					case AnimState.Deployed:
+					case AnimState.Accelerating:
+					case AnimState.Decelerating:
+					case AnimState.Rotating:
+					case AnimState.RotatingNotEnoughEC:
+					case AnimState.Stuck:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
+		public bool IsDeployingRequested
+		{
+			get
+			{
+				switch (animState)
+				{
+					case AnimState.Deploying:
 					case AnimState.Deployed:
 					case AnimState.Accelerating:
 					case AnimState.Decelerating:
@@ -171,7 +191,7 @@ namespace KERBALISM
 		/// Is the habitat pressurized above the pressure threshold
 		/// Note that when false, it doesn't mean kerbals need to be in their suits if they are in breathable atmosphere.
 		/// </summary>
-		public bool IsPressurized
+		public bool IsPressurizedAboveThreshold
 		{
 			get
 			{
@@ -185,6 +205,22 @@ namespace KERBALISM
 				}
 			}
 		}
+
+		public bool IsPressurizationRequested
+		{
+			get
+			{
+				switch (pressureState)
+				{
+					case PressureState.Pressurized:
+					case PressureState.Pressurizing:
+						return true;
+					default:
+						return false;
+				}
+			}
+		}
+
 
 		/// <summary>
 		/// Are suits required. Note that this doesn't mean the habitat is depressurized.
@@ -207,7 +243,7 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Are suits required. Note that this doesn't mean the habitat is depressurized.
+		/// Is the habitat at zero pressure ?
 		/// </summary>
 		public bool IsFullyDepressurized
 		{
@@ -216,7 +252,6 @@ namespace KERBALISM
 				switch (pressureState)
 				{
 					case PressureState.AlwaysDepressurized:
-					case PressureState.Breatheable:
 					case PressureState.Depressurized:
 						return true;
 					default:
@@ -299,6 +334,7 @@ namespace KERBALISM
 			atmoAmount = Lib.ConfigValue(node, "atmoAmount", atmoAmount);
 			wasteLevel = Lib.ConfigValue(node, "wasteLevel", wasteLevel);
 			shieldingAmount = Lib.ConfigValue(node, "shieldingAmount", shieldingAmount);
+			animTimer = Lib.ConfigValue(node, "animTimer", animTimer);
 
 			sunRadiationOccluders.Clear();
 			foreach (ConfigNode occluderNode in node.GetNodes("OCCLUDER"))
@@ -321,6 +357,7 @@ namespace KERBALISM
 			node.AddValue("atmoAmount", atmoAmount);
 			node.AddValue("wasteLevel", wasteLevel);
 			node.AddValue("shieldingAmount", shieldingAmount);
+			node.AddValue("animTimer", animTimer);
 
 			foreach (SunRadiationOccluder occluder in sunRadiationOccluders)
 			{

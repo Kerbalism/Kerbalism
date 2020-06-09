@@ -171,7 +171,11 @@ namespace KERBALISM
 		{
 			if (IsDefined && anim.IsPlaying(name))
 			{
-				anim[name].speed = playingSpeed * normalizedSpeed;
+				float newSpeed = playingSpeed * normalizedSpeed;
+				// never go to zero speed, to keep the Playing property returning true
+				if (newSpeed == 0f)
+					newSpeed = playingSpeed > 0f ? float.Epsilon : -float.Epsilon; 
+				anim[name].speed = newSpeed;
 			}
 		}
 

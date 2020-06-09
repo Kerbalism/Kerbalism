@@ -8,8 +8,7 @@ namespace KERBALISM
 {
     public static class Storm
     {
-        // TODO multi sun support?
-        public static float sun_observation_quality = 1.0f;
+        public readonly static Dictionary<int, float> sunObservationQuality = new Dictionary<int, float>();
 
         internal static void CreateStorm(StormData bd, CelestialBody body, double distanceToSun)
         {
@@ -20,7 +19,7 @@ namespace KERBALISM
 
             if (bd.storm_generation < now)
             {
-                var sun = Lib.GetParentSun(body);
+                var sun = Sim.GetParentStar(body);
                 var avgDuration = PreferencesRadiation.Instance.AvgStormDuration;
 
                 // retry after 5 * average storm duration + jitter (to avoid recalc spikes)
@@ -44,11 +43,11 @@ namespace KERBALISM
                     bd.storm_generation += bd.storm_duration;
 
                     // add a random error to the estimated storm duration if we don't observe the sun too well
-                    var error = bd.storm_duration * 3 * Lib.RandomDouble() * (1 - sun_observation_quality);
+                    var error = bd.storm_duration * 3 * Lib.RandomDouble() * (1 - SunObservationQuality(sun));
                     bd.displayed_duration = bd.storm_duration + error;
 
                     // show warning message only if you're lucky...
-                    bd.display_warning = Lib.RandomFloat() < sun_observation_quality;
+                    bd.display_warning = Lib.RandomFloat() < SunObservationQuality(sun);
 
 
 #if DEBUG_RADIATION
@@ -127,13 +126,13 @@ namespace KERBALISM
             if (!Features.Radiation) return;
 
             // only consider vessels in interplanetary space
-            if (!Lib.IsSun(v.mainBody)) return;
+            if (!Sim.IsStar(v.mainBody)) return;
 
 			// disregard EVAs
 			if (v.isEVA) return;
 
             var bd = vd.stormData;
-            CreateStorm(bd, v.mainBody, vd.EnvMainSun.Distance);
+            CreateStorm(bd, v.mainBody, vd.MainStar.distance);
 
             if (vd.cfg_storm)
             {
@@ -197,10 +196,11 @@ namespace KERBALISM
             foreach (Vessel v in FlightGlobals.Vessels)
             {
                 // if inside the system
-                if (Lib.GetParentPlanet(v.mainBody) == body)
+                if (Sim.GetParentPlanet(v.mainBody) == body)
                 {
-                    // get info from the cache
-                    v.TryGetVesselData(out VesselData vd);
+					// get info from the cache
+					if (!v.TryGetVesselData(out VesselData vd))
+						continue;
 
                     // skip invalid vessels
                     if (!vd.IsSimulated) continue;
@@ -223,11 +223,11 @@ namespace KERBALISM
             if (!Features.Radiation) return true;
 
             // skip the sun
-            if (Lib.IsSun(body)) return true;
+            if (Sim.IsStar(body)) return true;
 
             // skip moons
             // note: referenceBody is never null here
-            if (!Lib.IsSun(body.referenceBody)) return true;
+            if (!Sim.IsStar(body.referenceBody)) return true;
 
             // do not skip the body
             return false;
@@ -236,18 +236,30 @@ namespace KERBALISM
         /// <summary>return true if a storm is incoming</summary>
         public static bool Incoming(Vessel v)
         {
-			v.TryGetVesselData(out VesselData vd);
-			var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+			v.TryGetVesselDataTemp(out VesselData vd);
+			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 1 && bd.display_warning;
         }
 
         /// <summary>return true if a storm is in progress</summary>
         public static bool InProgress(Vessel v)
         {
-			v.TryGetVesselData(out VesselData vd);
-			var bd = Lib.IsSun(v.mainBody) ? vd.stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
+			v.TryGetVesselDataTemp(out VesselData vd);
+			var bd = Sim.IsStar(v.mainBody) ? vd.stormData : DB.Storm(Sim.GetParentPlanet(v.mainBody).name);
             return bd.storm_state == 2;
         }
-    }
+
+		internal static float SunObservationQuality(CelestialBody sun)
+		{
+            if (!sunObservationQuality.ContainsKey(sun.flightGlobalsIndex))
+                sunObservationQuality[sun.flightGlobalsIndex] = 1;
+            return sunObservationQuality[sun.flightGlobalsIndex];
+		}
+
+		internal static void SetSunObservationQuality(CelestialBody sun, float quality)
+		{
+            sunObservationQuality[sun.flightGlobalsIndex] = quality;
+		}
+	}
 
 } // KERBALISM

@@ -25,8 +25,8 @@ namespace KERBALISM
 		/// <summary> volume (m3) of all pressurized habitats, enabled of not. Habitats using the outside air are ignored </summary>
 		public double pressurizedVolume = 0.0;
 
-		/// <summary> pressure (atm) of all pressurized habitats, enabled of not. Habitats using the outside air are ignored </summary>
-		public double pressureAtm = 0.0;
+		/// <summary> pressure (%) of all pressurized habitats, enabled of not. Habitats using the outside air are ignored </summary>
+		public double pressure = 0.0;
 
 		/// <summary> [0.0 ; 1.0] amount of crew members not living with their helmets (pressurized hab / outside air) vs total crew count</summary>
 		public double pressureFactor = 0.0;
@@ -57,7 +57,7 @@ namespace KERBALISM
 		public void ResetBeforeModulesUpdate(VesselDataBase vd)
 		{
 			livingVolume = volumePerCrew = livingSpaceFactor
-				= pressurizedSurface = pressurizedVolume = pressureAtm
+				= pressurizedSurface = pressurizedVolume = pressure
 				= pressureFactor = poisoningLevel = shieldingSurface
 				= shieldingAmount = shieldingModifier = comfortFactor
 				= radiationRate = 0.0;
@@ -165,7 +165,7 @@ namespace KERBALISM
 			int crewCount = vd.CrewCount;
 			volumePerCrew = crewCount > 0 ? livingVolume / crewCount : 0.0;
 			livingSpaceFactor = Math.Min(volumePerCrew / PreferencesComfort.Instance.livingSpace, 1.0);
-			pressureAtm = pressurizedVolume > 0.0 ? pressurizedPartsAtmoAmount / pressurizedVolume : 0.0;
+			pressure = pressurizedVolume > 0.0 ? pressurizedPartsAtmoAmount / pressurizedVolume : 0.0;
 
 			pressureFactor = crewCount > 0 ? ((double)pressurizedPartsCrewCount / (double)crewCount) : 0.0; // 0.0 when pressurized, 1.0 when depressurized
 

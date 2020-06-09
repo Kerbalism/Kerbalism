@@ -13,7 +13,8 @@ namespace KERBALISM
 		[KSPField] public string processName = string.Empty;
 		[KSPField] public double capacity = 1.0;
 		[KSPField] public string id = string.Empty;       // this is only for identifying the module with B9PS on parts that have multiple process controllers for the same process
-		[KSPField] public string uiGroup = null;          // display name of the UI group
+		[KSPField] public string uiGroupName = null;          // display name of the UI group
+		[KSPField] public string uiGroupDisplayName = null;          // display name of the UI group
 
 		[KSPField]
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
@@ -114,8 +115,8 @@ namespace KERBALISM
 			runningField.guiActive = runningField.guiActiveEditor = moduleData.Process.canToggle;
 			runningField.guiName = moduleData.Process.title;
 
-			if (uiGroup != null)
-				runningField.group = new BasePAWGroup(uiGroup, uiGroup, false);
+			if (uiGroupName != null)
+				runningField.group = new BasePAWGroup(uiGroupName, uiGroupDisplayName ?? uiGroupName, false);
 		}
 
 		public static void Toggle(ProcessControllerData processData, bool isLoaded)
