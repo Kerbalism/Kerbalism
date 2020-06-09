@@ -389,7 +389,10 @@ namespace KERBALISM
 			if (running && rated_operation_duration > 1 && lastRunningCheck > 0)
 			{
 				var duration = now - lastRunningCheck;
-				operation_duration += duration;
+				if (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1)
+				{
+					operation_duration += duration;
+				}
 				vessel.TryGetVesselData(out VesselData vd);
 				vd.ResetReliabilityStatus();
 
