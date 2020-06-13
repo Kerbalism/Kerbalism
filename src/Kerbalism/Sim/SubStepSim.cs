@@ -196,7 +196,7 @@ namespace KERBALISM
 			MiniProfiler.lastFuTicks = fuWatch.ElapsedTicks;
 			fuWatch.Restart();
 
-			Profiler.BeginSample("Kerbalism.SubStepSim.Update");
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SubStepSim.Update");
 
 			subStepsToCompute = (int)(TimeWarp.fetch.warpRates[7] * 0.02 * 1.5 / subStepInterval);
 
@@ -226,7 +226,7 @@ namespace KERBALISM
 				if (__lockWasTaken) System.Threading.Monitor.Exit(__lockObj);
 			}
 
-			Profiler.EndSample();
+			UnityEngine.Profiling.Profiler.EndSample();
 
 		}
 

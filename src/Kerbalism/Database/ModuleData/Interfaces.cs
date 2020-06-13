@@ -33,5 +33,6 @@ namespace KERBALISM
 		// Unless a specific value is defined in configs, it can be guessed from the thermal module mass compared to the part mass.
 		double SurfaceFactor { get; } 
 		ModuleThermalData ThermalData { get; set; }
+		double CoolantVolume { get; }
 	}
 }

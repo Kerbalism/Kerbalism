@@ -116,9 +116,10 @@ namespace KERBALISM
         public Dictionary<string, Supply.SupplyState> supplies; // supplies state data
         public List<uint> scansat_id; // used to remember scansat sensors that were disabled
         public double scienceTransmitted; // how much science points has this vessel earned trough transmission
+		
 
 		// persist that so we don't have to do an expensive check every time
-        public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
+		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 
 		#endregion
 
@@ -659,31 +660,37 @@ namespace KERBALISM
 			//	}
 			//}
 				
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.PartRadiationUpdate");
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.FixedUpdate");
 
+			ThermalData.Reset();
 			for (int i = 0; i < Parts.Count; i++)
 			{
-				foreach (ModuleData module in Parts[i].modules)
-				{
-					module.OnFixedUpdate(elapsedSec);
-				}
-
-				PartRadiationData radiationData = Parts[i].radiationData;
+				PartData pd = Parts[i];
+				PartRadiationData radiationData = pd.radiationData;
 				radiationData.elapsedSecSinceLastUpdate += elapsedSec;
 
 				if (i == partToUpdate)
 				{
 					radiationData.Update();
-
 				}
-
-				if (Parts[i].thermalData != null)
+				
+				if (pd.thermalData != null)
 				{
-					Parts[i].thermalData.Update(elapsedSec);
+					pd.thermalData.Update(elapsedSec);
+					ThermalData.coolantVolume += pd.thermalData.coolantVolume;
+					ThermalData.coolantTemperature += pd.thermalData.coolantVolume * pd.thermalData.coolantTemperature;
 				}
 			}
-
+			ThermalData.coolantTemperature /= ThermalData.coolantVolume;
 			partToUpdate = (partToUpdate + 1) % Parts.Count;
+
+			foreach (PartData pd in Parts)
+			{
+				foreach (ModuleData module in pd.modules)
+				{
+					module.OnFixedUpdate(elapsedSec);
+				}
+			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}

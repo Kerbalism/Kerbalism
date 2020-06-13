@@ -148,6 +148,8 @@ namespace KERBALISM
 		private PartData partData;
 		private double energyPerKelvin;
 		private double storedEnergy = -1.0;
+		public double coolantTemperature;
+		public double coolantVolume;
 
 		public float emissivity = 0.35f;
 
@@ -350,10 +352,15 @@ namespace KERBALISM
 		private void UpdateModules(double elapsedSec)
 		{
 			double internalToSkinTotal = 0.0;
+			coolantVolume = 0.0;
+			coolantTemperature = 0.0;
 			foreach (IThermalModule thermalModule in thermalModules)
 			{
 				internalToSkinTotal += thermalModule.ThermalData.Update(elapsedSec, partData.volumeAndSurface.surface, temperature);
+				coolantVolume += thermalModule.CoolantVolume;
+				coolantTemperature += thermalModule.CoolantVolume * thermalModule.ThermalData.Temperature;
 			}
+			coolantTemperature = coolantVolume > 0.0 ? coolantTemperature / coolantVolume : 0.0;
 		}
 
 		public void Update(double elapsedSec)
