@@ -125,17 +125,18 @@ namespace KERBALISM
 					// to many GeV (the fastest particles can approach the speed of light, as in a
 					// "ground-level event"). This is why they are such a big problem for interplanetary space travel.
 
-					// We just assume a big halfing thickness for that kind of ionized radiation.
-					var halfingThickness = 1.0;
+					// Beer-Lambert law: Remaining radiation = radiation * e^-ux.  Not exact for SEP, but close enough to loosely fit observed curves.
+					// linear attenuation coefficent u.  Asssuming an average CME event energy Al shielding 10 ~= 30 g/cm^2.
+					// Averaged from NASA plots of large CME events vs Al shielding projections.
+					var linearAttenuation = 10; 
 
-					// halfing factor h = part thickness / halfing thickness
-					// remaining radiation = radiation / (2^h)
-					// However, what you loose in particle radiation you gain in gamma radiation (Bremsstrahlung)
+					// However, what you lose in particle radiation you gain in gamma radiation (Bremsstrahlung)
 
-					var bremsstrahlung = remainingRadiation / Math.Pow(2, shieldingInfo.thickness / halfingThickness);
-					remainingRadiation -= bremsstrahlung;
+					var incomingRadiation = remainingRadiation;
+					remainingRadiation *= Math.Exp(shieldingInfo.thickness * linearAttenuation * -1);
+					var bremsstrahlung = incomingRadiation - remainingRadiation;
 
-					result += Radiation.DistanceRadiation(bremsstrahlung, shieldingInfo.distance);
+					result += Radiation.DistanceRadiation(bremsstrahlung, Math.Max(1,shieldingInfo.distance)) / 10; //Gamma radiation has 1/10 the quality factor of SEP
 				}
 
 				result += remainingRadiation;
