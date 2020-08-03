@@ -70,8 +70,10 @@ namespace KERBALISM
 		/// Copied from the target solar panel module if supported and present.
 		/// If defined in the SolarPanelFixer config, the target module curve will be overriden.
 		/// </summary>
-		[KSPField]
+		[KSPField(isPersistant = true)]
 		public FloatCurve timeEfficCurve;
+		private static FloatCurve teCurve = null;
+		private bool prefabDefinesTimeEfficCurve = false;
 
 		/// <summary>UT of part creation in flight, used to evaluate the timeEfficCurve</summary>
 		[KSPField(isPersistant = true)]
@@ -150,8 +152,15 @@ namespace KERBALISM
 				options), false, UISkinManager.GetSkin("MainMenuSkin"));
 		}
 
+		public override void OnAwake()
+		{
+			if (teCurve == null) teCurve = new FloatCurve();
+		}
+
 		public override void OnLoad(ConfigNode node)
 		{
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+				prefabDefinesTimeEfficCurve = node.HasNode("timeEfficCurve");
 			if (SolarPanel == null && !GetSolarPanelModule())
 				return;
 
@@ -191,8 +200,7 @@ namespace KERBALISM
 
 			isInitialized = true;
 
-			// not sure why (I guess because of the KSPField attribute), but timeEfficCurve is instanciated with 0 keys by something instead of being null
-			if (timeEfficCurve == null || timeEfficCurve.Curve.keys.Length == 0)
+			if (!prefabDefinesTimeEfficCurve)
 				timeEfficCurve = SolarPanel.GetTimeCurve();
 
 			if (Lib.IsFlight && launchUT < 0.0)
@@ -487,7 +495,7 @@ namespace KERBALISM
 
 			// get wear factor (time based output degradation)
 			wearFactor = 1.0;
-			if (timeEfficCurve != null && timeEfficCurve.Curve.keys.Length > 1)
+			if (timeEfficCurve?.Curve.keys.Length > 1)
 				wearFactor = Lib.Clamp(timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 
 			// get final output rate in EC/s
@@ -533,10 +541,11 @@ namespace KERBALISM
 			efficiencyFactor *= vd.IrradianceStarTotal / Sim.SolarFluxAtHome;
 
 			// get wear factor (output degradation with time)
-			if (prefab.timeEfficCurve != null && prefab.timeEfficCurve.Curve.keys.Length > 1)
+			if (m.moduleValues.HasNode("timeEfficCurve"))
 			{
+				teCurve.Load(m.moduleValues.GetNode("timeEfficCurve"));
 				double launchUT = Lib.Proto.GetDouble(m, "launchUT");
-				efficiencyFactor *= Lib.Clamp(prefab.timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
+				efficiencyFactor *= Lib.Clamp(teCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 			}
 
 			// get nominal panel charge rate at 1 AU
@@ -854,7 +863,7 @@ namespace KERBALISM
 			public override FloatCurve GetTimeCurve()
 			{
 
-				if (panelModule.timeEfficCurve != null && panelModule.timeEfficCurve.Curve.keys.Length > 1)
+				if (panelModule.timeEfficCurve?.Curve.keys.Length > 1)
 				{
 					FloatCurve timeCurve = new FloatCurve();
 					foreach (Keyframe key in panelModule.timeEfficCurve.Curve.keys)
@@ -1526,20 +1535,14 @@ namespace KERBALISM
 		}
 		#endregion
 
-		#region ROSolar switcheable/resizeable MDSP derivative (ModuleROSolar
-		// Made by PaP for RO. Implement in-editor model switching / resizing on top of the stock module.
-		// Current version (v0.2) doesn't seem to have tracking panels, may need further work to get those working.
+		#region ROSolar switcheable/resizeable MDSP derivative (ModuleROSolar)
+		// Made by Pap for RO. Implement in-editor model switching / resizing on top of the stock module.
+		// TODO: Tracking panels implemented in v1.1 (May 2020).  Need further work here to get those working?
 		// Plugin is here : https://github.com/KSP-RO/ROLibrary/blob/master/Source/ROLib/Modules/ModuleROSolar.cs
 		// Configs are here : https://github.com/KSP-RO/ROSolar
 		// Require the following MM patch to work :
 		/*
-		@PART[*]:HAS[@MODULE[ModuleROSolar]]:AFTER[zzzKerbalism]
-		{
-			MODULE
-			{
-				name = SolarPanelFixer
-			}
-		}
+		@PART:HAS[@MODULE[ModuleROSolar]]:AFTER[zzzKerbalism] { %MODULE[SolarPanelFixer]{} }
 		*/
 		private class ROConfigurablePanel : StockPanel
 		{
