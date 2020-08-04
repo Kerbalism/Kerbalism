@@ -731,7 +731,7 @@ namespace KERBALISM
 
 					float mass = blockingPart.mass + blockingPart.resourceMass;
 
-					// divide part mass by the mass of aluminium (2699 kg/m³), cubic root of that
+					// divide part mass by the mass of aluminium (2699 kg/m?), cubic root of that
 					// gives a very rough approximation of the thickness, assuming it's a cube.
 					// So a 40.000 kg fuel tank would be equivalent to 2.45m aluminium.
 					float thickness = Mathf.Pow(mass / 2.699f, 1f / 3f);
@@ -770,18 +770,18 @@ namespace KERBALISM
 					// to many GeV (the fastest particles can approach the speed of light, as in a
 					// "ground-level event"). This is why they are such a big problem for interplanetary space travel.
 
-					// Note : we assume a big halfing thickness (1.0) for that kind of ionized radiation.
-					// so the following formula : bremsstrahlung = remainingRadiation / Math.Pow(2, occluder.thickness / halfingThickness);
-					// is simplified to : bremsstrahlung = remainingRadiation / Math.Pow(2, occluder.thickness);
+					// Beer-Lambert law: Remaining radiation = radiation * e^-ux.  Not exact for SEP, but close enough to loosely fit observed curves.
+					// linear attenuation coefficent u.  Asssuming an average CME event energy Al shielding 10 ~= 30 g/cm^2.
+					// Averaged from NASA plots of large CME events vs Al shielding projections.
+					var linearAttenuation = 10;
 
-					// halfing factor h = part thickness / halfing thickness
-					// remaining radiation = radiation / (2^h)
-					// However, what you loose in particle radiation you gain in gamma radiation (Bremsstrahlung)
+					// However, what you lose in particle radiation you gain in gamma radiation (Bremsstrahlung)
 
-					double bremsstrahlung = remainingRadiation / Math.Pow(2, occluder.thickness);
-					remainingRadiation -= bremsstrahlung;
+					var incomingRadiation = remainingRadiation;
+					remainingRadiation *= Math.Exp(occluder.thickness * linearAttenuation * -1);
+					var bremsstrahlung = incomingRadiation - remainingRadiation;
 
-					result += Radiation.DistanceRadiation(bremsstrahlung, occluder.distance);
+					result += Radiation.DistanceRadiation(bremsstrahlung, Math.Max(1, occluder.distance)) / 10; //Gamma radiation has 1/10 the quality factor of SEP
 				}
 
 				result += remainingRadiation;
@@ -799,7 +799,7 @@ namespace KERBALISM
 		/// </summary>
 		// The default magic numbers are :
 		// - shieldingEfficiency (default 0.9) is for 20 mm of shielding material
-		// - 1 unit of shielding resource = 1m² of 20 mm thick shielding material
+		// - 1 unit of shielding resource = 1m? of 20 mm thick shielding material
 		public static double ShieldingEfficiency(double shieldingFactor)
 		{
 			return 1.0 - Math.Pow(1.0 - PreferencesRadiation.Instance.shieldingEfficiency, Math.Max(shieldingFactor, 0.0));
