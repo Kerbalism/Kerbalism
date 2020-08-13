@@ -1,3 +1,17 @@
+## v3.10 for all versions of KSP from 1.5.0 to 1.10.x
+
+ - 2020-08-13
+
+### Changes since the last release
+
+* Updated for KSP 1.10 (and removed the necessity to rename shader folders for coming versions)
+* Added science config for the new stock magnetometer experiment (also making DMOS use that)
+* Don't count engine running time during time warp #646
+* Solar storm fixes and additions #648
+* Fix Execution error for null value in Contract #649
+* Make SolarPanelFixer timeEfficCurve Persistent (RO Solar support) #651
+* Fixed duplicate panorama comfort module in some SSPX parts #644
+
 ## v3.9 for all versions of KSP from 1.5.0 to 1.9.x
 
  - 2020-05-15
@@ -40,7 +54,7 @@
 
 ### Changes since the last release
 
-* New radial container parts (Arkolis), soft-deprecation of the old pressurized tanks and the TAC hex cans 
+* New radial container parts (Arkolis), soft-deprecation of the old pressurized tanks and the TAC hex cans
 * Ability to show/hide individual vessels in vessel list (SirMortimer)
 * Mesh/model based habitat volume/surface evaluation : improve accuracy for non explicitely supported parts (Got)
 * Adjusted existing habitat volume/surface configurations (stock, SSPX...) (Got)
@@ -84,7 +98,7 @@
 * Fixed a savegame loading crash
 * Better handling of fatal errors: show a message to the user instead of hard crashing without a hint
 * Some UI tweaks (compacted module infos, more tooltips in automation, habitat volume in part info and others)
-* Tinygrox took on the herculanean task of localizing all of Kerbalism, which means that now a lot of strings can be localized that previously were not. Chinese localization included. 
+* Tinygrox took on the herculanean task of localizing all of Kerbalism, which means that now a lot of strings can be localized that previously were not. Chinese localization included.
 * Harvester automation fixed by asazernik
 * Updated support for: Beyond Home (radiation models), BDB (science configuration), RealAntennas, ROSolar, stock antenna configurations, Near Future Exploration (reflectors), US2 (rtg), SSPX (rotating gravity ring counterweights), ReStockPlus (the new nuclear engine now emits radiation)
 * [API updates](https://github.com/Kerbalism/Kerbalism/wiki/TechGuide-~-C%23-API) and extensions (in preparation for RPR compatibility, and part modules that need to produce/consume vessel resources)
