@@ -358,7 +358,13 @@ namespace KERBALISM
 			if (!PreferencesReliability.Instance.engineFailures) return;
 
 			// don't count engine running time during time warp (see https://github.com/Kerbalism/Kerbalism/pull/646)
-			if (TimeWarp.WarpMode == TimeWarp.Modes.HIGH && TimeWarp.CurrentRate > 1) return;
+			if (TimeWarp.WarpMode == TimeWarp.Modes.HIGH && TimeWarp.CurrentRate > 1)
+			{
+				// forget that the engine was running when we're warping. otherwise we might consume engine time
+				// during warp when it actually didn't run because of KSP physics
+				lastRunningCheck = 0;
+				return;
+			}
 
 			if (broken || enforce_breakdown || turnon_failure_probability <= 0 && rated_operation_duration <= 0) return;
 			double now = Planetarium.GetUniversalTime();
