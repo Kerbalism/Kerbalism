@@ -100,26 +100,26 @@ namespace KERBALISM
 		// PAW UI
 		// Note : don't change the 4 UI_Toggle bool from code, they are UI only "read-only" 
 		// To change the state from code, use the static Toggle() methods
-		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat", guiActiveUnfocused = true)]//Habitat
 		public string mainPAWInfo;
 
-		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat", guiActiveUnfocused = true)]//Habitat
 		public string secPAWInfo;
 
 		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		[UI_Toggle(scene = UI_Scene.All, requireFullControl = false, affectSymCounterparts = UI_Scene.None)]
 		public bool habitatEnabled;
 
-		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat", guiActiveUnfocused = true)]//Habitat
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool pressureEnabled;
 
-		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat", guiActiveUnfocused = true)]//Habitat
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool deployEnabled;
 
 
-		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPField(groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat", guiActiveUnfocused = true)]//Habitat
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
 		public bool rotationEnabled;
 

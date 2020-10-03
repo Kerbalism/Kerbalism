@@ -38,7 +38,7 @@ The values defined here will be propagated to :
       <KSPMinMinor>8</KSPMinMinor>
       <KSPMinBuild>0</KSPMinBuild>
       <KSPMaxMajor>1</KSPMaxMajor>
-      <KSPMaxMinor>9</KSPMaxMinor>
+      <KSPMaxMinor>10</KSPMaxMinor>
       <KSPMaxBuild>9</KSPMaxBuild>
       <KSPBuildVersion>1.8.0</KSPBuildVersion>
       <KSPNETFramework>v4.6</KSPNETFramework>
