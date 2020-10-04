@@ -366,7 +366,7 @@ namespace KERBALISM
 					Supply.SendMessages(vd);
 
 					// call automation scripts
-					vd.computer.Automate(v, vd, resources);
+					vd.computer.Automate(v, vd);
 
 					// remove from unloaded data container
 					unloaded.Remove(vd.VesselId);
@@ -443,7 +443,7 @@ namespace KERBALISM
 				Supply.SendMessages(last_vd);
 
 				// call automation scripts
-				last_vd.computer.Automate(last_v, last_vd, resources);
+				last_vd.computer.Automate(last_v, last_vd);
 
 				// remove from unloaded data container
 				unloaded.Remove(last_vd.VesselId);

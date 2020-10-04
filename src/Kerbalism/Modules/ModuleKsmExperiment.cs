@@ -11,7 +11,8 @@ using KERBALISM.Planner;
 
 namespace KERBALISM
 {
-	public class ModuleKsmExperiment : KsmPartModule<ModuleKsmExperiment, ExperimentData>, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, IBackgroundModule, ISwitchable
+	public class ModuleKsmExperiment : KsmPartModule<ModuleKsmExperiment, ExperimentData>, IModuleInfo, IPartMassModifier, IMultipleDragCube, IPlannerModule, IBackgroundModule, IB9Switchable
+		//, IAutomationModule<ExperimentData>
 	{
 		#region FIELDS
 
@@ -704,6 +705,11 @@ namespace KERBALISM
 			}
 
 			return hasOtherRunning;
+		}
+
+		public override AutomationAdapter CreateAutomationAdapter(KsmPartModule module, ModuleData moduleData)
+		{
+			return new ExperimentAutomationAdapter(module, moduleData);
 		}
 
 		#endregion

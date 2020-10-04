@@ -487,12 +487,7 @@ namespace KERBALISM
 
 			debugInfo = (moduleData.isEnabled ? "Enabled - " : "Disabled - ") + moduleData.pressureState.ToString() + " - " + moduleData.animState.ToString();
 
-			double habPressure = atmoRes.Amount / atmoRes.Capacity;
-
-			mainPAWInfo = Lib.BuildString(
-				Lib.Color(habPressure > Settings.PressureThreshold, habPressure.ToString("P2"), Lib.Kolor.Green, Lib.Kolor.Orange),
-				volume.ToString(" (0.0 m3)"),
-				" Crew:", " ", moduleData.crewCount.ToString(), "/", part.CrewCapacity.ToString());
+			mainPAWInfo = MainInfoString(this, moduleData);
 
 			if (secInfoField.guiActive)
 			{
@@ -556,29 +551,7 @@ namespace KERBALISM
 			{
 				pressureEnabled = moduleData.IsPressurizationRequested;
 
-				string state = string.Empty;
-				switch (moduleData.pressureState)
-				{
-					case PressureState.Pressurized:
-						state = Lib.Color("pressurized", Lib.Kolor.Green);
-						break;
-					case PressureState.Depressurized:
-						state = Lib.Color("depressurized", Lib.Kolor.Yellow);
-						break;
-					case PressureState.Breatheable:
-						state = Lib.Color("external", Lib.Kolor.Green);
-						break;
-					case PressureState.Pressurizing:
-						state = Lib.Color("pressurizing", Lib.Kolor.Yellow);
-						break;
-					case PressureState.DepressurizingAboveThreshold:
-						state = Lib.Color("depressurizing", Lib.Kolor.Green);
-						break;
-					case PressureState.DepressurizingBelowThreshold:
-						state = Lib.Color("depressurizing", Lib.Kolor.Yellow);
-						break;
-				}
-
+				string state = PressureStateString(moduleData);
 				((UIPartActionToggle)pressureField.uiControlEditor?.partActionItem)?.fieldStatus?.SetText(state);
 				((UIPartActionToggle)pressureField.uiControlFlight?.partActionItem)?.fieldStatus?.SetText(state);
 			}
@@ -622,6 +595,39 @@ namespace KERBALISM
 				((UIPartActionToggle)rotateField.uiControlFlight?.partActionItem)?.fieldName?.SetText(label);
 				((UIPartActionToggle)rotateField.uiControlFlight?.partActionItem)?.fieldStatus?.SetText(status);
 			}
+		}
+
+		public static string MainInfoString(ModuleKsmHabitat habitat, HabitatData moduleData)
+		{
+			double habPressure = 0.0;
+			var atmoRes = moduleData.updateHandler?.atmoRes;
+			if(atmoRes != null)
+				habPressure = atmoRes.Amount / atmoRes.Capacity;
+
+			return Lib.BuildString(
+			   Lib.Color(habPressure > Settings.PressureThreshold, habPressure.ToString("P2"), Lib.Kolor.Green, Lib.Kolor.Orange),
+			   habitat.volume.ToString(" (0.0 m3)"),
+			   " Crew:", " ", moduleData.crewCount.ToString(), "/", habitat.part.CrewCapacity.ToString());
+		}
+
+		public static string PressureStateString(HabitatData moduleData)
+		{
+			switch (moduleData.pressureState)
+			{
+				case PressureState.Pressurized:
+					return Lib.Color("pressurized", Lib.Kolor.Green);
+				case PressureState.Depressurized:
+					return Lib.Color("depressurized", Lib.Kolor.Yellow);
+				case PressureState.Breatheable:
+					return Lib.Color("external", Lib.Kolor.Green);
+				case PressureState.Pressurizing:
+					return Lib.Color("pressurizing", Lib.Kolor.Yellow);
+				case PressureState.DepressurizingAboveThreshold:
+					return Lib.Color("depressurizing", Lib.Kolor.Green);
+				case PressureState.DepressurizingBelowThreshold:
+					return Lib.Color("depressurizing", Lib.Kolor.Yellow);
+			}
+			return string.Empty;
 		}
 
 		private void FixedUpdate()
@@ -681,12 +687,12 @@ namespace KERBALISM
 			private HabitatData data;
 			private ModuleKsmHabitat module;
 
-			private PartResourceWrapper atmoRes;
-			private PartResourceWrapper wasteRes;
+			public readonly PartResourceWrapper atmoRes;
+			public readonly PartResourceWrapper wasteRes;
 			private PartResourceWrapper shieldRes;
 
-			private VesselKSPResource atmoResInfo;
-			private VesselKSPResource wasteResInfo;
+			public readonly VesselKSPResource atmoResInfo;
+			public readonly VesselKSPResource wasteResInfo;
 			private VesselKSPResource breathableResInfo;
 			private VesselKSPResource ecResInfo;
 
@@ -1348,10 +1354,10 @@ namespace KERBALISM
 
 		#region ENABLE / DISABLE PRESSURE & UI
 
-		public void OnTogglePressure(object field) => TryTogglePressure(this, moduleData, true);
+		public void OnTogglePressure(object field) => TryTogglePressure(this, moduleData);
 
-		/// <summary> try to deploy or retract the habitat. isLoaded must be set to true in the editor and for a loaded vessel, false for an unloaded vessel</summary>
-		public static bool TryTogglePressure(ModuleKsmHabitat module, HabitatData data, bool isLoaded)
+		/// <summary> try to deploy or retract the habitat.</summary>
+		public static bool TryTogglePressure(ModuleKsmHabitat module, HabitatData data)
 		{
 			if (!module.canPressurize || !data.IsDeployed)
 			{
@@ -1373,6 +1379,14 @@ namespace KERBALISM
 			}
 
 			return true;
+		}
+
+		public override AutomationAdapter CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
+		{
+			var habitat = moduleOrPrefab as ModuleKsmHabitat;
+			if(habitat.canPressurize)
+				return new HabitatAutomationAdapter(moduleOrPrefab, moduleData);
+			return null;
 		}
 
 		#endregion

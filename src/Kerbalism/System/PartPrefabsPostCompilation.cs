@@ -62,7 +62,7 @@ namespace KERBALISM
 										subtype.SetSubTypeDescriptionDetail(details);
 									}
 								}
-								else if (moduleModifier.ModuleActive && moduleModifier.PartModule is ISwitchable switchedModule)
+								else if (moduleModifier.ModuleActive && moduleModifier.PartModule is IB9Switchable switchedModule)
 								{
 									string description = switchedModule.GetSubtypeDescription(moduleModifier.DataNode);
 									if (!string.IsNullOrEmpty(description))

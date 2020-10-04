@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KERBALISM
 {
@@ -23,6 +19,15 @@ namespace KERBALISM
 		public abstract ModuleData ModuleData { get; set; }
 
 		public abstract Type ModuleDataType { get; }
+
+		/// <summary>
+		/// Override this method to add automation support for this part module
+		/// </summary>
+		/// <returns>IAutomationDevice with device module specific implementations for automation support</returns>
+		public virtual AutomationAdapter CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
+		{
+			return null;
+		}
 	}
 
 	public abstract class KsmPartModule<TModule, TData> : KsmPartModule
@@ -42,7 +47,6 @@ namespace KERBALISM
 			{
 				moduleData.loadedModule = null;
 			}
-
 		}
 	}
 }

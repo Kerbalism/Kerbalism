@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace KERBALISM
 {
-	public interface ISwitchable
+	public interface IB9Switchable
 	{
 		void OnSwitchActivate();
 
@@ -105,7 +105,7 @@ namespace KERBALISM
 
 		public static void ActivatePostfix(PartModule ___module)
 		{
-			if (___module is ISwitchable switchableModule)
+			if (___module is IB9Switchable switchableModule)
 			{
 				Lib.Log($"B9PS : activating {___module.GetType().Name}, id={___module.GetInstanceID()}");
 				switchableModule.OnSwitchActivate();
@@ -114,7 +114,7 @@ namespace KERBALISM
 
 		public static void DeactivatePostfix(PartModule ___module)
 		{
-			if (___module is ISwitchable switchableModule)
+			if (___module is IB9Switchable switchableModule)
 			{
 				Lib.Log($"B9PS : deactivating {___module.GetType().Name}, id={___module.GetInstanceID()}");
 				switchableModule.OnSwitchDeactivate();

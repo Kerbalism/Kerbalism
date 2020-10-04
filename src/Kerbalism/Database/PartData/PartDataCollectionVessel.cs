@@ -334,6 +334,24 @@ namespace KERBALISM
 			return false;
 		}
 
+		public static bool TryGetModuleDataOfType(this ProtoPartSnapshot part, Type type, out ModuleData moduleData)
+		{
+			if (PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))
+			{
+				for (int i = 0; i < partData.modules.Count; i++)
+				{
+					if(type == partData.modules[i].GetType())
+					{
+						moduleData = partData.modules[i];
+						return true;
+					}
+				}
+			}
+
+			moduleData = null;
+			return false;
+		}
+
 		public static IEnumerable<T> GetFlightModuleDatasOfType<T>(this Part part) where T : ModuleData
 		{
 			if (!PartDataCollectionVessel.allFlightPartDatas.TryGetValue(part.flightID, out PartData partData))

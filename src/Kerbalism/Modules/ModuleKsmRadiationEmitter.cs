@@ -75,9 +75,9 @@ namespace KERBALISM
 		public void Toggle()
 		{
 			// switch status
+			if (!canToggle) return;
 			moduleData.running = !moduleData.running;
 		}
-
 
 		// action groups
 		[KSPAction("#KERBALISM_Emitter_Action")]
@@ -104,6 +104,36 @@ namespace KERBALISM
 				sb.AppendInfo(Local.Planner_consumed, Lib.HumanReadableRate(-ecRate, "F3", "EC", true));
 
 			return sb.ToString();
+		}
+
+		// Automation support
+
+		public override AutomationAdapter CreateAutomationAdapter(KsmPartModule module, ModuleData moduleData)
+		{
+			if (!canToggle)
+				return null;
+			return new RadiationEmitterAutomationAdapter(module, ModuleData);
+		}
+
+		private class RadiationEmitterAutomationAdapter : AutomationAdapter
+		{
+			public RadiationEmitterAutomationAdapter(KsmPartModule module, ModuleData moduleData) : base(module, moduleData) { }
+
+			override public void Ctrl(bool value)
+			{
+				if ((moduleData as RadiationEmitterData).running != value) (moduleData as RadiationEmitterData).running = value;
+			}
+
+			override public void Toggle()
+			{
+				(moduleData as RadiationEmitterData).running = !(moduleData as RadiationEmitterData).running;
+			}
+
+			override public string Status => Lib.Color((moduleData as RadiationEmitterData).running, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
+
+			override public bool IsVisible => true;
+
+			public override string Name => "radiationEmitter";
 		}
 	}
 }

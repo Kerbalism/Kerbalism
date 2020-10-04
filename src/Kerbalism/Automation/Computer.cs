@@ -78,19 +78,8 @@ namespace KERBALISM
 		}
 
 		// call scripts automatically when conditions are met
-		public void Automate(Vessel v, VesselData vd, VesselResHandler resources)
+		public void Automate(Vessel v, VesselData vd)
 		{
-			// get current states
-			VesselResource ec = resources.GetResource("ElectricCharge");
-			bool sunlight = !vd.InFullShadow;
-			bool power_low = ec.Level < 0.2;
-			bool power_high = ec.Level > 0.8;
-			bool radiation_low = vd.EnvRadiation < 0.000005552; //< 0.02 rad/h
-			bool radiation_high = vd.EnvRadiation > 0.00001388; //< 0.05 rad/h
-			bool signal = vd.Connection.linked;
-			bool drive_full = vd.DrivesFreeSpace < double.MaxValue && (vd.DrivesFreeSpace / vd.DrivesCapacity < 0.15);
-			bool drive_empty = vd.DrivesFreeSpace >= double.MaxValue || (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9);
-
 			// get current situation
 			bool landed = false;
 			bool atmo = false;
@@ -173,37 +162,51 @@ namespace KERBALISM
 			moduleDevices = new List<Device>();
 
 			// store device being added
-			Device device;
+			Device device = null;
 
 			// loaded vessel
 			if (v.loaded)
 			{
 				foreach (PartModule m in Lib.FindModules<PartModule>(v))
 				{
-					switch (m.moduleName)
+					device = null;
+
+					var ksmModule = m as KsmPartModule;
+					if(ksmModule != null)
 					{
-						case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
-						//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
-						case "Emitter": device = new EmitterDevice(m as ModuleKsmRadiationEmitter); break;
-						case "Harvester": device = new HarvesterDevice(m as Harvester); break;
-						case "Laboratory": device = new LaboratoryDevice(m as Laboratory); break;
-						case "ModuleKsmExperiment": device = new ExperimentDevice(m as ModuleKsmExperiment); break;
-						case "SolarPanelFixer": device = new PanelDevice(m as SolarPanelFixer); break;
-						case "ModuleGenerator": device = new GeneratorDevice(m as ModuleGenerator); break;
-						case "ModuleResourceConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
-						case "ModuleKPBSConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
-						case "FissionReactor": device = new ConverterDevice(m as ModuleResourceConverter); break;
-						case "ModuleResourceHarvester": device = new DrillDevice(m as ModuleResourceHarvester); break;
-						case "ModuleLight": device = new LightDevice(m as ModuleLight); break;
-						case "ModuleColoredLensLight": device = new LightDevice(m as ModuleLight); break;
-						case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight); break;
-						case "SCANsat": device = new ScannerDevice(m); break;
-						case "ModuleSCANresourceScanner": device = new ScannerDevice(m); break;
-						case "ModuleDataTransmitter":
-						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter); break;
-						case "ModuleRTAntenna":
-						case "ModuleRTAntennaPassive": device = new AntennaRTDevice(m); break;
-						default: continue;
+						var automationAdapter = ksmModule.CreateAutomationAdapter(ksmModule, ksmModule.ModuleData);
+						if(automationAdapter != null)
+						{
+							device = new KsmModuleAdapterDevice(ksmModule, automationAdapter);
+						}
+					}
+
+					if(device == null) {
+						switch (m.moduleName)
+						{
+							case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
+							//case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
+							// replaced by iautomationmodule // case "Emitter": device = new EmitterDevice(m as ModuleKsmRadiationEmitter); break;
+							case "Harvester": device = new HarvesterDevice(m as Harvester); break;
+							case "Laboratory": device = new LaboratoryDevice(m as Laboratory); break;
+							// replaced by iautomationmodule // case "ModuleKsmExperiment": device = new ExperimentDevice(m as ModuleKsmExperiment); break;
+							case "SolarPanelFixer": device = new PanelDevice(m as SolarPanelFixer); break;
+							case "ModuleGenerator": device = new GeneratorDevice(m as ModuleGenerator); break;
+							case "ModuleResourceConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
+							case "ModuleKPBSConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
+							case "FissionReactor": device = new ConverterDevice(m as ModuleResourceConverter); break;
+							case "ModuleResourceHarvester": device = new DrillDevice(m as ModuleResourceHarvester); break;
+							case "ModuleLight": device = new LightDevice(m as ModuleLight); break;
+							case "ModuleColoredLensLight": device = new LightDevice(m as ModuleLight); break;
+							case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight); break;
+							case "SCANsat": device = new ScannerDevice(m); break;
+							case "ModuleSCANresourceScanner": device = new ScannerDevice(m); break;
+							case "ModuleDataTransmitter":
+							case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter); break;
+							case "ModuleRTAntenna":
+							case "ModuleRTAntennaPassive": device = new AntennaRTDevice(m); break;
+							default: continue;
+						}
 					}
 
 					// add the device
@@ -231,6 +234,8 @@ namespace KERBALISM
 					// for each module
 					foreach (ProtoPartModuleSnapshot m in p.modules)
 					{
+						device = null;
+
 						// get the module prefab
 						// if the prefab doesn't contain this module, skip it
 						PartModule module_prefab = Lib.ModulePrefab(module_prefabs, m.moduleName, PD);
@@ -240,31 +245,48 @@ namespace KERBALISM
 						// note: this must be done after ModulePrefab is called, so that indexes are right
 						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
 
-						// depending on module name
-						switch (m.moduleName)
+						var ksmModule = module_prefab as KsmPartModule;
+						if (ksmModule != null)
 						{
-							case "Greenhouse": device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m); break;
-							//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
-							case "Emitter": device = new ProtoEmitterDevice(module_prefab as ModuleKsmRadiationEmitter, p, m); break;
-							case "Harvester": device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m); break;
-							case "Laboratory": device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m); break;
-							case "ModuleKsmExperiment": device = new ProtoExperimentDevice(module_prefab as ModuleKsmExperiment, p, m, v); break;
-							case "SolarPanelFixer": device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m); break;
-							case "ModuleGenerator": device = new ProtoGeneratorDevice(module_prefab as ModuleGenerator, p, m); break;
-							case "ModuleResourceConverter":
-							case "ModuleKPBSConverter":
-							case "FissionReactor": device = new ProtoConverterDevice(module_prefab as ModuleResourceConverter, p, m); break;
-							case "ModuleResourceHarvester": device = new ProtoDrillDevice(module_prefab as ModuleResourceHarvester, p, m); break;
-							case "ModuleLight":
-							case "ModuleColoredLensLight":
-							case "ModuleMultiPointSurfaceLight": device = new ProtoLightDevice(module_prefab as ModuleLight, p, m); break;
-							case "SCANsat": device = new ProtoScannerDevice(module_prefab, p, m, v); break;
-							case "ModuleSCANresourceScanner": device = new ProtoScannerDevice(module_prefab, p, m, v); break;
-							case "ModuleDataTransmitter":
-							case "ModuleDataTransmitterFeedeable": device = new ProtoAntennaDevice(module_prefab as ModuleDataTransmitter, p, m); break;
-							case "ModuleRTAntenna":
-							case "ModuleRTAntennaPassive": device = new ProtoAntennaRTDevice(module_prefab, p, m); break;
-							default: continue;
+							ModuleData moduleData;
+							if (p.TryGetModuleDataOfType(ksmModule.ModuleDataType, out moduleData))
+							{
+								var automationAdapter = ksmModule.CreateAutomationAdapter(ksmModule, moduleData);
+								if (automationAdapter != null)
+								{
+									device = new KsmModuleAdapterDevice(ksmModule, p, automationAdapter);
+								}
+							}
+						}
+
+						if (device == null)
+						{
+							// depending on module name
+							switch (m.moduleName)
+							{
+								case "Greenhouse": device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m); break;
+								//case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
+								// replaced by iautomationmodule case "Emitter": device = new ProtoEmitterDevice(module_prefab as ModuleKsmRadiationEmitter, p, m); break;
+								case "Harvester": device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m); break;
+								case "Laboratory": device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m); break;
+								// replaced by iautomationmodule case "ModuleKsmExperiment": device = new ProtoExperimentDevice(module_prefab as ModuleKsmExperiment, p, m, v); break;
+								case "SolarPanelFixer": device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m); break;
+								case "ModuleGenerator": device = new ProtoGeneratorDevice(module_prefab as ModuleGenerator, p, m); break;
+								case "ModuleResourceConverter":
+								case "ModuleKPBSConverter":
+								case "FissionReactor": device = new ProtoConverterDevice(module_prefab as ModuleResourceConverter, p, m); break;
+								case "ModuleResourceHarvester": device = new ProtoDrillDevice(module_prefab as ModuleResourceHarvester, p, m); break;
+								case "ModuleLight":
+								case "ModuleColoredLensLight":
+								case "ModuleMultiPointSurfaceLight": device = new ProtoLightDevice(module_prefab as ModuleLight, p, m); break;
+								case "SCANsat": device = new ProtoScannerDevice(module_prefab, p, m, v); break;
+								case "ModuleSCANresourceScanner": device = new ProtoScannerDevice(module_prefab, p, m, v); break;
+								case "ModuleDataTransmitter":
+								case "ModuleDataTransmitterFeedeable": device = new ProtoAntennaDevice(module_prefab as ModuleDataTransmitter, p, m); break;
+								case "ModuleRTAntenna":
+								case "ModuleRTAntennaPassive": device = new ProtoAntennaRTDevice(module_prefab, p, m); break;
+								default: continue;
+							}
 						}
 
 						// add the device

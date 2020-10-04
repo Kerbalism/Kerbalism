@@ -56,7 +56,7 @@ namespace KERBALISM
 				for (int i = devices.Count - 1; i >= 0; i--)
 				{
 					Device dev = devices[i];
-					
+
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
 
@@ -78,6 +78,8 @@ namespace KERBALISM
 							hasModuleDeviceSection = true;
 						}
 					}
+
+					Lib.LogDebug($"Dev id {dev.PartId} - displayName {dev.DisplayName} - status {dev.Status} - tooltip {dev.Tooltip}");
 
 					if (dev.PartId != 0u)
 						p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
