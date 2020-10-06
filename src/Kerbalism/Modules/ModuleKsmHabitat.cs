@@ -630,7 +630,7 @@ namespace KERBALISM
 			return string.Empty;
 		}
 
-		private void FixedUpdate()
+		public void FixedUpdate()
 		{
 			moduleData.updateHandler.Update(Kerbalism.elapsed_s);
 		}

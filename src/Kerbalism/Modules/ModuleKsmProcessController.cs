@@ -1,7 +1,4 @@
-using System.Collections.Generic;
 using UnityEngine;
-using KSP.Localization;
-
 
 namespace KERBALISM
 {
@@ -12,9 +9,8 @@ namespace KERBALISM
 	{
 		[KSPField] public string processName = string.Empty;
 		[KSPField] public double capacity = 1.0;
-		[KSPField] public string id = string.Empty;       // this is only for identifying the module with B9PS on parts that have multiple process controllers for the same process
-		[KSPField] public string uiGroupName = null;          // display name of the UI group
-		[KSPField] public string uiGroupDisplayName = null;          // display name of the UI group
+		[KSPField] public string uiGroupName = null;         // internal name of the UI group
+		[KSPField] public string uiGroupDisplayName = null;  // display name of the UI group
 
 		[KSPField]
 		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
@@ -62,8 +58,8 @@ namespace KERBALISM
 			if (switchedProcess != null)
 			{
 				double switchedCapacity;
-				if (subtypeDataNode.HasValue(nameof(switchedCapacity)))
-					switchedCapacity = Lib.ConfigValue(subtypeDataNode, nameof(switchedCapacity), 0.0);
+				if (subtypeDataNode.HasValue(nameof(capacity)))
+					switchedCapacity = Lib.ConfigValue(subtypeDataNode, nameof(capacity), 0.0);
 				else
 					switchedCapacity = capacity;
 
@@ -135,8 +131,6 @@ namespace KERBALISM
 					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 			}
 		}
-
-		
 
 		public bool IsRunning()
 		{
