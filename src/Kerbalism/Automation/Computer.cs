@@ -174,10 +174,16 @@ namespace KERBALISM
 					var ksmModule = m as KsmPartModule;
 					if(ksmModule != null)
 					{
-						var automationAdapter = ksmModule.CreateAutomationAdapter(ksmModule, ksmModule.ModuleData);
-						if(automationAdapter != null)
+						AutomationAdapter[] automationAdapters = ksmModule.CreateAutomationAdapter(ksmModule, ksmModule.ModuleData);
+						if(automationAdapters != null)
 						{
-							device = new KsmModuleAdapterDevice(ksmModule, automationAdapter);
+							for(int i = 0; i < automationAdapters.Length; i++)
+							{
+								device = new KsmModuleAdapterDevice(ksmModule, automationAdapters[i], i);
+								moduleDevices.Add(device);
+							}
+
+							continue;
 						}
 					}
 
@@ -248,10 +254,16 @@ namespace KERBALISM
 							ModuleData moduleData;
 							if (p.TryGetModuleDataOfType(ksmModule.ModuleDataType, out moduleData))
 							{
-								var automationAdapter = ksmModule.CreateAutomationAdapter(ksmModule, moduleData);
-								if (automationAdapter != null)
+								AutomationAdapter[] automationAdapters = ksmModule.CreateAutomationAdapter(ksmModule, moduleData);
+								if (automationAdapters != null)
 								{
-									device = new KsmModuleAdapterDevice(ksmModule, p, automationAdapter);
+									for(int i = 0; i < automationAdapters.Length; i++)
+									{
+										device = new KsmModuleAdapterDevice(ksmModule, p, automationAdapters[i], i);
+										moduleDevices.Add(device);
+									}
+
+									continue;
 								}
 							}
 						}

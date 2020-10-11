@@ -14,7 +14,8 @@ namespace KERBALISM
 
 		public string substrateResourceName; // name of the substrate resource
 		public double growthRate; // Current max. rate [0..1] of growth process
-		public bool isRunning;  // true/false, is this thing running?
+		public bool growthRunning;  // true/false, is the growth process running?
+		public bool setupRunning;  // true/false, is the setup process running?
 
 		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
 		{
@@ -27,7 +28,8 @@ namespace KERBALISM
 			SetupProcess = Profile.processes.Find(p => p.name == setupProcessName);
 
 			substrateResourceName = modulePrefab.substrateResourceName;
-			isRunning = modulePrefab.running;
+			growthRunning = modulePrefab.growthRunning;
+			setupRunning = modulePrefab.setupRunning;
 		}
 
 		public void SetupGrowthProcess(string growthProcessName, double growthProcessCapacity)
@@ -56,7 +58,8 @@ namespace KERBALISM
 
 			substrateResourceName = Lib.ConfigValue(node, "substrateResourceName", "");
 			growthRate = Lib.ConfigValue(node, "growthRate", 0.0);
-			isRunning = Lib.ConfigValue(node, "isRunning", true);
+			growthRunning = Lib.ConfigValue(node, "growthRunning", true);
+			setupRunning = Lib.ConfigValue(node, "setupRunning", true);
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -69,7 +72,8 @@ namespace KERBALISM
 
 			node.AddValue("substrateResourceName", substrateResourceName);
 			node.AddValue("growthRate", growthRate);
-			node.AddValue("isRunning", isRunning);
+			node.AddValue("growthRunning", growthRunning);
+			node.AddValue("setupRunning", setupRunning);
 		}
 
 		public override void OnVesselDataUpdate()
@@ -78,8 +82,8 @@ namespace KERBALISM
 			if (moduleIsEnabled)
 			{
 				var growthCapacity = growthProcessCapacity * growthRate;
-				VesselData.VesselProcesses.GetOrCreateProcessData(GrowthProcess).RegisterProcessControllerCapacity(isRunning, growthProcessCapacity);
-				VesselData.VesselProcesses.GetOrCreateProcessData(SetupProcess).RegisterProcessControllerCapacity(isRunning, setupProcessCapacity);
+				VesselData.VesselProcesses.GetOrCreateProcessData(GrowthProcess).RegisterProcessControllerCapacity(growthRunning, growthProcessCapacity);
+				VesselData.VesselProcesses.GetOrCreateProcessData(SetupProcess).RegisterProcessControllerCapacity(setupRunning, setupProcessCapacity);
 			}
 		}
 
@@ -114,10 +118,16 @@ namespace KERBALISM
 
 		[KSPField] public string lamps;              // object with emissive texture used to represent intensity graphically
 
-		[KSPField(guiActiveUnfocused = true, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]
-		[UI_Toggle(scene = UI_Scene.All, affectSymCounterparts = UI_Scene.None)]
-		public bool running;
-		private BaseField runningField;
+		[KSPField(groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]
+		[UI_Toggle(scene = UI_Scene.All, requireFullControl = false, affectSymCounterparts = UI_Scene.None)]
+		public bool setupRunning;
+
+		[KSPField(groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]
+		[UI_Toggle(scene = UI_Scene.All, requireFullControl = false, affectSymCounterparts = UI_Scene.None)]
+		public bool growthRunning;
+
+		private BaseField growthRunningField;
+		private BaseField setupRunningField;
 
 		// animation handlers
 		private Animator shutterAnimator;
@@ -168,13 +178,41 @@ namespace KERBALISM
 
 		public override void OnStart(StartState state)
 		{
-			runningField = Fields["running"];
-			runningField.OnValueModified += (field) => Toggle(moduleData, true);
+			// PAW setup
 
+			// synchronize PAW state with data state
+			growthRunning = moduleData.growthRunning;
+			setupRunning = moduleData.setupRunning;
+
+			// get BaseField references
+			growthRunningField = Fields["growthRunning"];
+			setupRunningField = Fields["setupRunning"];
+
+			// add value modified callbacks to the toggles
+			growthRunningField.OnValueModified += OnToggleGrowth;
+			setupRunningField.OnValueModified += OnToggleSetup;
+
+			// set visibility
+			growthRunningField.guiActive = growthRunningField.guiActiveEditor = true;
+			setupRunningField.guiActive = setupRunningField.guiActiveEditor = moduleData.SetupProcess != null;
+
+			// set names
+			growthRunningField.guiName = "Food Growth";
+			setupRunningField.guiName = "Greenhouse Setup";
+
+			((UI_Toggle)growthRunningField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+			((UI_Toggle)growthRunningField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+			((UI_Toggle)growthRunningField.uiControlEditor).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+			((UI_Toggle)growthRunningField.uiControlEditor).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+
+			((UI_Toggle)setupRunningField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+			((UI_Toggle)setupRunningField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+			((UI_Toggle)setupRunningField.uiControlEditor).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+			((UI_Toggle)setupRunningField.uiControlEditor).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+
+			// animations and light
 			shutterAnimator = new Animator(part, anim_shutters, anim_shutters_reverse);
 			plantsAnimator = new Animator(part, anim_plants, anim_plants_reverse);
-
-			shutterAnimator.Still(running ? 1f : 0f);
 
 			// cache lamps renderer
 			if (lamps.Length > 0)
@@ -192,15 +230,11 @@ namespace KERBALISM
 
 			if (!part.Resources.Contains(substrateResourceName))
 				Lib.AddResource(part, substrateResourceName, 0, substrateCapacity);
-
 			substrateRes = new LoadedPartResourceWrapper(part.Resources[substrateResourceName]);
 
-			((UI_Toggle)runningField.uiControlFlight).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
-			((UI_Toggle)runningField.uiControlFlight).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
-			((UI_Toggle)runningField.uiControlEditor).enabledText = Lib.Color(Local.Generic_ENABLED.ToLower(), Lib.Kolor.Green);
-			((UI_Toggle)runningField.uiControlEditor).disabledText = Lib.Color(Local.Generic_DISABLED.ToLower(), Lib.Kolor.Yellow);
-
 			Setup();
+
+			shutterAnimator.Still(growthRunning ? 0f : 1f);
 		}
 
 		public void Update()
@@ -208,7 +242,10 @@ namespace KERBALISM
 			// TODO turn on lights if current light level is too low
 			// set lamps emissive object
 			if (lampsRenderer != null)
-				lampColor.a = running ? 1.0f : 0.0f;
+			{
+				lampColor.a = (growthRunning || setupRunning) ? 1.0f : 0.0f;
+				lampsRenderer.material.SetColor("_EmissiveColor", lampColor);
+			}
 
 			plantsAnimator.Still((float)moduleData.growthRate);
 		}
@@ -240,8 +277,6 @@ namespace KERBALISM
 		/// <summary>  start the module. must be idempotent: expect to be called several times </summary>
 		private void Setup()
 		{
-			Lib.LogDebug($"Greenhouse on {part.name} starting with growth process '{growthProcessName}' / setup process '{setupProcessName}'");
-
 			if (string.IsNullOrEmpty(growthProcessName))
 			{
 				Lib.LogDebug($"No growth process, disabling module");
@@ -259,27 +294,26 @@ namespace KERBALISM
 				Lib.LogDebug($"Configuring with growth process '{growthProcessName}' (was '{moduleData.growthProcessName}')");
 				moduleData.SetupGrowthProcess(growthProcessName, growthProcessCapacity);
 			}
-
-			// we might be restarting with a different configuration
 			if (moduleData.setupProcessName != setupProcessName || moduleData.setupProcessCapacity != setupProcessCapacity)
 			{
 				Lib.LogDebug($"Configuring with setup process '{setupProcessCapacity}' (was '{moduleData.setupProcessCapacity}')");
 				moduleData.SetupSetupProcess(setupProcessName, setupProcessCapacity);
 			}
 
-			// PAW setup
-			running = moduleData.isRunning;
-			runningField.guiActive = runningField.guiActiveEditor = moduleData.GrowthProcess.canToggle;
-			runningField.guiName = moduleData.GrowthProcess.title;
+			setupRunningField.guiActive = setupRunningField.guiActiveEditor = moduleData.SetupProcess != null;
+			growthRunning = moduleData.growthRunning;
+			setupRunning = moduleData.setupRunning && setupRunningField.guiActive;
 		}
 
-		public static void Toggle(GreenhouseData greenhouseData, bool isLoaded)
-		{
-			greenhouseData.isRunning = !greenhouseData.isRunning;
+		private void OnToggleSetup(object field) => ToggleSetup(moduleData);
 
-			if (isLoaded)
+		public static void ToggleSetup(GreenhouseData greenhouseData)
+		{
+			greenhouseData.setupRunning = !greenhouseData.setupRunning;
+
+			if (greenhouseData.IsLoaded)
 			{
-				greenhouseData.loadedModule.running = greenhouseData.isRunning;
+				greenhouseData.loadedModule.setupRunning = greenhouseData.setupRunning;
 
 				// refresh VAB/SPH ui
 				if (Lib.IsEditor)
@@ -287,10 +321,23 @@ namespace KERBALISM
 			}
 		}
 
-		public bool IsRunning()
+		private void OnToggleGrowth(object field) => ToggleGrowth(moduleData);
+
+		public static void ToggleGrowth(GreenhouseData greenhouseData)
 		{
-			return running && !string.IsNullOrEmpty(growthProcessName);
+			greenhouseData.growthRunning = !greenhouseData.growthRunning;
+
+			if (greenhouseData.IsLoaded)
+			{
+				greenhouseData.loadedModule.growthRunning = greenhouseData.growthRunning;
+				greenhouseData.loadedModule.shutterAnimator.Play(greenhouseData.growthRunning, false, null, Lib.IsEditor ? 4.0f : 1.0f);
+
+				// refresh VAB/SPH ui
+				if (Lib.IsEditor)
+					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			}
 		}
+
 
 		// part tooltip
 		public override string GetInfo()
@@ -306,18 +353,71 @@ namespace KERBALISM
 			return result;
 		}
 
-		// module info support
-		public string GetModuleTitle()
+		// automation
+		public override AutomationAdapter[] CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
 		{
-			if (moduleData == null || moduleData.GrowthProcess == null)
-				return string.Empty;
-
-			return moduleData.GrowthProcess.title;
+			return new AutomationAdapter[] {
+				new GreenhouseGrowthAutomationAdapter(moduleOrPrefab, moduleData),
+				new GreenhouseSetupAutomationAdapter(moduleOrPrefab, moduleData)
+			};
 		}
 
+		// module info support
+		public string GetModuleTitle() { return "Greenhouse";  }
 		public override string GetModuleDisplayName() => GetModuleTitle();
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+
+		private abstract class GreenhouseAutomationAdapter : AutomationAdapter
+		{
+			protected ModuleKsmGreenhouse greenhouseModule => module as ModuleKsmGreenhouse;
+			protected GreenhouseData data => moduleData as GreenhouseData;
+
+			public GreenhouseAutomationAdapter(KsmPartModule module, ModuleData moduleData) : base(module, moduleData) { }
+		}
+
+		private class GreenhouseGrowthAutomationAdapter : GreenhouseAutomationAdapter
+		{
+			public GreenhouseGrowthAutomationAdapter(KsmPartModule module, ModuleData moduleData) : base(module, moduleData) { }
+
+			public override string Name => "Greenhouse grow food";
+
+			public override string Status => Lib.Color(data.growthRunning, Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Orange);
+
+			public override void Ctrl(bool value)
+			{
+				if(data.growthRunning != value)
+					ModuleKsmGreenhouse.ToggleGrowth(data);
+			}
+
+			public override void Toggle()
+			{
+				ModuleKsmGreenhouse.ToggleGrowth(data);
+			}
+		}
+
+		private class GreenhouseSetupAutomationAdapter : GreenhouseAutomationAdapter
+		{
+			public GreenhouseSetupAutomationAdapter(KsmPartModule module, ModuleData moduleData) : base(module, moduleData)
+			{
+				IsVisible = data.SetupProcess != null;
+			}
+
+			public override string Name => "Greenhouse setup";
+
+			public override string Status => Lib.Color(data.setupRunning, Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Orange);
+
+			public override void Ctrl(bool value)
+			{
+				if (data.setupRunning != value)
+					ModuleKsmGreenhouse.ToggleSetup(data);
+			}
+
+			public override void Toggle()
+			{
+				ModuleKsmGreenhouse.ToggleSetup(data);
+			}
+		}
 
 
 		/*

@@ -10,7 +10,7 @@ namespace KERBALISM
 		private readonly AutomationAdapter automationAdapter;
 		private readonly ModuleData moduleData;
 
-		public KsmModuleAdapterDevice(KsmPartModule prefab, ProtoPartSnapshot protoPart, AutomationAdapter adapter)
+		public KsmModuleAdapterDevice(KsmPartModule prefab, ProtoPartSnapshot protoPart, AutomationAdapter adapter, int adapterIndex)
 		{
 			name = prefab.part.partInfo.title;
 			displayName = prefab is IModuleInfo ? ((IModuleInfo)prefab).GetModuleTitle() : prefab.GUIName;
@@ -20,7 +20,7 @@ namespace KERBALISM
 			protoPart.TryGetModuleDataOfType(prefab.ModuleDataType, out moduleData);
 		}
 
-		public KsmModuleAdapterDevice(KsmPartModule ksmModule, AutomationAdapter adapter)
+		public KsmModuleAdapterDevice(KsmPartModule ksmModule, AutomationAdapter adapter, int adapterIndex)
 		{
 			name = ksmModule.part.partInfo.title;
 			displayName = ksmModule is IModuleInfo ? ((IModuleInfo)ksmModule).GetModuleTitle() : ksmModule.GUIName;

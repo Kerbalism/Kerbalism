@@ -108,11 +108,11 @@ namespace KERBALISM
 
 		// Automation support
 
-		public override AutomationAdapter CreateAutomationAdapter(KsmPartModule module, ModuleData moduleData)
+		public override AutomationAdapter[] CreateAutomationAdapter(KsmPartModule module, ModuleData moduleData)
 		{
 			if (!canToggle)
 				return null;
-			return new RadiationEmitterAutomationAdapter(module, ModuleData);
+			return new AutomationAdapter[] { new RadiationEmitterAutomationAdapter(module, ModuleData) };
 		}
 
 		private class RadiationEmitterAutomationAdapter : AutomationAdapter

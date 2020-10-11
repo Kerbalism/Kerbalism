@@ -27,7 +27,7 @@ namespace KERBALISM
 		/// Override this method to add automation support for this part module
 		/// </summary>
 		/// <returns>IAutomationDevice with device module specific implementations for automation support</returns>
-		public virtual AutomationAdapter CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
+		public virtual AutomationAdapter[] CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
 		{
 			return null;
 		}

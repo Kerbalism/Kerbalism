@@ -1381,11 +1381,11 @@ namespace KERBALISM
 			return true;
 		}
 
-		public override AutomationAdapter CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
+		public override AutomationAdapter[] CreateAutomationAdapter(KsmPartModule moduleOrPrefab, ModuleData moduleData)
 		{
 			var habitat = moduleOrPrefab as ModuleKsmHabitat;
 			if(habitat.canPressurize)
-				return new HabitatAutomationAdapter(moduleOrPrefab, moduleData);
+				return new AutomationAdapter[] { new HabitatAutomationAdapter(moduleOrPrefab, moduleData) };
 			return null;
 		}
 

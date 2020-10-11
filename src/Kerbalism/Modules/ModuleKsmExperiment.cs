@@ -707,9 +707,9 @@ namespace KERBALISM
 			return hasOtherRunning;
 		}
 
-		public override AutomationAdapter CreateAutomationAdapter(KsmPartModule module, ModuleData moduleData)
+		public override AutomationAdapter[] CreateAutomationAdapter(KsmPartModule module, ModuleData moduleData)
 		{
-			return new ExperimentAutomationAdapter(module, moduleData);
+			return new AutomationAdapter[] { new ExperimentAutomationAdapter(module, moduleData) };
 		}
 
 		#endregion
