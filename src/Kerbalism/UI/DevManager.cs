@@ -79,8 +79,6 @@ namespace KERBALISM
 						}
 					}
 
-					Lib.LogDebug($"Dev id {dev.PartId} - displayName {dev.DisplayName} - status {dev.Status} - tooltip {dev.Tooltip}");
-
 					if (dev.PartId != 0u)
 						p.AddContent(dev.DisplayName, dev.Status, dev.Tooltip, dev.Toggle, () => Highlighter.Set(dev.PartId, Color.cyan));
 					else
