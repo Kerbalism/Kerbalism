@@ -46,8 +46,7 @@ namespace KERBALISM
 			}
 		}
 
-		public class Input : Resource
-		{ }
+		public class Input : Resource { }
 
 		public class Output : Resource
 		{

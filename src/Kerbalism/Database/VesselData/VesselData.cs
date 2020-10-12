@@ -226,11 +226,6 @@ namespace KERBALISM
 
 		public override IConnectionInfo ConnectionInfo => connection;
 
-        /// <summary>some data about greenhouses</summary>
-        public List<Greenhouse.Data> Greenhouses => greenhouses; List<Greenhouse.Data> greenhouses;
-
-		
-
         /// <summary>true if all command modules are hibernating (limited control and no transmission)</summary>
         public bool Hibernating { get; private set; }
         public bool hasNonHibernatingCommandModules = false;
@@ -694,9 +689,6 @@ namespace KERBALISM
 
             if (Hibernating)
                 deviceTransmit = false;
-
-			// data about greenhouses
-			greenhouses = Greenhouse.Greenhouses(Vessel);
 
             DriveData.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 

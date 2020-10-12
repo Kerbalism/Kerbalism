@@ -190,7 +190,6 @@ namespace KERBALISM
 					if(device == null) {
 						switch (m.moduleName)
 						{
-							case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
 							case "Harvester": device = new HarvesterDevice(m as Harvester); break;
 							case "Laboratory": device = new LaboratoryDevice(m as Laboratory); break;
 							case "SolarPanelFixer": device = new PanelDevice(m as SolarPanelFixer); break;
@@ -273,7 +272,6 @@ namespace KERBALISM
 							// depending on module name
 							switch (m.moduleName)
 							{
-								case "Greenhouse": device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m); break;
 								case "Harvester": device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m); break;
 								case "Laboratory": device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m); break;
 								case "SolarPanelFixer": device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m); break;

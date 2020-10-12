@@ -38,7 +38,6 @@ namespace KERBALISM
 			// draw the content
 			Render_crew(p, crew);
 			if (Features.Science) Render_science(p, v, vd);
-			Render_greenhouse(p, vd);
 			Render_supplies(p, v, vd);
 			Render_habitat(p, v, vd);
 			Render_environment(p, v, vd);
@@ -287,44 +286,6 @@ namespace KERBALISM
 				p.AddContent(Lib.Ellipsis(name, Styles.ScaleStringLength(30)), kd.disabled ? Lib.Color(Local.TELEMETRY_HYBERNATED, Lib.Kolor.Cyan) : string.Empty);//"HYBERNATED"
 				p.AddRightIcon(health_severity == 0 ? Textures.health_white : health_severity == 1 ? Textures.health_yellow : Textures.health_red, tooltip);
 				p.AddRightIcon(stress_severity == 0 ? Textures.brain_white : stress_severity == 1 ? Textures.brain_yellow : Textures.brain_red, tooltip);
-			}
-		}
-
-		static void Render_greenhouse(Panel p, VesselData vd)
-		{
-			// do nothing without greenhouses
-			if (vd.Greenhouses.Count == 0) return;
-
-			// panel section
-			p.AddSection(Local.TELEMETRY_GREENHOUSE);//"GREENHOUSE"
-
-			// for each greenhouse
-			for (int i = 0; i < vd.Greenhouses.Count; ++i)
-			{
-				var greenhouse = vd.Greenhouses[i];
-
-				// state string
-				string state = greenhouse.issue.Length > 0
-				  ? Lib.Color(greenhouse.issue, Lib.Kolor.Yellow)
-				  : greenhouse.growth >= 0.99
-				  ? Lib.Color(Local.TELEMETRY_readytoharvest, Lib.Kolor.Green)//"ready to harvest"
-				  : Local.TELEMETRY_growing;//"growing"
-
-				// tooltip with summary
-				string tooltip = greenhouse.growth < 0.99 ? Lib.BuildString
-				(
-				  "<align=left />",
-				  Local.TELEMETRY_timetoharvest, "\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
-				  Local.TELEMETRY_growth, "\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
-				  Local.TELEMETRY_naturallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
-				  Local.TELEMETRY_artificiallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
-				) : string.Empty;
-
-				// render it
-				p.AddContent(Lib.BuildString(Local.TELEMETRY_crop, " #", (i + 1).ToString()), state, tooltip);//"crop"
-
-				// issues too, why not
-				p.AddRightIcon(greenhouse.issue.Length == 0 ? Textures.plant_white : Textures.plant_yellow, tooltip);
 			}
 		}
 	}

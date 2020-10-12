@@ -413,20 +413,6 @@ namespace KERBALISM
 			}
 		}
 
-		void Problem_greenhouses(Vessel v, List<Greenhouse.Data> greenhouses, ref List<Texture2D> icons, ref List<string> tooltips)
-		{
-			if (greenhouses.Count == 0) return;
-
-			foreach (Greenhouse.Data greenhouse in greenhouses)
-			{
-				if (greenhouse.issue.Length > 0)
-				{
-					if (!icons.Contains(Textures.plant_yellow)) icons.Add(Textures.plant_yellow);
-					tooltips.Add(Lib.BuildString(Local.Monitor_Greenhouse, " <b>", greenhouse.issue, "</b>"));//"Greenhouse:"
-				}
-			}
-		}
-
 		void Problem_kerbals(List<ProtoCrewMember> crew, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
 			UInt32 health_severity = 0;
@@ -529,7 +515,6 @@ namespace KERBALISM
 			if (Features.Radiation) Problem_storm(v, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Profile.rules.Count > 0) Problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vd, ref problem_icons, ref problem_tooltips);
-			Problem_greenhouses(v, vd.Greenhouses, ref problem_icons, ref problem_tooltips);
 			if (Features.LifeSupport) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon

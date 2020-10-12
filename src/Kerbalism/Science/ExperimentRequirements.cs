@@ -34,7 +34,6 @@ namespace KERBALISM
 			CrewCapacityMax,
 			VolumePerCrewMin,
 			VolumePerCrewMax,
-			Greenhouse,
 			AtmosphereAltMin,
 			AtmosphereAltMax,
 			AltitudeBodyRadiusMin,
@@ -182,8 +181,7 @@ namespace KERBALISM
 					case Require.RndFacilityLevelMax     : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment), (int)Requires[i].value, results[i]); break;
 
 					case Require.Shadow         : TestReq(() => vd.InFullShadow,                                                                                  results[i]); break; 
-					case Require.Sunlight       : TestReq(() => vd.InSunlight,                                                                                    results[i]); break; 
-					case Require.Greenhouse     : TestReq(() => vd.Greenhouses.Count > 0,                                                                            results[i]); break;
+					case Require.Sunlight       : TestReq(() => vd.InSunlight,                                                                                    results[i]); break;
 					case Require.AbsoluteZero   : TestReq(() => vd.EnvTemperature < 30.0,                                                                            results[i]); break;
 					case Require.InnerBelt      : TestReq(() => vd.EnvInnerBelt,                                                                                     results[i]); break;
 					case Require.OuterBelt      : TestReq(() => vd.EnvOuterBelt,                                                                                     results[i]); break;
@@ -527,7 +525,6 @@ namespace KERBALISM
 				case Require.InterStellar:
 				case Require.Shadow:
 				case Require.Sunlight:
-				case Require.Greenhouse:
 				default:
 					return req.ToString();
 			}

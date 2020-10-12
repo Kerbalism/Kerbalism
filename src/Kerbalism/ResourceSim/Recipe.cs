@@ -9,11 +9,6 @@ namespace KERBALISM
 	/// Outputs can be defined a "dumpeable" to avoid this last limitation.
 	/// </summary>
 
-	// TODO : (GOTMACHINE) the "combined" feature (ability for an input to substitute another if not available) added a lot of complexity to the Recipe code,
-	// all in the purpose of a minor feature for greenhouses (CO2 / Waste automatic substitution)
-	// If at some point we rewrite greenhouses and get ride of that stuff it would be a good idea to revert the changes made in this commit :
-	// https://github.com/Kerbalism/Kerbalism/commit/91a154b0eeda8443d9dd888c2e40ca511c5adfa3#diff-ffbaadfd7e682c9dcb3912d5f8c5cabb
-
 	// TODO : (GOTMACHINE) At some point, we want to use "virtual" resources in recipes.
 	// Their purpose would be to give the ability to scale the non-resource output of a pure consumer.
 	// Example : to scale antenna data rate by EC availability, define an "antennaOutput" virtual resource and a recipe that convert EC to antennaOutput
@@ -33,16 +28,14 @@ namespace KERBALISM
 	{
 		public struct Entry
 		{
-			public Entry(string name, double quantity, bool dump = true, string combined = null)
+			public Entry(string name, double quantity, bool dump = true)
 			{
 				this.name = name;
-				this.combined = combined;
 				this.quantity = quantity;
 				this.inv_quantity = 1.0 / quantity;
 				this.dump = dump;
 			}
 			public string name;
-			public string combined;    // if entry is the primary to be combined, then the secondary resource is named here. secondary entry has its combined set to "" not null
 			public double quantity;
 			public double inv_quantity;
 			public bool dump;
@@ -68,15 +61,6 @@ namespace KERBALISM
 			if (quantity > double.Epsilon) //< avoid division by zero
 			{
 				inputs.Add(new Entry(resource_name, quantity));
-			}
-		}
-
-		/// <summary>add a combined input to the recipe</summary>
-		public void AddInput(string resource_name, double quantity, string combined)
-		{
-			if (quantity > double.Epsilon) //< avoid division by zero
-			{
-				inputs.Add(new Entry(resource_name, quantity, true, combined));
 			}
 		}
 
@@ -123,30 +107,7 @@ namespace KERBALISM
 				{
 					Entry e = inputs[i];
 					VesselResource res = resources.GetResource(e.name);
-
-					// handle combined inputs
-					if (e.combined != null)
-					{
-						// is combined resource the primary
-						if (e.combined != "")
-						{
-							Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-							VesselResource sec = resources.GetResource(sec_e.name);
-							double pri_worst = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
-							if (pri_worst > 0.0)
-							{
-								worst_input = pri_worst;
-							}
-							else
-							{
-								worst_input = Lib.Clamp((sec.Amount + sec.Deferred) * sec_e.inv_quantity, 0.0, worst_input);
-							}
-						}
-					}
-					else
-					{
-						worst_input = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
-					}
+					worst_input = Lib.Clamp((res.Amount + res.Deferred) * e.inv_quantity, 0.0, worst_input);
 				}
 			}
 
@@ -174,30 +135,7 @@ namespace KERBALISM
 			{
 				Entry e = inputs[i];
 				VesselResource res = resources.GetResource(e.name);
-				// handle combined inputs
-				if (e.combined != null)
-				{
-					// is combined resource the primary
-					if (e.combined != "")
-					{
-						Entry sec_e = inputs.Find(x => x.name.Contains(e.combined));
-						VesselResource sec = resources.GetResource(sec_e.name);
-						double need = (e.quantity * worst_io) + (sec_e.quantity * worst_io);
-						// do we have enough primary to satisfy needs, if so don't consume secondary
-						if (res.Amount + res.Deferred >= need) resources.Consume(e.name, need, broker);
-						// consume primary if any available and secondary
-						else
-						{
-							need -= res.Amount + res.Deferred;
-							res.RecipeConsume(res.Amount + res.Deferred, broker);
-							sec.RecipeConsume(need, broker);
-						}
-					}
-				}
-				else
-				{
-					res.RecipeConsume(e.quantity * worst_io, broker);
-				}
+				res.RecipeConsume(e.quantity * worst_io, broker);
 			}
 
 			// produce outputs
