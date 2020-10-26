@@ -134,6 +134,76 @@ namespace KERBALISM
 
 			if (inputs.Count == 0 && outputs.Count == 0)
 				throw new Exception($"Process {name} has no valid input or output, skipping..");
+
+			LogProcessRates();
+		}
+
+		private void LogProcessRates()
+		{
+#if DEBUG || DEVBUILD
+			double totalInputMass = 0;
+			double totalOutputMass = 0;
+			StringBuilder sb = new StringBuilder();
+
+			// this will only be printed if the process looks suspicious
+			sb.Append($"Process {name} changes total mass of vessel:").AppendLine();
+
+			foreach (Input i in inputs)
+			{
+				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(i.name);
+				if (resourceDef == null)
+				{
+					sb.Append($"Unknown input resource {i.name}").AppendLine();
+				}
+				else
+				{
+					double kilosPerUnit =  resourceDef.density * 1000.0;
+					double kilosPerHour = 3600.0 * i.rate * kilosPerUnit;
+					totalInputMass += kilosPerHour;
+					sb.Append($"Input {i.name}@{i.rate} = {kilosPerHour} kg/h").AppendLine();
+				}
+			}
+
+			foreach (Output o in outputs)
+			{
+				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(o.name);
+				if (resourceDef == null)
+				{
+					sb.Append($"$Unknown output resource {o.name}").AppendLine();
+				}
+				else
+				{
+					double kilosPerUnit =  resourceDef.density * 1000.0;
+					double kilosPerHour = 3600.0 * o.rate * kilosPerUnit;
+					totalOutputMass += kilosPerHour;
+					sb.Append($"Output {o.name}@{o.rate} = {kilosPerHour} kg/h").AppendLine();
+				}
+			}
+
+			sb.Append($"Total input mass : {totalInputMass}").AppendLine();
+			sb.Append($"Total output mass: {totalOutputMass}").AppendLine();
+
+			// there will be some numerical errors involved in the simulation.
+			// due to the very small numbers (very low rates per second, calculated 20 times per second and more),
+			// the actual rates might be quite different when the simulation runs. here we just look at nominal process
+			// inputs and outputs for one hour, eliminating the error that will be introduced when the simulation runs
+			// at slower speeds.
+			// you can't put floating point numbers into a computer and expect perfect results, so we ignore processes that are "good enough".
+			double diff = totalOutputMass - totalInputMass;
+
+			if(diff > 0.001) // warn if process generates > 1g/h
+			{
+				sb.Append($"Process is generating mass: {diff} kg/h ({(diff*1000.0).ToString("F5")} g/h)").AppendLine();
+				sb.Append("Note: this might be expected behaviour if external resources (like air) are used as an input.").AppendLine();
+				Lib.Log(sb.ToString());
+			}
+
+			if(diff < -0.01) // warn if process looses > 10g/h
+			{
+				sb.Append($"Process looses more than 1g/h mass: {diff} kg/h ({(diff * 1000.0).ToString("F5")} g/h)");
+				Lib.Log(sb.ToString());
+			}
+#endif
 		}
 
 		public double EvaluateModifier(VesselDataBase data)

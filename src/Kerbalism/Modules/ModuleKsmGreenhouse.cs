@@ -81,14 +81,15 @@ namespace KERBALISM
 			// TODO account for max radiation and min light
 			if (moduleIsEnabled)
 			{
-				var growthCapacity = growthProcessCapacity * growthRate;
-				VesselData.VesselProcesses.GetOrCreateProcessData(GrowthProcess).RegisterProcessControllerCapacity(growthRunning, growthProcessCapacity);
+				Lib.LogDebug($"Greenhouse vessel data update: growth {growthRunning}@{growthRate} setup {setupRunning}");
+				VesselData.VesselProcesses.GetOrCreateProcessData(GrowthProcess).RegisterProcessControllerCapacity(growthRunning, growthProcessCapacity * growthRate);
 				VesselData.VesselProcesses.GetOrCreateProcessData(SetupProcess).RegisterProcessControllerCapacity(setupRunning, setupProcessCapacity);
 			}
 		}
 
 		internal void UpdateSubstrateLevel(PartResourceWrapper substrateRes)
 		{
+			Lib.LogDebug($"Greenhouse update substrate level");
 			if (substrateRes != null && substrateRes.Capacity > 0)
 				growthRate = substrateRes.Amount / substrateRes.Capacity;
 			else
@@ -197,8 +198,8 @@ namespace KERBALISM
 			setupRunningField.guiActive = setupRunningField.guiActiveEditor = moduleData.SetupProcess != null;
 
 			// set names
-			growthRunningField.guiName = "Food Growth";
-			setupRunningField.guiName = "Greenhouse Setup";
+			growthRunningField.guiName = moduleData.GrowthProcess.title ?? "Grow food";
+			setupRunningField.guiName = moduleData.SetupProcess?.title ?? "Generate Substrate";
 
 			((UI_Toggle)growthRunningField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
 			((UI_Toggle)growthRunningField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
@@ -380,19 +381,21 @@ namespace KERBALISM
 		{
 			public GreenhouseGrowthAutomationAdapter(KsmPartModule module, ModuleData moduleData) : base(module, moduleData) { }
 
-			public override string Name => "Greenhouse grow food";
+
+			public override string Name => "Greenhouse grow food"; // must be hardcoded
+			public override string DisplayName => data.GrowthProcess.title;
 
 			public override string Status => Lib.Color(data.growthRunning, Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Orange);
 
 			public override void Ctrl(bool value)
 			{
 				if(data.growthRunning != value)
-					ModuleKsmGreenhouse.ToggleGrowth(data);
+					ToggleGrowth(data);
 			}
 
 			public override void Toggle()
 			{
-				ModuleKsmGreenhouse.ToggleGrowth(data);
+				ToggleGrowth(data);
 			}
 		}
 
@@ -403,19 +406,20 @@ namespace KERBALISM
 				IsVisible = data.SetupProcess != null;
 			}
 
-			public override string Name => "Greenhouse setup";
+			public override string Name => "Greenhouse generate substrate"; // must be hardcoded
+			public override string DisplayName => data.SetupProcess?.title ?? "Generate substrate";
 
 			public override string Status => Lib.Color(data.setupRunning, Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Orange);
 
 			public override void Ctrl(bool value)
 			{
 				if (data.setupRunning != value)
-					ModuleKsmGreenhouse.ToggleSetup(data);
+					ToggleSetup(data);
 			}
 
 			public override void Toggle()
 			{
-				ModuleKsmGreenhouse.ToggleSetup(data);
+				ToggleSetup(data);
 			}
 		}
 
