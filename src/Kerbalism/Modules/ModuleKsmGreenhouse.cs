@@ -81,7 +81,6 @@ namespace KERBALISM
 			// TODO account for max radiation and min light
 			if (moduleIsEnabled)
 			{
-				Lib.LogDebug($"Greenhouse vessel data update: growth {growthRunning}@{growthRate} setup {setupRunning}");
 				VesselData.VesselProcesses.GetOrCreateProcessData(GrowthProcess).RegisterProcessControllerCapacity(growthRunning, growthProcessCapacity * growthRate);
 				VesselData.VesselProcesses.GetOrCreateProcessData(SetupProcess).RegisterProcessControllerCapacity(setupRunning, setupProcessCapacity);
 			}
@@ -89,7 +88,6 @@ namespace KERBALISM
 
 		internal void UpdateSubstrateLevel(PartResourceWrapper substrateRes)
 		{
-			Lib.LogDebug($"Greenhouse update substrate level");
 			if (substrateRes != null && substrateRes.Capacity > 0)
 				growthRate = substrateRes.Amount / substrateRes.Capacity;
 			else
