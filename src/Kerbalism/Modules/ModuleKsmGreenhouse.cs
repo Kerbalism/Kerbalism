@@ -97,9 +97,6 @@ namespace KERBALISM
 
 	public class ModuleKsmGreenhouse : KsmPartModule<ModuleKsmGreenhouse, GreenhouseData>, IBackgroundModule, IModuleInfo, IB9Switchable
 	{
-		[KSPField] public double minLight = 400;           // minimum lighting flux required for growth, in W/m^2
-		[KSPField] public double maxRadiation = 0.00001;   // maximum radiation allowed for growth in rad/s (plants are very tolerant towards radiation)
-
 		[KSPField] public string growthProcessName = string.Empty; // process name of in-flight food production process
 		[KSPField] public double growthProcessCapacity = 1.0;
 
@@ -341,13 +338,12 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			if (moduleData == null || moduleData.GrowthProcess == null)
-				return string.Empty;
+			var process = moduleData?.GrowthProcess ?? Profile.processes.Find(p => p.name == growthProcessName);
+			string result = process.GetInfo(moduleData?.growthProcessCapacity ?? growthProcessCapacity, true);
 
-			string result = moduleData.GrowthProcess.GetInfo(moduleData.growthProcessCapacity, true);
-
-			if(moduleData.SetupProcess != null)
-				result += "\n" + moduleData.SetupProcess.GetInfo(moduleData.growthProcessCapacity, true);
+			var setupProcess = moduleData?.SetupProcess ?? Profile.processes.Find(p => p.name == setupProcessName);
+			if(setupProcess != null)
+				result += "\n" + setupProcess.GetInfo(moduleData?.setupProcessCapacity ?? setupProcessCapacity, true);
 
 			return result;
 		}
@@ -362,10 +358,10 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "Greenhouse";  }
-		public override string GetModuleDisplayName() => GetModuleTitle();
-		public string GetPrimaryField() { return string.Empty; }
-		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+		public string GetModuleTitle() => Local.Greenhouse;
+		public override string GetModuleDisplayName() => Local.Greenhouse;
+		public string GetPrimaryField() => Local.Greenhouse;
+		public Callback<Rect> GetDrawModulePanelCallback() => null;
 
 		private abstract class GreenhouseAutomationAdapter : AutomationAdapter
 		{
@@ -420,79 +416,5 @@ namespace KERBALISM
 				ToggleSetup(data);
 			}
 		}
-
-
-		/*
-		PRODUCTION_RECIPE
-		{
-			INPUT
-			{
-				name = KsmWasteAtmosphere
-				substitute = Oxygen
-				rate = 0.1
-			}
-
-			INPUT
-			{
-				name = Ammonia
-				rate = 0.02
-			}
-
-			INPUT
-			{
-				name = Water
-				rate = 0.02
-			}
-
-			OUTPUT
-			{
-				name = Food
-				rate = 0.02
-			}
-
-			OUTPUT
-			{
-				name = Oxygen
-				rate = 0.02
-				dumpByDefault = true
-			}
-		}
-
-		SETUP_RECIPE
-		{
-			INPUT
-			{
-				name = KsmWasteAtmosphere
-				substitute = Oxygen
-				rate = 0.1
-			}
-
-			INPUT
-			{
-				name = Ammonia
-				rate = 0.02
-			}
-
-			INPUT
-			{
-				name = Water
-				rate = 0.02
-			}
-
-			INPUT
-			{
-				name = Substrate
-				rate = 0.02
-			}
-
-			OUTPUT
-			{
-				name = Oxygen
-				rate = 0.1
-				dumpByDefault = true
-			}
-		}
-
-		*/
 	}
 }

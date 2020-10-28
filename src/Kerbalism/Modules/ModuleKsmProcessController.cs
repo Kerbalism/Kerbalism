@@ -156,7 +156,10 @@ namespace KERBALISM
 		}
 
 		public override string GetModuleDisplayName() => GetModuleTitle();
-		public string GetPrimaryField() { return string.Empty; }
+		public string GetPrimaryField() {
+			var process = Profile.processes.Find(p => p.name == processName);
+			return process?.GetInfo(capacity, true);
+		}
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
 		// animation group support
