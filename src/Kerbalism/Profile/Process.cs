@@ -73,7 +73,7 @@ namespace KERBALISM
 		private static StringBuilder sb = new StringBuilder();
 
 		public string name;                           // unique name for the process
-		public string pseudoResourceName;
+		public string resourceName;
 		public string title;                          // UI title
 		public string desc;                           // UI description (long text)
 		public bool canToggle;                        // defines if this process can be toggled
@@ -91,7 +91,7 @@ namespace KERBALISM
 			if (name.Length == 0)
 				throw new Exception("skipping unnammed process");
 
-			pseudoResourceName = name + "Res";
+			resourceName = Lib.ConfigValue(node, "resourceName", name + "Resource");
 			title = Lib.ConfigValue(node, "title", string.Empty);
 			desc = Lib.ConfigValue(node, "desc", string.Empty);
 			canToggle = Lib.ConfigValue(node, "canToggle", true);
@@ -107,7 +107,7 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					ErrorManager.AddError(false, $"Can't parse modifier for process '{name}'", $"modifier : {modifierString}\n{e.Message}");
+					ErrorManager.AddError(false, $"Can't parse modifier for process '{name}'", $"modifier: {modifierString}\n{e.Message}");
 					hasModifier = false;
 				}
 			}
@@ -215,7 +215,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				return 1.0;
+				return data.ResHandler.GetResource(resourceName).Amount;
 			}
 		}
 
@@ -284,8 +284,6 @@ namespace KERBALISM
 				// TODO : what about self-consuming processes ? 
 				//specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 			}
-
-
 
 			return sb.ToString();
 		}

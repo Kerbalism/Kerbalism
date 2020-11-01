@@ -69,15 +69,23 @@ namespace KERBALISM
 
 		public void Evaluate(VesselDataBase vd)
 		{
-			MaxCapacity = newTotalCapacity;
-			newTotalCapacity = 0.0;
+			if(newTotalCapacity > 0)
+			{
+				MaxCapacity = newTotalCapacity;
+				newTotalCapacity = 0.0;
 
-			enabledCapacity = newEnabledCapacity;
-			newEnabledCapacity = 0.0;
+				enabledCapacity = newEnabledCapacity;
+				newEnabledCapacity = 0.0;
 
-			VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.pseudoResourceName);
-			processRes.SetCapacity(enabledCapacity);
-			processRes.SetAmount(AvailableCapacity);
+				/*
+				PartVirtualResource res;
+				vd.ResHandler.TryGetPartVirtualResource(process.resourceName, out res);
+
+				VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.resourceName);
+				processRes.SetCapacity(enabledCapacity);
+				processRes.SetAmount(AvailableCapacity);
+				*/
+			}
 		}
 
 		public void RegisterProcessControllerCapacity(bool enabled, double maxCapacity)

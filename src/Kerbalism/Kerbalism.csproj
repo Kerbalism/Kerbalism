@@ -336,7 +336,6 @@
     <Compile Include="Modules\Base\IBackgroundModule.cs" />
     <Compile Include="Patches\ModuleDataTransmitter_GetInfo.cs" />
     <Compile Include="Modules\ModuleKsmProcessController.cs" />
-    <Compile Include="Database\ModuleData\ProcessControllerData.cs" />
     <Compile Include="Automation\VesselDevices\VesselProcess.cs" />
     <Compile Include="Modules\Base\IAutomationAdapter.cs" />
     <Compile Include="Automation\Devices\KsmModuleAdapterDevice.cs" />

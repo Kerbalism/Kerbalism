@@ -2,9 +2,87 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	/// <summary>
-	/// Replacement for ProcessController
-	/// </summary>
+	public class ProcessControllerData : ModuleData<ModuleKsmProcessController, ProcessControllerData>
+	{
+		public string processName;      // internal name of the process (i.e. "scrubber" or "sabatier")
+		public double processCapacity; // this part modules original/total capacity to run this process
+		public double processAmount = -1; // this part modules remaining capacity to run this process (-1 = not initialized)
+		public bool isRunning;  // true/false, if process controller is turned on or not
+		public bool isBroken;   // true if process controller is broken
+		public Process Process { get; private set; } // the process associated with the process name, for convenience
+
+		private PartVirtualResource processResource;
+
+		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
+		{
+			isRunning = modulePrefab.running;
+			isBroken = modulePrefab.broken;
+
+			processName = modulePrefab.processName;
+			Process = Profile.processes.Find(p => p.name == processName);
+		}
+
+		public void Setup(string processName, double processCapacity)
+		{
+			if(processResource != null)
+			{
+				VesselData.ResHandler.RemovePartVirtualResource(processResource);
+				processResource = null;
+			}
+
+			this.processName = processName;
+			this.processCapacity = processCapacity;
+
+			Process = Profile.processes.Find(p => p.name == processName);
+
+			Lib.LogDebug($"Setup {processName} resource {Process.resourceName} capacity ({processAmount}/{processCapacity})");
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			isRunning = Lib.ConfigValue(node, "isRunning", true);
+			isBroken = Lib.ConfigValue(node, "isBroken", false);
+			processName = Lib.ConfigValue(node, "processName", "");
+			processAmount = Lib.ConfigValue(node, "processAmount", 1.0);
+			processCapacity = Lib.ConfigValue(node, "processCapacity", 1.0);
+
+			Process = Profile.processes.Find(p => p.name == processName);
+
+			Lib.LogDebug($"Loaded {processName} resource {Process.resourceName} capacity ({processAmount}/{processCapacity})");
+		}
+
+		public override void OnSave(ConfigNode node)
+		{
+			node.AddValue("processName", processName);
+			node.AddValue("isRunning", isRunning);
+			node.AddValue("isBroken", isBroken);
+			node.AddValue("processCapacity", processCapacity);
+			node.AddValue("processAmount", processAmount);
+		}
+
+		public override void OnVesselDataUpdate()
+		{
+			if (moduleIsEnabled && !isBroken)
+			{
+				if (processResource == null)
+				{
+					processResource = new PartVirtualResource(Process.resourceName);
+					processResource.SetCapacity(processCapacity);
+
+					// processAmount = -1 means that the value was not initialized, and we use the process capacity as initial amount
+					processResource.SetAmount(processAmount < 0 ? processCapacity : processAmount);
+
+					VesselData.ResHandler.AddPartVirtualResource(processResource);
+					Lib.LogDebug($"Initialized process {processName} resource {processResource.Name} @ {processResource.Amount}/{processResource.Capacity}");
+				}
+
+				processCapacity = processResource.Capacity;
+				processAmount = processResource.Amount;
+				VesselData.VesselProcesses.GetOrCreateProcessData(Process).RegisterProcessControllerCapacity(isRunning, processResource.Amount);
+			}
+		}
+	}
+
 	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, IB9Switchable
 	{
 		[KSPField] public string processName = string.Empty;

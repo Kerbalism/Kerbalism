@@ -349,7 +349,7 @@ namespace KERBALISM
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Profile");
-					// apply rules
+					// execute rules and processes
 					Profile.Execute(v, vd, resources, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
@@ -421,7 +421,7 @@ namespace KERBALISM
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Profile");
-				// apply rules
+				// execute rules and processes
 				Profile.Execute(last_v, last_vd, resources, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 

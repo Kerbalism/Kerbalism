@@ -329,7 +329,7 @@ namespace KERBALISM
 				resNameText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 5, 0);
 				resNameText.TopTransform.SetSizeDelta(150, 16);
 
-				resCapText = new KsmGuiText(this, data.processCapacity.ToString("F1"), null, TextAlignmentOptions.Center);
+				resCapText = new KsmGuiText(this, data.processAmount.ToString("F1"), null, TextAlignmentOptions.Center);
 				resCapText.TopTransform.SetAnchorsAndPosition(TextAnchor.MiddleLeft, TextAnchor.MiddleLeft, 160, 0);
 				resCapText.TopTransform.SetSizeDelta(55, 16);
 
@@ -351,7 +351,7 @@ namespace KERBALISM
 				}
 				else
 				{
-					resCapText.Text = data.processCapacity.ToString("F1");
+					resCapText.Text = data.processAmount.ToString("F1");
 					resCapText.TextComponent.color = Color.white;
 					resToggleText.Enabled = true;
 					resToggleText.Text = data.isRunning ? Local.Generic_YES : Local.Generic_NO;

@@ -20,7 +20,7 @@ namespace KERBALISM
 
 		public override KsmPartModule PrefabModuleBase => modulePrefab;
 
-		public VesselDataBase VesselData => partData.vesselData;
+		public VesselDataBase VesselData => partData?.vesselData;
 
 		public bool IsLoaded => loadedModule != null;
 

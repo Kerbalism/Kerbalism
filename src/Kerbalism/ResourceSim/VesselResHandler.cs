@@ -185,6 +185,15 @@ namespace KERBALISM
 			return true;
 		}
 
+		public bool RemovePartVirtualResource(PartVirtualResource resource)
+		{
+			if (resources.ContainsKey(resource.Name))
+				return false;
+
+			resources.Remove(resource.Name);
+			return true;
+		}
+
 		/// <summary>
 		/// Get all virtual resources that exist on the vessel. Quite slow, don't use this in update/fixedupdate.
 		/// Note that it isn't garanteed that these resources are still present/used on the vessel.
