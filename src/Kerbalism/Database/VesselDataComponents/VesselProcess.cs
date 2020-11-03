@@ -92,7 +92,7 @@ namespace KERBALISM
 			AvailableCapacity = enabled ? enabledCapacity * enabledFactor : 0.0;
 			AvailableCapacityPercent = enabledCapacity > 0.0 ? AvailableCapacity / enabledCapacity : 0.0;
 
-			VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.pseudoResourceName);
+			VesselVirtualResource processRes = (VesselVirtualResource)vd.ResHandler.GetResource(process.PseudoResourceName);
 			processRes.SetCapacity(enabledCapacity);
 			processRes.SetAmount(AvailableCapacity);
 		}
@@ -102,7 +102,9 @@ namespace KERBALISM
 			newTotalCapacity += maxCapacity;
 
 			if (enabled)
+			{
 				newEnabledCapacity += maxCapacity;
+			}
 		}
 
 		public string CurrentRatesInfo()

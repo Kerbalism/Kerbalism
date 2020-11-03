@@ -157,6 +157,7 @@
     <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\Interfaces.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
+    <Compile Include="Database\ModuleData\ProcessControllerData.cs" />
     <Compile Include="Database\ModuleData\RadiationEmitterData.cs" />
     <Compile Include="Database\PartData\PartDataCollectionBase.cs" />
     <Compile Include="Database\PartData\PartDataCollectionShip.cs" />

@@ -506,7 +506,7 @@ namespace KERBALISM
 			{
 				foreach (PartResourceData prd in pd.virtualResources)
 				{
-					if (!prd.flowState)
+					if (!prd.FlowState)
 						continue;
 
 					if (prd.resourceId == null || !resourceWrappers.TryGetValue((int)prd.resourceId, out ResourceWrapper wrapper))

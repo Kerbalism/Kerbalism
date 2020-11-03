@@ -16,33 +16,63 @@ namespace KERBALISM
 		public bool Contains(string resourceName) => resources.Exists(p => p.ResourceName == resourceName);
 		public int Count => resources.Count;
 
-		public PartResourceData AddResource(string resourceName, double amount, double capacity, string containerId = null)
+		public PartResourceData AddResource(string resourceName, double amount, double capacity, bool asSeparateContainer = false)
 		{
+			int containerIndex = 0;
+
 			foreach (PartResourceData existingRes in resources)
 			{
-				if (existingRes.ResourceName == resourceName && existingRes.ContainerId == containerId)
+				if (existingRes.ResourceName == resourceName)
 				{
-					existingRes.Capacity = capacity;
-					existingRes.Amount = amount;
-					return existingRes;
+					if (asSeparateContainer)
+					{
+						containerIndex = Math.Max(containerIndex, existingRes.ContainerIndex) + 1;
+					}
+					else
+					{
+						existingRes.Capacity = capacity;
+						existingRes.Amount = amount;
+						return existingRes;
+					}
 				}
 			}
 
-			PartResourceData res = new PartResourceData(resourceName, amount, capacity, containerId);
+			return AddResource(resourceName, amount, capacity, containerIndex);
+		}
+
+		public PartResourceData AddResource(string resourceName, double amount, double capacity, int containerIndex)
+		{
+			PartResourceData res = new PartResourceData(resourceName, containerIndex, amount, capacity);
 			resources.Add(res);
 			return res;
 		}
 
-		/// <summary> remove all resources with the specified name and container id</summary>
-		public void RemoveResource(string resourceName, string containerId = null)
+		public PartResourceData GetResource(string resourceName)
 		{
-			resources.RemoveAll(p => p.ResourceName == resourceName && p.ContainerId == containerId);
+			return resources.Find(p => p.ResourceName == resourceName);
 		}
 
-		/// <summary> remove all resources with the specified name, regardless of their container id</summary>
+		public PartResourceData GetResource(string resourceName, int containerIndex)
+		{
+			return resources.Find(p => p.ResourceName == resourceName && p.ContainerIndex == containerIndex);
+		}
+
+		/// <summary> remove all resources with the specified name and container index</summary>
+		public void RemoveResource(string resourceName, int containerIndex)
+		{
+			resources.RemoveAll(p => p.ResourceName == resourceName && p.ContainerIndex == containerIndex);
+		}
+
+		/// <summary> remove all resources with the specified name, regardless of their container</summary>
 		public void RemoveResource(string resourceName)
 		{
 			resources.RemoveAll(p => p.ResourceName == resourceName);
+		}
+
+		/// <summary> remove a resource</summary>
+		public void RemoveResource(PartResourceData resource)
+		{
+			resources.RemoveAll(p => p == resource);
 		}
 	}
 }

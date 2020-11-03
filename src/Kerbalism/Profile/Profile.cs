@@ -21,6 +21,23 @@ namespace KERBALISM
 		// node parsing
 		private static void Nodeparse(ConfigNode profile_node)
 		{
+			// parse all VirtualResourceDefinition
+			foreach (ConfigNode vResNode in profile_node.GetNodes(NODENAME_VIRTUAL_RESOURCE))
+			{
+				try
+				{
+					VirtualResourceDefinition vResDef = new VirtualResourceDefinition(vResNode);
+					if (!VirtualResourceDefinition.definitions.ContainsKey(vResDef.name))
+					{
+						VirtualResourceDefinition.definitions.Add(vResDef.name, vResDef);
+					}
+				}
+				catch (Exception e)
+				{
+					Lib.Log("failed to load virtual resource\n" + e.ToString(), Lib.LogLevel.Warning);
+				}
+			}
+
 			// parse all rules
 			foreach (ConfigNode rule_node in profile_node.GetNodes(NODENAME_RULE))
 			{
@@ -81,24 +98,6 @@ namespace KERBALISM
 				catch (Exception e)
 				{
 					Lib.Log("failed to load process\n" + e.ToString(), Lib.LogLevel.Warning);
-				}
-			}
-
-			// parse all VirtualResourceDefinition
-			foreach (ConfigNode vResNode in profile_node.GetNodes(NODENAME_VIRTUAL_RESOURCE))
-			{
-				try
-				{
-					// parse process
-					VirtualResourceDefinition vResDef = new VirtualResourceDefinition(vResNode);
-					if (!VirtualResourceDefinition.definitions.ContainsKey(vResDef.name))
-					{
-						VirtualResourceDefinition.definitions.Add(vResDef.name, vResDef);
-					}
-				}
-				catch (Exception e)
-				{
-					Lib.Log("failed to load virtual resource\n" + e.ToString(), Lib.LogLevel.Warning);
 				}
 			}
 		}

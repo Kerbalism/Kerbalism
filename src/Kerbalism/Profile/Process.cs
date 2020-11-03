@@ -73,28 +73,35 @@ namespace KERBALISM
 		private static StringBuilder sb = new StringBuilder();
 
 		public string name;                           // unique name for the process
-		public string resourceName;
 		public string title;                          // UI title
 		public string desc;                           // UI description (long text)
 		public bool canToggle;                        // defines if this process can be toggled
 		public List<Input> inputs;
 		public List<Output> outputs;
-		public double selfConsumptionRate = 0.0;
 
 		public ResourceBroker broker;
 		public bool hasModifier;
 		private IGenericExpression<double> modifier;
-		
+
+		public string CapacityResourceName { get; private set; }
+		public bool UseCapacityResource { get; private set; }
+		public string PseudoResourceName { get; private set; }
+
 		public Process(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
 			if (name.Length == 0)
 				throw new Exception("skipping unnammed process");
 
-			resourceName = Lib.ConfigValue(node, "resourceName", name + "Resource");
+			PseudoResourceName = Lib.ConfigValue(node, "pseudoResourceName", name + "Process");
+
+			UseCapacityResource = Lib.ConfigValue(node, "useCapacityResource", false);
+			CapacityResourceName = Lib.ConfigValue(node, "capacityResourceName", name + "Capacity");
+
 			title = Lib.ConfigValue(node, "title", string.Empty);
 			desc = Lib.ConfigValue(node, "desc", string.Empty);
 			canToggle = Lib.ConfigValue(node, "canToggle", true);
+			
 			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Converter, title);
 
 			string modifierString = Lib.ConfigValue(node, "modifier", string.Empty);
@@ -135,75 +142,12 @@ namespace KERBALISM
 			if (inputs.Count == 0 && outputs.Count == 0)
 				throw new Exception($"Process {name} has no valid input or output, skipping..");
 
+			if (UseCapacityResource)
+			{
+				VirtualResourceDefinition.GetOrCreateDefinition(CapacityResourceName, false, VirtualResourceDefinition.ResType.PartResource);
+			}
+
 			LogProcessRates();
-		}
-
-		private void LogProcessRates()
-		{
-#if DEBUG || DEVBUILD
-			double totalInputMass = 0;
-			double totalOutputMass = 0;
-			StringBuilder sb = new StringBuilder();
-
-			// this will only be printed if the process looks suspicious
-			sb.Append($"Process {name} changes total mass of vessel:").AppendLine();
-
-			foreach (Input i in inputs)
-			{
-				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(i.name);
-				if (resourceDef == null)
-				{
-					sb.Append($"Unknown input resource {i.name}").AppendLine();
-				}
-				else
-				{
-					double kilosPerUnit =  resourceDef.density * 1000.0;
-					double kilosPerHour = 3600.0 * i.rate * kilosPerUnit;
-					totalInputMass += kilosPerHour;
-					sb.Append($"Input {i.name}@{i.rate} = {kilosPerHour} kg/h").AppendLine();
-				}
-			}
-
-			foreach (Output o in outputs)
-			{
-				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(o.name);
-				if (resourceDef == null)
-				{
-					sb.Append($"$Unknown output resource {o.name}").AppendLine();
-				}
-				else
-				{
-					double kilosPerUnit =  resourceDef.density * 1000.0;
-					double kilosPerHour = 3600.0 * o.rate * kilosPerUnit;
-					totalOutputMass += kilosPerHour;
-					sb.Append($"Output {o.name}@{o.rate} = {kilosPerHour} kg/h").AppendLine();
-				}
-			}
-
-			sb.Append($"Total input mass : {totalInputMass}").AppendLine();
-			sb.Append($"Total output mass: {totalOutputMass}").AppendLine();
-
-			// there will be some numerical errors involved in the simulation.
-			// due to the very small numbers (very low rates per second, calculated 20 times per second and more),
-			// the actual rates might be quite different when the simulation runs. here we just look at nominal process
-			// inputs and outputs for one hour, eliminating the error that will be introduced when the simulation runs
-			// at slower speeds.
-			// you can't put floating point numbers into a computer and expect perfect results, so we ignore processes that are "good enough".
-			double diff = totalOutputMass - totalInputMass;
-
-			if(diff > 0.001) // warn if process generates > 1g/h
-			{
-				sb.Append($"Process is generating mass: {diff} kg/h ({(diff*1000.0).ToString("F5")} g/h)").AppendLine();
-				sb.Append("Note: this might be expected behaviour if external resources (like air) are used as an input.").AppendLine();
-				Lib.Log(sb.ToString());
-			}
-
-			if(diff < -0.01) // warn if process looses > 10g/h
-			{
-				sb.Append($"Process looses more than 1g/h mass: {diff} kg/h ({(diff * 1000.0).ToString("F5")} g/h)");
-				Lib.Log(sb.ToString());
-			}
-#endif
 		}
 
 		public double EvaluateModifier(VesselDataBase data)
@@ -215,7 +159,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				return data.ResHandler.GetResource(resourceName).Amount;
+				return data.ResHandler.GetResource(PseudoResourceName).Amount;
 			}
 		}
 
@@ -254,6 +198,7 @@ namespace KERBALISM
 		public string GetInfo(double capacity, bool includeDescription)
 		{
 			sb.Clear();
+			double selfConsumingRate = 0.0;
 
 			if (includeDescription && desc.Length > 0)
 			{
@@ -283,12 +228,97 @@ namespace KERBALISM
 
 				if (i < inputCount - 1)
 					sb.AppendKSPNewLine();
-				
-				// TODO : what about self-consuming processes ? 
-				//specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
+
+				if (UseCapacityResource && input.name == CapacityResourceName)
+				{
+					selfConsumingRate = input.rate;
+				}
+			}
+
+			if (selfConsumingRate > 0.0)
+			{
+				sb.AppendKSPNewLine();
+				sb.AppendKSPNewLine();
+				sb.Append(Local.ProcessController_info1); //"Half-life"
+				sb.Append("\t");
+				sb.Append(Lib.HumanReadableDuration(0.5 * (capacity / selfConsumingRate)));
 			}
 
 			return sb.ToString();
+		}
+
+
+		private void LogProcessRates()
+		{
+#if DEBUG || DEVBUILD
+			double totalInputMass = 0;
+			double totalOutputMass = 0;
+			StringBuilder sb = new StringBuilder();
+
+			// this will only be printed if the process looks suspicious
+			sb.Append($"Process {name} changes total mass of vessel:").AppendLine();
+
+			foreach (Input i in inputs)
+			{
+				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(i.name);
+				if (resourceDef == null)
+				{
+					sb.Append($"Unknown input resource {i.name}").AppendLine();
+				}
+				else
+				{
+					double kilosPerUnit = resourceDef.density * 1000.0;
+					double kilosPerHour = 3600.0 * i.rate * kilosPerUnit;
+					totalInputMass += kilosPerHour;
+					sb.Append($"Input {i.name}@{i.rate} = {kilosPerHour} kg/h").AppendLine();
+				}
+			}
+
+			foreach (Output o in outputs)
+			{
+				PartResourceDefinition resourceDef = PartResourceLibrary.Instance.GetDefinition(o.name);
+				if (resourceDef == null)
+				{
+					sb.Append($"$Unknown output resource {o.name}").AppendLine();
+				}
+				else
+				{
+					double kilosPerUnit = resourceDef.density * 1000.0;
+					double kilosPerHour = 3600.0 * o.rate * kilosPerUnit;
+					totalOutputMass += kilosPerHour;
+					sb.Append($"Output {o.name}@{o.rate} = {kilosPerHour} kg/h").AppendLine();
+				}
+			}
+
+			sb.Append($"Total input mass : {totalInputMass}").AppendLine();
+			sb.Append($"Total output mass: {totalOutputMass}").AppendLine();
+
+			// there will be some numerical errors involved in the simulation.
+			// due to the very small numbers (very low rates per second, calculated 20 times per second and more),
+			// the actual rates might be quite different when the simulation runs. here we just look at nominal process
+			// inputs and outputs for one hour, eliminating the error that will be introduced when the simulation runs
+			// at slower speeds.
+			// you can't put floating point numbers into a computer and expect perfect results, so we ignore processes that are "good enough".
+			double diff = totalOutputMass - totalInputMass;
+
+			if (diff > 0.001) // warn if process generates > 1g/h
+			{
+				sb.Append($"Process is generating mass: {diff} kg/h ({(diff * 1000.0).ToString("F5")} g/h)").AppendLine();
+				sb.Append("Note: this might be expected behaviour if external resources (like air) are used as an input.").AppendLine();
+				Lib.Log(sb.ToString());
+			}
+
+			if (diff < -0.01) // warn if process looses > 10g/h
+			{
+				sb.Append($"Process looses more than 1g/h mass: {diff} kg/h ({(diff * 1000.0).ToString("F5")} g/h)");
+				Lib.Log(sb.ToString());
+			}
+#endif
+		}
+
+		public override string ToString()
+		{
+			return name;
 		}
 	}
 

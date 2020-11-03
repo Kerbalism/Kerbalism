@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace KERBALISM
 {
+	/*
 	public class ProcessControllerData : ModuleData<ModuleKsmProcessController, ProcessControllerData>
 	{
 		public string processName;      // internal name of the process (i.e. "scrubber" or "sabatier")
@@ -82,7 +83,7 @@ namespace KERBALISM
 			}
 		}
 	}
-
+	*/
 	public class ModuleKsmProcessController : KsmPartModule<ModuleKsmProcessController, ProcessControllerData>, IModuleInfo, IAnimatedModule, IB9Switchable
 	{
 		[KSPField] public string processName = string.Empty;
@@ -234,11 +235,8 @@ namespace KERBALISM
 		}
 
 		public override string GetModuleDisplayName() => GetModuleTitle();
-		public string GetPrimaryField() {
-			var process = Profile.processes.Find(p => p.name == processName);
-			return process?.GetInfo(capacity, true);
-		}
-		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
+		public string GetPrimaryField() => string.Empty;
+		public Callback<Rect> GetDrawModulePanelCallback() => null;
 
 		// animation group support
 		public void EnableModule() { }
