@@ -45,6 +45,8 @@ namespace KERBALISM
 		private List<Entry> outputs;  // set of output resources
 		private double left;     // what proportion of the recipe is left to execute
 
+		public double UtilizationFactor => 1.0 - left;
+
 		private ResourceBroker broker;
 
 		public Recipe(ResourceBroker broker)
@@ -114,8 +116,8 @@ namespace KERBALISM
 			// determine worst output ratio
 			// - pure output recipes can just overflow
 			double worst_output = left;
-			if (inputs.Count > 0)
-			{
+			//if (inputs.Count > 0)
+			//{
 				for (int i = 0; i < outputs.Count; ++i)
 				{
 					Entry e = outputs[i];
@@ -125,7 +127,7 @@ namespace KERBALISM
 						worst_output = Lib.Clamp((res.Capacity - (res.Amount + res.Deferred)) * e.inv_quantity, 0.0, worst_output);
 					}
 				}
-			}
+			//}
 
 			// determine worst-io
 			double worst_io = Math.Min(worst_input, worst_output);

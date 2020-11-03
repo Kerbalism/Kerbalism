@@ -12,6 +12,7 @@ namespace KERBALISM
 		public const string NODENAME_RULE = "RULE";
 		public const string NODENAME_PROCESS = "PROCESS";
 		public const string NODENAME_SUPPLY = "SUPPLY";
+		public const string NODENAME_VIRTUAL_RESOURCE = "VIRTUAL_RESOURCE";
 
 		public static List<Rule> rules;               // rules in the profile
 		public static List<Supply> supplies;          // supplies in the profile
@@ -82,6 +83,24 @@ namespace KERBALISM
 					Lib.Log("failed to load process\n" + e.ToString(), Lib.LogLevel.Warning);
 				}
 			}
+
+			// parse all VirtualResourceDefinition
+			foreach (ConfigNode vResNode in profile_node.GetNodes(NODENAME_VIRTUAL_RESOURCE))
+			{
+				try
+				{
+					// parse process
+					VirtualResourceDefinition vResDef = new VirtualResourceDefinition(vResNode);
+					if (!VirtualResourceDefinition.definitions.ContainsKey(vResDef.name))
+					{
+						VirtualResourceDefinition.definitions.Add(vResDef.name, vResDef);
+					}
+				}
+				catch (Exception e)
+				{
+					Lib.Log("failed to load virtual resource\n" + e.ToString(), Lib.LogLevel.Warning);
+				}
+			}
 		}
 
 		public static void Parse()
@@ -117,6 +136,9 @@ namespace KERBALISM
 			// parse nodes
 			Nodeparse(profileNode);
 
+			// do systems-specific setup
+			PostParseSetup();
+
 			// log info
 			Lib.Log($"{supplies.Count} {NODENAME_SUPPLY} definitions found :");
 			foreach (Supply supply in supplies)
@@ -130,7 +152,14 @@ namespace KERBALISM
 			foreach (Process process in processes)
 				Lib.Log($"- {process.name}");
 
-			
+			Lib.Log($"{VirtualResourceDefinition.definitions.Count} {NODENAME_VIRTUAL_RESOURCE} definitions found :");
+			foreach (VirtualResourceDefinition resDef in VirtualResourceDefinition.definitions.Values)
+				Lib.Log($"- {resDef.name}");
+		}
+
+		private static void PostParseSetup()
+		{
+			VesselResHandler.SetupDefinitions();
 		}
 
 		public static void Execute(Vessel v, VesselData vd, VesselResHandler resources, double elapsed_s)

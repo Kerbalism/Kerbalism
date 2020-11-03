@@ -49,12 +49,13 @@ namespace KERBALISM
 
 			if (connection.Status != LinkStatus.direct_link)
 			{
-				Vessel firstHop = Lib.CommNodeToVessel(v.Connection.ControlPath.First.end);
+				Vessel firstHop = CommNodeToVessel(v.Connection.ControlPath.First.end);
 				// Get rate from the firstHop, each Hop will do the same logic, then we will have the min rate for whole path
-				firstHop.TryGetVesselDataTemp(out VesselData vd);
-				connection.rate = Math.Min(vd.Connection.rate, connection.rate);
+				if (firstHop == null || !firstHop.TryGetVesselData(out VesselData vd))
+					connection.rate = 0.0;
+				else
+					connection.rate = Math.Min(vd.Connection.rate, connection.rate);
 			}
-
 
 			connection.control_path.Clear();
 			foreach (CommLink link in v.connection.ControlPath)
@@ -87,6 +88,11 @@ namespace KERBALISM
 			// set minimal data rate to what is defined in Settings (1 bit/s by default) 
 			if (connection.rate > 0.0 && connection.rate * Lib.bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
 				connection.rate = Settings.DataRateMinimumBitsPerSecond / Lib.bitsPerMB;
+		}
+
+		private static Vessel CommNodeToVessel(CommNode node)
+		{
+			return node?.transform?.gameObject.GetComponent<Vessel>();
 		}
 	}
 }

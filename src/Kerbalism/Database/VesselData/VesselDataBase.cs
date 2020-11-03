@@ -48,11 +48,17 @@ namespace KERBALISM
 
 		public virtual CelestialBody MainBody { get; }
 
+		/// <summary>in meters</summary>
 		public virtual double Altitude { get; }
 
+		/// <summary>in degree</summary>
 		public virtual double Latitude { get; }
 
+		/// <summary>in degree</summary>
 		public virtual double Longitude { get; }
+
+		/// <summary>in rad/s</summary>
+		public virtual double AngularVelocity { get; }
 
 		/// <summary>number of crew on the vessel</summary>
 		public virtual int CrewCount { get; }
@@ -249,6 +255,7 @@ namespace KERBALISM
 						}
 					}
 				}
+				partData.PostInstantiateSetup();
 			}
 		}
 
@@ -258,6 +265,12 @@ namespace KERBALISM
 
 		public void ModuleDataUpdate()
 		{
+			if (LoadedOrEditor && Parts[0].LoadedPart == null)
+			{
+				Lib.LogDebug($"Skipping loaded vessel ModuleDataUpdate (part references not set yet) on {VesselName}");
+				return;
+			}
+
 			habitatData.ResetBeforeModulesUpdate(this);
 
 			foreach (PartData partData in Parts)
@@ -293,6 +306,15 @@ namespace KERBALISM
 				starFlux.directRawFlux = stepStarFlux.directRawFlux;
 				starFlux.bodiesAlbedoFlux = stepStarFlux.bodiesAlbedoFlux;
 				starFlux.bodiesEmissiveFlux = stepStarFlux.bodiesEmissiveFlux;
+				starFlux.mainBodyVesselStarAngle = stepStarFlux.mainBodyVesselStarAngle;
+
+				starFlux.mainBodyVesselStarAngle = stepStarFlux.mainBodyVesselStarAngle;
+				starFlux.sunAndBodyFaceSkinTemp = stepStarFlux.sunAndBodyFaceSkinTemp;
+				starFlux.bodiesFaceSkinTemp = stepStarFlux.bodiesFaceSkinTemp;
+				starFlux.sunFaceSkinTemp = stepStarFlux.sunFaceSkinTemp;
+				starFlux.darkFaceSkinTemp = stepStarFlux.darkFaceSkinTemp;
+				starFlux.skinIrradiance = stepStarFlux.skinIrradiance;
+				starFlux.skinRadiosity = stepStarFlux.skinRadiosity;
 
 				irradianceStarTotal += stepStarFlux.directFlux;
 				directRawFluxTotal += stepStarFlux.directRawFlux;

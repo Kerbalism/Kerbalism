@@ -204,7 +204,7 @@ namespace KERBALISM
 			{
 				processData.loadedModule.running = processData.isRunning;
 
-				// refresh VAB/SPH ui
+				// refresh planner and VAB/SPH ui
 				if (Lib.IsEditor)
 					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 			}

@@ -17,6 +17,9 @@ namespace KERBALISM
 		/// <summary> distance from vessel to sun center</summary>
 		public double distance;
 
+		/// <summary> [0 : 1] factor for the [0° : 180°] angle between the main body, the vessel and the sun</summary>
+		public double mainBodyVesselStarAngle;
+
 		/// <summary>
 		/// return 1.0 when the vessel is in direct sunlight, 0.0 when in shadow
 		/// <para/> in analytic evaluation, this is a scalar of representing the fraction of time spent in sunlight
@@ -37,6 +40,15 @@ namespace KERBALISM
 
 		/// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmosphere and occlusion) </summary>
 		public double directRawFluxProportion;
+
+
+		public double sunAndBodyFaceSkinTemp;
+		public double bodiesFaceSkinTemp;
+		public double sunFaceSkinTemp;
+		public double darkFaceSkinTemp;
+		public double skinIrradiance;
+		public double skinRadiosity;
+
 
 		public StarFlux(SimStar star)
 		{
@@ -61,6 +73,14 @@ namespace KERBALISM
 			bodiesAlbedoFlux = 0.0;
 			bodiesEmissiveFlux = 0.0;
 			directRawFluxProportion = 0.0;
-		}
+
+			mainBodyVesselStarAngle = 0.0;
+			sunAndBodyFaceSkinTemp = 0.0;
+			bodiesFaceSkinTemp = 0.0;
+			sunFaceSkinTemp = 0.0;
+			darkFaceSkinTemp = 0.0;
+			skinIrradiance = 0.0;
+			skinRadiosity = 0.0;
+	}
 	}
 }

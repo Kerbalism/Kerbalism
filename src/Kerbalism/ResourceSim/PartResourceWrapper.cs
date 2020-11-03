@@ -41,25 +41,4 @@ namespace KERBALISM
 		public override double Capacity { get => partResource.maxAmount; set => partResource.maxAmount = value; }
 		public override bool FlowState { get => partResource.flowState; set => partResource.flowState = value; }
 	}
-
-	public class VirtualContainer : PartResourceWrapper
-	{
-		private string resName;
-		private double amount;
-		private double capacity;
-		private bool flowState;
-
-		public VirtualContainer(string resourceName, double amount, double capacity, bool flowState = true)
-		{
-			this.resName = resourceName;
-			this.amount = Math.Min(capacity, amount);
-			this.capacity = capacity;
-			this.flowState = flowState;
-		}
-
-		public override string ResName => resName;
-		public override double Amount { get => amount; set => amount = value; }
-		public override double Capacity { get => capacity; set => capacity = value; }
-		public override bool FlowState { get => flowState; set => flowState = value; }
-	}
 }

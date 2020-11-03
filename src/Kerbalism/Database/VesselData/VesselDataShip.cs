@@ -52,6 +52,8 @@ namespace KERBALISM
 
 		public override double Longitude => longitude; public double longitude;
 
+		public override double AngularVelocity => 0.0;
+
 		public override int CrewCount => crewCount; public int crewCount;
 
 		public override int CrewCapacity => crewCapacity; public int crewCapacity;
@@ -305,6 +307,7 @@ namespace KERBALISM
 		//		}
 		//	}
 		//}
+
 
 		private void AnalyzeReliability(List<Part> parts)
 		{

@@ -4,26 +4,23 @@ using System.Collections.Generic;
 namespace KERBALISM
 {
 	/// <summary>
-	/// VirtualResource is meant to be used in the following cases :
-	/// <para/>- replacement for processes pseudoresources (note : this will require migrating the planner resource sim before that can happen)
-	/// <para/>- checking the output of a resource consumer, by creating a Recipe with the consumed resource as input and the virtual resource as output
-	/// <para/>- eventually they could be used to replace the habitat pseudo resources but well... don't touch habitat.
+	/// VesselVirtualResource is a vessel wide, non persisted resource.<br/>
+	/// It behave like any other resource in regard to Recipes and produce/consume calls, at the exception that it doesn't handle "critical" consumptions<br/>
+	/// It's amount and capacity isn't held in any part, and can be set directy using the relevant methods.<br/>
+	/// Since it isn't persisted, it has to be re-instantiatiated after loads by whatever component is using it.
 	/// </summary>
 	public class VesselVirtualResource : VesselResource
 	{
-		/// <summary>
-		/// Virtual resource name. Use an unique name to avoid it being shared.
-		/// Examples :
-		/// <para/>- "myResource" + "myModule" will make the resource shared with all "myModule" partmodules
-		/// <para/>- "myResource" + "myModule" + part.flightID will make that resource local to a partmodule and a part
-		/// </summary>
-		public override string Name => name;
-		protected string name;
+		/// <summary> Virtual resource name. Use an unique name to avoid it being shared. </summary>
+		public override string Name => definition.name;
 
-		public override string Title => title;
-		protected string title;
+		public override string Title => definition.title;
 
-		public override bool Visible => false;
+		public override bool Visible => definition.isVisible;
+
+		public bool IsValid => definition != null;
+
+		private VirtualResourceDefinition definition;
 
 		/// <summary> Amount of virtual resource. This can be set directly if needed.</summary>
 		public override double Amount => amount;
@@ -44,8 +41,6 @@ namespace KERBALISM
 		/// <summary>
 		/// Storage capacity of the virtual resource. Will default to double.MaxValue unless explicitely defined
 		/// <para/>Note that a virtual resource used as output in a Recipe will follow the same rules as a regular resource regarding the "dump" behvior specified in the Recipe.
-		/// <para/>In the current state of things, if you intent to use Capacity in a VirtualResource it must be set manually 
-		/// from OnLoad or OnStart as there is no persistence for it.
 		/// </summary>
 		public override double Capacity => capacity;
 		protected double capacity;
@@ -63,55 +58,35 @@ namespace KERBALISM
 			level = capacity > 0.0 ? amount / capacity : 0.0;
 		}
 
-		/// <summary> Not yet consumed or produced amount, will be synchronized to Amount in Sync()</summary>
-		public override double Deferred => deferred;
-		protected double deferred;
-
-		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
-		public override double Rate => rate;
-		protected double rate;
-
-		/// <summary> Amount vs capacity, or 0 if there is no capacity</summary>
-		public override double Level => level;
-		protected double level;
-
-		/// <summary> [0 ; 1] availability factor that will be applied to every Consume() call in the next simulation step</summary>
-		public override double AvailabilityFactor => availabilityFactor;
-		protected double availabilityFactor;
-
-		/// <summary> last step consumption requests. For visualization only, can be greater than what was actually consumed </summary>
-		public override double ConsumeRequests => consumeRequests;
-		protected double consumeRequests;
-
-		/// <summary> last step production requests. For visualization only, can be greater than what was actually produced </summary>
-		public override double ProduceRequests => produceRequests;
-		protected double produceRequests;
-
-		protected double currentConsumeRequests;
-		protected double currentProduceRequests;
-
-		/// <summary> list of consumers and producers for this resource</summary>
-		public override List<ResourceBrokerRate> ResourceBrokers => resourceBrokers;
-		protected List<ResourceBrokerRate> resourceBrokers;
-
-		/// <summary>Dictionary of all consumers and producers (key) and how much amount they did add/remove (value).</summary>
-		protected Dictionary<ResourceBroker, double> brokersResourceAmounts;
-
 		public override bool NeedUpdate => true;
 
-		public bool IsPersistent { get; set; } = false;
-
-		/// <summary>Don't use this to create a virtual resource, use the VesselResHandler.SetupOrCreateVirtualResource() method</summary>
-		public VesselVirtualResource(string name)
+		/// <summary>Don't use this to create a virtual resource, use the VesselResHandler.CreateVirtualResource() method</summary>
+		public VesselVirtualResource(string name, bool isVisible = false, string title = null)
 		{
-			this.name = name;
-			title = name;
+			definition = VirtualResourceDefinition.GetOrCreateDefinition(name, isVisible, VirtualResourceDefinition.ResType.VesselResource, title);
 			amount = 0.0;
 			capacity = double.MaxValue;
 			deferred = 0.0;
 			level = 0.0;
 			resourceBrokers = new List<ResourceBrokerRate>();
 			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
+		}
+
+		/// <summary>Don't use this to create a virtual resource, use the VesselResHandler.CreateVirtualResource() method</summary>
+		public VesselVirtualResource(VirtualResourceDefinition definition)
+		{
+			this.definition = definition;
+			amount = 0.0;
+			capacity = double.MaxValue;
+			deferred = 0.0;
+			level = 0.0;
+			resourceBrokers = new List<ResourceBrokerRate>();
+			brokersResourceAmounts = new Dictionary<ResourceBroker, double>();
+		}
+
+		public override void Init()
+		{
+			return;
 		}
 
 		public override bool ExecuteAndSyncToParts(VesselDataBase vd, double elapsed_s)

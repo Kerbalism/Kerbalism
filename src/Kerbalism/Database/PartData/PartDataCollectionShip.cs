@@ -33,9 +33,20 @@ namespace KERBALISM
 					shipPartsCache.Clear();
 					lastFixedUpdateTimeStamp = Time.fixedTime;
 					lastLoadedPartsCount = allParts.Count;
-					foreach (PartData partData in allParts)
+					for (int i = allParts.Count - 1; i >= 0; i--)
 					{
-						if (!partData.LoadedPart.frozen)
+						PartData partData = allParts[i];
+						// can't find the exact reproduction steps, but sometimes parts fail to be removed when they are destroyed
+						// if that happen, due the unity null equality overload, checking if partData.LoadedPart is null will return true
+						// but the reference will still be accessible. I'm not sure GetInstanceId() is still working, so the actual removal may
+						// fail (hence why the try/catch), but at least the part won't risk being considered as being a ship part.
+						// Further investigation on the root cause of this would be nice, but for now that don't seem to cause issues.
+						if (partData.LoadedPart == null) 
+						{
+							try { Remove(partData.LoadedPart); }
+							catch (System.Exception) { continue; }
+						}
+						else if(!partData.LoadedPart.frozen)
 						{
 							shipPartsCache.Add(partData);
 						}
@@ -90,7 +101,7 @@ namespace KERBALISM
 				ConfigNode partNode = new ConfigNode(partData.LoadedPart.craftID.ToString());
 
 				isPersistent |= PartResourceData.SavePartResources(partData, partNode);
-				isPersistent |= PartRadiationData.SaveRadiationData(partData, partNode);
+				isPersistent |= PartRadiationData.Save(partData, partNode);
 
 				if (isPersistent)
 					partsNode.AddNode(partNode);
@@ -119,7 +130,7 @@ namespace KERBALISM
 					continue;
 
 				PartResourceData.LoadPartResources(partData, partNode);
-				PartRadiationData.LoadRadiationData(partData, partNode);
+				PartRadiationData.Load(partData, partNode);
 			}
 		}
 	}

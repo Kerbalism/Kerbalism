@@ -71,7 +71,7 @@ namespace KERBALISM
 
 			// top header
 			KsmGuiHeader topHeader = new KsmGuiHeader(window, data.ModuleDefinition.Info.Title, default, 120);
-			topHeader.TextObject.SetTooltipText(Lib.BuildString(Local.SCIENCEARCHIVE_onvessel, " ", Lib.Bold(data.VesselData.VesselName), "\n", Local.SCIENCEARCHIVE_onpart, " ", Lib.Bold(data.partData.Title)));//"on vessel :"on part :
+			topHeader.TextObject.SetTooltipText(Lib.BuildString(Local.SCIENCEARCHIVE_onvessel, " : ", Lib.Bold(data.VesselData.VesselName), "\n", Local.SCIENCEARCHIVE_onpart, " : ", Lib.Bold(data.partData.Title)));
 			rndVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderRnD, ToggleArchivePanel, Local.SCIENCEARCHIVE_showarchive);//"show science archive"
 			rndVisibilityButton.MoveAsFirstChild();
 			expInfoVisibilityButton = new KsmGuiIconButton(topHeader, Textures.KsmGuiTexHeaderInfo, ToggleExpInfo, Local.SCIENCEARCHIVE_showexperimentinfo);//"show experiment info"

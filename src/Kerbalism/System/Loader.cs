@@ -117,21 +117,7 @@ namespace KERBALISM
 				ErrorManager.CheckErrors(true);
 			}
 
-			// save the habitat volume/surface cache
-			if (ModuleKsmHabitat.habitatDatabase == null)
-				return;
-
-			ConfigNode fakeNode = new ConfigNode();
-
-			foreach (KeyValuePair<string, Lib.PartVolumeAndSurfaceInfo> habInfo in ModuleKsmHabitat.habitatDatabase)
-			{
-				ConfigNode node = new ConfigNode(ModuleKsmHabitat.habitatDataCacheNodeName);
-				node.AddValue("partName", habInfo.Key.Replace('.', '_'));
-				habInfo.Value.Save(node);
-				fakeNode.AddNode(node);
-			}
-
-			fakeNode.Save(ModuleKsmHabitat.HabitatDataCachePath);
+			PartVolumeAndSurface.SaveCache();
 		}
 	}
 

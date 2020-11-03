@@ -38,9 +38,11 @@ namespace KERBALISM
 		private AvailablePart partInfo;
 		public Part PartPrefab { get; private set; }
 		public Part LoadedPart { get; private set; }
+		private bool initialized = false;
 
 		public PartRadiationData radiationData;
-		public List<PartResourceData> virtualResources = new List<PartResourceData>();
+		public PartVolumeAndSurface.Info volumeAndSurface;
+		public PartResourceDataCollection virtualResources;
 		public List<ModuleData> modules = new List<ModuleData>();
 
 		/// <summary> Localized part title </summary>
@@ -51,8 +53,6 @@ namespace KERBALISM
 
 		public override string ToString() => Title;
 
-
-
 		public PartData(VesselDataBase vesselData, Part part)
 		{
 			this.vesselData = vesselData;
@@ -62,6 +62,8 @@ namespace KERBALISM
 			PartPrefab = GetPartPrefab(part.partInfo);
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
+			virtualResources = new PartResourceDataCollection();
+			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
 		}
 
@@ -71,6 +73,8 @@ namespace KERBALISM
 			flightId = protopart.flightID;
 			partInfo = protopart.partInfo;
 			PartPrefab = GetPartPrefab(protopart.partInfo);
+			virtualResources = new PartResourceDataCollection();
+			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
 			radiationData = new PartRadiationData(this);
 		}
 
@@ -78,6 +82,14 @@ namespace KERBALISM
 		{
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
+		}
+
+		public void PostInstantiateSetup()
+		{
+			if (initialized)
+				return;
+
+			initialized = true;
 		}
 
 		/// <summary> Must be called if the part is destroyed </summary>
@@ -98,8 +110,7 @@ namespace KERBALISM
 		// The kerbalEVA part variants (vintage/future) prefabs are created in some weird way
 		// causing the PartModules from the base KerbalEVA definition to not exist on them, depending
 		// on what DLCs are installed (!). The issue with that is that we rely on the prefab modules
-		// for ModuleData instantiation, so in those specific cases we return the base kerbalEVA
-		// prefab
+		// for ModuleData instantiation, so in those specific cases we return the base kerbalEVA prefab
 		private Part GetPartPrefab(AvailablePart partInfo)
 		{
 			switch (partInfo.name)

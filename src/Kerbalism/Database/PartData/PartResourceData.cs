@@ -10,8 +10,10 @@ namespace KERBALISM
 	{
 		public const string NODENAME_RESOURCES = "RESOURCES";
 
-		private PartVirtualResource resource;
-		public PartVirtualResource Resource => resource;
+		public string ResourceName { get; private set; }
+
+		public int? resourceId = null;
+		public string ContainerId { get; private set; }
 
 		private double amount;
 		public double Amount
@@ -19,10 +21,7 @@ namespace KERBALISM
 			get => amount;
 			set
 			{
-				double newAmount = Math.Min(value, capacity);
-				double diff = newAmount - amount;
-				amount = newAmount;
-				resource.SetAmount(Resource.Amount + diff);
+				amount = value < 0.0 ? 0.0 : value > capacity ? capacity : value;
 			}
 		}
 
@@ -32,29 +31,26 @@ namespace KERBALISM
 			get => capacity;
 			set
 			{
-				double diff = value - capacity;
+				if (value < 0.0)
+					value = 0.0;
+
+				if (value > amount)
+					amount = value;
+
 				capacity = value;
-				resource.SetCapacity(Resource.Capacity + diff);
-				amount = Math.Min(amount, capacity);
 			}
 		}
 
-		public void SetSyncedAmount(double amount)
-		{
-			this.amount = amount;
-		}
+		public bool flowState = true;
 
-		public PartResourceData(VesselDataBase vd, string name, double amount, double capacity)
+		public double Level => capacity > 0.0 ? amount / capacity : 0.0;
+
+		public PartResourceData(string resourceName, double amount = 0.0, double capacity = 0.0, string containerId = null)
 		{
-			if (!vd.ResHandler.TryGetPartVirtualResource(name, out resource))
-			{
-				resource = new PartVirtualResource(name);
-				resource.SetCapacity(0.0);
-				vd.ResHandler.AddPartVirtualResource(resource);
-			}
-				
+			ResourceName = resourceName;
 			Capacity = capacity;
 			Amount = amount;
+			ContainerId = containerId;
 		}
 
 		public static void LoadPartResources(PartData pd, ConfigNode partDataNode)
@@ -65,13 +61,11 @@ namespace KERBALISM
 
 			foreach (ConfigNode node in resTopNode.nodes)
 			{
-				PartResourceData res = new PartResourceData(
-					pd.vesselData,
-					node.name,
+				string containerId = node.GetValue("containerId");
+				pd.virtualResources.AddResource(node.name,
 					Lib.ConfigValue(node, "amount", 0.0),
-					Lib.ConfigValue(node, "capacity", 0.0));
-
-				pd.virtualResources.Add(res);
+					Lib.ConfigValue(node, "capacity", 0.0),
+					containerId);
 			}
 		}
 
@@ -84,17 +78,13 @@ namespace KERBALISM
 
 			foreach (PartResourceData res in pd.virtualResources)
 			{
-				ConfigNode resNode = resTopNode.AddNode(res.resource.Name);
+				ConfigNode resNode = resTopNode.AddNode(res.ResourceName);
 				resNode.AddValue("amount", res.amount);
 				resNode.AddValue("capacity", res.capacity);
+				if (res.ContainerId != null)
+					resNode.AddValue("containerId", res.ContainerId);
 			}
 			return true;
-		}
-
-		public void Remove()
-		{
-			Resource.SetAmount(Resource.Amount - amount);
-			Resource.SetCapacity(Resource.Capacity - capacity);
 		}
 	}
 }

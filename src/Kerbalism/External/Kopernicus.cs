@@ -142,7 +142,7 @@ namespace KERBALISM
 				if (bodyProperties == null)
 					continue;
 
-				bodyInfo.displayName = Lib.ConfigValue(bodyProperties, "displayName", bodyInfo.displayName).Replace("^N", "");
+				bodyInfo.displayName = Lib.ConfigValue(bodyProperties, "displayName", bodyInfo.displayName).LocalizeRemoveGender();
 
 				if (bodyProperties.HasValue("isHomeWorld"))
 				{

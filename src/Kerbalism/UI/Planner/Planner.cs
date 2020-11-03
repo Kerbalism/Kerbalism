@@ -486,12 +486,12 @@ namespace KERBALISM.Planner
 			(
 				"<align=left />" +
 				String.Format("<b>{0,-14}\t{1,-15}\t{2}</b>\n", Local.Planner_Source, Local.Planner_Flux, Local.Planner_Temp),//"Source""Flux""Temp"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.IrradianceStarTotal > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceStarTotal) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceStarTotal))),//"solar""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.IrradianceAlbedo > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceAlbedo) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceAlbedo))),//"albedo""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.IrradianceBodiesEmissive > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceBodiesEmissive) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesEmissive))),//"body""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", "body core", vesselData.IrradianceBodiesCore > 0.0 ? Lib.HumanReadableFlux(vesselData.IrradianceBodiesCore) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesCore))),//"body""none"
-				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableFlux(Sim.BackgroundFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux))),//"background"
-				String.Format("{0,-14}\t{1,-15}\t{2}", Local.Planner_total + "   ", Lib.HumanReadableFlux(vesselData.IrradianceTotal), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceTotal)))//"total"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_solar, vesselData.IrradianceStarTotal > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceStarTotal) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceStarTotal))),//"solar""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_albedo, vesselData.IrradianceAlbedo > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceAlbedo) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceAlbedo))),//"albedo""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_body, vesselData.IrradianceBodiesEmissive > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceBodiesEmissive) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesEmissive))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", "body core", vesselData.IrradianceBodiesCore > 0.0 ? Lib.HumanReadableIrradiance(vesselData.IrradianceBodiesCore) : Local.Generic_NONE, Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceBodiesCore))),//"body""none"
+				String.Format("{0,-14}\t{1,-15}\t{2}\n", Local.Planner_background, Lib.HumanReadableIrradiance(Sim.BackgroundFlux), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(Sim.BackgroundFlux))),//"background"
+				String.Format("{0,-14}\t{1,-15}\t{2}", Local.Planner_total + "   ", Lib.HumanReadableIrradiance(vesselData.IrradianceTotal), Lib.HumanReadableTemp(Sim.BlackBodyTemperature(vesselData.IrradianceTotal)))//"total"
 			);
 			string atmosphere_tooltip = Lib.BuildString
 			(

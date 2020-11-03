@@ -237,6 +237,7 @@ namespace KERBALISM
 		public static double PressureThreshold;                 // below that threshold, the vessel will be considered under non-survivable pressure and kerbals will put their helmets.
 																// also determine the altitude at which non-pressurized habitats can use the external air.
 																// note that while ingame we display hab pressure as % with no unit, 100 % = 1 atm = 101.325 kPa for all internal calculations
+
 		// poisoning
 		public static double PoisoningFactor;                   // poisoning modifier value for vessels below threshold
 		public static double PoisoningThreshold;                // level of waste atmosphere resource that determine co2 poisoning status

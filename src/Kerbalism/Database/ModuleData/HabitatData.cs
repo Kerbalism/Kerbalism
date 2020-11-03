@@ -81,12 +81,6 @@ namespace KERBALISM
 
 		public AnimState animState = AnimState.Retracted;
 
-		/// <summary> if deployable, is the habitat deployed ? </summary>
-		//public bool isDeployed = false;
-
-		///// <summary> if centrifuge, is the centrifuge spinning ? </summary>
-		//public bool isRotating = false;
-
 		/// <summary> crew count </summary>
 		public int crewCount = 0;
 
@@ -364,7 +358,7 @@ namespace KERBALISM
 				ConfigNode occluderNode = node.AddNode("OCCLUDER");
 				occluderNode.AddValue("distance", occluder.distance);
 				occluderNode.AddValue("thickness", occluder.thickness);
-			};
+			}
 		}
 
 		#endregion

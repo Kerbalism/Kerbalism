@@ -10,7 +10,7 @@ using static KERBALISM.HabitatLib;
 
 namespace KERBALISM
 {
-	public class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier
+	public class ModuleKsmHabitat : KsmPartModule<ModuleKsmHabitat, HabitatData>, IBackgroundModule, ISpecifics, IModuleInfo, IPartCostModifier, IVolumeAndSurfaceModule
 	{
 		#region FIELDS / PROPERTIES
 		// general config
@@ -28,7 +28,7 @@ namespace KERBALISM
 		// volume / surface config
 		[KSPField] public double volume = 0.0;  // habitable volume in m^3, deduced from model if not specified
 		[KSPField] public double surface = 0.0; // external surface in m^2, deduced from model if not specified
-		[KSPField] public Lib.VolumeAndSurfaceMethod volumeAndSurfaceMethod = Lib.VolumeAndSurfaceMethod.Best;
+		[KSPField] public PartVolumeAndSurface.Method volumeAndSurfaceMethod = PartVolumeAndSurface.Method.Best;
 		[KSPField] public bool substractAttachementNodesSurface = true;
 
 		// resources config
@@ -92,11 +92,6 @@ namespace KERBALISM
 
 		public PartResourceWrapper WasteRes => wasteRes;
 
-		// static game wide volume / surface cache
-		public static Dictionary<string, Lib.PartVolumeAndSurfaceInfo> habitatDatabase;
-		public const string habitatDataCacheNodeName = "KERBALISM_HABITAT_INFO";
-		public static string HabitatDataCachePath => Path.Combine(Lib.KerbalismRootPath, "HabitatData.cache");
-
 		// PAW UI
 		// Note : don't change the 4 UI_Toggle bool from code, they are UI only "read-only" 
 		// To change the state from code, use the static Toggle() methods
@@ -130,6 +125,60 @@ namespace KERBALISM
 
 		#region INIT
 
+		// IVolumeAndSurfaceModule
+		public void SetupPrefabPartModel()
+		{
+			SetupAnimations();
+
+			// determine habitat permanent state based on if animations exists and are valid
+			isDeployable = deployAnimator.IsDefined;
+			isCentrifuge = rotateAnimator.IsDefined;
+			hasShielding = Features.Radiation && maxShieldingFactor > 0.0;
+
+			// ensure correct state
+			if (!isDeployable)
+				deployWithPressure = false;
+
+			if (isDeployable)
+				deployAnimator.Still(1f);
+		}
+
+		// IVolumeAndSurfaceModule
+		public void GetVolumeAndSurfaceResults(PartVolumeAndSurface.Info result)
+		{
+			// SSTU specific support copypasted from the old system, not sure how well this works
+			if (volume <= 0.0 || surface <= 0.0)
+			{
+				foreach (PartModule pm in part.Modules)
+				{
+					if (pm.moduleName == "SSTUModularPart")
+					{
+						Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
+						if (bb != null)
+						{
+							if (volume <= 0.0) volume = PartVolumeAndSurface.BoundsVolume(bb) * 0.785398; // assume it's a cylinder
+							if (surface <= 0.0) surface = PartVolumeAndSurface.BoundsSurface(bb) * 0.95493; // assume it's a cylinder
+						}
+						return;
+					}
+				}
+			}
+
+			result.GetUsingMethod(volumeAndSurfaceMethod, out double calcVolume, out double calcSurface, substractAttachementNodesSurface);
+
+			if (volume <= 0.0) volume = calcVolume;
+			if (surface <= 0.0) surface = calcSurface;
+
+			result.volume = volume;
+			result.surface = surface;
+
+			// use config defined depressurization duration or fallback to the default setting
+			if (depressurizationSpeed > 0.0)
+				depressurizationSpeed = M3ToL(volume) / depressurizationSpeed;
+			else
+				depressurizationSpeed = M3ToL(volume) / (Settings.DepressuriationDefaultDuration * volume);
+		}
+
 		// parsing configs at prefab compilation
 		public override void OnLoad(ConfigNode node)
 		{
@@ -145,85 +194,9 @@ namespace KERBALISM
 						Lib.Log($"Unrecognized comfort `{comfortString}` in ModuleKsmHabitat config for part {part.partName}");
 				}
 
-				// instanciate animations from config
-				SetupAnimations();
-
-				// volume/surface calcs are quite slow and memory intensive, so we do them only once on the prefab
-				// then get the prefab values from OnStart. Moreover, we cache the results in the 
-				// Kerbalism\HabitatData.cache file and reuse those cached results on next game launch.
-				if (volume <= 0.0 || surface <= 0.0)
-				{
-					if (habitatDatabase == null)
-					{
-						ConfigNode dbRootNode = ConfigNode.Load(HabitatDataCachePath);
-						ConfigNode[] habInfoNodes = dbRootNode?.GetNodes(habitatDataCacheNodeName);
-						habitatDatabase = new Dictionary<string, Lib.PartVolumeAndSurfaceInfo>();
-
-						if (habInfoNodes != null)
-						{
-							for (int i = 0; i < habInfoNodes.Length; i++)
-							{
-								string partName = habInfoNodes[i].GetValue("partName") ?? string.Empty;
-								if (!string.IsNullOrEmpty(partName) && !habitatDatabase.ContainsKey(partName))
-									habitatDatabase.Add(partName, new Lib.PartVolumeAndSurfaceInfo(habInfoNodes[i]));
-							}
-						}
-					}
-
-					// SSTU specific support copypasted from the old system, not sure how well this works
-					foreach (PartModule pm in part.Modules)
-					{
-						if (pm.moduleName == "SSTUModularPart")
-						{
-							Bounds bb = Lib.ReflectionCall<Bounds>(pm, "getModuleBounds", new Type[] { typeof(string) }, new string[] { "CORE" });
-							if (bb != null)
-							{
-								if (volume <= 0.0) volume = Lib.BoundsVolume(bb) * 0.785398; // assume it's a cylinder
-								if (surface <= 0.0) surface = Lib.BoundsSurface(bb) * 0.95493; // assume it's a cylinder
-							}
-							return;
-						}
-					}
-
-					string configPartName = part.name.Replace('.', '_');
-					Lib.PartVolumeAndSurfaceInfo partInfo;
-					if (!habitatDatabase.TryGetValue(configPartName, out partInfo))
-					{
-						// set the model to the deployed state
-						if (isDeployable)
-							deployAnimator.Still(1f);
-
-						// get surface and volume
-						partInfo = Lib.GetPartVolumeAndSurface(part, Settings.VolumeAndSurfaceLogging);
-
-						habitatDatabase.Add(configPartName, partInfo);
-					}
-
-					partInfo.GetUsingMethod(
-						volumeAndSurfaceMethod != Lib.VolumeAndSurfaceMethod.Best ? volumeAndSurfaceMethod : partInfo.bestMethod,
-						out double infoVolume, out double infoSurface, substractAttachementNodesSurface);
-
-					if (volume <= 0.0) volume = infoVolume;
-					if (surface <= 0.0) surface = infoSurface;
-				}
-
-				// determine habitat permanent state based on if animations exists and are valid
-				isDeployable = deployAnimator.IsDefined;
-				isCentrifuge = rotateAnimator.IsDefined;
-				hasShielding = Features.Radiation && maxShieldingFactor > 0.0;
-
-				// ensure correct state
-				if (!isDeployable)
-					deployWithPressure = false;
-
-				//if (isDeployable && deployWithPressure)
-				//	canRetract = false; // inflatables can't be retracted
-
-				// parse config defined depressurization duration or fallback to the default setting
-				if (Lib.ConfigDuration(node, "depressurizationDuration", false, out depressurizationSpeed))
-					depressurizationSpeed = M3ToL(volume) / depressurizationSpeed;
-				else
-					depressurizationSpeed = M3ToL(volume) / (Settings.DepressuriationDefaultDuration * volume);
+				// parse config defined depressurization duration
+				if (!Lib.ConfigDuration(node, "depressurizationDuration", false, out depressurizationSpeed))
+					depressurizationSpeed = -1.0;
 			}
 		}
 
@@ -344,6 +317,8 @@ namespace KERBALISM
 
 			// PAW setup
 
+
+
 			// synchronize PAW state with data state
 			habitatEnabled = moduleData.isEnabled;
 			pressureEnabled = moduleData.IsPressurizationRequested;
@@ -358,30 +333,42 @@ namespace KERBALISM
 			deployField = Fields["deployEnabled"];
 			rotateField = Fields["rotationEnabled"];
 
-			// add value modified callbacks to the toggles
-			enableField.OnValueModified += OnToggleHabitat;
-			pressureField.OnValueModified += OnTogglePressure;
-			deployField.OnValueModified += OnToggleDeploy;
-			rotateField.OnValueModified += OnToggleRotation;
+			if (vessel != null && vessel.isEVA)
+			{
+				mainInfoField.guiActive = false;
+				secInfoField.guiActive = false;
+				enableField.guiActive = false;
+				pressureField.guiActive = false;
+				deployField.guiActive = false;
+				rotateField.guiActive = false;
+			}
+			else
+			{
+				// add value modified callbacks to the toggles
+				enableField.OnValueModified += OnToggleHabitat;
+				pressureField.OnValueModified += OnTogglePressure;
+				deployField.OnValueModified += OnToggleDeploy;
+				rotateField.OnValueModified += OnToggleRotation;
 
-			// set visibility
-			mainInfoField.guiActive = mainInfoField.guiActiveEditor = true;
-			secInfoField.guiActive = secInfoField.guiActiveEditor = IsSecInfoVisible;
-			enableField.guiActive = enableField.guiActiveEditor = CanToggleHabitat;
-			pressureField.guiActive = pressureField.guiActiveEditor = CanTogglePressure;
-			deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
-			rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
+				// set visibility
+				mainInfoField.guiActive = mainInfoField.guiActiveEditor = true;
+				secInfoField.guiActive = secInfoField.guiActiveEditor = IsSecInfoVisible;
+				enableField.guiActive = enableField.guiActiveEditor = CanToggleHabitat;
+				pressureField.guiActive = pressureField.guiActiveEditor = CanTogglePressure;
+				deployField.guiActive = deployField.guiActiveEditor = CanToggleDeploy;
+				rotateField.guiActive = rotateField.guiActiveEditor = CanToggleRotate;
 
-			// set names
-			mainInfoField.guiName = "Pressure";
-			enableField.guiName = "Habitat";
-			pressureField.guiName = "Pressure";
-			deployField.guiName = "Deployement";
+				// set names
+				mainInfoField.guiName = "Pressure";
+				enableField.guiName = "Habitat";
+				pressureField.guiName = "Pressure";
+				deployField.guiName = "Deployement";
 
-			((UI_Toggle)enableField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
-			((UI_Toggle)enableField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
-			((UI_Toggle)enableField.uiControlEditor).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
-			((UI_Toggle)enableField.uiControlEditor).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+				((UI_Toggle)enableField.uiControlFlight).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+				((UI_Toggle)enableField.uiControlFlight).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+				((UI_Toggle)enableField.uiControlEditor).enabledText = Lib.Color("enabled", Lib.Kolor.Green);
+				((UI_Toggle)enableField.uiControlEditor).disabledText = Lib.Color("disabled", Lib.Kolor.Yellow);
+			}
 
 #if DEBUG
 			Events["LogVolumeAndSurface"].guiActiveEditor = true;
@@ -454,7 +441,10 @@ namespace KERBALISM
 
 		public void Update()
 		{
-			// TODO : Find a reliable way to have that f**** PAW correctly updated when we change guiActive...
+			if (vessel != null && vessel.isEVA)
+				return;
+
+				// TODO : Find a reliable way to have that f**** PAW correctly updated when we change guiActive...
 			switch (moduleData.animState)
 			{
 				case AnimState.Accelerating:
@@ -1553,7 +1543,7 @@ namespace KERBALISM
 
 		// debug
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-		public void LogVolumeAndSurface() => Lib.GetPartVolumeAndSurface(part, true);
+		public void LogVolumeAndSurface() => PartVolumeAndSurface.GetPartVolumeAndSurface(part, true);
 
 		#endregion
 
@@ -1565,8 +1555,8 @@ namespace KERBALISM
 			string ecAbbr = PartResourceLibrary.Instance.GetDefinition("ElectricCharge").abbreviation;
 
 			Specifics specs = new Specifics();
-			specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > 0.0 ? volume : Lib.PartBoundsVolume(part)) + (volume > 0.0 ? "" : " (bounds)"));//"Volume"
-			specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > 0.0 ? surface : Lib.PartBoundsSurface(part)) + (surface > 0.0 ? "" : " (bounds)"));//"Surface"
+			specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > 0.0 ? volume : PartVolumeAndSurface.PartBoundsVolume(part)) + (volume > 0.0 ? "" : " (bounds)"));//"Volume"
+			specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > 0.0 ? surface : PartVolumeAndSurface.PartBoundsSurface(part)) + (surface > 0.0 ? "" : " (bounds)"));//"Surface"
 			specs.Add("");
 
 			if (!canPressurize)
@@ -1642,7 +1632,7 @@ namespace KERBALISM
 			return Lib.BuildString(
 				Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
 				" : ",
-				Lib.HumanReadableVolume(volume > 0.0 ? volume : Lib.PartBoundsVolume(part)),
+				Lib.HumanReadableVolume(volume > 0.0 ? volume : PartVolumeAndSurface.PartBoundsVolume(part)),
 				volume > 0.0 ? "" : " (bounds)");
 		}
 

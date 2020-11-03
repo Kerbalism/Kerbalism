@@ -116,9 +116,10 @@ namespace KERBALISM
         public Dictionary<string, Supply.SupplyState> supplies; // supplies state data
         public List<uint> scansat_id; // used to remember scansat sensors that were disabled
         public double scienceTransmitted; // how much science points has this vessel earned trough transmission
+		
 
 		// persist that so we don't have to do an expensive check every time
-        public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
+		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 
 		#endregion
 
@@ -139,6 +140,8 @@ namespace KERBALISM
 		public override double Latitude => Vessel.latitude;
 
 		public override double Longitude => Vessel.longitude;
+
+		public override double AngularVelocity => Vessel.angularVelocityD.magnitude;
 
 		/// <summary> [environment] true if inside ocean</summary>
 		public override bool EnvUnderwater => underwater; bool underwater;
@@ -302,9 +305,9 @@ namespace KERBALISM
 			Vessel = vessel;
 			VesselId = Vessel.id;
 
-			VesselParts = new PartDataCollectionVessel(this, (PartDataCollectionShip)shipVd.Parts);
 			resHandler = shipVd.ResHandler;
 			resHandler.ConvertShipHandlerToVesselHandler();
+			VesselParts = new PartDataCollectionVessel(this, (PartDataCollectionShip)shipVd.Parts);
 
 			//Parts.Load(kerbalismDataNode); // don't load parts, they already have been loaded when the ship was instantiated
 			Load(kerbalismDataNode, true);
@@ -313,7 +316,7 @@ namespace KERBALISM
 			SetInstantiateDefaults(vessel.protoVessel);
 		}
 
-		/// <summary> This ctor is to be used for newly created vessels, either from ship construction or for  </summary>
+		/// <summary> This ctor is to be used for newly created vessels, from ship construction or after undocking/decoupling</summary>
 		public VesselData(Vessel vessel, List<PartData> partDatas = null)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
@@ -326,22 +329,20 @@ namespace KERBALISM
 
 			if (Vessel.loaded)
 			{
+				resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
 				if (partDatas == null)
 					VesselParts = new PartDataCollectionVessel(this, Vessel);
 				else
 					VesselParts = new PartDataCollectionVessel(this, partDatas);
-
-				resHandler = new VesselResHandler(Vessel, VesselResHandler.VesselState.Loaded);
 			}
 			else
 			{
+				resHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
 				// vessels can be created unloaded, asteroids for example
 				if (partDatas == null)
 					VesselParts = new PartDataCollectionVessel(this, Vessel.protoVessel, null);
 				else
 					VesselParts = new PartDataCollectionVessel(this, partDatas);
-
-				resHandler = new VesselResHandler(Vessel.protoVessel, VesselResHandler.VesselState.Unloaded);
 			}
 
 			SetPersistedFieldsDefaults(vessel.protoVessel);
@@ -368,16 +369,16 @@ namespace KERBALISM
 
 			if (vesselDataNode == null)
 			{
-				VesselParts = new PartDataCollectionVessel(this, protoVessel, null);
 				resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
+				VesselParts = new PartDataCollectionVessel(this, protoVessel, null);
 				SetPersistedFieldsDefaults(protoVessel);
 				Lib.LogDebug("VesselData ctor (created from unsaved protovessel) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
 			}
 			else
 			{
 				Lib.LogDebug("VesselData ctor (loading from database) : id '" + VesselId + "' (" + protoVessel.vesselName + ")...");
-				VesselParts = new PartDataCollectionVessel(this, protoVessel, vesselDataNode);
 				resHandler = new VesselResHandler(protoVessel, VesselResHandler.VesselState.Unloaded);
+				VesselParts = new PartDataCollectionVessel(this, protoVessel, vesselDataNode);
 				Parts.Load(vesselDataNode);
 				Load(vesselDataNode, false);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
@@ -417,7 +418,6 @@ namespace KERBALISM
 			vesselSituations = new VesselSituations(this);
 			connection = new ConnectionInfo();
 			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
-			supplies = Supply.CreateStateDictionary(resHandler);
 		}
 
 		protected override void OnLoad(ConfigNode node)
@@ -596,6 +596,7 @@ namespace KERBALISM
 			{
 				EnvironmentUpdate(secSinceLastEval);
 				StateUpdate();
+				CheckPartStart();
 				ModuleDataUpdate();
 				secSinceLastEval = 0.0;
 			}
@@ -603,12 +604,31 @@ namespace KERBALISM
 			FixedUpdate(elapsedSeconds);
 		}
 
+		private void CheckPartStart()
+		{
+			if (!modulesStarted)
+			{
+				modulesStarted = true;
+
+				if (LoadedOrEditor)
+					return;
+
+				foreach (PartData part in Parts)
+				{
+					foreach (ModuleData module in part.modules)
+					{
+						Lib.LogDebug($"Starting {module.GetType().Name} on {VesselName}");
+						module.OnStart();
+					}
+					part.PostInstantiateSetup();
+				}
+			}
+		}
+
 		private int partToUpdate = 1;
 		private bool modulesStarted = false;
 		private void FixedUpdate(double elapsedSec)
 		{
-			
-
 			// On loaded vessels, don't call this before the loaded part / modules 
 			// references have been set (happen in the Part.Start() prefix, usually called)
 			if (LoadedOrEditor)
@@ -621,37 +641,45 @@ namespace KERBALISM
 			}
 			else if (!modulesStarted)
 			{
-				modulesStarted = true;
-				foreach (PartData part in Parts)
-				{
-					foreach (ModuleData module in part.modules)
-					{
-						Lib.LogDebug($"Starting {module.GetType().Name} on {VesselName}");
-						module.OnStart();
-					}
-				}
+				return;
 			}
+			//else if (!modulesStarted)
+			//{
+			//	modulesStarted = true;
+			//	foreach (PartData part in Parts)
+			//	{
+			//		foreach (ModuleData module in part.modules)
+			//		{
+			//			Lib.LogDebug($"Starting {module.GetType().Name} on {VesselName}");
+			//			module.OnStart();
+			//		}
+			//		part.PostInstantiateSetup();
+			//	}
+			//}
 				
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.PartRadiationUpdate");
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.FixedUpdate");
 
 			for (int i = 0; i < Parts.Count; i++)
 			{
-				foreach (ModuleData module in Parts[i].modules)
-				{
-					module.OnFixedUpdate(elapsedSec);
-				}
-
-				PartRadiationData radiationData = Parts[i].radiationData;
+				PartData pd = Parts[i];
+				PartRadiationData radiationData = pd.radiationData;
 				radiationData.elapsedSecSinceLastUpdate += elapsedSec;
 
 				if (i == partToUpdate)
 				{
 					radiationData.Update();
+				}
+				
+			}
+			partToUpdate = (partToUpdate + 1) % Parts.Count;
 
+			foreach (PartData pd in Parts)
+			{
+				foreach (ModuleData module in pd.modules)
+				{
+					module.OnFixedUpdate(elapsedSec);
 				}
 			}
-
-			partToUpdate = (partToUpdate + 1) % Parts.Count;
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -748,6 +776,15 @@ namespace KERBALISM
 						vesselStarFlux.directRawFlux += stepStarFlux.directRawFlux;
 						vesselStarFlux.bodiesAlbedoFlux += stepStarFlux.bodiesAlbedoFlux;
 						vesselStarFlux.bodiesEmissiveFlux += stepStarFlux.bodiesEmissiveFlux;
+
+						vesselStarFlux.mainBodyVesselStarAngle += stepStarFlux.mainBodyVesselStarAngle;
+						vesselStarFlux.sunAndBodyFaceSkinTemp += stepStarFlux.sunAndBodyFaceSkinTemp;
+						vesselStarFlux.bodiesFaceSkinTemp += stepStarFlux.bodiesFaceSkinTemp;
+						vesselStarFlux.sunFaceSkinTemp += stepStarFlux.sunFaceSkinTemp;
+						vesselStarFlux.darkFaceSkinTemp += stepStarFlux.darkFaceSkinTemp;
+						vesselStarFlux.skinIrradiance += stepStarFlux.skinIrradiance;
+						vesselStarFlux.skinRadiosity += stepStarFlux.skinRadiosity;
+
 						directRawFluxTotal += stepStarFlux.directRawFlux;
 
 						if (vesselStarFlux.directFlux > 0.0)
@@ -776,6 +813,15 @@ namespace KERBALISM
 					vesselStarFlux.bodiesAlbedoFlux /= subStepCountD;
 					vesselStarFlux.bodiesEmissiveFlux /= subStepCountD;
 					vesselStarFlux.sunlightFactor /= subStepCountD;
+
+					vesselStarFlux.mainBodyVesselStarAngle /= subStepCountD;
+					vesselStarFlux.sunAndBodyFaceSkinTemp /= subStepCountD;
+					vesselStarFlux.bodiesFaceSkinTemp /= subStepCountD;
+					vesselStarFlux.sunFaceSkinTemp /= subStepCountD;
+					vesselStarFlux.darkFaceSkinTemp /= subStepCountD;
+					vesselStarFlux.skinIrradiance /= subStepCountD;
+					vesselStarFlux.skinRadiosity /= subStepCountD;
+
 
 					irradianceAlbedo += vesselStarFlux.bodiesAlbedoFlux;
 					irradianceBodiesEmissive += vesselStarFlux.bodiesEmissiveFlux;

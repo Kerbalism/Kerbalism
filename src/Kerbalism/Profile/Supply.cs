@@ -81,7 +81,7 @@ namespace KERBALISM
 			fullStopWarp = Lib.ConfigValue(node, "fullStopWarp", false);
 		}
 
-		public static Dictionary<string, SupplyState> CreateStateDictionary(VesselResHandler resHandler)
+		private static Dictionary<string, SupplyState> CreateStateDictionary(VesselResHandler resHandler)
 		{
 			Dictionary<string, SupplyState> supplies = new Dictionary<string, SupplyState>(Profile.supplies.Count);
 
@@ -104,6 +104,11 @@ namespace KERBALISM
 
 		public static void SendMessages(VesselData vd)
 		{
+			if (vd.supplies == null)
+			{
+				vd.supplies = CreateStateDictionary(vd.ResHandler);
+			}
+
 			// execute all supplies
 			foreach (Supply supply in Profile.supplies)
 			{

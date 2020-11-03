@@ -36,8 +36,8 @@ namespace KERBALISM
 
 				// surface panel
 				p.AddSection(Local.BodyInfo_SURFACE);//"SURFACE"
-				p.AddContent("raw solar irradiance", Lib.HumanReadableFlux(rawIrradiance));
-				if (simBody.coreThermalFlux != 0.0) p.AddContent("core thermal irradiance", Lib.HumanReadableFlux(simBody.coreThermalFlux));
+				p.AddContent("raw solar irradiance", Lib.HumanReadableIrradiance(rawIrradiance));
+				if (simBody.coreThermalFlux != 0.0) p.AddContent("core thermal irradiance", Lib.HumanReadableIrradiance(simBody.coreThermalFlux));
 				p.AddContent("bond albedo", simBody.albedo.ToString("F2"));
 				p.AddContent("geometric albedo", simBody.geometricAlbedo.ToString("F2"));
 				p.AddContent("equilibrium temperature", Lib.HumanReadableTemp(equilibriumTemperature));
@@ -55,7 +55,7 @@ namespace KERBALISM
 					p.AddContent(Local.BodyInfo_lightabsorption, Lib.HumanReadablePerc(1.0 - simBody.atmoAverageLightTransparency));//"light absorption"
 					if (Features.Radiation) p.AddContent(Local.BodyInfo_gammaabsorption, Lib.HumanReadablePerc(1.0 - Sim.GammaTransparency(body, 0.0)));//"gamma absorption"
 					p.AddContent("greenhouse effect", Lib.HumanReadableTemp(simBody.atmoGreenhouseTempOffset));
-					p.AddContent("surface solar irradiance", Lib.HumanReadableFlux(surfaceIrradiance));
+					p.AddContent("surface solar irradiance", Lib.HumanReadableIrradiance(surfaceIrradiance));
 					p.AddContent("day equatorial temperature", Lib.HumanReadableTemp(dayTemperature));
 					p.AddContent("night equatorial temperature", Lib.HumanReadableTemp(nightTemperature));
 					p.AddContent("polar temperature", Lib.HumanReadableTemp(polarTemperature));

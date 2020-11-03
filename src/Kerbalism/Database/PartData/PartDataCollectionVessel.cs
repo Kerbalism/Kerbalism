@@ -65,7 +65,8 @@ namespace KERBALISM
 					}
 				}
 			}
-				
+
+
 		}
 
 		public PartDataCollectionVessel(VesselDataBase vesselData, ProtoVessel protoVessel, ConfigNode vesselDataNode)
@@ -132,7 +133,7 @@ namespace KERBALISM
 				ConfigNode partNode = new ConfigNode(partData.flightId.ToString());
 
 				isPersistent |= PartResourceData.SavePartResources(partData, partNode);
-				isPersistent |= PartRadiationData.SaveRadiationData(partData, partNode);
+				isPersistent |= PartRadiationData.Save(partData, partNode);
 
 				if (isPersistent)
 					partsNode.AddNode(partNode);
@@ -158,7 +159,7 @@ namespace KERBALISM
 				}
 
 				PartResourceData.LoadPartResources(partData, partNode);
-				PartRadiationData.LoadRadiationData(partData, partNode);
+				PartRadiationData.Load(partData, partNode);
 			}
 		}
 

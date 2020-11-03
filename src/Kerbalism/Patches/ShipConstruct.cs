@@ -59,6 +59,7 @@ namespace KERBALISM
 						}
 					}
 				}
+				partData.PostInstantiateSetup();
 			}
 			else
 			{
@@ -86,6 +87,7 @@ namespace KERBALISM
 						ModuleData.GetOrCreateFlightModuleData(partData, ksmPM, i);
 					}
 				}
+				partData.PostInstantiateSetup();
 			}
 		}
 	}
@@ -187,6 +189,7 @@ namespace KERBALISM
 
 			foreach (Part part in __instance.parts)
 			{
+				PartData newPartData = null;
 				for (int i = 0; i < part.Modules.Count; i++)
 				{
 					if (part.Modules[i] is KsmPartModule ksmPM)
@@ -200,13 +203,13 @@ namespace KERBALISM
 
 							// This could in the above loop, but since this only happen in unfrequent corner cases,
 							// having it here avoid doing t
-							if (!VesselDataShip.ShipParts.TryGet(part, out PartData partData))
+							if (!VesselDataShip.ShipParts.TryGet(part, out newPartData))
 							{
-								partData = new PartData(VesselDataShip.Instance, part);
-								VesselDataShip.ShipParts.Add(partData);
+								newPartData = new PartData(VesselDataShip.Instance, part);
+								VesselDataShip.ShipParts.Add(newPartData);
 							}
 
-							ModuleData.New(ksmPM, i, partData, false);
+							ModuleData.New(ksmPM, i, newPartData, false);
 						}
 
 						int shipId;
@@ -218,6 +221,11 @@ namespace KERBALISM
 						ksmPM.dataShipId = shipId;
 						ksmPM.ModuleData.shipId = shipId;
 					}
+				}
+
+				if (newPartData != null)
+				{
+					newPartData.PostInstantiateSetup();
 				}
 			}
 		}
