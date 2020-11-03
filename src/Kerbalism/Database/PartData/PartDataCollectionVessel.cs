@@ -134,7 +134,6 @@ namespace KERBALISM
 
 				isPersistent |= PartResourceData.SavePartResources(partData, partNode);
 				isPersistent |= PartRadiationData.Save(partData, partNode);
-				isPersistent |= PartThermalData2.Save(partData, partNode);
 
 				if (isPersistent)
 					partsNode.AddNode(partNode);
@@ -161,7 +160,6 @@ namespace KERBALISM
 
 				PartResourceData.LoadPartResources(partData, partNode);
 				PartRadiationData.Load(partData, partNode);
-				PartThermalData2.Load(partData, partNode);
 			}
 		}
 

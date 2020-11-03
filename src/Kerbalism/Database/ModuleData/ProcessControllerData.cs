@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace KERBALISM
 {
-	public class ProcessControllerData : ModuleData<ModuleKsmProcessController, ProcessControllerData>, IThermalModule
+	public class ProcessControllerData : ModuleData<ModuleKsmProcessController, ProcessControllerData>
 	{
 		public string processName;      // internal name of the process (i.e. "scrubber" or "sabatier")
 		public double processCapacity;  // this part modules capacity to run this process
@@ -15,15 +15,6 @@ namespace KERBALISM
 
 		private double availableCapacity;
 		private double consumedCapacity;
-		private double heatProduction;
-
-		public bool IsThermalEnabled => moduleIsEnabled && Process.nominalHeatProduction != 0.0;
-		public double OperatingTemperature => Process.operatingTemperature;
-		public double HeatProduction => heatProduction;
-		public double ThermalMass => Process != null ? Process.thermalMass * processCapacity : 0.0;
-		public string ModuleId => processName;
-		public double SurfaceFactor => Math.Min(ThermalMass / partData.PartPrefab.mass, 1.0);
-		public ModuleThermalData ThermalData { get; set; }
 
 		public override void OnFirstInstantiate(ProtoPartModuleSnapshot protoModule, ProtoPartSnapshot protoPart)
 		{
@@ -54,11 +45,6 @@ namespace KERBALISM
 
 			if (Process == null)
 				moduleIsEnabled = false;
-
-			if (IsThermalEnabled)
-			{
-				ModuleThermalData.Load(ThermalData, node);
-			}
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -68,11 +54,6 @@ namespace KERBALISM
 			node.AddValue("isRunning", isRunning);
 			node.AddValue("isBroken", isBroken);
 			node.AddValue("consumedCapacity", consumedCapacity);
-
-			if (IsThermalEnabled)
-			{
-				ThermalData.Save(node);
-			}
 		}
 
 		public override void OnStart()
@@ -89,10 +70,7 @@ namespace KERBALISM
 				return;
 
 			consumedCapacity += Process.selfConsumptionRate * elapsedSec;
-			Process.EvaluateThermalFactors(ThermalData.Temperature, VesselProcess.AvailableCapacityUtilization, out double thermalEfficiency, out heatProduction);
-			double remainingCapacity = Math.Max(processCapacity - consumedCapacity, 0.0);
-			heatProduction *= remainingCapacity * VesselProcess.AvailableCapacityPercent;
-			availableCapacity = remainingCapacity * thermalEfficiency;
+			availableCapacity = Math.Max(processCapacity - consumedCapacity, 0.0);
 		}
 
 		public override void OnVesselDataUpdate()

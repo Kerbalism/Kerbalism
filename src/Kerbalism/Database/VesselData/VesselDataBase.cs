@@ -139,8 +139,6 @@ namespace KERBALISM
 		/// <summary> True if less than 10% of the current update was spent in the direct light of the main star</summary>
 		public bool InFullShadow => MainStar.sunlightFactor < 0.1;
 
-		public VesselThermalData ThermalData { get; private set; } = new VesselThermalData();
-
 		#endregion
 
 		#region LIFECYCLE

@@ -21,18 +21,4 @@ namespace KERBALISM
 		bool IsActive { get; }
 		PartRadiationData RadiationData { get; }
 	}
-
-	public interface IThermalModule
-	{
-		bool IsThermalEnabled { get; }
-		string ModuleId { get; }
-		double OperatingTemperature { get; } // Kelvin
-		double HeatProduction { get; } // KiloWatts
-		double ThermalMass { get; } // Tons
-		// Estimate of the contact area proportion between that module and the part surface.
-		// Unless a specific value is defined in configs, it can be guessed from the thermal module mass compared to the part mass.
-		double SurfaceFactor { get; } 
-		ModuleThermalData ThermalData { get; set; }
-		double CoolantVolume { get; }
-	}
 }

@@ -41,7 +41,6 @@ namespace KERBALISM
 		private bool initialized = false;
 
 		public PartRadiationData radiationData;
-		public PartThermalData2 thermalData;
 		public PartVolumeAndSurface.Info volumeAndSurface;
 		public PartResourceDataCollection virtualResources;
 		public List<ModuleData> modules = new List<ModuleData>();
@@ -90,7 +89,6 @@ namespace KERBALISM
 			if (initialized)
 				return;
 
-			thermalData = PartThermalData2.Setup(this);
 			initialized = true;
 		}
 

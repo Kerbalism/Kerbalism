@@ -35,8 +35,6 @@ namespace KERBALISM.Planner
 			if (Features.Failures)
 				panel_special.Add("reliability");
 
-			panel_special.Add("thermal");
-
 			// environment panels
 			if (Features.LifeSupport)
 				panel_environment.Add("habitat");
@@ -178,9 +176,6 @@ namespace KERBALISM.Planner
 							break;
 						case "reliability":
 							AddSubPanelReliability(panel);
-							break;
-						case "thermal":
-							AddSubPanelThermal(panel);
 							break;
 					}
 				}
@@ -483,66 +478,6 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_redundancy, redundancy_str, redundancy_tooltip);//"redundancy"
 			p.AddContent(Local.Planner_repair, repair_str, repair_tooltip);//"repair"
 		}
-
-		///<summary> Add environment sub-panel, including tooltips </summary>
-		private static void AddSubPanelThermal(Panel p)
-		{
-			double internalHeatProduction = 0.0;
-			double environmentExchange = 0.0;
-			double skinIrradiance = 0.0;
-			double skinRadiosity = 0.0;
-			double thermalPartsCount = 0.0;
-			foreach (PartData partData in VesselDataShip.Instance.Parts)
-			{
-				if (partData.thermalData == null)
-					continue;
-
-				internalHeatProduction += partData.thermalData.internalFlux;
-				environmentExchange += partData.thermalData.envFlux;
-				skinIrradiance += partData.thermalData.irradiance;
-				skinRadiosity += partData.thermalData.radiosity;
-				thermalPartsCount++;
-			}
-
-			if (thermalPartsCount > 1.0)
-			{
-				skinIrradiance /= thermalPartsCount;
-				skinRadiosity /= thermalPartsCount;
-			}
-
-			string envFluxTooltip = Lib.BuildString
-			(
-				"<align=left />",
-				String.Format("{0,-20}\t<b>{1}</b>\n", "Average irradiance", Lib.HumanReadableIrradiance(skinIrradiance)),
-				String.Format("{0,-20}\t<b>{1}</b>", "Average radiosity", Lib.HumanReadableIrradiance(skinRadiosity))
-			);
-
-			VesselResource belowThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData2.belowThDef.name);
-			string heatingControl;
-			if (Math.Abs(belowThEnergyRes.ProduceRequests + belowThEnergyRes.UnknownBrokersRate) < 1e-03)
-				heatingControl = Lib.HumanReadableSmallNumber(belowThEnergyRes.ProduceRequests) + " / " + Lib.HumanReadableThermalFlux(-belowThEnergyRes.UnknownBrokersRate);
-			else
-				heatingControl = Lib.Color(Lib.HumanReadableSmallNumber(belowThEnergyRes.ProduceRequests), Lib.Kolor.Orange) + " / " + Lib.HumanReadableThermalFlux(-belowThEnergyRes.UnknownBrokersRate);
-
-			VesselResource aboveThEnergyRes = VesselDataShip.Instance.ResHandler.GetResource(PartThermalData2.aboveThDef.name);
-			double coolingNeeded = Math.Max(aboveThEnergyRes.Amount, aboveThEnergyRes.UnknownBrokersRate);
-			string coolingControl;
-			if (Math.Abs(aboveThEnergyRes.ConsumeRequests - coolingNeeded) < 1e-03)
-				coolingControl = Lib.HumanReadableSmallNumber(aboveThEnergyRes.ConsumeRequests) + " / " + Lib.HumanReadableThermalFlux(coolingNeeded);
-			else
-				coolingControl = Lib.Color(Lib.HumanReadableSmallNumber(aboveThEnergyRes.ConsumeRequests), Lib.Kolor.Orange) + " / " + Lib.HumanReadableThermalFlux(coolingNeeded);
-
-			// render panel
-			p.AddSection("THERMAL CONTROL", string.Empty,
-				() => { p.Prev(ref special_index, panel_special.Count); updateRequested = true; },
-				() => { p.Next(ref special_index, panel_special.Count); updateRequested = true; });
-			p.AddContent("Environment balance", Lib.HumanReadableThermalFlux(environmentExchange), envFluxTooltip);
-			p.AddContent("Internal waste heat", Lib.HumanReadableThermalFlux(internalHeatProduction));
-			p.AddContent("Heating control", heatingControl, belowThEnergyRes.BrokersListTooltip(false));
-			p.AddContent("Cooling control", coolingControl, aboveThEnergyRes.BrokersListTooltip(false));
-		}
-
-		
 
 		///<summary> Add environment sub-panel, including tooltips </summary>
 		private static void AddSubPanelEnvironment(Panel p)

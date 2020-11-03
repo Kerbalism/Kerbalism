@@ -159,18 +159,14 @@
     <Compile Include="Database\ModuleData\ExperimentData.cs" />
     <Compile Include="Database\ModuleData\Interfaces.cs" />
     <Compile Include="Database\ModuleData\ModuleData.cs" />
-    <Compile Include="Database\ModuleData\ModuleThermalData.cs" />
     <Compile Include="Database\ModuleData\RadiationEmitterData.cs" />
     <Compile Include="Database\PartData\PartDataCollectionBase.cs" />
     <Compile Include="Database\PartData\PartDataCollectionShip.cs" />
     <Compile Include="Database\PartData\PartRadiationData.cs" />
     <Compile Include="Database\PartData\PartResourceData.cs" />
     <Compile Include="Database\PartData\PartResourceDataCollection.cs" />
-    <Compile Include="Database\PartData\PartThermalData2.cs" />
-    <Compile Include="Database\PartData\PartThermalData.cs" />
     <Compile Include="Database\PartVolumeAndSurface.cs" />
     <Compile Include="Database\VesselDataComponents\VesselData.Rescue.cs" />
-    <Compile Include="Database\VesselDataComponents\VesselThermalData.cs" />
     <Compile Include="Database\VesselData\VesselDataBase.cs" />
     <Compile Include="Database\VesselDataComponents\VesselHabitat.cs" />
     <Compile Include="Database\VesselDataComponents\VesselProcess.cs" />
@@ -183,7 +179,6 @@
     <Compile Include="Modules\ModuleKsmGreenhouse.cs" />
     <Compile Include="Modules\ModuleKsmRadiationEmitter.cs" />
     <Compile Include="Modules\ModuleKsmRadiationCoil.cs" />
-    <Compile Include="Modules\ModuleKsmRadiator.cs" />
     <Compile Include="Patches\InternalModelAndHelmets.cs" />
     <Compile Include="Patches\ModuleCommand.cs" />
     <Compile Include="API\PartModuleAPI.cs" />

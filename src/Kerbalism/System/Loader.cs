@@ -57,7 +57,6 @@ namespace KERBALISM
 			if (Features.Radiation) Inject(root, "Kerbalism", "Radiation");
 			if (Features.LifeSupport) Inject(root, "Kerbalism", "LifeSupport");
 			if (Features.Stress) Inject(root, "Kerbalism", "Stress");
-			if (Features.Thermal) Inject(root, "Kerbalism", "Thermal");
 
 			// Create harmony instance
 			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");

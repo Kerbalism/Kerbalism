@@ -81,43 +81,13 @@ namespace KERBALISM
 		public List<Input> inputs;
 		public List<Output> outputs;
 		public double selfConsumptionRate = 0.0;
-		public bool thermalEnabled = false;
-		public double operatingTemperature = 295.0;
-		public double operatingTemperatureRange = 50.0;
-		public double nominalHeatProduction = 0.01;
-
-		// how the current temperature vs the operating temperature and 
-		// operating temperature range affect the process efficiency :
-		// if 0.0, temperature has no effect on efficiency
-		// if 1.0, the effiency / temperature relation is linear
-		// if < 1.0, the efficiency will stay high for a small temperature difference with the operating temperature
-		// if > 1.0, the efficiency will drop quickly for a small temperature difference with the operating temperature
-		// visualization : https://www.desmos.com/calculator/5iaf0az2j1
-		// effFactor = Math.Pow(Math.Min(1.0, 1.0 - Math.Abs(temperature - operatingTemperature) / (operatingTemperatureRange * 0.5)), thermalEfficiencyExponent)
-		public double thermalEfficiencyExponent = 1.0;
-
-		// how the process production rate affect heat production :
-		// if 0.0, heat production is constant as long as the process is enabled
-		// if 1.0, the production rate / heat production relation is linear
-		// if < 1.0, heat production will rise quickly when the production rate is low
-		// if > 1.0, heat production will rise slowly when the production rate is low
-		public double heatProductionExponent = 1.0;
-		public double thermalMass = 0.010; // tons / capacity unit
 
 		public ResourceBroker broker;
 		public bool hasModifier;
 		private IGenericExpression<double> modifier;
-
-		public void EvaluateThermalFactors(double temperature, double prodFactor, out double thermalEfficiency, out double heatProduction)
-		{
-			thermalEfficiency = Math.Pow(Math.Min(1.0, 1.0 - (Math.Abs(temperature - operatingTemperature) / (operatingTemperatureRange * 0.5))), thermalEfficiencyExponent);
-			heatProduction = nominalHeatProduction * Math.Pow(prodFactor, heatProductionExponent);
-		}
 		
 		public Process(ConfigNode node)
 		{
-			
-
 			name = Lib.ConfigValue(node, "name", string.Empty);
 			if (name.Length == 0)
 				throw new Exception("skipping unnammed process");

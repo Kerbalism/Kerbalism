@@ -62,15 +62,6 @@ namespace KERBALISM.Planner
 				ExecuteProcess(p);
 			}
 
-			// process heat
-			foreach (PartData partData in VesselDataShip.Instance.Parts)
-			{
-				if (partData.thermalData == null)
-					continue;
-
-				partData.thermalData.PlannerUpdate();
-			}
-
 			// process comms
 			// TODO : add a switch somewhere in the planner to select transmitting/not transmitting
 			handler.ElectricCharge.Consume(vd.connection.ec_idle, ResourceBroker.CommsIdle);

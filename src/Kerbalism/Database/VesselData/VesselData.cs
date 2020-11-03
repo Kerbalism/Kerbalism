@@ -141,7 +141,6 @@ namespace KERBALISM
 
 		public override double Longitude => Vessel.longitude;
 
-		// TODO : persist this for thermal calcs
 		public override double AngularVelocity => Vessel.angularVelocityD.magnitude;
 
 		/// <summary> [environment] true if inside ocean</summary>
@@ -662,7 +661,6 @@ namespace KERBALISM
 				
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.FixedUpdate");
 
-			ThermalData.Reset();
 			for (int i = 0; i < Parts.Count; i++)
 			{
 				PartData pd = Parts[i];
@@ -674,14 +672,7 @@ namespace KERBALISM
 					radiationData.Update();
 				}
 				
-				if (pd.thermalData != null)
-				{
-					pd.thermalData.Update(elapsedSec);
-					ThermalData.coolantVolume += pd.thermalData.coolantVolume;
-					ThermalData.coolantTemperature += pd.thermalData.coolantVolume * pd.thermalData.coolantTemperature;
-				}
 			}
-			ThermalData.coolantTemperature /= ThermalData.coolantVolume;
 			partToUpdate = (partToUpdate + 1) % Parts.Count;
 
 			foreach (PartData pd in Parts)

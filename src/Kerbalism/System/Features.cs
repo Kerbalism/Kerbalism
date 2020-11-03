@@ -11,7 +11,6 @@ namespace KERBALISM
 		public static bool Radiation;
 		public static bool Failures;
 		public static bool Science;
-		public static bool Thermal;
 
 		public static void Parse()
 		{
@@ -29,7 +28,6 @@ namespace KERBALISM
 			Science = Lib.ConfigValue(cfg, "Science", true);
 			Radiation = Lib.ConfigValue(cfg, "Radiation", true);
 			Stress = Lib.ConfigValue(cfg, "Stress", true);
-			Thermal = Lib.ConfigValue(cfg, "Thermal", true);
 
 			if (Stress && !LifeSupport)
 			{
@@ -50,7 +48,6 @@ namespace KERBALISM
 			Lib.Log("- Failures: " + Failures);
 			Lib.Log("- Science: " + Science);
 			Lib.Log("- Radiation: " + Radiation);
-			Lib.Log("- Thermal: " + Thermal);
 		}
 	}
 } // KERBALISM

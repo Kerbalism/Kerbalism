@@ -159,7 +159,6 @@ namespace KERBALISM
 
 		private static void PostParseSetup()
 		{
-			PartThermalData2.SetupVirtualResources();
 			VesselResHandler.SetupDefinitions();
 		}
 

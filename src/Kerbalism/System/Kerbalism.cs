@@ -250,8 +250,6 @@ namespace KERBALISM
 				firstFU = false;
 			}
 
-			Localizer.Format("#autoLOC_272436", new string[] { FlightGlobals.Bodies[1].displayName });
-
 			SubStepSim.OnFixedUpdate();
 			Sim.OnFixedUpdate();
 
