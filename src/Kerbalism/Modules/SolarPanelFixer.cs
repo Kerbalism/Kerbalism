@@ -8,6 +8,7 @@ using UnityEngine;
 using KSP.Localization;
 using KERBALISM.Planner;
 using System.Linq;
+using EdyCommonTools;
 
 namespace KERBALISM
 {
@@ -936,6 +937,12 @@ namespace KERBALISM
 
 			public override PanelState GetState()
 			{
+				// Detect modified TotalEnergyRate (B9PS switching of the stock module or ROSolar built-in switching)
+				if (panelModule.resHandler.outputResources[0].rate != 0.0)
+				{
+					OnStart(false, ref fixerModule.nominalRate);
+				}
+
 				if (!panelModule.useAnimation)
 				{
 					if (panelModule.deployState == ModuleDeployablePart.DeployState.BROKEN)
@@ -1113,6 +1120,13 @@ namespace KERBALISM
 
 			public override PanelState GetState()
 			{
+				// Detect modified TotalEnergyRate (B9PS switching of the target module)
+				double newrate = Lib.ReflectionValue<float>(panelModule, "TotalEnergyRate");
+				if (newrate != fixerModule.nominalRate)
+				{
+					OnStart(false, ref fixerModule.nominalRate);
+				}
+
 				string stateStr = Lib.ReflectionValue<string>(panelModule, "SavedState");
 				Type enumtype = typeof(ModuleDeployablePart.DeployState);
 				if (!Enum.IsDefined(enumtype, stateStr))
@@ -1546,6 +1560,10 @@ namespace KERBALISM
 		*/
 		private class ROConfigurablePanel : StockPanel
 		{
+			// Note : this has been implemented in the base class (StockPanel) because
+			// we have the same issue with NearFutureSolar B9PS-switching its MDSP modules.
+
+			/*
 			public override PanelState GetState()
 			{
 				// We set the resHandler rate to 0 in StockPanel.OnStart(), and ModuleROSolar set it back
@@ -1556,6 +1574,7 @@ namespace KERBALISM
 
 				return base.GetState();
 			}
+			*/
 		}
 
 		#endregion
