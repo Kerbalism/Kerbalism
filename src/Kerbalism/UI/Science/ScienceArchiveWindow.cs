@@ -299,13 +299,26 @@ namespace KERBALISM
 			}
 		}
 
+		private static string[] alwaysResearchedExperiments = new string[]
+		{
+			"asteroidSample",
+			"cometSample_short",
+			"cometSample_intermediate",
+			"cometSample_long",
+			"cometSample_interstellar"
+		};
+
 		private static void UpdateResearchedFilter()
 		{
 			researchedExpInfos.Clear();
 
-			ExperimentInfo asteroidSample = ScienceDB.GetExperimentInfo("asteroidSample");
-			if (asteroidSample != null)
-				researchedExpInfos.Add(asteroidSample);
+			ExperimentInfo alwaysResearchedExperiment;
+			foreach (string experimentId in alwaysResearchedExperiments)
+			{
+				alwaysResearchedExperiment = ScienceDB.GetExperimentInfo(experimentId);
+				if (alwaysResearchedExperiment != null)
+					researchedExpInfos.Add(alwaysResearchedExperiment);
+			}
 
 			foreach (AvailablePart availablePart in PartLoader.LoadedPartsList)
 			{

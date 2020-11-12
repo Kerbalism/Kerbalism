@@ -370,7 +370,7 @@ namespace KERBALISM
 				}
 
 				// special cases
-				if (ExperimentId == "asteroidSample")
+				if (ExperimentId == "asteroidSample" || ExperimentId.StartsWith("cometSample_", StringComparison.Ordinal))
 				{
 					ModuleInfo = Local.Experimentinfo_Asteroid;//"Asteroid samples can be taken by kerbals on EVA"
 					ModuleInfo += "\n"+Local.Experimentinfo_Samplesize +" ";//Sample size:
@@ -378,6 +378,7 @@ namespace KERBALISM
 					ModuleInfo += "\n"+Local.Experimentinfo_Samplemass +" ";//Sample mass:
 					ModuleInfo += Lib.HumanReadableMass(DataSize * Settings.AsteroidSampleMassPerMB);
 				}
+
 #if !KSP15_16
 				else if (IsROC)
 				{

@@ -624,7 +624,7 @@ namespace KERBALISM
 		/// Create our SubjectData by parsing the stock "experiment@situation" subject id string.
 		/// Used for asteroid samples, for compatibility with RnD archive data of removed mods and for converting stock ScienceData into SubjectData
 		/// </summary>
-		public static SubjectData GetSubjectDataFromStockId(string stockSubjectId, ScienceSubject RnDSubject = null)
+		public static SubjectData GetSubjectDataFromStockId(string stockSubjectId, ScienceSubject RnDSubject = null, string extraSituationInfo = null)
 		{
 			SubjectData subjectData = null;
 
@@ -654,17 +654,19 @@ namespace KERBALISM
 			// for subject ids created with the ResearchAndDevelopment.GetExperimentSubject overload that take a "sourceUId" string,
 			// the sourceUId is added to the situation after a "_"
 			// in stock this seems to be used only for asteroids, and I don't think any mod use it.
-			string extraSituationInfo = string.Empty;
 			if (expAndSit[1].Contains("_"))
 			{
 				string[] sitAndAsteroid = expAndSit[1].Split('_');
 				// remove
 				expAndSit[1] = sitAndAsteroid[0];
 				// asteroid are saved as "part.partInfo.name + part.flightID", and the part name always end with a randomly generated "AAA-000" string
-				extraSituationInfo = Regex.Match(sitAndAsteroid[1], ".*?-[0-9][0-9][0-9]").Value;
-				// if no match, just use the unmodified string
-				if (extraSituationInfo == string.Empty)
-					extraSituationInfo = sitAndAsteroid[1];
+				if (extraSituationInfo == null)
+				{
+					extraSituationInfo = Regex.Match(sitAndAsteroid[1], ".*?-[0-9][0-9][0-9]").Value;
+					// if no match, just use the unmodified string
+					if (extraSituationInfo == string.Empty)
+						extraSituationInfo = sitAndAsteroid[1];
+				}
 			}
 
 			string[] bodyAndBiome = expAndSit[1].Split(ScienceSituationUtils.validSituationsStrings, StringSplitOptions.RemoveEmptyEntries);
@@ -711,7 +713,7 @@ namespace KERBALISM
 
 					// TODO : also, we need to remove the "reentry" subjects, as stock is failing to parse them, altough this is in a try/catch block and handled gracefully.
 					string sanitizedBiome = bodyAndBiome[1].Replace(" ", string.Empty);
-					if (RnDSubject != null && extraSituationInfo == string.Empty && sanitizedBiome != bodyAndBiome[1])
+					if (RnDSubject != null && extraSituationInfo == null && sanitizedBiome != bodyAndBiome[1])
 					{
 						string correctedSubjectId = expAndSit[0] + "@" + bodyAndBiome[0] + situation + sanitizedBiome;
 						RnDSubject.id = correctedSubjectId;
@@ -737,7 +739,7 @@ namespace KERBALISM
 			Situation vesselSituation = new Situation(bodyIndex, scienceSituation, biomeIndex);
 			
 			// if the subject is a "doable" subject, we should have it in the DB.
-			if (extraSituationInfo == string.Empty)
+			if (extraSituationInfo == null)
 				subjectData = GetSubjectData(expInfo, vesselSituation);
 
 			// else create the subjectdata. this can happen either because :
@@ -746,7 +748,7 @@ namespace KERBALISM
 			// - it was created by a mod that does things in a non-stock way (ex : DMOS anomaly scans uses the anomaly name as biomes)
 			if (subjectData == null)
 			{
-				if (bodyAndBiome.Length == 2 && bodyAndBiome[1] != string.Empty && string.IsNullOrEmpty(extraSituationInfo))
+				if (bodyAndBiome.Length == 2 && bodyAndBiome[1] != string.Empty && extraSituationInfo == null)
 				{
 					extraSituationInfo = bodyAndBiome[1];
 				}
