@@ -17,6 +17,6 @@ namespace KERBALISM
 		/// <summary>
 		/// Called on the prefab, just after the part has been compiled
 		/// </summary>
-		void GetVolumeAndSurfaceResults(PartVolumeAndSurface.Info result);
+		void GetVolumeAndSurfaceResults(PartVolumeAndSurface.Definition result);
 	}
 }

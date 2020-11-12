@@ -2178,7 +2178,7 @@ namespace KERBALISM
 
 		#region RESOURCE
 
-		/// <summary> Returns the "real world" density of a resource (KSP "density" is in ton/unit) </summary>
+		/// <summary> Returns the "real world" density of a resource (KSP "density" is in ton/unit and doesn't accounr for the volume property) </summary>
 		public static double RealDensity(this PartResourceDefinition res)
 		{
 			return res.density * 1000.0 / res.volume;

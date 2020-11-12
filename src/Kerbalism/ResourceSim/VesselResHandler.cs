@@ -155,6 +155,11 @@ namespace KERBALISM
 			}
 		}
 
+		public void PostInstantiateVirtualResourcesSync(VesselDataBase vd)
+		{
+			SyncVirtualResources(vd);
+		}
+
 		/// <summary>return the VesselResource for this resource or create a VesselVirtualResource if the resource doesn't exists</summary>
 		public VesselResource GetResource(string resourceName)
 		{

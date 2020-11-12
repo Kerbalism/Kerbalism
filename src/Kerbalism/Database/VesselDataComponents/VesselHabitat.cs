@@ -40,9 +40,6 @@ namespace KERBALISM
 		/// <summary> amount of shielding resource (1 unit = 1m2 of 20mm thick pb) for all enabled habitats, excluding depressurized habitats that aren't crewed</summary>
 		public double shieldingAmount = 0.0;
 
-		/// <summary> [0.0 ; 1.0] factor : proportion of radiation blocked by shielding (see Radiation.ShieldingEfficiency())</summary>
-		public double shieldingModifier = 0.0;
-
 		/// <summary> bitmask of available comforts (see Comfort enum) : comforts in disabled or depressurized habs are ignored</summary>
 		public int comfortMask = 0;
 
@@ -59,7 +56,7 @@ namespace KERBALISM
 			livingVolume = volumePerCrew = livingSpaceFactor
 				= pressurizedSurface = pressurizedVolume = pressure
 				= pressureFactor = poisoningLevel = shieldingSurface
-				= shieldingAmount = shieldingModifier = comfortFactor
+				= shieldingAmount = comfortFactor
 				= radiationRate = 0.0;
 
 			comfortMask = 0;
@@ -170,7 +167,6 @@ namespace KERBALISM
 			pressureFactor = crewCount > 0 ? ((double)pressurizedPartsCrewCount / (double)crewCount) : 0.0; // 0.0 when pressurized, 1.0 when depressurized
 
 			poisoningLevel = wasteConsideredPartsCount > 0 ? poisoningLevel / wasteConsideredPartsCount : 0.0;
-			shieldingModifier = shieldingSurface > 0.0 ? Radiation.ShieldingEfficiency(shieldingAmount / shieldingSurface) : 0.0;
 
 			if (vd.EnvLanded) comfortMask |= (int)Comfort.firmGround | (int)Comfort.exercice;
 			if (crewCount > 0) comfortMask |= (int)Comfort.notAlone;

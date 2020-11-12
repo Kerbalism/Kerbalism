@@ -217,7 +217,11 @@ namespace KERBALISM
 				VesselDataShip.Instance.Parts.Load(vesselDataNode);
 
 				if (isNewShip)
+				{
 					VesselDataShip.Instance.Load(vesselDataNode, false);
+				}
+
+				VesselDataShip.Instance.ResHandler.PostInstantiateVirtualResourcesSync(VesselDataShip.Instance);
 
 				// populate the dictionary of ModuleData nodes to load, to avoid doing a full loop
 				// on every node for each ModuleData

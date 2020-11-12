@@ -144,7 +144,7 @@ namespace KERBALISM
 		}
 
 		// IVolumeAndSurfaceModule
-		public void GetVolumeAndSurfaceResults(PartVolumeAndSurface.Info result)
+		public void GetVolumeAndSurfaceResults(PartVolumeAndSurface.Definition result)
 		{
 			// SSTU specific support copypasted from the old system, not sure how well this works
 			if (volume <= 0.0 || surface <= 0.0)

@@ -11,7 +11,7 @@ namespace KERBALISM
 	public static class PartVolumeAndSurface
 	{
 		// static game wide volume / surface cache
-		public static Dictionary<string, Info> partDatabase;
+		public static Dictionary<string, Definition> partDatabase;
 		public const string cacheNodeName = "KERBALISM_PART_VSINFO";
 		public static string cachePath => Path.Combine(Lib.KerbalismRootPath, "PartsVS.cache");
 
@@ -19,7 +19,7 @@ namespace KERBALISM
 		{
 			if (partDatabase == null)
 			{
-				partDatabase = new Dictionary<string, Info>();
+				partDatabase = new Dictionary<string, Definition>();
 
 				ConfigNode dbRootNode = ConfigNode.Load(cachePath);
 				ConfigNode[] habInfoNodes = dbRootNode?.GetNodes(cacheNodeName);
@@ -30,7 +30,7 @@ namespace KERBALISM
 					{
 						string partName = habInfoNodes[i].GetValue("partName") ?? string.Empty;
 						if (!string.IsNullOrEmpty(partName) && !partDatabase.ContainsKey(partName))
-							partDatabase.Add(partName, new Info(habInfoNodes[i]));
+							partDatabase.Add(partName, new Definition(habInfoNodes[i]));
 					}
 				}
 			}
@@ -56,7 +56,7 @@ namespace KERBALISM
 			if (!requireEvaluation)
 				return;
 
-			if (!partDatabase.TryGetValue(prefab.name, out Info partInfo))
+			if (!partDatabase.TryGetValue(prefab.name, out Definition partInfo))
 			{
 				foreach (IVolumeAndSurfaceModule vsModule in vsModules)
 				{
@@ -64,6 +64,7 @@ namespace KERBALISM
 				}
 
 				partInfo = GetPartVolumeAndSurface(prefab, Settings.VolumeAndSurfaceLogging);
+				partInfo.GetUsingMethod(Method.Best, out partInfo.volume, out partInfo.surface, false);
 				partDatabase.Add(prefab.name, partInfo);
 			}
 
@@ -81,7 +82,7 @@ namespace KERBALISM
 
 			ConfigNode fakeNode = new ConfigNode();
 
-			foreach (KeyValuePair<string, Info> habInfo in partDatabase)
+			foreach (KeyValuePair<string, Definition> habInfo in partDatabase)
 			{
 				ConfigNode node = new ConfigNode(cacheNodeName);
 				node.AddValue("partName", habInfo.Key);
@@ -92,9 +93,9 @@ namespace KERBALISM
 			fakeNode.Save(cachePath);
 		}
 
-		public static Info GetInfo(Part part)
+		public static Definition GetDefinition(Part part)
 		{
-			if (partDatabase.TryGetValue(part.name, out Info info))
+			if (partDatabase.TryGetValue(part.name, out Definition info))
 				return info;
 
 			return null;
@@ -180,7 +181,7 @@ namespace KERBALISM
 			return bounds;
 		}
 
-		public class Info
+		public class Definition
 		{
 			public Method bestMethod = Method.Best;
 
@@ -198,9 +199,9 @@ namespace KERBALISM
 
 			public double attachNodesSurface = 0.0;
 
-			public Info() { }
+			public Definition() { }
 
-			public Info(ConfigNode node)
+			public Definition(ConfigNode node)
 			{
 				bestMethod = Lib.ConfigEnum(node, "bestMethod", Method.Best);
 				boundsVolume = Lib.ConfigValue(node, "boundsVolume", 0.0);
@@ -349,7 +350,7 @@ namespace KERBALISM
 		/// <param name="ignoreSkinnedMeshes">If true, the volume/surface of deformable meshes (ex : inflatables) will be ignored</param>
 		/// <param name="rootTransform">if specified, only bounds/meshes/colliders on this transform and its children will be used</param>
 		/// <returns>surface/volume results for the 3 methods, and the best method to use</returns>
-		public static Info GetPartVolumeAndSurface(
+		public static Definition GetPartVolumeAndSurface(
 			Part part,
 			bool logAll = false,
 			bool ignoreSkinnedMeshes = false,
@@ -359,7 +360,7 @@ namespace KERBALISM
 
 			if (rootTransform == null) rootTransform = part.transform;
 
-			Info results = new Info();
+			Definition results = new Definition();
 
 			if (logAll) Lib.Log("Searching for meshes...");
 			List<MeshInfo> meshInfos = GetPartMeshesVolumeAndSurface(rootTransform, ignoreSkinnedMeshes);

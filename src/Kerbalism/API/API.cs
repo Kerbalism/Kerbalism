@@ -434,15 +434,6 @@ namespace KERBALISM
 			return vd.Habitat.poisoningLevel;
 		}
 
-		// return proportion of radiation blocked by shielding
-		public static double Shielding(Vessel v)
-		{
-			if (!Features.LifeSupport || !v.TryGetVesselDataTemp(out VesselData vd))
-				return 0.0;
-
-			return vd.Habitat.shieldingModifier;
-		}
-
 		// return living space factor
 		public static double LivingSpace(Vessel v)
 		{

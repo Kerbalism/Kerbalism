@@ -18,7 +18,7 @@ namespace KERBALISM
 
             public List<IRadiationEmitter> RadiationEmitters { get; private set; } = new List<IRadiationEmitter>();
 
-            public void Update(VesselDataBase vd)
+			public void Update(VesselDataBase vd)
 			{
 				RadiationOccluders.Clear();
 				RadiationArrays.Clear();

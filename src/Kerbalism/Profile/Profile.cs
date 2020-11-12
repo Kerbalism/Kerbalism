@@ -13,6 +13,7 @@ namespace KERBALISM
 		public const string NODENAME_PROCESS = "PROCESS";
 		public const string NODENAME_SUPPLY = "SUPPLY";
 		public const string NODENAME_VIRTUAL_RESOURCE = "VIRTUAL_RESOURCE";
+		public const string NODENAME_RESOURCE_HVL = "RESOURCE_HVL";
 
 		public static List<Rule> rules;               // rules in the profile
 		public static List<Supply> supplies;          // supplies in the profile
@@ -21,6 +22,9 @@ namespace KERBALISM
 		// node parsing
 		private static void Nodeparse(ConfigNode profile_node)
 		{
+			// parse resources radiation occlusion definitions
+			Radiation.PopulateResourcesOcclusionLibrary(profile_node.GetNodes(NODENAME_RESOURCE_HVL));
+
 			// parse all VirtualResourceDefinition
 			foreach (ConfigNode vResNode in profile_node.GetNodes(NODENAME_VIRTUAL_RESOURCE))
 			{

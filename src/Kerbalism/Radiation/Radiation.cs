@@ -12,14 +12,72 @@ namespace KERBALISM
     // the radiation system
     public static class Radiation
     {
-		public struct ResourceOcclusion
+		public class ResourceOcclusion
 		{
-			public bool onPartWalls;
-			public double lowHVL;
-			public double highHVL;
+			public PartResourceDefinition StockDefinition { get; private set; }
+			public bool IsWallResource { get; private set; }
+			public double LowHVL { get; private set; }
+			public double HighHVL { get; private set; }
+
+			private ResourceOcclusion() {}
+
+			public ResourceOcclusion(PartResourceDefinition stockDefinition)
+			{
+				StockDefinition = stockDefinition;
+				IsWallResource = false;
+				LowHVL = waterHVL_Gamma1MeV / StockDefinition.RealDensity();
+				HighHVL = waterHVL_Gamma25MeV / StockDefinition.RealDensity();
+			}
+
+			public static bool TryParseResourceOcclusion(ConfigNode definitionNode, out ResourceOcclusion resourceOcclusion)
+			{
+				string resName = Lib.ConfigValue(definitionNode, "name", string.Empty);
+				PartResourceDefinition stockDefinition = PartResourceLibrary.Instance.GetDefinition(resName);
+				if (stockDefinition == null)
+				{
+					resourceOcclusion = null;
+					return false;
+				}
+
+				resourceOcclusion = new ResourceOcclusion();
+				resourceOcclusion.StockDefinition = stockDefinition;
+				resourceOcclusion.IsWallResource = Lib.ConfigValue(definitionNode, "isWallResource", false);
+				resourceOcclusion.LowHVL = Lib.ConfigValue(definitionNode, "lowHVL", 1.0);
+				resourceOcclusion.HighHVL = Lib.ConfigValue(definitionNode, "highHVL", 1.0);
+				return true;
+			}
 		}
 
-		public static Dictionary<int, ResourceOcclusion> shieldingResources = new Dictionary<int, ResourceOcclusion>();
+		public static Dictionary<int, ResourceOcclusion> resourcesOcclusionLibrary = new Dictionary<int, ResourceOcclusion>();
+
+		public static void PopulateResourcesOcclusionLibrary(ConfigNode[] configDefinitions)
+		{
+			foreach (ConfigNode node in configDefinitions)
+			{
+				if (ResourceOcclusion.TryParseResourceOcclusion(node, out ResourceOcclusion resourceOcclusion))
+				{
+					resourcesOcclusionLibrary[resourceOcclusion.StockDefinition.id] = resourceOcclusion;
+				}
+			}
+
+			foreach (PartResourceDefinition resource in PartResourceLibrary.Instance.resourceDefinitions)
+			{
+				if (!resourcesOcclusionLibrary.ContainsKey(resource.id))
+				{
+					resourcesOcclusionLibrary[resource.id] = new ResourceOcclusion(resource);
+				}
+			}
+		}
+
+		public static ResourceOcclusion GetResourceOcclusion(PartResourceDefinition resource) => resourcesOcclusionLibrary[resource.id];
+		public static ResourceOcclusion GetResourceOcclusion(string resourceName)
+		{
+			PartResourceDefinition resource = PartResourceLibrary.Instance.GetDefinition(resourceName);
+			if (resource == null)
+				return null;
+
+			return resourcesOcclusionLibrary[resource.id];
+		}
 
 		/// <summary>
 		/// Half-Value Layer (meters) : the thickness of water required to divide 1 MeV gamma radiation by two.
@@ -697,97 +755,6 @@ namespace KERBALISM
 #endif
 			// return radiation
 			return radiation;
-		}
-
-		/// <summary>
-		/// Do a physics raytrace between the habitat part and the sun, then save the thickness and distance of each intersected part.
-		/// <para/>Performance intensive operation.
-		/// <para/>Don't call this while the vessel is unloaded !
-		/// </summary>
-		public static void RaytraceHabitatSunRadiation(Vector3d mainSunDrection, HabitatData habitat)
-		{
-			if (!Features.Radiation) return;
-
-			habitat.sunRadiationOccluders.Clear();
-			hittedPartsCache.Clear();
-
-			Ray ray = new Ray(habitat.loadedModule.transform.position, mainSunDrection);
-			int hitCount = Physics.RaycastNonAlloc(ray, sunRayHitsCache, 200f, partsLayerMask);
-
-			for (int i = 0; i < hitCount - 1; i++)
-			{
-				RaycastHit hit = sunRayHitsCache[i];
-				if (hit.transform != null) // && hit.transform.gameObject != null)
-				{
-					Part blockingPart = FlightGlobals.GetPartUpwardsCached(hit.transform.gameObject);
-					if (blockingPart == null || blockingPart == habitat.loadedModule.part)
-						continue;
-
-					// avoid counting twice the same part (a part can have multiple colliders)
-					if (hittedPartsCache.Contains(blockingPart.flightID))
-						continue;
-					else
-						hittedPartsCache.Add(blockingPart.flightID);
-
-					float mass = blockingPart.mass + blockingPart.resourceMass;
-
-					// divide part mass by the mass of aluminium (2699 kg/m?), cubic root of that
-					// gives a very rough approximation of the thickness, assuming it's a cube.
-					// So a 40.000 kg fuel tank would be equivalent to 2.45m aluminium.
-					float thickness = Mathf.Pow(mass / 2.699f, 1f / 3f);
-
-					habitat.sunRadiationOccluders.Add(new SunRadiationOccluder(hit.distance, thickness));
-				}
-			}
-
-			// sort by distance, in reverse
-			habitat.sunRadiationOccluders.Sort((a, b) => b.distance.CompareTo(a.distance));
-		}
-
-		/// <summary>
-		/// Compute an average radiation based on the radiation blocked by the raytraced occluders for every enabled habitat part on the vessel
-		/// <para/> Note : only used during solar storms
-		/// </summary>
-		public static double GetHabitatSunRadiation(double sunRadiation, VesselData vd)
-		{
-			double result = 0.0;
-			int enabledHabitatCount = 0;
-
-			foreach (HabitatData habitaData in vd.Parts.AllModulesOfType<HabitatData>())
-			{
-				if (!habitaData.isEnabled)
-					continue;
-
-				enabledHabitatCount++;
-
-				double remainingRadiation = sunRadiation;
-
-				foreach (SunRadiationOccluder occluder in habitaData.sunRadiationOccluders)
-				{
-					// for a 500 keV gamma ray, halfing thickness for aluminium is 3.05cm. But...
-					// Solar energetic particles (SEP) are high-energy particles coming from the Sun.
-					// They consist of protons, electrons and HZE ions with energy ranging from a few tens of keV
-					// to many GeV (the fastest particles can approach the speed of light, as in a
-					// "ground-level event"). This is why they are such a big problem for interplanetary space travel.
-
-					// Beer-Lambert law: Remaining radiation = radiation * e^-ux.  Not exact for SEP, but close enough to loosely fit observed curves.
-					// linear attenuation coefficent u.  Asssuming an average CME event energy Al shielding 10 ~= 30 g/cm^2.
-					// Averaged from NASA plots of large CME events vs Al shielding projections.
-					var linearAttenuation = 10;
-
-					// However, what you lose in particle radiation you gain in gamma radiation (Bremsstrahlung)
-
-					var incomingRadiation = remainingRadiation;
-					remainingRadiation *= Math.Exp(occluder.thickness * linearAttenuation * -1);
-					var bremsstrahlung = incomingRadiation - remainingRadiation;
-
-					result += Radiation.DistanceRadiation(bremsstrahlung, Math.Max(1, occluder.distance)) / 10; //Gamma radiation has 1/10 the quality factor of SEP
-				}
-
-				result += remainingRadiation;
-			}
-
-			return enabledHabitatCount > 0 ? result / enabledHabitatCount : 0.0;
 		}
 
 		/// <summary>

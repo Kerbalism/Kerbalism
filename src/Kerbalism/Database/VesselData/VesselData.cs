@@ -89,6 +89,8 @@ namespace KERBALISM
         /// </summary>
         public List<File> filesTransmitted;
 
+		private VesselLogic.VesselRadiation vesselRadiation = new VesselLogic.VesselRadiation();
+
 		#endregion
 
 		#region FIELDS/PROPERTIES : PERSISTED STATE
@@ -345,6 +347,7 @@ namespace KERBALISM
 					VesselParts = new PartDataCollectionVessel(this, partDatas);
 			}
 
+			resHandler.PostInstantiateVirtualResourcesSync(this);
 			SetPersistedFieldsDefaults(vessel.protoVessel);
 			SetInstantiateDefaults(vessel.protoVessel);
 
@@ -384,6 +387,7 @@ namespace KERBALISM
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + Parts.Count);
 			}
 
+			resHandler.PostInstantiateVirtualResourcesSync(this);
 			SetInstantiateDefaults(protoVessel);
 
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -625,7 +629,6 @@ namespace KERBALISM
 			}
 		}
 
-		private int partToUpdate = 1;
 		private bool modulesStarted = false;
 		private void FixedUpdate(double elapsedSec)
 		{
@@ -659,19 +662,7 @@ namespace KERBALISM
 				
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.FixedUpdate");
 
-			for (int i = 0; i < Parts.Count; i++)
-			{
-				PartData pd = Parts[i];
-				PartRadiationData radiationData = pd.radiationData;
-				radiationData.elapsedSecSinceLastUpdate += elapsedSec;
-
-				if (i == partToUpdate)
-				{
-					radiationData.Update();
-				}
-				
-			}
-			partToUpdate = (partToUpdate + 1) % Parts.Count;
+			vesselRadiation.FixedUpdate(Parts, LoadedOrEditor, elapsedSec);
 
 			foreach (PartData pd in Parts)
 			{

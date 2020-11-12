@@ -63,6 +63,9 @@
  <Reference Include="Unity.VSCode.Editor">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
  </Reference>
+ <Reference Include="Unity.TextMeshPro.Editor">
+ <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+ </Reference>
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
  </Reference>
@@ -75,14 +78,11 @@
  <Reference Include="Unity.Rider.Editor">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
  </Reference>
- <Reference Include="UnityEditor.UI">
- <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
- </Reference>
- <Reference Include="Unity.TextMeshPro.Editor">
- <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
- </Reference>
  <Reference Include="Unity.TextMeshPro">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEditor.UI">
+ <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.AIModule">
  <HintPath>K:/Apps/Unity2019-2-2f1/Editor/Data/Managed/UnityEngine/UnityEngine.AIModule.dll</HintPath>
@@ -261,14 +261,14 @@
  <Reference Include="UnityEngine.XRModule">
  <HintPath>K:/Apps/Unity2019-2-2f1/Editor/Data/Managed/UnityEngine/UnityEngine.XRModule.dll</HintPath>
  </Reference>
+ <Reference Include="PartTools">
+ <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Assets/PartTools/Lib/PartTools.dll</HintPath>
+ </Reference>
  <Reference Include="PartToolsEditor">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Assets/PartTools/Lib/PartToolsEditor.dll</HintPath>
  </Reference>
  <Reference Include="KSPAssetCompiler">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Assets/Plugins/KSPAssets/KSPAssetCompiler.dll</HintPath>
- </Reference>
- <Reference Include="PartTools">
- <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Assets/PartTools/Lib/PartTools.dll</HintPath>
  </Reference>
  <Reference Include="KSPAssets">
  <HintPath>C:/Users/Got/source/repos/Kerbalism/Kerbalism/misc/Parts/RadiationCapsuleEffect/RadiationCapsuleEffect/Assets/Plugins/KSPAssets/KSPAssets.dll</HintPath>

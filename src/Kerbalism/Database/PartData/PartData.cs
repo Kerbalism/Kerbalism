@@ -41,7 +41,7 @@ namespace KERBALISM
 		private bool initialized = false;
 
 		public PartRadiationData radiationData;
-		public PartVolumeAndSurface.Info volumeAndSurface;
+		public PartVolumeAndSurface.Definition volumeAndSurface;
 		public PartResourceDataCollection virtualResources;
 		public List<ModuleData> modules = new List<ModuleData>();
 
@@ -63,7 +63,7 @@ namespace KERBALISM
 			LoadedPart = part;
 			loadedPartDatas[part.GetInstanceID()] = this;
 			virtualResources = new PartResourceDataCollection();
-			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
+			volumeAndSurface = PartVolumeAndSurface.GetDefinition(PartPrefab);
 			radiationData = new PartRadiationData(this);
 		}
 
@@ -74,7 +74,7 @@ namespace KERBALISM
 			partInfo = protopart.partInfo;
 			PartPrefab = GetPartPrefab(protopart.partInfo);
 			virtualResources = new PartResourceDataCollection();
-			volumeAndSurface = PartVolumeAndSurface.GetInfo(PartPrefab);
+			volumeAndSurface = PartVolumeAndSurface.GetDefinition(PartPrefab);
 			radiationData = new PartRadiationData(this);
 		}
 

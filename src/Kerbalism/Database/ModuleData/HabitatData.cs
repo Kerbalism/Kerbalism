@@ -47,19 +47,6 @@ namespace KERBALISM
 			plants = 1 << 5
 		}
 
-
-		public struct SunRadiationOccluder
-		{
-			public float distance;
-			public float thickness;
-
-			public SunRadiationOccluder(float distance, float thickness)
-			{
-				this.distance = distance;
-				this.thickness = thickness;
-			}
-		}
-
 		#endregion
 
 		#region FIELDS
@@ -95,8 +82,6 @@ namespace KERBALISM
 
 		/// <summary> used to know when to consume ec for deploy/retract and accelerate/decelerate centrifuges</summary>
 		public float animTimer = 0f;
-
-		public List<SunRadiationOccluder> sunRadiationOccluders = new List<SunRadiationOccluder>();
 
 		public ModuleKsmHabitat.HabitatUpdateHandler updateHandler;
 
@@ -329,14 +314,6 @@ namespace KERBALISM
 			wasteLevel = Lib.ConfigValue(node, "wasteLevel", wasteLevel);
 			shieldingAmount = Lib.ConfigValue(node, "shieldingAmount", shieldingAmount);
 			animTimer = Lib.ConfigValue(node, "animTimer", animTimer);
-
-			sunRadiationOccluders.Clear();
-			foreach (ConfigNode occluderNode in node.GetNodes("OCCLUDER"))
-			{
-				float distance = Lib.ConfigValue(occluderNode, "distance", 1f);
-				float thickness = Lib.ConfigValue(occluderNode, "thickness", 1f);
-				sunRadiationOccluders.Add(new SunRadiationOccluder(distance, thickness));
-			}
 		}
 
 		public override void OnSave(ConfigNode node)
@@ -352,13 +329,6 @@ namespace KERBALISM
 			node.AddValue("wasteLevel", wasteLevel);
 			node.AddValue("shieldingAmount", shieldingAmount);
 			node.AddValue("animTimer", animTimer);
-
-			foreach (SunRadiationOccluder occluder in sunRadiationOccluders)
-			{
-				ConfigNode occluderNode = node.AddNode("OCCLUDER");
-				occluderNode.AddValue("distance", occluder.distance);
-				occluderNode.AddValue("thickness", occluder.thickness);
-			}
 		}
 
 		#endregion

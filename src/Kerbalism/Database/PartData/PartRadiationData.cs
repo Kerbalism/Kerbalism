@@ -7,36 +7,181 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	public class PartRadiationData
+	/*
+OVERVIEW : 
+- Storm / local radiation raycasting :
+	- RaycastAll between emitter and receiver, save "from" hits
+	- RaycastAll between receiver and emitter, save "to" hits
+	- foreach hit :
+		- build a list of hitted parts and affect from and to hits
+		- the good "from" hit is the one closest from the emitter
+		- the good "to" hit is the one closest from the receiver
+		- distance from / to is the thickness
+		- determine wall thickness the ray has gone through by using the hits normals
+
+- Occluder stats :
+	- At minimum, a part has 2 occluder "materials" : walls and core
+	- The "wall" occluder has a thickness enclosing the part.
+		- Half the part mass is considered to be walls of aluminium density, giving a "wall volume"
+		- The wall thickness is the "wall volume" divided by the part surface
+		- HVL values are derived from aluminium properties
+	- A "core" occluder that is derived from the part volume and half the part mass
+		- A "density factor" is derived from the difference between the part volume and the volume of half the part mass at aluminum density
+		- HVL values are derived from aluminium properties, scaled down by the "density factor"
+	- By default, resources are additional "core" occluders using the same formula, but with the density and HVL parameters from the resource instead of aluminium
+	- A RESOURCE_HVL node in the profile can be used to define the resource occlusion stats (wall/core, HVL values)
+		- Resources that don't have a definition are considered as "core", with HVL values derived from the resource density.
+
+- Radiation is computed as follow :
+	- "Ambiant" radiation (bodies, belts...) :
+		- Is blocked by the part "wall" occluder materials, according to the material "low" energy HVL value
+		- Is blocked by coil array fields enclosing the part
+	- "Storm" radiation (sun) :
+		- Is blocked by the part "wall" occluder materials
+		- Is blocked by all occluder materials from all parts in between
+		- According to the material "high" energy HVL value
+		- Parts in between produce secondary radiation (bremsstrahlung)
+		- Bremsstrahlung is also blocked, but using the "low" energy HVL value
+	- "Local" radiation (emitters)
+		- Is blocked by the part "wall" occluder materials, and by all occluder materials from all parts in between
+		- Is blocked by all occluder materials from all parts in between
+		- According to the material "high" or "low" energy HVL value depending on the emitter
+
+- TODO :
+	- IRadiationEmitter is currently only implemented in ModuleKsmRadiationEmitter. An implementation in ModuleKsmProcessController would make sense.
+	- Also, ModuleKsmRadiationEmitter could benefit from a config-defined reflection based system allowing to watch another module state to
+	  determine if the emitter should be enabled, and eventually to scale the radiation level.
+	- Currently there is a set of heuristics used to determine if a part can or can't be an occluder, to exclude small parts.
+	  An option to override the automatic choice with per-part configs would be nice
+	- Occlusion computations accuracy heavily rely on a static library of part volume/surface stats currently computed at prefab compilation.
+	  This is problematic for deployable / procedural parts. Ideally we should have volume/surface stats stored in PartData, with hooks /
+	  events watching for "shape changes", either triggering a volume/surface reevaluation (might need to investigate how to do that in a separate thread,
+	  this too heavy to be done in real time) or acquiring volume/surface from external sources (procedural parts ?)
+	- Planner / flight UI info for radiation need a bit of love. Some info (tooltip) about the radiation level per source would be nice.
+	  Also an ETA on radiation poisonning at current level.
+	- The coil array system is a bit dumb and unrealistic. Ideally the field should be cylindrical and be an occluder for storm/emitters, 
+	  only providing "direct" protection for "ambiant" radiation. In any case, the whole system is very WIP and in dire need of debugging and balancing.
+	- Ideally, planetary (and sun) radiation should be directional, like storms and emitters. The only "ambiant" radiation should happen in belts (and maybe
+	  when close from a body surface)
+	- An "auto-shelter" feature would be nice : when external radiation exceed a player defined level, a set of player defined habitats are disabled, 
+	  and re-enabled when the storm is over. Require implementing unloaded crew transfer (relatively easy).
+	*/
+
+	public partial class PartRadiationData
 	{
 		public const string NODENAME_RADIATION = "RADIATION";
 		public const string NODENAME_EMITTERS = "EMITTERS";
 
 		#region TYPES
 
-		private class OccluderMaterial
+		private class Occlusion
 		{
-			private double thickness;
-			private double lowHVL;
-			private double highHVL;
+			protected const double ALUMINUM_DENSITY = 2.7;
 
-			public void Set(double thickness, double lowHVL, double highHVL)
+			protected double lowHVL;
+			protected double highHVL;
+			public bool IsWallOccluder { get; protected set; }
+
+			// for a wall occluder, this is the wall thickness
+			// for non wall occluder, this is a density factor
+			protected double occlusionFactor;
+
+			public double RadiationFactor(PartRadiationData partRadiationData, bool highPowerRad)
 			{
-				this.thickness = thickness;
-				this.lowHVL = lowHVL;
-				this.highHVL = highHVL;
+				if (occlusionFactor == 0.0)
+				{
+					return 1.0;
+				}
+
+				return Math.Pow(0.5, occlusionFactor * partRadiationData.hitPenetration / (highPowerRad ? highHVL : lowHVL));
 			}
 
-			public void Set(double thickness, double density)
+			public double WallRadiationFactor(PartRadiationData partRadiationData, bool highPowerRad)
 			{
-				this.thickness = thickness;
-				lowHVL = Radiation.waterHVL_Gamma1MeV / density;
-				highHVL = Radiation.waterHVL_Gamma25MeV / density;
+				if (occlusionFactor == 0.0)
+				{
+					return 1.0;
+				}
+
+				double depth = 0.0;
+				if (partRadiationData.fromHitNormalDot > 0.0)
+				{
+					depth += occlusionFactor / partRadiationData.fromHitNormalDot;
+				}
+				if (partRadiationData.toHitNormalDot > 0.0)
+				{
+					depth += occlusionFactor / partRadiationData.toHitNormalDot;
+				}
+
+				return Math.Pow(0.5, Math.Min(depth, partRadiationData.hitPenetration) / (highPowerRad ? highHVL : lowHVL));
+			}
+		}
+
+		private class PartOcclusion : Occlusion
+		{
+			public PartOcclusion(bool isWallOccluder)
+			{
+				lowHVL = Radiation.aluminiumHVL_Gamma1MeV;
+				highHVL = Radiation.aluminiumHVL_Gamma25MeV;
+				IsWallOccluder = isWallOccluder;
 			}
 
-			public double RadiationFactor(double thicknessFactor, bool highPowerRad)
+			public void UpdateOcclusion(double partMass, double partSurface, double partVolume)
 			{
-				return Math.Pow(0.5, (thickness * thicknessFactor) / (highPowerRad ? highHVL : lowHVL));
+				if (IsWallOccluder)
+				{
+					occlusionFactor = (partMass * 0.5 * ALUMINUM_DENSITY) / partSurface;
+				}
+				else
+				{
+					occlusionFactor = (partMass * 0.5 * ALUMINUM_DENSITY) / partVolume;
+				}
+			}
+		}
+
+		private class ResourceOcclusion : Occlusion
+		{
+			private double volumePerUnit;
+			private int resourceId;
+
+			public ResourceOcclusion(PartResourceDefinition partResourceDefinition)
+			{
+				Setup(partResourceDefinition);
+			}
+
+			private void Setup(PartResourceDefinition partResourceDefinition)
+			{
+				Radiation.ResourceOcclusion resourceOcclusion = Radiation.GetResourceOcclusion(partResourceDefinition);
+				lowHVL = resourceOcclusion.LowHVL;
+				highHVL = resourceOcclusion.HighHVL;
+				IsWallOccluder = resourceOcclusion.IsWallResource;
+				volumePerUnit = partResourceDefinition.volume;
+				resourceId = partResourceDefinition.id;
+			}
+
+			public void UpdateOcclusion(PartResource partResource, double partSurface, double partVolume)
+			{
+				if (partResource.info.id != resourceId)
+				{
+					Setup(partResource.info);
+				}
+
+				if (partResource.amount <= 0.0)
+				{
+					occlusionFactor = 0.0;
+					return;
+				}
+
+				double volume = (partResource.amount * volumePerUnit) / 1000.0;
+
+				if (IsWallOccluder)
+				{
+					occlusionFactor = volume / partSurface;
+				}
+				else
+				{
+					occlusionFactor = volume / partVolume;
+				}
 			}
 		}
 
@@ -54,38 +199,11 @@ namespace KERBALISM
 			public double RadiationRemoved => array.RadiationRemoved * protectionFactor;
 		}
 
-		private struct SunOccluder
-		{
-			public PartRadiationData occluderData;
-			public double thicknessFactor;
-			public double distanceSqr;
 
-			public SunOccluder(PartRadiationData occluderData, double thicknessFactor, double distanceSqr)
-			{
-				this.occluderData = occluderData;
-				this.thicknessFactor = thicknessFactor;
-				this.distanceSqr = distanceSqr;
-			}
-		}
-
-		private struct EmittersRadiation
-		{
-			public int emitterID;
-			public double radiation;
-
-			public EmittersRadiation(int emitterID, double radiation)
-			{
-				this.emitterID = emitterID;
-				this.radiation = radiation;
-			}
-		}
 
 		#endregion
 
 		#region FIELDS
-
-		// occluders static cache
-		private static List<SunOccluder> occluders = new List<SunOccluder>();
 
 		// rad/s received by that part
 		public double radiationRate;
@@ -93,37 +211,27 @@ namespace KERBALISM
 		// total radiation dose received since launch
 		public double accumulatedRadiation;
 
-		public double elapsedSecSinceLastUpdate;
+		public bool raycastDone = true;
 
-		// for solar storm radiation, proportion of radiation blocked by all parts between this part and the sun.
-		private double sunRadiationFactor;
+		public double elapsedSecSinceLastUpdate;
 
 		// all active radiation shields whose protecting field include this part.
 		private List<CoilArrayShielding> radiationCoilArrays;
 
-		// This is used to scale down IRadiationEmitters effect on this part.
-		// obtained by physic raytracing between that part and every IRadiationModifier on the vessel
-		// key is the IRadiationEmitter (ModuleData) id, value is [0;1] factor applied to the IRadiationEmitter radiation
-		private List<EmittersRadiation> emittersRadiation;
-		private int nextEmitterToUpdate = 0;
+		// occluding stats for the part structural mass
+		private PartOcclusion wallOcclusion;
+		private PartOcclusion volumeOcclusion;
 
-		// very guesstimated thickness of the part : part bounding box volume, cube rooted
-		private float bbThickness;
-
-		// guesstimated part surface
-		private double bbSurface;
-
-		// occluding stats for the part structural mass. Fixed at part creation.
-		private OccluderMaterial intrinsicOcclusion;
-
-		// occluding stats for the part resources mass.
-		// For now, recalculated on loaded vessels only, but it should be technically possible to do it for unloaded vessels too
-		// And while this would make sense 
-		private List<OccluderMaterial> resourcesOcclusion = new List<OccluderMaterial>();
+		// occluding stats for the part resources
+		private List<ResourceOcclusion> resourcesOcclusion = new List<ResourceOcclusion>();
 
 		private PartData partData;
 
 		private bool? isReceiver;
+
+		private SunRaycastTask sunRaycastTask;
+
+		private List<EmitterRaycastTask> emitterRaycastTasks;
 
 		#endregion
 
@@ -142,8 +250,11 @@ namespace KERBALISM
 							if (radiationCoilArrays == null)
 								radiationCoilArrays = new List<CoilArrayShielding>();
 
-							if (emittersRadiation == null)
-								emittersRadiation = new List<EmittersRadiation>();
+							if (sunRaycastTask == null)
+								sunRaycastTask = new SunRaycastTask(this);
+
+							if (emitterRaycastTasks == null)
+								emitterRaycastTasks = new List<EmitterRaycastTask>();
 
 							isReceiver = true;
 							break;
@@ -170,6 +281,12 @@ namespace KERBALISM
 		{
 			this.partData = partData;
 			IsOccluder = partData.volumeAndSurface != null;
+			if (IsOccluder)
+			{
+				wallOcclusion = new PartOcclusion(true);
+				volumeOcclusion = new PartOcclusion(false);
+			}
+
 		}
 
 		public static void Load(PartData partData, ConfigNode partDataNode)
@@ -178,17 +295,30 @@ namespace KERBALISM
 			if (radNode == null)
 				return;
 
-			partData.radiationData.radiationRate = Lib.ConfigValue(partDataNode, "radRate", 0.0);
-			partData.radiationData.accumulatedRadiation = Lib.ConfigValue(partDataNode, "radAcc", 0.0);
+			partData.radiationData.radiationRate = Lib.ConfigValue(radNode, "radRate", 0.0);
+			partData.radiationData.accumulatedRadiation = Lib.ConfigValue(radNode, "radAcc", 0.0);
 
+			if (radNode.HasValue("sunFactor"))
+			{
+				if (partData.radiationData.sunRaycastTask == null)
+				{
+					partData.radiationData.sunRaycastTask = new SunRaycastTask(partData.radiationData);
+				}
+				partData.radiationData.sunRaycastTask.sunRadiationFactor = Lib.ConfigValue(radNode, "sunFactor", 1.0);
+			}
+			
 			ConfigNode emittersNode = radNode.GetNode(NODENAME_EMITTERS);
 			if (emittersNode != null)
 			{
-				partData.radiationData.emittersRadiation = new List<EmittersRadiation>();
+				if (partData.radiationData.emitterRaycastTasks == null)
+				{
+					partData.radiationData.emitterRaycastTasks = new List<EmitterRaycastTask>();
+				}
+				
 				foreach (ConfigNode.Value value in emittersNode.values)
 				{
-					EmittersRadiation emitter = new EmittersRadiation(Lib.Parse.ToInt(value.name), Lib.Parse.ToDouble(value.value));
-					partData.radiationData.emittersRadiation.Add(emitter);
+					EmitterRaycastTask emitter = new EmitterRaycastTask(partData.radiationData, value);
+					partData.radiationData.emitterRaycastTasks.Add(emitter);
 				}
 			}
 		}
@@ -202,16 +332,20 @@ namespace KERBALISM
 			radiationNode.AddValue("radRate", partData.radiationData.radiationRate);
 			radiationNode.AddValue("radAcc", partData.radiationData.accumulatedRadiation);
 
-			ConfigNode emittersNode = new ConfigNode(NODENAME_EMITTERS);
-			bool hasEmitter = false;
-			foreach (var emitterData in partData.radiationData.emittersRadiation)
+			if (partData.radiationData.sunRaycastTask != null)
 			{
-				hasEmitter |= true;
-				emittersNode.AddValue(emitterData.emitterID.ToString(), emitterData.radiation.ToString());
+				radiationNode.AddValue("sunFactor", partData.radiationData.sunRaycastTask.sunRadiationFactor);
 			}
 
-			if (hasEmitter)
+			if (partData.radiationData.emitterRaycastTasks != null && partData.radiationData.emitterRaycastTasks.Count > 0.0)
+			{
+				ConfigNode emittersNode = new ConfigNode(NODENAME_EMITTERS);
+				foreach (var emitterRaycastTask in partData.radiationData.emitterRaycastTasks)
+				{
+					emitterRaycastTask.SaveToNode(emittersNode);
+				}
 				radiationNode.AddNode(emittersNode);
+			}
 
 			return true;
 		}
@@ -220,7 +354,30 @@ namespace KERBALISM
 
 		#region EVALUATION
 
+		public void AddElapsedTime(double elapsedSec) => elapsedSecSinceLastUpdate += elapsedSec;
+
+		public void EnqueueRaycastTasks(Queue<RaycastTask> raycastTasks)
+		{
+			if (raycastDone)
+			{
+				raycastDone = false;
+
+				raycastTasks.Enqueue(sunRaycastTask);
+
+				foreach (EmitterRaycastTask emitterRaycastTask in emitterRaycastTasks)
+				{
+					raycastTasks.Enqueue(emitterRaycastTask);
+				}
+			}
+		}
+
+		// debug info
 		private bool debug = false;
+		private double stormRadiationFactor;
+		private double stormRadiation;
+		private double emittersRadiation;
+
+
 		public void Update()
 		{
 			// TODO : should we consider emissions and occlusion from other nearby (~ 250m max) loaded vessels ?
@@ -239,10 +396,6 @@ namespace KERBALISM
 			{
 				if (IsReceiver)
 				{
-					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.PartRadiationData.SunRadiation");
-					sunRadiationFactor = GetSunRadiationFactor(partData.vesselData.MainStarDirection);
-					UnityEngine.Profiling.Profiler.EndSample();
-
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.PartRadiationData.Update.Arrays");
 					radiationCoilArrays.Clear();
 					foreach (RadiationCoilData array in partData.vesselData.PartCache.RadiationArrays)
@@ -264,71 +417,47 @@ namespace KERBALISM
 				}
 			}
 
-
-
 			if (IsReceiver)
 			{
-				radiationRate = partData.vesselData.EnvRadiation;
+				stormRadiation = 0.0;
+				emittersRadiation = 0.0;
 
-				// first scale down "ambiant" radiation by the part own shielding
-				// TODO : we might want to only use "wall" shielding resources here
-				// Add an extra bool in the OccluderMaterial class ?
-				if (IsOccluder)
-					radiationRate = RemainingRadiation(radiationRate, 1.0, false);
+				// add "ambiant" radiation (background, belts, bodies...)
+				radiationRate = RemainingRadiation(partData.vesselData.EnvRadiation, false, true);
 
-				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.PartRadiationData.Update.Emitters");
+				// synchronize emitters references and add their radiation
+				int vesselEmittersCount = partData.vesselData.PartCache.RadiationEmitters.Count;
+				int tasksCount = emitterRaycastTasks.Count;
 
-				// then add the radiation from all active emitters on the vessel, scaled down by in-between occluders
-				List<IRadiationEmitter> emitters = partData.vesselData.PartCache.RadiationEmitters;
-				int vesselEmittersCount = emitters.Count;
-				int knownEmittersCount = emittersRadiation.Count;
+				if (tasksCount > vesselEmittersCount)
+				{
+					emitterRaycastTasks.RemoveRange(vesselEmittersCount - 1, tasksCount - vesselEmittersCount);
+				}
+
 				for (int i = 0; i < vesselEmittersCount; i++)
 				{
-					IRadiationEmitter emitter = emitters[i];
-					// On loaded vessels, recalculate the emitter impact
-					if (partData.vesselData.LoadedOrEditor)
+					if (i + 1 > tasksCount)
 					{
-						// If a new emitter has been added on the vessel (or the first time this is called), add it
-						if (knownEmittersCount < vesselEmittersCount)
-						{
-							emittersRadiation.Add(new EmittersRadiation(emitter.ModuleId, GetRadiationFromEmitter(emitter)));
-							knownEmittersCount++;
-						}
-						// Detect if an emitter has been removed by comparing the module ids at the same index in both list
-						else if (emittersRadiation[i].emitterID != emitter.ModuleId)
-						{
-							emittersRadiation[i] = new EmittersRadiation(emitter.ModuleId, GetRadiationFromEmitter(emitter));
-						}
-						// Otherwise, update a single emitter per call to have performance being part count agnostic.
-						// Doing this ensure accurate results in case the vessel geometry changes (robotics...)
-						else if (nextEmitterToUpdate == i)
-						{
-							emittersRadiation[i] = new EmittersRadiation(emitter.ModuleId, GetRadiationFromEmitter(emitter));
-							nextEmitterToUpdate = (nextEmitterToUpdate + 1) % knownEmittersCount;
-						}
+						emitterRaycastTasks.Add(new EmitterRaycastTask(this, partData.vesselData.PartCache.RadiationEmitters[i]));
+					}
+					else
+					{
+						emitterRaycastTasks[i].CheckEmitterHasChanged(partData.vesselData.PartCache.RadiationEmitters[i]);
 					}
 
-					if (emitter.IsActive && i < knownEmittersCount)
-					{
-						radiationRate += emittersRadiation[i].radiation;
-					}
+					radiationRate += emitterRaycastTasks[i].Radiation;
+					emittersRadiation += emitterRaycastTasks[i].Radiation;
 				}
-
-				// In case emitters were removed from the vessel, trim the list
-				if (knownEmittersCount > vesselEmittersCount)
-				{
-					emittersRadiation.RemoveRange(vesselEmittersCount - 1, knownEmittersCount - vesselEmittersCount);
-				}
-
-				UnityEngine.Profiling.Profiler.EndSample();
 
 				// add storm radiation, if there is a storm
+				stormRadiationFactor = sunRaycastTask.sunRadiationFactor;
 				if (partData.vesselData.EnvStorm)
 				{
-					radiationRate += partData.vesselData.EnvStormRadiation * sunRadiationFactor;
+					radiationRate += partData.vesselData.EnvStormRadiation * sunRaycastTask.sunRadiationFactor;
+					stormRadiation = partData.vesselData.EnvStormRadiation * sunRaycastTask.sunRadiationFactor;
 				}
 
-				// then substract magnetic shields effects
+				// substract magnetic shields effects
 				foreach (CoilArrayShielding arrayData in radiationCoilArrays)
 				{
 					radiationRate -= arrayData.RadiationRemoved;
@@ -353,48 +482,32 @@ namespace KERBALISM
 				{
 					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(radiationRate)), this));
 					partData.LoadedPart.Fields[nameof(radiationRate)].guiName = "Radiation";
-					partData.LoadedPart.Fields[nameof(radiationRate)].guiFormat = "F7";
-					partData.LoadedPart.Fields[nameof(radiationRate)].guiUnits = "rad/s";
+					partData.LoadedPart.Fields[nameof(radiationRate)].guiFormat = "F10";
+					partData.LoadedPart.Fields[nameof(radiationRate)].guiUnits = " rad/s";
 
-					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(sunRadiationFactor), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
-					partData.LoadedPart.Fields[nameof(sunRadiationFactor)].guiFormat = "F2";
+					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(emittersRadiation), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
+					partData.LoadedPart.Fields[nameof(emittersRadiation)].guiName = "Emitters";
+					partData.LoadedPart.Fields[nameof(emittersRadiation)].guiFormat = "F10";
+					partData.LoadedPart.Fields[nameof(emittersRadiation)].guiUnits = " rad/s";
+
+					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(stormRadiation), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
+					partData.LoadedPart.Fields[nameof(stormRadiation)].guiName = "Storm";
+					partData.LoadedPart.Fields[nameof(stormRadiation)].guiFormat = "F10";
+					partData.LoadedPart.Fields[nameof(stormRadiation)].guiUnits = " rad/s";
+
+					partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(stormRadiationFactor), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
+					partData.LoadedPart.Fields[nameof(stormRadiationFactor)].guiName = "Storm rad factor";
+					partData.LoadedPart.Fields[nameof(stormRadiationFactor)].guiFormat = "F5";
 				}
-
-				//partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(radiationRate)), this));
-				//partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(accumulatedRadiation)), this));
-				//partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(sunRadiationFactor), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
-				//partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(bbSurface), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
-				//partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), GetType().GetField(nameof(bbThickness), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), this));
-				//partData.LoadedPart.Fields.Add(new BaseField(new UI_Label(), intrinsicOcclusion.GetType().GetField("thickness", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance), intrinsicOcclusion));
 			}
 		}
 
+		// TODO : use the actual part mass, not the prefab mass
+		// Since the part can be unloaded, this require either storing the protopart reference in PartData, or storing the mass independently (a bit silly)
 		public void GetOccluderStats()
 		{
-			// TODO : Those BB-based approximations will likely result in over-occlusion from "non-compact" shaped parts.
-			// And using the model based volume/surface methods has drawbacks :
-			// - performance impact on the first KSP launch
-			// - doesn't work for ingame shape-changing parts : mesh-switched, procedural or tweakscaled.
-			// an alternate real-time friendly solution could be to use the drag cube surface,
-			// and linearly scaling down the bb derived thickness by comparing the bb surface and the drag cube surface.
-			Bounds partBounds = PartVolumeAndSurface.GetPartBounds(partData.PartPrefab);
-			// part thickness is approximated as the length of the cube whose volume is the voume of the cylinder fitting in it's bounding box volume.
-			bbThickness = Mathf.Pow((float)(PartVolumeAndSurface.BoundsVolume(partBounds) * PartVolumeAndSurface.boundsCylinderVolumeFactor), 1f / 3f);
-			// same for surface
-			bbSurface = PartVolumeAndSurface.BoundsSurface(partBounds) * PartVolumeAndSurface.boundsCylinderSurfaceFactor;
-
-			// thickness = volume / surface
-
-			// wall thickness is approximated as the length of a cube, where the cube volume
-			// assumption : half the part structural mass is "walls" of ~ aluminium density
-			float wallThickness = Mathf.Pow((partData.PartPrefab.mass * 0.5f) / 2.7f, 1f / 3f) / (float)bbSurface;
-
-			if (intrinsicOcclusion == null)
-			{
-				intrinsicOcclusion = new OccluderMaterial();
-			}
-			
-			intrinsicOcclusion.Set(wallThickness, Radiation.aluminiumHVL_Gamma1MeV, Radiation.aluminiumHVL_Gamma25MeV);
+			wallOcclusion.UpdateOcclusion(partData.PartPrefab.mass, partData.volumeAndSurface.surface, partData.volumeAndSurface.volume);
+			volumeOcclusion.UpdateOcclusion(partData.PartPrefab.mass, partData.volumeAndSurface.surface, partData.volumeAndSurface.volume);
 		}
 
 		private void UpdateOcclusionStats()
@@ -406,29 +519,17 @@ namespace KERBALISM
 			{
 				PartResource res = partData.LoadedPart.Resources[i];
 
-				if (res.amount < 1e-06 || res.info.density == 0.0)
+				if (res.info.density == 0.0)
 					continue;
 
 				occluderIndex++;
 				if (occluderIndex >= listCapacity)
 				{
-					resourcesOcclusion.Add(new OccluderMaterial());
+					resourcesOcclusion.Add(new ResourceOcclusion(res.info));
 					listCapacity++;
 				}
-					
-				double resVolume = (res.amount * res.info.volume) / 1000.0;
-				if (Radiation.shieldingResources.TryGetValue(res.info.id, out Radiation.ResourceOcclusion occlusionData))
-				{
-					double thickness = occlusionData.onPartWalls
-						? (resVolume / bbSurface) * 2.0 // the resource is a material "spread out" on the part surface
-						: Math.Pow(resVolume, 1.0 / 3.0); // the resource is a solid cube stored in the part center
-					resourcesOcclusion[occluderIndex].Set(thickness, occlusionData.lowHVL, occlusionData.highHVL);
-				}
-				else
-				{
-					double thickness = Math.Pow(resVolume, 1.0 / 3.0);
-					resourcesOcclusion[occluderIndex].Set(thickness, res.info.RealDensity());
-				}
+
+				resourcesOcclusion[occluderIndex].UpdateOcclusion(res, partData.volumeAndSurface.surface, partData.volumeAndSurface.volume);
 			}
 
 			while (listCapacity > occluderIndex + 1)
@@ -438,113 +539,29 @@ namespace KERBALISM
 			}
 		}
 
-		private double RemainingRadiation(double initialRadiation, double thicknessFactor, bool highPowerRad)
+		private double RemainingRadiation(double initialRadiation, bool highPowerRad, bool wallOnly = false)
 		{
-			initialRadiation *= intrinsicOcclusion.RadiationFactor(thicknessFactor, highPowerRad);
 
-			foreach (OccluderMaterial occluder in resourcesOcclusion)
+			initialRadiation *= wallOcclusion.WallRadiationFactor(this, highPowerRad);
+
+			if (!wallOnly)
 			{
-				initialRadiation *= occluder.RadiationFactor(thicknessFactor, highPowerRad);
+				initialRadiation *= volumeOcclusion.RadiationFactor(this, highPowerRad);
 			}
-			return initialRadiation;
-		}
+			
 
-		private double GetSunRadiationFactor(Vector3 sunDirection)
-		{
-			Vector3 rayOrigin = partData.LoadedPart.transform.position;
-			Vector3 rayDir = sunDirection;
-
-			occluders.Clear();
-
-			foreach (PartRadiationData occluderData in partData.vesselData.PartCache.RadiationOccluders)
+			foreach (ResourceOcclusion occlusion in resourcesOcclusion)
 			{
-				if (occluderData == this)
-					continue;
-
-				Vector3 occluderPosition = occluderData.partData.LoadedPart.transform.position;
-				if (!Lib.RaySphereIntersectionFloat(rayOrigin, rayDir, occluderPosition, occluderData.bbThickness * 0.5f, out Vector3 hitPosition, out float differenceLengthSquared))
-					continue;
-
-				// get the shortest distance between the ray hit position and the axis between the emitter and occluder
-				float hitDistanceSqr = Lib.RayPointDistanceSquared(rayOrigin, (rayOrigin - occluderPosition).normalized, hitPosition);
-				// based on the part half-thickness, determine a factor for how much the ray deviate from the axis
-				float deviation = hitDistanceSqr / (occluderData.bbThickness * occluderData.bbThickness * 0.25f);
-				// then get a factor for how much that impact that occluder ability to block incoming radiation
-				float thicknessFactor = 1f - deviation;
-				// just ignore occluders whose hit deviation was more than the half-thickness (can happen due to fp errors)
-				if (thicknessFactor <= 0f)
-					continue;
-
-				occluders.Add(new SunOccluder(occluderData, thicknessFactor, differenceLengthSquared));
-			}
-
-			if (occluders.Count == 0)
-				return 1.0;
-
-			// sort by distance, in reverse
-			occluders.Sort((a, b) => b.distanceSqr.CompareTo(a.distanceSqr));
-
-			double remaining = 1.0;
-			double factor = 0.0;
-			foreach (SunOccluder occluder in occluders)
-			{
-				double bremsstrahlung = remaining - occluder.occluderData.RemainingRadiation(remaining, occluder.thicknessFactor, true);
-				remaining -= bremsstrahlung;
-				factor += Radiation.DistanceSqrRadiation(bremsstrahlung, occluder.distanceSqr);
-
-				if (remaining < Radiation.Nominal)
+				if (occlusion.IsWallOccluder)
 				{
-					remaining = 0.0;
-					break;
+					initialRadiation *= occlusion.WallRadiationFactor(this, highPowerRad);
+				}
+				else if (!wallOnly)
+				{
+					initialRadiation *= occlusion.RadiationFactor(this, highPowerRad);
 				}
 			}
-			factor += remaining;
-
-			// since this is directional, only account for half the part thickness
-			if (IsOccluder)
-				factor = RemainingRadiation(factor, 0.5, true);
-
-			return factor;
-		}
-
-		private double GetRadiationFromEmitter(IRadiationEmitter emitter)
-		{
-			Vector3 rayOrigin = partData.LoadedPart.transform.position;
-			Vector3 emitterPos = emitter.RadiationData.partData.LoadedPart.transform.position;
-			Vector3 rayDir = emitterPos - rayOrigin;
-			double radiation = Radiation.DistanceSqrRadiation(emitter.RadiationRate, rayDir.sqrMagnitude);
-			rayDir = rayDir.normalized;
-
-			foreach (PartRadiationData occluderData in partData.vesselData.PartCache.RadiationOccluders)
-			{
-				// TODO : special handling for "this", occlusion should matter but using only half the part thickness
-				if (occluderData == this)
-					continue;
-
-				Vector3 occluderPosition = occluderData.partData.LoadedPart.transform.position;
-				// TODO : we might need to use a special version of that method that still resturn true
-				// when the ray origin is inside the sphere. Example : for a pod with a heat shield attached, the heat shield
-				// sphere will likely enclose the pod position, but it is still a valid occluder.
-				if (!Lib.RaySphereIntersectionFloat(rayOrigin, rayDir, occluderPosition, occluderData.bbThickness * 0.5f, out Vector3 hitPosition))
-					continue;
-
-				// get the shortest distance between the ray hit position and the axis between the emitter and occluder
-				float hitDistanceSqr = Lib.RayPointDistanceSquared(rayOrigin, rayDir, hitPosition);
-				// based on the part half-thickness, determine a factor for how much the ray deviate from the axis
-				float deviation = hitDistanceSqr / (occluderData.bbThickness * occluderData.bbThickness * 0.25f);
-				// then get a factor for how much that impact that occluder ability to block incoming radiation
-				float thicknessFactor = 1f - deviation;
-				// just ignore occluders whose hit deviation was more than the half-thickness (can happen due to fp errors)
-				if (thicknessFactor <= 0f)
-					continue;
-
-				radiation = occluderData.RemainingRadiation(radiation, thicknessFactor, false);
-
-				if (radiation < Radiation.Nominal)
-					return 0.0;
-			}
-
-			return radiation;
+			return initialRadiation;
 		}
 
 		#endregion

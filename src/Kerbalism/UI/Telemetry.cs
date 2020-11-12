@@ -112,7 +112,6 @@ namespace KERBALISM
 
 			p.AddContent("shieldingSurface", vd.Habitat.shieldingSurface.ToString("0.00 m2"));
 			p.AddContent("shieldingAmount", vd.Habitat.shieldingAmount.ToString("F2"));
-			p.AddContent("shieldingModifier", vd.Habitat.shieldingModifier.ToString("F2"));
 			p.AddContent("poisoningLevel", vd.Habitat.poisoningLevel.ToString("F2"));
 
 			p.AddContent("comfortModifier", vd.Habitat.comfortFactor.ToString("F2"), HabitatLib.ComfortTooltip(vd.Habitat.comfortMask, vd.Habitat.comfortFactor));

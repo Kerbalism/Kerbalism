@@ -172,20 +172,6 @@ namespace KERBALISM
 				}
 			}
 
-			foreach (ConfigNode resNode	in cfg.GetNodes(NODENAME_RESOURCE_HVL))
-			{
-				string resName = Lib.ConfigValue(resNode, "name", string.Empty);
-				PartResourceDefinition resDef = PartResourceLibrary.Instance.GetDefinition(resName);
-				if (resDef != null)
-				{
-					Radiation.ResourceOcclusion resOcclusion = new Radiation.ResourceOcclusion();
-					resOcclusion.onPartWalls = true;
-					resOcclusion.highHVL = Lib.ConfigValue(resNode, "highHVL", 1.0);
-					resOcclusion.lowHVL = Lib.ConfigValue(resNode, "lowHVL", 1.0);
-					Radiation.shieldingResources[resDef.id] = resOcclusion;
-				}
-			}
-
 			loaded = true;
 		}
 
