@@ -239,7 +239,7 @@
     <Compile Include="Modules\ModuleKsmExperiment.cs" />
     <Compile Include="Modules\Reliability.cs" />
     <Compile Include="Modules\SolarPanelFixer.cs" />
-    <Compile Include="Patches\ModuleAsteroid_performSampleExperiment.cs" />
+    <Compile Include="Patches\AsteroidAndCometSurfaceSample.cs" />
     <Compile Include="Profile\Process.cs" />
     <Compile Include="Renderer\LineRenderer.cs" />
     <Compile Include="Renderer\ParticleMesh.cs" />
