@@ -541,6 +541,10 @@ OVERVIEW :
 
 		private double RemainingRadiation(double initialRadiation, bool highPowerRad, bool wallOnly = false)
 		{
+			if (!IsOccluder)
+			{
+				return initialRadiation;
+			}
 
 			initialRadiation *= wallOcclusion.WallRadiationFactor(this, highPowerRad);
 
