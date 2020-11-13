@@ -237,7 +237,7 @@ namespace KERBALISM
 			if (completeSpec != null)
 				return;
 
-			if (Info.ExperimentId == "asteroidSample")
+			if (Info.ExperimentId == "asteroidSample" || Info.ExperimentId.StartsWith("cometSample_", StringComparison.Ordinal))
 			{
 				completeSpec = CompileInfoAsteroidSample();
 			}
