@@ -215,6 +215,13 @@ namespace KERBALISM
 				data.to.RequestResource(res.resourceName, -quantity);
 			}
 
+			// Airlock loss
+			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
+
+			// Since KSP 1.11, EVA prop is stored on "EVA jetpack" inventory part, and filled in the editor, removing
+			// the need for handling where the EVA propellant comes from (there is no more magic refill in stock)
+#if KSP15_16 || KSP18 || KSP110
+
 			// take as much of the propellant as possible. just imagine: there are 1.3 units left, and 12 occupants
 			// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
 			// and have to get from one end of the station to the other with just 0.1 units in the tank...
@@ -227,15 +234,13 @@ namespace KERBALISM
 			// don't put that into Cache.VesselInfo because that can be deleted before we get there
 			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
 
-			// Airlock loss
-			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
-
 			// show warning if there is little or no EVA propellant in the suit
 			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
 			{
 				Message.Post(Severity.danger,
 					Local.CallBackMsg_EvaNoMP.Format("<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
 			}
+#endif
 
 			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
 			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
