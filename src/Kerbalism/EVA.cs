@@ -17,20 +17,6 @@ namespace KERBALISM
 			// get KerbalEVA module
 			KerbalEVA kerbal = Lib.FindModules<KerbalEVA>(v)[0];
 
-			// Since KSP 1.11, EVA prop is stored on "EVA jetpack" inventory part, and filled in the editor, removing
-			// the need for handling where the EVA propellant comes from (there is no more magic refill in stock)
-#if KSP15_16 || KSP18 || KSP110
-
-			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
-			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
-			if(Cache.HasVesselObjectsCache(v, "eva_prop"))
-			{
-				var quantity = Cache.VesselObjectsCache<double>(v, "eva_prop");
-				Cache.RemoveVesselObjectsCache(v, "eva_prop");
-				Lib.SetResource(kerbal.part, Lib.EvaPropellantName(), quantity, Lib.EvaPropellantCapacity());
-			}
-#endif
-
 			// get resource handler
 			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
 

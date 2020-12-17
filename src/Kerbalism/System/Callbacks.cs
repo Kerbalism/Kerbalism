@@ -193,7 +193,7 @@ namespace KERBALISM
 			// setup supply resources capacity in the eva kerbal
 			Profile.SetupEva(data.to);
 
-			String prop_name = Lib.EvaPropellantName();
+			string evaPropName = Lib.EvaPropellantName();
 
 			// for each resource in the kerbal
 			for (int i = 0; i < data.to.Resources.Count; ++i)
@@ -202,7 +202,7 @@ namespace KERBALISM
 				PartResource res = data.to.Resources[i];
 
 				// eva prop is handled differently
-				if (res.resourceName == prop_name)
+				if (res.resourceName == evaPropName)
 				{
 					continue;
 				}
@@ -218,36 +218,76 @@ namespace KERBALISM
 			// Airlock loss
 			resources.Consume(data.from.vessel, "Nitrogen", Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
 
-			// Since KSP 1.11, EVA prop is stored on "EVA jetpack" inventory part, and filled in the editor, removing
-			// the need for handling where the EVA propellant comes from (there is no more magic refill in stock)
+			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
+
+
+			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
+			EVA.HeadLamps(kerbal, false);
+
+			// execute script
+			data.from.vessel.KerbalismData().computer.Execute(data.from.vessel, ScriptType.eva_out);
+
+			// Start a coroutine for doing eva propellant resource transfers once the kerbal EVA is started (this is too early here)
+			data.to.StartCoroutine(PostEVATweaks(data.from, data.to, evaPropName));
+		}
+
+		/// <summary>
+		/// We need to delay the EVA propellant modifications because ToEVA is called too early, before the EVA kerbal
+		/// Start() code has run.
+		/// </summary>
+		IEnumerator PostEVATweaks(Part vesselHatch, Part kerbalPart, string evaPropName)
+		{
+			yield return null;
+
+			double evaPropQuantity = double.MaxValue;
+
 #if KSP15_16 || KSP18 || KSP110
+
+			double evaPropCapacity = Lib.EvaPropellantCapacity();
 
 			// take as much of the propellant as possible. just imagine: there are 1.3 units left, and 12 occupants
 			// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
 			// and have to get from one end of the station to the other with just 0.1 units in the tank...
 			// nope.
-			double evaPropQuantity = data.from.RequestResource(prop_name, Lib.EvaPropellantCapacity());
+			evaPropQuantity = vesselHatch.RequestResource(evaPropName, evaPropCapacity);
 
-			// We can't just add the monoprop here, because that doesn't always work. It might be related
-			// to the fact that stock KSP wants to add 5 units of monoprop to new EVAs. Instead of fighting KSP here,
-			// we just let it do it's thing and set our amount later in EVA.cs - which seems to work just fine.
-			// don't put that into Cache.VesselInfo because that can be deleted before we get there
-			Cache.SetVesselObjectsCache(data.to.vessel, "eva_prop", evaPropQuantity);
+			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
+			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
+			Lib.SetResource(kerbalPart, evaPropName, evaPropQuantity, evaPropCapacity);
+#else
+			// Since KSP 1.11, EVA prop is stored on "EVA jetpack" inventory part, and filled in the editor, removing
+			// the need for handling where the EVA propellant comes from (there is no more magic refill in stock).
+			// However, stock doesn't provide any way to refill the jetpack, so we still handle that.
 
-			// show warning if there is little or no EVA propellant in the suit
-			if (evaPropQuantity <= 0.05 && !Lib.Landed(data.from.vessel))
+			KerbalEVA kerbalEVA = kerbalPart.FindModuleImplementing<KerbalEVA>();
+			ProtoPartResourceSnapshot jetPackProp = null;
+			if (kerbalEVA.ModuleInventoryPartReference != null)
 			{
-				Message.Post(Severity.danger,
-					Local.CallBackMsg_EvaNoMP.Format("<b>"+prop_name+"</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
+				foreach (StoredPart storedPart in kerbalEVA.ModuleInventoryPartReference.storedParts.Values)
+				{
+					if (storedPart.partName == "evaJetpack")
+					{
+						jetPackProp = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
+						break;
+					}
+				}
+			}
+
+			if (jetPackProp != null && jetPackProp.amount < jetPackProp.maxAmount)
+			{
+				double vesselPropTransferred = vesselHatch.RequestResource(evaPropName, jetPackProp.maxAmount - jetPackProp.amount);
+				jetPackProp.amount = Math.Min(jetPackProp.amount + vesselPropTransferred, jetPackProp.maxAmount);
+				evaPropQuantity = jetPackProp.amount;
 			}
 #endif
 
-			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
-			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
-			EVA.HeadLamps(kerbal, false);
+			// show warning if there is little or no EVA propellant in the suit
+			if (evaPropQuantity <= 0.05 && !Lib.Landed(vesselHatch.vessel))
+			{
+				Message.Post(Severity.danger,
+					Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropName + "</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
+			}
 
-			// execute script
-			data.from.vessel.KerbalismData().computer.Execute(data.from.vessel, ScriptType.eva_out);
 		}
 
 
@@ -256,8 +296,6 @@ namespace KERBALISM
 			// contract configurator calls this event with both parts being the same when it adds a passenger
 			if (data.from == data.to)
 				return;
-
-			String prop_name = Lib.EvaPropellantName();
 
 			// for each resource in the eva kerbal
 			for (int i = 0; i < data.from.Resources.Count; ++i)
@@ -268,6 +306,47 @@ namespace KERBALISM
 				// add leftovers to the vessel
 				data.to.RequestResource(res.resourceName, -res.amount);
 			}
+
+#if !KSP15_16 && !KSP18 && !KSP110
+
+			string evaPropName = Lib.EvaPropellantName();
+			if (evaPropName != "EVA Propellant")
+			{
+				KerbalEVA kerbalEVA = data.from.FindModuleImplementing<KerbalEVA>();
+				ProtoPartResourceSnapshot jetPackProp = null;
+				if (kerbalEVA.ModuleInventoryPartReference != null)
+				{
+					foreach (StoredPart storedPart in kerbalEVA.ModuleInventoryPartReference.storedParts.Values)
+					{
+						if (storedPart.partName == "evaJetpack")
+						{
+							jetPackProp = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
+							break;
+						}
+					}
+				}
+
+				if (jetPackProp != null && jetPackProp.amount > 0.0)
+				{
+					// get vessel resources handler
+					ResourceInfo evaPropOnVessel = ResourceCache.GetResource(data.to.vessel, evaPropName);
+					double storage = evaPropOnVessel.Capacity - evaPropOnVessel.Amount;
+					double stored = Math.Min(jetPackProp.amount, storage);
+					evaPropOnVessel.Produce(stored, ResourceBroker.Generic);
+					jetPackProp.amount = Math.Max(jetPackProp.amount - stored, 0.0);
+
+					// Explaination :
+					// - The ProtoCrewMember has already been removed from the EVA part and added to the vessel part
+					// - It's inventory has already been saved
+					// - The stock ModuleInventoryPart.RefillEVAPropellantOnBoarding() method has already been called
+					// So to set the correct amount of EVA prop, we :
+					// - Harmony patch ModuleInventoryPart.RefillEVAPropellantOnBoarding() so it doesn't refill anything
+					// - Grab the ProtoCrewMember on the vessel part
+					// - Call the SaveInventory() method again, with the modified amount on the inventory StoredPart
+					data.to.protoModuleCrew[data.to.protoModuleCrew.Count - 1].SaveInventory(kerbalEVA.ModuleInventoryPartReference);
+				}
+			}
+#endif
 
 			// merge drives data
 			Drive.Transfer(data.from.vessel, data.to.vessel, true);
