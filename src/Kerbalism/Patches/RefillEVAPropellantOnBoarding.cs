@@ -6,8 +6,8 @@ namespace KERBALISM
 {
 	// Prevent stock auto-refilling of EVA propellant in the KSP 1.11+ jetpack if we are using Monopropellant
 	[HarmonyPatch(typeof(ModuleInventoryPart))]
-	[HarmonyPatch("RefillEVAPropellantOnBoarding")]
-	class RefillEVAPropellantOnBoarding
+	[HarmonyPatch("RefillEVAPropellant")]
+	class RefillEVAPropellant
 	{
 		static bool Prefix()
 		{

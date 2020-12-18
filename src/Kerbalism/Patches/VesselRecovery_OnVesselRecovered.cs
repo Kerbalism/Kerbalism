@@ -79,7 +79,12 @@ namespace KERBALISM
 					if (file.useStockCrediting)
 					{
 						file.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+
+						if (!file.subjectData.ExistsInRnD)
+							file.subjectData.CreateSubjectInRnD();
+
 						file.subjectData.SetAsPersistent();
+						file.subjectData.UpdateSubjectCompletion(subjectValue);
 					}
 					else
 					{
@@ -105,7 +110,12 @@ namespace KERBALISM
 					if (sample.useStockCrediting)
 					{
 						sample.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+
+						if (!sample.subjectData.ExistsInRnD)
+							sample.subjectData.CreateSubjectInRnD();
+
 						sample.subjectData.SetAsPersistent();
+						sample.subjectData.UpdateSubjectCompletion(subjectValue);
 					}
 					else
 					{

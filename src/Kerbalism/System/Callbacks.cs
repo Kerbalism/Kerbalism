@@ -239,10 +239,12 @@ namespace KERBALISM
 		{
 			yield return null;
 
-			double evaPropQuantity = double.MaxValue;
+			double evaPropQuantity = 0.0;
+			bool hasJetPack = false;
 
 #if KSP15_16 || KSP18 || KSP110
 
+			hasJetPack = true;
 			double evaPropCapacity = Lib.EvaPropellantCapacity();
 
 			// take as much of the propellant as possible. just imagine: there are 1.3 units left, and 12 occupants
@@ -260,32 +262,44 @@ namespace KERBALISM
 			// However, stock doesn't provide any way to refill the jetpack, so we still handle that.
 
 			KerbalEVA kerbalEVA = kerbalPart.FindModuleImplementing<KerbalEVA>();
-			ProtoPartResourceSnapshot jetPackProp = null;
+			List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
 			if (kerbalEVA.ModuleInventoryPartReference != null)
 			{
 				foreach (StoredPart storedPart in kerbalEVA.ModuleInventoryPartReference.storedParts.Values)
 				{
+					// Note : the "evaJetpack" string is hardcoded in the KSP source
 					if (storedPart.partName == "evaJetpack")
 					{
-						jetPackProp = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
-						break;
+						hasJetPack = true;
+					}
+
+					ProtoPartResourceSnapshot prop = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
+					if (prop != null)
+					{
+						propContainers.Add(prop);
 					}
 				}
 			}
 
-			if (jetPackProp != null && jetPackProp.amount < jetPackProp.maxAmount)
+			if (propContainers.Count > 0)
 			{
-				double vesselPropTransferred = vesselHatch.RequestResource(evaPropName, jetPackProp.maxAmount - jetPackProp.amount);
-				jetPackProp.amount = Math.Min(jetPackProp.amount + vesselPropTransferred, jetPackProp.maxAmount);
-				evaPropQuantity = jetPackProp.amount;
+				foreach (ProtoPartResourceSnapshot propContainer in propContainers)
+				{
+					if (propContainer.amount < propContainer.maxAmount)
+					{
+						double vesselPropTransferred = vesselHatch.RequestResource(evaPropName, propContainer.maxAmount - propContainer.amount);
+						propContainer.amount = Math.Min(propContainer.amount + vesselPropTransferred, propContainer.maxAmount);
+						evaPropQuantity += propContainer.amount;
+					}
+				}
 			}
 #endif
 
 			// show warning if there is little or no EVA propellant in the suit
-			if (evaPropQuantity <= 0.05 && !Lib.Landed(vesselHatch.vessel))
+			if (hasJetPack && evaPropQuantity <= 0.05 && !Lib.Landed(vesselHatch.vessel))
 			{
 				Message.Post(Severity.danger,
-					Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropName + "</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA suit")"Don't let the ladder go!"
+					Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropName + "</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA JetPack")"Don't let the ladder go!"
 			}
 
 		}
@@ -313,27 +327,37 @@ namespace KERBALISM
 			if (evaPropName != "EVA Propellant")
 			{
 				KerbalEVA kerbalEVA = data.from.FindModuleImplementing<KerbalEVA>();
-				ProtoPartResourceSnapshot jetPackProp = null;
+				List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
 				if (kerbalEVA.ModuleInventoryPartReference != null)
 				{
 					foreach (StoredPart storedPart in kerbalEVA.ModuleInventoryPartReference.storedParts.Values)
 					{
-						if (storedPart.partName == "evaJetpack")
+						ProtoPartResourceSnapshot propContainer = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
+						if (propContainer != null && propContainer.amount > 0.0)
 						{
-							jetPackProp = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
-							break;
+							propContainers.Add(propContainer);
 						}
 					}
 				}
 
-				if (jetPackProp != null && jetPackProp.amount > 0.0)
+
+
+				if (propContainers.Count > 0)
 				{
 					// get vessel resources handler
 					ResourceInfo evaPropOnVessel = ResourceCache.GetResource(data.to.vessel, evaPropName);
-					double storage = evaPropOnVessel.Capacity - evaPropOnVessel.Amount;
-					double stored = Math.Min(jetPackProp.amount, storage);
-					evaPropOnVessel.Produce(stored, ResourceBroker.Generic);
-					jetPackProp.amount = Math.Max(jetPackProp.amount - stored, 0.0);
+					double storageAvailable = evaPropOnVessel.Capacity - evaPropOnVessel.Amount;
+
+					foreach (ProtoPartResourceSnapshot propContainer in propContainers)
+					{
+						double stored = Math.Min(propContainer.amount, storageAvailable);
+						storageAvailable -= stored;
+						evaPropOnVessel.Produce(stored, ResourceBroker.Generic);
+						propContainer.amount = Math.Max(propContainer.amount - stored, 0.0);
+
+						if (storageAvailable <= 0.0)
+							break;
+					}
 
 					// Explaination :
 					// - The ProtoCrewMember has already been removed from the EVA part and added to the vessel part
