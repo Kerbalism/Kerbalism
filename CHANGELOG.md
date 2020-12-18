@@ -1,3 +1,20 @@
+## v3.11 for all versions of KSP from 1.5.0 to 1.11.x
+
+ - 2020-12-18
+
+### Changes since the last release
+
+* Updated for KSP 1.11
+* Monopropellant support for KSP 1.11 EVA jetpack and "eva fuel cylinders" (@gotmachine)
+* Removed ability to disable habitats, to mitigate the (unfixed) bugs with pressurization (@gotmachine)
+* Added radiation fields configs for GPP and GEP (@SirMortimer)
+* Enable water recycler process on US2 Water Purifier wedge (@ccavisess)
+* #690 : Handle B9PS switching of solar panel rates (NFSolar...) (@gotmachine)
+* #654 : Comet samples support (@gotmachine)
+* Improvements to engine reliability patches (@hemeac)
+* Support for KiwiTechTree in EngineIgnitor support patch (@Clamp-o-Tron)
+* Fix to radial LS containers mass (@Murtnowski)
+
 ## v3.10 for all versions of KSP from 1.5.0 to 1.10.x
 
  - 2020-08-13
