@@ -242,7 +242,7 @@ namespace KERBALISM
 			double evaPropQuantity = 0.0;
 			bool hasJetPack = false;
 
-#if KSP15_16 || KSP18 || KSP110
+#if KSP15_16 || KSP17 || KSP18 || KSP110
 
 			hasJetPack = true;
 			double evaPropCapacity = Lib.EvaPropellantCapacity();
@@ -321,7 +321,7 @@ namespace KERBALISM
 				data.to.RequestResource(res.resourceName, -res.amount);
 			}
 
-#if !KSP15_16 && !KSP18 && !KSP110
+#if !KSP15_16 && !KSP17 && !KSP18 && !KSP110
 
 			string evaPropName = Lib.EvaPropellantName();
 			if (evaPropName != "EVA Propellant")
@@ -339,8 +339,6 @@ namespace KERBALISM
 						}
 					}
 				}
-
-
 
 				if (propContainers.Count > 0)
 				{

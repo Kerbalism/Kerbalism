@@ -1,4 +1,4 @@
-﻿#if !KSP15_16 && !KSP18 && !KSP110
+﻿#if !KSP15_16 && !KSP17 && !KSP18 && !KSP110
 
 using Harmony;
 

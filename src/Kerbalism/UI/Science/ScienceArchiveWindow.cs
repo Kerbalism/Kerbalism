@@ -266,7 +266,9 @@ namespace KERBALISM
 #if !KSP15_16
 					else if (partModule is ModuleInventoryPart inventory)
 					{
+#pragma warning disable CS0618 // Type or member is obsolete
 						foreach (string inventoryPartName in inventory.InventoryPartsList)
+#pragma warning restore CS0618 // Type or member is obsolete
 						{
 							Part groundPart = PartLoader.getPartInfoByName(inventoryPartName)?.partPrefab;
 							if (groundPart == null)
