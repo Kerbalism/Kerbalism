@@ -169,7 +169,7 @@ namespace KERBALISM
 
             // hide toggle if specified
             Events["Toggle"].active = toggle;
-            Actions["Action"].active = toggle;
+            //Actions["Action"].active = toggle;
 
 #if DEBUG
 			Events["LogVolumeAndSurface"].active = true;
@@ -383,7 +383,10 @@ namespace KERBALISM
                         status_str = Local.Generic_ENABLED;
                     }
                     Set_pressurized(true);
-                    break;
+
+					// GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
+					Events["Toggle"].guiActive = false;
+					break;
                 case State.disabled:
                     status_str = Local.Generic_DISABLED;
                     Set_pressurized(false);
@@ -505,8 +508,16 @@ namespace KERBALISM
             switch (state)
             {
                 // Make Set_flow be called only once throgh the Toggle
-                case State.enabled: Set_flow(false); state = State.depressurizing; break;
-                case State.disabled: Set_flow(true); state = State.pressurizing; break;
+
+				// GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
+                case State.enabled:
+					if (Lib.IsFlight())
+						break;
+
+					Set_flow(false);
+					state = State.depressurizing;
+					break;
+				case State.disabled: Set_flow(true); state = State.pressurizing; break;
                 case State.pressurizing: Set_flow(false); state = State.depressurizing; break;
                 case State.depressurizing: Set_flow(true); state = State.pressurizing; break;
             }
@@ -515,11 +526,12 @@ namespace KERBALISM
             if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
-        // action groups
-        [KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
+		// action groups
+		// GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
+		//[KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
-        // part tooltip
-        public override string GetInfo()
+		// part tooltip
+		public override string GetInfo()
         {
             return Specs().Info();
         }

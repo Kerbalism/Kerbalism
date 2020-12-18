@@ -289,8 +289,8 @@ namespace KERBALISM
 					{
 						double vesselPropTransferred = vesselHatch.RequestResource(evaPropName, propContainer.maxAmount - propContainer.amount);
 						propContainer.amount = Math.Min(propContainer.amount + vesselPropTransferred, propContainer.maxAmount);
-						evaPropQuantity += propContainer.amount;
 					}
+					evaPropQuantity += propContainer.amount;
 				}
 			}
 #endif
