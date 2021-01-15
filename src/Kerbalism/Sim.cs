@@ -635,6 +635,8 @@ namespace KERBALISM
 		#endregion
 
 		#region ATMOSPHERE
+		public static double depthfactor = 0.1;
+
 		// return proportion of flux not blocked by atmosphere
 		// - position: sampling point
 		// - sun_dir: normalized vector from sampling point to the sun
@@ -651,17 +653,11 @@ namespace KERBALISM
 			if (static_pressure > 0.0)
 			{
 				double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
-
-				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-				double Ra = body.Radius + altitude;
-				double Ya = body.atmosphereDepth - altitude;
-				double q = Ra * Math.Max(0.0, Vector3d.Dot(up, sun_dir));
-				double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
-				return body.GetSolarPowerFactor(density) * Ya / path;
+				body.GetSolarAtmosphericEffects(Vector3d.Dot(up, sun_dir), density, out _, out double stockFluxFactor);
+				return stockFluxFactor;
 			}
 			return 1.0;
 		}
-
 
 		// return proportion of flux not blocked by atmosphere
 		// note: this one assume the receiver is on the ground
@@ -673,13 +669,8 @@ namespace KERBALISM
 			if (static_pressure > 0.0)
 			{
 				double density = body.GetDensity(static_pressure, body.GetTemperature(0.0));
-
-				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-				double Ra = body.Radius;
-				double Ya = body.atmosphereDepth;
-				double q = Ra * cos_a;
-				double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
-				return body.GetSolarPowerFactor(density) * Ya / path;
+				body.GetSolarAtmosphericEffects(cos_a, density, out _, out double stockFluxFactor);
+				return stockFluxFactor;
 			}
 			return 1.0;
 		}
@@ -718,16 +709,11 @@ namespace KERBALISM
 				sunDirs[2] = (sunDirs[0] + sunDirs[1]).normalized;
 
 				double density = body.GetDensity(static_pressure, body.GetTemperature(altitude));
-
-				// nonrefracting radially symmetrical atmosphere model [Schoenberg 1929]
-				double Ra = body.Radius + altitude;
-				double Ya = body.atmosphereDepth - altitude;
 				double atmo_factor_analytic = 0.0;
 				for (int i = 0; i < 3; i++)
 				{
-					double q = Ra * Math.Max(0.0, Vector3d.Dot(radialOut, sunDirs[i]));
-					double path = Math.Sqrt(q * q + 2.0 * Ra * Ya + Ya * Ya) - q;
-					atmo_factor_analytic += body.GetSolarPowerFactor(density) * Ya / path;
+					body.GetSolarAtmosphericEffects(Vector3d.Dot(radialOut, sunDirs[i]), density, out _, out double stockFluxFactor);
+					atmo_factor_analytic += stockFluxFactor;
 				}
 				atmo_factor_analytic /= 3.0;
 				return atmo_factor_analytic;
