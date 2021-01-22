@@ -261,6 +261,9 @@ namespace KERBALISM
 							continue;
 						}
 						Require reqEnum = (Require)Enum.Parse(typeof(Require), reqString[0]);
+						if (reqEnum == Require.Part)
+							reqString[1] = reqString[1].Replace('_', '.');
+
 						reqList.Add(ParseRequiresValue(reqEnum, reqString[1]));
 					}
 					else
@@ -439,6 +442,10 @@ namespace KERBALISM
 				case Require.AdministrationLevelMin:
 				case Require.AdministrationLevelMax:
 					return ((int)reqValue).ToString();
+				case Require.Module:
+					return KSPUtil.PrintModuleName((string)reqValue);
+				case Require.Part:
+					return PartLoader.getPartInfoByName((string)reqValue)?.title ?? (string)reqValue;
 				default:
 					return string.Empty;
 			}
@@ -493,8 +500,8 @@ namespace KERBALISM
 				case Require.MissionControlLevelMax:   return Local.ExperimentReq_MissionControlLevelMax;//"Mission Control max level "
 				case Require.AdministrationLevelMin:   return Local.ExperimentReq_AdministrationLevelMin;//"Administration min level "
 				case Require.AdministrationLevelMax:   return Local.ExperimentReq_AdministrationLevelMax;//"Administration max level "
-				case Require.Part:                                  return Local.ExperimentReq_Part;//"Need part "
-				case Require.Module:                   return  Local.ExperimentReq_Module;//"Need module "
+				case Require.Part:                     return Local.ExperimentReq_Part;//"Need part "
+				case Require.Module:                   return Local.ExperimentReq_Module;//"Need module "
 
 				case Require.AbsoluteZero:
 				case Require.InnerBelt:
