@@ -435,6 +435,10 @@ namespace KERBALISM
 				// iterate over all stars, compute the exposure factor
 				foreach (VesselData.SunInfo sunInfo in vd.EnvSunsInfo)
 				{
+					// ignore insignifiant flux from distant stars
+					if (sunInfo != trackedSunInfo && sunInfo.SolarFlux < 1e-6)
+						continue;
+
 					double sunCosineFactor = 0.0;
 					double sunOccludedFactor = 0.0;
 					string occludingPart = null;

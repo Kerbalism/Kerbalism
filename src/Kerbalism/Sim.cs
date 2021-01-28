@@ -19,7 +19,7 @@ namespace KERBALISM
 					{
 						double starFluxAtHome = Lib.ReflectionValue<double>(c, "solarLuminosity");
 						suns.Add(new SunData(body.flightGlobalsIndex, starFluxAtHome));
-						if (starFluxAtHome > 1.0) Sim.SolarFluxAtHome += starFluxAtHome;
+						
 					}
 				}
 			}
@@ -28,11 +28,31 @@ namespace KERBALISM
 			if (suns.Count == 0)
 			{
 				suns.Add(new SunData(0, PhysicsGlobals.SolarLuminosityAtHome));
-				Sim.SolarFluxAtHome = PhysicsGlobals.SolarLuminosityAtHome;
 			}
 
 			// calculate each sun total flux (must be done after the "suns" list is populated
-			foreach (SunData sd in suns) sd.InitSolarFluxTotal();
+			CelestialBody home = FlightGlobals.GetHomeBody();
+			foreach (SunData sd in suns)
+			{
+				sd.InitSolarFluxTotal();
+
+				// in some cases, weird Kopernicus (binary home stars ?) systems might imply a solar luminosity at home 
+				// that is higher than what is defined in PhysicsGlobals.SolarLuminosityAtHome.
+				// Can't remember what case exactly, if that code is causing issues,
+				// remove it and just always use PhysicsGlobals.SolarLuminosityAtHome
+				double distance = (home.position - sd.body.position).magnitude;
+				double sunSolarFluxAtHome = sd.SolarFlux(distance, false);
+				if (sunSolarFluxAtHome > 0.1)
+				{
+					SolarFluxAtHome += sunSolarFluxAtHome;
+				}
+			}
+
+			// The above calculations will likely end up with a slightly lower SolarFluxAtHome than expected, correct if necessary.
+			if (SolarFluxAtHome < PhysicsGlobals.SolarLuminosityAtHome)
+			{
+				SolarFluxAtHome = PhysicsGlobals.SolarLuminosityAtHome;
+			}
 
 			// get scaled space planetary layer for physic raytracing
 			planetaryLayerMask = 1 << LayerMask.NameToLayer("Scaled Scenery");
