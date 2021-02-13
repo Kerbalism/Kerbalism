@@ -18,6 +18,9 @@ namespace KERBALISM
 			// check that name is specified
 			if (name.Length == 0) throw new Exception("skipping unnamed process");
 
+			// fix for https://github.com/JadeOfMaar/RationalResources/issues/25
+			bool skip_resources_validity_check = Lib.ConfigValue(node, "skip_resources_validity_check", false);
+
 			inputs = new Dictionary<string, double>();
 			foreach (string input in node.GetValues("input"))
 			{
@@ -28,10 +31,12 @@ namespace KERBALISM
 				double input_rate = Lib.Parse.ToDouble(tok[1]);
 
 				// check that resource is specified
-				if (input_res.Length == 0) throw new Exception("skipping resource-less process " + name);
+				if (input_res.Length == 0)
+					throw new Exception("skipping resource-less process " + name);
 
 				// check that resource exist
-				if (Lib.GetDefinition(input_res) == null) throw new Exception("resource " + input_res + " doesn't exist for process " + name);
+				if (skip_resources_validity_check || Lib.GetDefinition(input_res) == null)
+					throw new Exception("resource " + input_res + " doesn't exist for process " + name);
 
 				// record input
 				inputs[input_res] = input_rate;
@@ -47,10 +52,12 @@ namespace KERBALISM
 				double output_rate = Lib.Parse.ToDouble(tok[1]);
 
 				// check that resource is specified
-				if (output_res.Length == 0) throw new Exception("skipping resource-less process " + name);
+				if (output_res.Length == 0)
+					throw new Exception("skipping resource-less process " + name);
 
 				// check that resource exist
-				if (Lib.GetDefinition(output_res) == null) throw new Exception("resource " + output_res + " doesn't exist for process " + name);
+				if (skip_resources_validity_check || Lib.GetDefinition(output_res) == null)
+					throw new Exception("resource " + output_res + " doesn't exist for process " + name);
 
 				// record output
 				outputs[output_res] = output_rate;
