@@ -1326,9 +1326,7 @@ namespace KERBALISM
 				case VesselType.Flag:
 				case VesselType.SpaceObject:
 				case VesselType.Unknown:
-#if !KSP15_16
 				case VesselType.DeployedSciencePart:
-#endif
 					return false;
 			}
 
@@ -1350,20 +1348,14 @@ namespace KERBALISM
 
 		public static bool IsControlUnit(Vessel v)
 		{
-#if !KSP15_16
 			return Serenity.GetScienceCluster(v) != null;
-#else
-			return false;
-#endif
 		}
 
 		public static bool IsPowered(Vessel v)
 		{
-#if !KSP15_16
 			var cluster = Serenity.GetScienceCluster(v);
 			if (cluster != null)
 				return cluster.IsPowered;
-#endif
 			return ResourceCache.GetResource(v, "ElectricCharge").Amount > double.Epsilon;
 		}
 

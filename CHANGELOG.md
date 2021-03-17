@@ -1,4 +1,17 @@
-## v3.11 for all versions of KSP from 1.5.0 to 1.11.x
+## v3.13 for all versions of KSP from 1.8.0 to 1.11.x
+
+ - 2021-03-17
+
+### Changes since the last release
+
+* New dependency : KSPHarmony available at https://github.com/KSPModdingLibs/HarmonyKSP
+* Removed KSP 1.5 to 1.7 support due to being unsupported by KSPHarmony
+* Fix #713 : Wrong solar power atmospheric opacity evaluation
+* Fix incorrect SolarFluxAtHome when multiple Kopernicus stars exists
+* Fix the configure Upgrade-Slots patch not being applied to other mods parts
+* Part / Module requirements in experiments `require` now show the name of the required module/part in the UI 
+
+## v3.12 for all versions of KSP from 1.5.0 to 1.11.x
 
  - 2020-12-18
 

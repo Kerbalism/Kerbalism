@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Harmony;
+using HarmonyLib;
 using KSP.UI.Screens;
 using UnityEngine;
 using KSP.Localization;
@@ -242,7 +242,7 @@ namespace KERBALISM
 			double evaPropQuantity = 0.0;
 			bool hasJetPack = false;
 
-#if KSP15_16 || KSP17 || KSP18 || KSP110
+#if KSP18 || KSP110
 
 			hasJetPack = true;
 			double evaPropCapacity = Lib.EvaPropellantCapacity();
@@ -321,7 +321,7 @@ namespace KERBALISM
 				data.to.RequestResource(res.resourceName, -res.amount);
 			}
 
-#if !KSP15_16 && !KSP17 && !KSP18 && !KSP110
+#if !KSP18 && !KSP110
 
 			string evaPropName = Lib.EvaPropellantName();
 			if (evaPropName != "EVA Propellant")
@@ -429,10 +429,8 @@ namespace KERBALISM
 
 		void VesselCreated(Vessel v)
 		{
-#if !KSP15_16
 			if (Serenity.GetModuleGroundExpControl(v) != null)
 				v.vesselName = Lib.BuildString(v.mainBody.name, " Site ", Lib.Greek());
-#endif
 		}
 
 		void VesselDestroyed(Vessel v)

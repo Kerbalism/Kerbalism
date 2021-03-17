@@ -27,12 +27,7 @@ namespace KERBALISM
 		// persistent
 		[KSPField(isPersistant = true)] public bool deployed = false; // currently deployed
 
-
-#if KSP15_16
-		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_")]
-#else
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
-#endif
 		// rmb status
 		public string Status;  // rate of radiation emitted/shielded
 
@@ -132,11 +127,7 @@ namespace KERBALISM
 			return ResourceUpdate(null, resourceChangeRequest);
 		}
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Radiation", groupDisplayName = "#KERBALISM_Group_Radiation")]//Radiation
-#endif
 		public void Toggle()
 		{
 			if (Lib.IsFlight())

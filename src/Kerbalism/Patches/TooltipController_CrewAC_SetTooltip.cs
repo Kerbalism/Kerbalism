@@ -1,5 +1,5 @@
 using System.Text;
-using Harmony;
+using HarmonyLib;
 using KSP.UI.TooltipTypes;
 
 namespace KERBALISM

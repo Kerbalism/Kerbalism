@@ -78,8 +78,8 @@
       <Private>False</Private>
     </Reference>
     <!-- Harmony reference, get it from the gamedata folder -->
-    <Reference Include="Harmony">
-      <HintPath>$(GameDataKerbalismPathPR)\0Harmony.1.2.0.1.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Lib.Harmony.2.0.4\lib\net45\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <!-- KSP Dlls -->
@@ -290,7 +290,9 @@
   <!-- ///////////////////////////////////////////////////// -->
   <!-- ////////// IMPORT DEFAULT MS BUILD PROCESS ////////// -->
   <!-- ///////////////////////////////////////////////////// -->
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- This target is called before the build, you can use it for debugging the build system -->
   <Target Name="BeforeBuild">

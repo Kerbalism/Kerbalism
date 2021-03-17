@@ -8,21 +8,21 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 ### Frequently Asked Questions: [FAQ]
 
-## Current version: 3.12
+## Current version: 3.13
 
 **What's new** : [New and Noteworthy]   
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
-**KSP version** : 1.5.x to 1.11.x
-**Requires** : [Module Manager], [CommunityResourcePack]  
+**KSP version** : 1.8.x to 1.11.x  
+**Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP]  
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
 ## Download and installation
 
 **Download on [Github releases] or use [CKAN]** 
 
-Two packages are available :
+Two packages are required :
 - **Kerbalism** is the core plugin, always required.
 - **KerbalismConfig** is the default configuration pack.\
   It can be be replaced by other packs distributed elsewhere.
@@ -31,6 +31,7 @@ Two packages are available :
 
 - [Module Manager] : must be installed in GameData
 - [CommunityResourcePack] : must be installed in GameData
+- [HarmonyKSP] : must be installed in GameData
 
 **Third-party configuration packs**
 
@@ -42,6 +43,7 @@ Don't combine packs unless there is explicit instructions to do so.
 
 **Installation checklist** for the "GameData" folder required content : 
 
+- `000_Harmony` (folder)
 - `CommunityResourcePack` (folder)
 - `Kerbalism` (folder)
 - `KerbalismConfig` (folder, can be replaced by a third-party config pack)
@@ -83,8 +85,6 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For more control, download the full [KSP-AVC Plugin].
 
 
-
-
 [Github releases]: https://github.com/Kerbalism/Kerbalism/releases
 [Github wiki]: https://github.com/Kerbalism/Kerbalism/wiki
 [GitHub issues]: https://github.com/Kerbalism/Kerbalism/issues
@@ -99,6 +99,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 
 [Module Manager]: https://ksp.sarbian.com/jenkins/job/ModuleManager/lastStableBuild/
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
+[HarmonyKSP]: https://github.com/KSPModdingLibs/HarmonyKSP/releases
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 [CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/154922-ckan-the-comprehensive-kerbal-archive-network-v1264-orion/

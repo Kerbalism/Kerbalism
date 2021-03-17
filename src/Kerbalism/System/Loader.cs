@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens;
-using Harmony;
+using HarmonyLib;
 
 
 namespace KERBALISM
@@ -72,7 +72,7 @@ namespace KERBALISM
 			if (Features.Supplies) Inject(root, "Feature", "Supplies");
 
 			// inject harmony patches
-			HarmonyInstance harmony = HarmonyInstance.Create("Kerbalism");
+			Harmony harmony = new Harmony("Kerbalism");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
 			var methods = harmony.GetPatchedMethods();
 

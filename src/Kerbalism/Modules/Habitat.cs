@@ -26,17 +26,11 @@ namespace KERBALISM
         [KSPField(isPersistant = true)] private double perctDeployed = 0;
 
         // rmb ui status strings
-#if KSP15_16
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume")]
-		public string Volume;
-		[KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface")]
-		public string Surface;
-#else
         [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public string Volume;
         [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Surface", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public string Surface;
-#endif
+
         // animations
         Animator inflate_anim;
 
@@ -485,11 +479,7 @@ namespace KERBALISM
             else Get_inflate_anim().Still(Lib.Level(part, "Atmosphere", true));
         }
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
         [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
         public void Toggle()
         {
             // if manned, we can't depressurize
@@ -717,12 +707,8 @@ namespace KERBALISM
 		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;
 		public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
-#if KSP15_16
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true)]
-#else
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "[Debug] log volume/surface", active = false, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-#endif
-        public void LogVolumeAndSurface()
+		public void LogVolumeAndSurface()
 		{
 			Lib.GetPartVolumeAndSurface(part, true);
 		}

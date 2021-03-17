@@ -1,9 +1,3 @@
-#if !KSP15_16
-using System.Collections.Generic;
-using System;
-using KSP.Localization;
-using CommNet;
-using KSPAssets;
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM
@@ -33,4 +27,3 @@ namespace KERBALISM
 		}
 	}
 }
-#endif

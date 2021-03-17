@@ -263,7 +263,6 @@ namespace KERBALISM
 								vesselExpInfos.Add(expInfo);
 						}
 					}
-#if !KSP15_16
 					else if (partModule is ModuleInventoryPart inventory)
 					{
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -285,7 +284,6 @@ namespace KERBALISM
 							}
 						}
 					}
-#endif
 				}
 			}
 
@@ -383,14 +381,12 @@ namespace KERBALISM
 						if (expInfo != null)
 							researchedExpInfos.Add(expInfo);
 					}
-#if !KSP15_16
 					else if (partModule is ModuleGroundExperiment groundExp)
 					{
 						ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(groundExp.experimentId);
 						if (expInfo != null)
 							researchedExpInfos.Add(expInfo);
 					}
-#endif
 				}
 			}
 

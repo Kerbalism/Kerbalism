@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Harmony;
+using HarmonyLib;
 using KSP.Localization;
 using System.Globalization;
 

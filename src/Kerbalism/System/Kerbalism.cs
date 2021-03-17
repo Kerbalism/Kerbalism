@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
-using Harmony;
 using KSP.UI.Screens;
-using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -142,7 +139,13 @@ namespace KERBALISM
 				}
 				catch (Exception e)
 				{
-					string fatalError = "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.ToString();
+					string fatalError = SanityCheck(true);
+					if (fatalError == null)
+						fatalError = string.Empty;
+					else
+						fatalError += "\n\n";
+
+					fatalError += "FATAL ERROR : Kerbalism core init has failed :" + "\n" + e.ToString();
 					Lib.Log(fatalError, Lib.LogLevel.Error);
 					LoadFailedPopup(fatalError);
 				}
@@ -240,7 +243,7 @@ namespace KERBALISM
 		private void LoadFailedPopup(string error)
 		{
 			string popupMsg = "Kerbalism has encountered an unrecoverable error and KSP must be closed\n\n";
-			popupMsg += "Report it at <b>kerbalism.github.io</b>, in the <b>kerbalism discord</b> or at the KSP forums thread\n\n";
+			popupMsg += "If you can't fix it, ask for help in the <b>kerbalism discord</b> or at the KSP forums thread\n\n";
 			popupMsg += "Please provide a screenshot of this message, and your ksp.log file found in your KSP install folder\n\n";
 			popupMsg += error;
 
@@ -503,24 +506,43 @@ namespace KERBALISM
 
 		#endregion
 
-		private void SanityCheck()
+		private string SanityCheck(bool forced = false)
 		{
 			// fix PostScreenMessage() not being available for a few updates after scene load since KSP 1.8
-			if (ScreenMessages.PostScreenMessage("") == null)
+			if (!forced)
 			{
-				didSanityCheck = false;
-				return;
+				if (ScreenMessages.PostScreenMessage("") == null)
+				{
+					didSanityCheck = false;
+					return string.Empty;
+				}
+				else
+				{
+					didSanityCheck = true;
+				}
 			}
-			else
+
+			bool harmonyFound = false;
+			foreach (var a in AssemblyLoader.loadedAssemblies)
 			{
-				didSanityCheck = true;
+				if (a.name.ToLower().Contains("harmony"))
+					harmonyFound = true;
+			}
+
+			if (!harmonyFound)
+			{
+				string result = "<color=#FF4500><b>HarmonyKSP isn't installed</b></color>\nThis is a required dependency for Kerbalism!";
+				DisplayWarning(result);
+				enabled = false;
+				return result;
 			}
 
 			if (!Settings.loaded)
 			{
-				DisplayWarning("<color=#FF4500>No configuration found</color>\nYou need KerbalismConfig (or any other Kerbalism config pack).");
+				string result = "<color=#FF4500><b>No Kerbalism configuration found</b></color>\nCheck that you have installed KerbalismConfig (or any other Kerbalism config pack).";
+				DisplayWarning(result);
 				enabled = false;
-				return;
+				return result;
 			}
 
 			List<string> incompatibleMods = Settings.IncompatibleMods();
@@ -568,6 +590,7 @@ namespace KERBALISM
 			}
 
 			DisplayWarning(msg);
+			return msg;
 		}
 
 		private static void DisplayWarning(string msg)

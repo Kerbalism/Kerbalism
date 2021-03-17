@@ -1,8 +1,7 @@
 using System;
 using System.Reflection;
 using System.Collections.Generic;
-using Harmony;
-using Harmony.ILCopying;
+using HarmonyLib;
 using UnityEngine;
 using KSP.Localization;
 

@@ -1,6 +1,5 @@
-#if !KSP15_16
 using System.Collections.Generic;
-using Harmony;
+using HarmonyLib;
 using Expansions.Serenity.DeployedScience.Runtime;
 
 namespace KERBALISM
@@ -79,4 +78,3 @@ namespace KERBALISM
 		}
 	}
 }
-#endif

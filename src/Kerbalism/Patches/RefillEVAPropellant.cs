@@ -1,6 +1,5 @@
-﻿#if !KSP15_16 && !KSP17 && !KSP18 && !KSP110
-
-using Harmony;
+﻿#if !KSP18 && !KSP110
+using HarmonyLib;
 
 namespace KERBALISM
 {
@@ -20,5 +19,4 @@ namespace KERBALISM
 		}
 	}
 }
-
 #endif

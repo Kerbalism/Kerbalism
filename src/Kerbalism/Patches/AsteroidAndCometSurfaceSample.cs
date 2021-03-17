@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Harmony;
+using HarmonyLib;
 using KSP.Localization;
 
 namespace KERBALISM
@@ -81,7 +81,7 @@ namespace KERBALISM
 		}
 	}
 
-#if !KSP15_16 && !KSP17 && !KSP18
+#if !KSP18
 
 	[HarmonyPatch(typeof(ModuleComet))]
 	[HarmonyPatch("TakeSampleEVAEvent")]
