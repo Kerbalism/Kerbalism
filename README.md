@@ -69,7 +69,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
   - Maybe it's a known issue ? Check the [GitHub issues] and ask on the [official Discord].
 
 - You want to **report a bug** ?
-  - Reproduce it consistently, provide us with screenshots and the `KSP.log`, `modulemanager.configcache` and `persistent.sfs` files.
+  - Install the [KSPBugReport] plugin and generate a bug report with it. Support requests that don't provide full logs and KSP database dumps are often ignored.
   - Report it on [Github issues] (preferred) or in the [KSP forums thread] (we don't go there often).
 
 - You want to **contribute** or add support for your mod ?
