@@ -97,6 +97,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/190382-150-181-kerbalism-32/
 [Discord]: https://discord.gg/3JAE2JE
 
+[KSPBugReport]: https://github.com/KSPModdingLibs/KSPBugReport
 [Module Manager]: https://ksp.sarbian.com/jenkins/job/ModuleManager/lastStableBuild/
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [HarmonyKSP]: https://github.com/KSPModdingLibs/HarmonyKSP/releases
