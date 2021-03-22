@@ -103,7 +103,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [HarmonyKSP]: https://github.com/KSPModdingLibs/HarmonyKSP/releases
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
-[CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/154922-ckan-the-comprehensive-kerbal-archive-network-v1264-orion/
+[CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/197082-ckan
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 
 [KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/banner.png
