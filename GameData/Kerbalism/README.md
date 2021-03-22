@@ -13,7 +13,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 **What's new** : [New and Noteworthy]   
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
-**License** : [Unlicense] (public domain)  
+**License** : [0BSD](https://tldrlegal.com/license/bsd-0-clause-license) (public domain)  
 **KSP version** : 1.5.x to 1.8.x  
 **Requires** : [Module Manager], [CommunityResourcePack]  
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
@@ -78,7 +78,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 ## Disclaimer and license
 
-This mod is released under the [Unlicense], which mean it's in the public domain.
+This mod is released under the [0BSD license](https://tldrlegal.com/license/bsd-0-clause-license), which mean it's in the public domain.
 
 It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For more control, download the full [KSP-AVC Plugin].
 
@@ -102,7 +102,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 [CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/154922-ckan-the-comprehensive-kerbal-archive-network-v1264-orion/
-[Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
+[0BSD]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 
 [KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/banner.png
 
