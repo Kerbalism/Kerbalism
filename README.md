@@ -66,7 +66,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 - You **found a bug** ?
   - Maybe it's related to another mod ? Check the [Mod Compatibility] page.
-  - Maybe it's a known issue ? Check the [GitHub issues] and ask on the [official Discord].
+  - Maybe it's a known issue ? Check the [GitHub issues] and ask on [Discord].
 
 - You want to **report a bug** ?
   - Install the [KSPBugReport] plugin and generate a bug report with it. Support requests that don't provide full logs and KSP database dumps are often ignored.
@@ -94,7 +94,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Contributing]: https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md
 [BuildSystem]: https://github.com/Kerbalism/Kerbalism/blob/master/BuildSystem/README.MD
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
-[KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/190382-150-181-kerbalism-32/
+[KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/201171-kerbalism
 [Discord]: https://discord.gg/3JAE2JE
 
 [KSPBugReport]: https://github.com/KSPModdingLibs/KSPBugReport
