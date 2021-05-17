@@ -550,7 +550,7 @@ namespace KERBALISM
 
 			private class Gaseous : BodyCondition
 			{
-				public override bool TestCondition(CelestialBody body) => body.hasSolidSurface;
+				public override bool TestCondition(CelestialBody body) => !body.hasSolidSurface;
 				public override string Title => Local.Experimentinfo_BodyCondition3;//"gaseous"
 			}
 
