@@ -38,8 +38,7 @@ Two packages are required :
 Make sure to install exactly one configuration pack only.\
 Don't combine packs unless there is explicit instructions to do so.
 - [ROKerbalism](https://github.com/Standecco/ROKerbalism) for Realism Overhaul / RP-1 by standecco
-- [SIMPLEX Living](https://spacedock.info/mod/2067) by theJesuit
-- [KerbalismScienceOnly](https://github.com/Kerbalism/KerbalismScienceOnly/releases) for Kerbalism with the science feature only
+- [SIMPLEX](https://spacedock.info/mod/2300) by theJesuit - Stockalike / Simplified life support
 
 **Installation checklist** for the "GameData" folder required content : 
 
