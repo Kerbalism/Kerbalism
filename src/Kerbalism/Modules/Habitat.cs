@@ -176,8 +176,11 @@ namespace KERBALISM
                 inflate_anim = new Animator(part, inflate);
             }
 
-            // configure on start
-            Configure();
+			// add the cost of shielding to the base part cost
+			shieldingCost = (float)surface * PartResourceLibrary.Instance.GetDefinition("Shielding").unitCost;
+
+			// configure on start
+			Configure();
 
             perctDeployed = Lib.Level(part, "Atmosphere", true);
 
@@ -263,9 +266,6 @@ namespace KERBALISM
 
                 // add external surface shielding
                 PartResource shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
-
-				// add the cost of shielding to the base part cost
-				shieldingCost = (float)surface * shieldingRes.info.unitCost;
 
 				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
 				shieldingRes.isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
