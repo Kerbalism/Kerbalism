@@ -121,6 +121,7 @@
     <Compile Include="Automation\Devices\Laboratory.cs" />
     <Compile Include="Automation\Devices\Experiment.cs" />
     <Compile Include="Automation\Devices\Scanner.cs" />
+    <Compile Include="Automation\Devices\Sentinel.cs" />
     <Compile Include="Automation\Script.cs" />
     <Compile Include="Automation\VesselDevices\VesselTransmit.cs" />
     <Compile Include="Background.cs" />
@@ -149,6 +150,7 @@
     <Compile Include="Database\VesselSituations.cs" />
     <Compile Include="External\BackgroundResources.cs" />
     <Compile Include="LocalizationCache.cs" />
+    <Compile Include="Modules\KebalismSentinel.cs" />
     <Compile Include="Patches\RefillEVAPropellant.cs" />
     <Compile Include="Science\SubjectData.cs" />
     <Compile Include="Database\SupplyData.cs" />

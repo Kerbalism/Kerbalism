@@ -268,6 +268,7 @@ namespace KERBALISM
 						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter);           break;
 						case "ModuleRTAntenna":
 						case "ModuleRTAntennaPassive":       device = new AntennaRTDevice(m);                                    break;
+						case "KerbalismSentinel":            device = new SentinelDevice(m as KerbalismSentinel);                break;
 						default: continue;
 					}
 
@@ -331,6 +332,7 @@ namespace KERBALISM
 							case "ModuleDataTransmitterFeedeable": device = new ProtoAntennaDevice(module_prefab as ModuleDataTransmitter, p, m);  break;
 							case "ModuleRTAntenna":
 							case "ModuleRTAntennaPassive":       device = new ProtoAntennaRTDevice(module_prefab, p, m);                           break;
+							case "KerbalismSentinel":            device = new ProtoSentinelDevice(module_prefab as KerbalismSentinel, p, m, v);    break;
 							default: continue;
 						}
 

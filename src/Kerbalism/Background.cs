@@ -91,6 +91,7 @@ namespace KERBALISM
 			NonRechargeBattery,
 			KerbalismProcess,
 			SolarPanelFixer,
+			KerbalismSentinel,
 
 			/// <summary>Module implementing the kerbalism background API</summary>
 			APIModule
@@ -126,6 +127,7 @@ namespace KERBALISM
 				case "FNGenerator": return Module_type.FNGenerator;
 				case "KerbalismProcess": return Module_type.KerbalismProcess;
 				case "SolarPanelFixer": return Module_type.SolarPanelFixer;
+				case "KerbalismSentinel": return Module_type.KerbalismSentinel;
 			}
 			return Module_type.Unknown;
 		}
@@ -176,6 +178,7 @@ namespace KERBALISM
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
+					case Module_type.KerbalismSentinel: KerbalismSentinel.BackgroundUpdate(v, e.m, e.module_prefab as KerbalismSentinel, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
 				}
 			}

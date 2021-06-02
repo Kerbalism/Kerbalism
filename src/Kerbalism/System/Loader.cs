@@ -74,6 +74,7 @@ namespace KERBALISM
 			// inject harmony patches
 			Harmony harmony = new Harmony("Kerbalism");
 			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			KerbalismSentinel.ApplyHarmonyPatches(harmony);
 			var methods = harmony.GetPatchedMethods();
 
 			// register loading callbacks
