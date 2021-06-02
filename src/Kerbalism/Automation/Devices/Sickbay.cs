@@ -37,7 +37,6 @@ namespace KERBALISM
 		public override void Ctrl(bool value)
 		{
 			Lib.Proto.Set(protoModule, "running", value);
-			protoPart.resources.Find(k => k.resourceName == prefab.resource).flowState = value;
 		}
 
 		public override void Toggle()
