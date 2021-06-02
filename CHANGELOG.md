@@ -1,3 +1,11 @@
+### Changes since the last release
+* Fixed #738 : Automation Breaks Sickbay RDU
+* Fixed #731 : Added missing Nitrogen and Ammonia entries on the Surface Scanning Module part
+* Fixed #730 : Inconsistent cost of habitat parts due to unapplied shielding costs compensation
+* Fixed #734 : Monopropellant input rate is wrong in MP Fuel Cell
+* Fixed #740 : Proper support for the SENTINEL telescope module, now consume EC and require a comms data link
+* Fixed #737 : Body experiment restriction for "Gaseous" is inverted
+
 ## v3.13 for all versions of KSP from 1.8.0 to 1.11.x
 
  - 2021-03-17
