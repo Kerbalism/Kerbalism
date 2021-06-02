@@ -93,11 +93,12 @@ namespace KERBALISM
 		{
 			public RequireDef requireDef;
 			public object value;
-			public bool isValid;
+			public double result;
 
 			public RequireResult(RequireDef requireDef)
 			{
 				this.requireDef = requireDef;
+				result = 0.0;
 			}
 		}
 
@@ -109,14 +110,14 @@ namespace KERBALISM
 			Requires = ParseRequirements(requires);
 		}
 
-		public bool TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
+		public double TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
 
 			results = new RequireResult[Requires.Length];
 
-			bool good = true;
+			double result = 1.0;
 
 			for (int i = 0; i < Requires.Length; i++)
 			{
@@ -172,8 +173,9 @@ namespace KERBALISM
 					case Require.AdministrationLevelMin  : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
 
-					case Require.Shadow         : TestReq(() => vd.EnvInFullShadow,                                                                                  results[i]); break; 
-					case Require.Sunlight       : TestReq(() => vd.EnvInSunlight,                                                                                    results[i]); break; 
+					case Require.Shadow         : TestReq(1.0 - vd.EnvSunlightFactor, results[i]); break;
+					case Require.Sunlight       : TestReq(vd.EnvSunlightFactor,       results[i]); break;
+
 					case Require.Greenhouse     : TestReq(() => vd.Greenhouses.Count > 0,                                                                            results[i]); break;
 					case Require.AbsoluteZero   : TestReq(() => vd.EnvTemperature < 30.0,                                                                            results[i]); break;
 					case Require.InnerBelt      : TestReq(() => vd.EnvInnerBelt,                                                                                     results[i]); break;
@@ -184,20 +186,20 @@ namespace KERBALISM
 					case Require.Part           : TestReq(() => Lib.HasPart(v, (string)Requires[i].value),															 results[i]); break;
 					case Require.Module         : TestReq(() => Lib.FindModules(v.protoVessel, (string)Requires[i].value).Count > 0,								 results[i]); break;
 
-					default: results[i].isValid = true; break;
+					default: results[i].result = 1.0; break;
 				}
 
-				if (!testAll && !results[i].isValid)
+				if (!testAll && results[i].result == 0.0)
 				{
 					UnityEngine.Profiling.Profiler.EndSample();
-					return false;
+					return 0.0;
 				}
 
-				good &= results[i].isValid;
+				result *= results[i].result;
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
-			return good;
+			return result;
 		}
 
 		public bool TestProgressionRequirements()
@@ -218,10 +220,10 @@ namespace KERBALISM
 					case Require.AdministrationLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration), (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration), (int)Requires[i].value, results[i]); break;
 
-					default: results[i].isValid = true; break;
+					default: results[i].result = 1.0; break;
 				}
 
-				if (!results[i].isValid)
+				if (results[i].result == 0.0)
 					return false;
 			}
 			return true;
@@ -229,13 +231,19 @@ namespace KERBALISM
 
 		private void TestReq(Func<bool> Condition, RequireResult result)
 		{
-			result.isValid = Condition();
+			result.result = Condition() ? 1.0 : 0.0;
 		}
 
 		private void TestReq<T, U>(Func<T, U, bool> Condition, T val, U reqVal, RequireResult result)
 		{
+			result.result = Condition(val, reqVal) ? 1.0 : 0.0;
 			result.value = val;
-			result.isValid = Condition(val, reqVal);
+		}
+
+		private void TestReq(double val, RequireResult result)
+		{
+			result.result = val;
+			result.value = val;
 		}
 
 		private RequireDef[] ParseRequirements(string requires)
@@ -386,6 +394,9 @@ namespace KERBALISM
 
 		public static string ReqValueFormat(Require req, object reqValue)
 		{
+			if (reqValue == null)
+				return string.Empty;
+
 			switch (req)
 			{
 				case Require.OrbitMinEccentricity:
@@ -446,6 +457,9 @@ namespace KERBALISM
 					return KSPUtil.PrintModuleName((string)reqValue);
 				case Require.Part:
 					return PartLoader.getPartInfoByName((string)reqValue)?.title ?? (string)reqValue;
+				case Require.Sunlight:
+				case Require.Shadow:
+					return ((double)reqValue).ToString("P2");
 				default:
 					return string.Empty;
 			}

@@ -38,7 +38,7 @@ namespace KERBALISM
 				if (module.Status == Experiment.ExpStatus.Running)
 				{
 					sb.Append(" ");
-					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate));
+					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, module.prodFactor));
 				}
 				else if (module.Subject != null && module.Status == Experiment.ExpStatus.Forced)
 				{
@@ -86,7 +86,7 @@ namespace KERBALISM
 					sb.Append("\n");
 					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
-					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, false));
+					sb.Append(Experiment.RunningCountdown(module.ExpInfo, module.Subject, module.data_rate, module.prodFactor, false));
 				}
 				else if (module.Subject != null && module.Status == Experiment.ExpStatus.Forced)
 				{
@@ -126,6 +126,7 @@ namespace KERBALISM
 		private Experiment.ExpStatus status;
 		private SubjectData subject;
 		private string scienceValue;
+		private double prodFactor;
 
 		private StringBuilder sb;
 
@@ -146,6 +147,7 @@ namespace KERBALISM
 			status = Lib.Proto.GetEnum(protoModule, "status", Experiment.ExpStatus.Stopped);
 			subject = ScienceDB.GetSubjectData(expInfo, Lib.Proto.GetInt(protoModule, "situationId"));
 			scienceValue = Experiment.ScienceValue(subject);
+			prodFactor = Lib.Proto.GetDouble(protoModule, "prodFactor");
 		}
 
 		public override string Name => prefab.experiment_id;
@@ -162,7 +164,7 @@ namespace KERBALISM
 				if (status == Experiment.ExpStatus.Running)
 				{
 					sb.Append(" ");
-					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate));
+					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate, prodFactor));
 				}
 				else if (subject != null && status == Experiment.ExpStatus.Forced)
 				{
@@ -210,7 +212,7 @@ namespace KERBALISM
 					sb.Append("\n");
 					sb.Append(Local.Experiment_completion);//completion :
 					sb.Append(" ");
-					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate, false));
+					sb.Append(Experiment.RunningCountdown(expInfo, subject, prefab.data_rate, prodFactor, false));
 				}
 				else if (subject != null && status == Experiment.ExpStatus.Forced)
 				{

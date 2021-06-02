@@ -33,6 +33,7 @@ namespace KERBALISM
 		bool isSample;
 		double remainingSampleMass;
 		string issue;
+		double prodFactor;
 
 		// utils
 		StringBuilder sb = new StringBuilder();
@@ -162,6 +163,7 @@ namespace KERBALISM
 				expInfo = ScienceDB.GetExperimentInfo(moduleOrPrefab.experiment_id);
 				subjectData = ScienceDB.GetSubjectData(expInfo, situationId);
 				issue = Lib.Proto.GetString(protoModule, "issue");
+				prodFactor = Lib.Proto.GetDouble(protoModule, "prodFactor");
 				if (isSample) remainingSampleMass = Lib.Proto.GetDouble(protoModule, "remainingSampleMass", 0.0);
 			}
 			else
@@ -171,6 +173,7 @@ namespace KERBALISM
 				expInfo = moduleOrPrefab.ExpInfo;
 				subjectData = moduleOrPrefab.Subject;
 				issue = moduleOrPrefab.issue;
+				prodFactor = moduleOrPrefab.prodFactor;
 				if (isSample) remainingSampleMass = moduleOrPrefab.remainingSampleMass;
 			}
 		}
@@ -200,7 +203,7 @@ namespace KERBALISM
 			if (status == ExpStatus.Running)
 			{
 				sb.Append(", ");
-				sb.Append(RunningCountdown(expInfo, subjectData, moduleOrPrefab.data_rate, true));
+				sb.Append(RunningCountdown(expInfo, subjectData, moduleOrPrefab.data_rate, prodFactor, true));
 			}
 			else if (status == ExpStatus.Forced && subjectData != null)
 			{
@@ -299,17 +302,20 @@ namespace KERBALISM
 				if (!first)
 					sb.Append("\n");
 				first = false;
-				sb.Append(Lib.Checkbox(req.isValid));
+				sb.Append(Lib.Checkbox(req.result > 0.0));
 				//sb.Append(" ");
 				sb.Append(Lib.Bold(ReqName(req.requireDef.require)));
 				if (req.value != null)
 				{
-					sb.Append(" : ");
-					sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.Kolor.Yellow, true));
+					if (req.requireDef.value != null)
+					{
+						sb.Append(" : ");
+						sb.Append(Lib.Color(ReqValueFormat(req.requireDef.require, req.requireDef.value), Lib.Kolor.Yellow, true));
+					}
 					sb.Append("\n<indent=5em>"); // match the checkbox indentation
 					sb.Append(Local.SCIENCEARCHIVE_current);//"current"
 					sb.Append(" : ");
-					sb.Append(Lib.Color(req.isValid, ReqValueFormat(req.requireDef.require, req.value), Lib.Kolor.Green, Lib.Kolor.Orange, true));
+					sb.Append(Lib.Color(req.result > 0.0, ReqValueFormat(req.requireDef.require, req.value), Lib.Kolor.Green, Lib.Kolor.Orange, true));
 					sb.Append("</indent>");
 				}
 			}

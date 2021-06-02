@@ -45,6 +45,7 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public double remainingSampleMass = 0.0;
 		[KSPField(isPersistant = true)] public uint privateHdId = 0;
 		[KSPField(isPersistant = true)] public bool firstStart = true;
+		[KSPField(isPersistant = true)] public double prodFactor;
 
 		/// <summary> never set this directly, use the "State" property </summary>
 		[KSPField(isPersistant = true)] private RunningState expState = RunningState.Stopped;
@@ -275,7 +276,7 @@ namespace KERBALISM
 					if (subject != null)
 					{
 						Events["ToggleEvent"].guiName = Lib.StatusToggle(Lib.Ellipsis(ExpInfo.Title, Styles.ScaleStringLength(25)), StatusInfo(status, issue));
-						Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info, Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, Subject, data_rate)));//"info"
+						Events["ShowPopup"].guiName = Lib.StatusToggle(Local.StatuToggle_info, Lib.BuildString(ScienceValue(Subject), " ", State == RunningState.Forced ? subject.PercentCollectedTotal.ToString("P0") : RunningCountdown(ExpInfo, Subject, data_rate, prodFactor)));//"info"
 					}
 					else
 					{
@@ -346,7 +347,7 @@ namespace KERBALISM
 			shrouded = part.ShieldedFromAirstream;
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
-			RunningUpdate(
+			prodFactor = RunningUpdate(
 				vessel, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded,
 				ResourceCache.GetResource(vessel, "ElectricCharge"),
 				ResourceCache.Get(vessel),
@@ -402,7 +403,7 @@ namespace KERBALISM
 			SubjectData subjectData;
 
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
-			RunningUpdate(
+			double prodFactor = RunningUpdate(
 				v, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded, // "this" is the prefab
 				ec,
 				resources,
@@ -420,6 +421,7 @@ namespace KERBALISM
 			Lib.Proto.Set(m, "situationId", situationId);
 			Lib.Proto.Set(m, "status", newStatus);
 			Lib.Proto.Set(m, "issue", issue);
+			Lib.Proto.Set(m, "prodFactor", prodFactor);
 
 			if (expInfo.SampleMass > 0.0)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
@@ -429,7 +431,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
-		private static void RunningUpdate(
+		private static double RunningUpdate(
 			Vessel v, VesselData vd, Situation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
 			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
@@ -449,30 +451,30 @@ namespace KERBALISM
 			{
 				lastSituationId = vd.VesselSituations.FirstSituation.Id;
 				mainIssue = Local.Module_Experiment_issue1;//"invalid situation"
-				return;
+				return 0.0;
 			}
 
 			double scienceRemaining = subjectData.ScienceRemainingToCollect;
 
 			if (expState != RunningState.Forced && scienceRemaining <= 0.0)
-				return;
+				return 0.0;
 
 			if (isShrouded && !prefab.allow_shrouded)
 			{
 				mainIssue = Local.Module_Experiment_issue2;//"shrouded"
-				return;
+				return 0.0;
 			}
 
 			if (subjectHasChanged && prefab.crew_reset.Length > 0)
 			{
 				mainIssue = Local.Module_Experiment_issue3;//"reset required"
-				return;
+				return 0.0;
 			}
 
 			if (ec.Amount == 0.0 && prefab.ec_rate > 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue4;//"no Electricity"
-				return;
+				return 0.0;
 			}
 
 			if (!string.IsNullOrEmpty(prefab.crew_operate))
@@ -481,44 +483,44 @@ namespace KERBALISM
 				if (!cs && Lib.CrewCount(v) > 0)
 				{
 					mainIssue = Local.Module_Experiment_issue5;//"crew on board"
-					return;
+					return 0.0;
 				}
 				else if (cs && !cs.Check(v))
 				{
 					mainIssue = cs.Warning();
-					return;
+					return 0.0;
 				}
 			}
 
 			if (!prefab.sample_collecting && remainingSampleMass <= 0.0 && expInfo.SampleMass > 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue6;//"depleted"
-				return;
+				return 0.0;
 			}
 
 			if (!didPrepare && !string.IsNullOrEmpty(prefab.crew_prepare))
 			{
 				mainIssue = Local.Module_Experiment_issue7;//"not prepared"
-				return;
+				return 0.0;
 			}
 
 			if (!v.loaded && subjectData.Situation.AtmosphericFlight())
 			{
 				mainIssue = Local.Module_Experiment_issue8;//"background flight"
-				return;
+				return 0.0;
 			}
 
-			RequireResult[] reqResults;
-			if (!prefab.Requirements.TestRequirements(v, out reqResults))
+			double reqScalar = prefab.Requirements.TestRequirements(v, out _);
+			if (reqScalar == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
-				return;
+				return 0.0;
 			}
 
 			if (!HasRequiredResources(v, resourceDefs, resources, out mainIssue))
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
-				return;
+				return 0.0;
 			}
 
 			double chunkSizeMax = prefab.data_rate * elapsed_s;
@@ -527,20 +529,19 @@ namespace KERBALISM
 			if (chunkSizeMax <= 0.0)
 			{
 				mainIssue = "Error : chunkSizeMax is 0.0";
-				return;
+				return 0.0;
 			}
 
-			double chunkSize;
+			double chunkSize = chunkSizeMax * reqScalar;
+
 			if (expState != RunningState.Forced)
-				chunkSize = Math.Min(chunkSizeMax, scienceRemaining / subjectData.SciencePerMB);
-			else
-				chunkSize = chunkSizeMax;
+				chunkSize = Math.Min(chunkSize, scienceRemaining / subjectData.SciencePerMB);
 
 			Drive drive = GetDrive(vd, hdId, chunkSize, subjectData);
 			if (drive == null)
 			{
 				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
-				return;
+				return 0.0;
 			}
 
 			Drive warpDrive = null;
@@ -565,15 +566,14 @@ namespace KERBALISM
 			if (available <= 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue11;//"no storage space"
-				return;
+				return 0.0;
 			}
 
 			chunkSize = Math.Min(chunkSize, available);
 
 			// TODO : prodfactor rely on resource capacity, resulting in wrong (lower) rate at high timewarp speeds if resource capacity is too low
 			// There is no way to fix that currently, this is another example of why virtual ressource recipes are needed
-			double prodFactor;
-			prodFactor = chunkSize / chunkSizeMax;
+			double prodFactor = chunkSize / chunkSizeMax;
 
 			if (prefab.ec_rate > 0.0)
 				prodFactor = Math.Min(prodFactor, Lib.Clamp(ec.Amount / (prefab.ec_rate * elapsed_s), 0.0, 1.0));
@@ -588,7 +588,7 @@ namespace KERBALISM
 			if (prodFactor == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue10;//"missing resource"
-				return;
+				return 0.0;
 			}
 
 			chunkSize = chunkSizeMax * prodFactor;
@@ -635,6 +635,8 @@ namespace KERBALISM
 				remainingSampleMass -= massDelta;
 				remainingSampleMass = Math.Max(remainingSampleMass, 0.0);
 			}
+
+			return prodFactor;
 		}
 
 		public virtual Situation GetSituation(VesselData vd)
@@ -1011,7 +1013,7 @@ namespace KERBALISM
 			}
 		}
 
-		public static string RunningCountdown(ExperimentInfo expInfo, SubjectData subjectData, double dataRate, bool compact = true)
+		public static string RunningCountdown(ExperimentInfo expInfo, SubjectData subjectData, double dataRate, double prodFactor = 1.0, bool compact = true)
 		{
 			double count;
 			if (subjectData != null)
@@ -1019,7 +1021,10 @@ namespace KERBALISM
 			else
 				count = expInfo.DataSize / dataRate;
 
-			return Lib.HumanReadableCountdown(count, compact);
+			if (prodFactor <= 0.0)
+				prodFactor = 1.0;
+
+			return Lib.HumanReadableCountdown(count / prodFactor, compact);
 		}
 
 		public static string ScienceValue(SubjectData subjectData)
