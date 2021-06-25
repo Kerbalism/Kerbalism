@@ -1,4 +1,11 @@
+## v3.14 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2021-06-25
+
 ### Changes since the last release
+* Updated for KSP 1.12
+* Fixed missing plants comfort in kerbalism greenhouse part
+* Fixed #743 : Dmagic Orbital Science config has badly named field
 * Fixed #738 : Automation Breaks Sickbay RDU
 * Fixed #731 : Added missing Nitrogen and Ammonia entries on the Surface Scanning Module part
 * Fixed #730 : Inconsistent cost of habitat parts due to unapplied shielding costs compensation
