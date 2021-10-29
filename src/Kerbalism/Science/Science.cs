@@ -90,7 +90,7 @@ namespace KERBALISM
 			vd.filesTransmitted.Clear();
 
 			// check connection
-			if (vd.Connection == null
+			if (!vd.CommHandler.IsReady
 				|| !vd.Connection.linked
 				|| vd.Connection.rate <= 0.0
 				|| !vd.deviceTransmit

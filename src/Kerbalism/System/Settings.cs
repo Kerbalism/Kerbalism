@@ -151,8 +151,8 @@ namespace KERBALISM
 		public static float DataRateSurfaceExperiment;          // transmission rate for surface experiments (Serenity DLC)
 		public static double TransmitterActiveEcFactor;         // how much of the configured EC rate is used while transmitter is active
 		public static double TransmitterPassiveEcFactor;        // how much of the configured EC rate is used while transmitter is passive
-
-		// science
+		public static double DampingExponentOverride;           // Kerbalism will calculate a damping exponent to achieve good data communication rates (see log file, search for DataRateDampingExponent). If the calculated value is not good for you, you can set your own.
+																// science
 		public static bool ScienceDialog;                       // keep showing the stock science dialog
 		public static double AsteroidSampleMassPerMB;           // When taking an asteroid sample, mass (in t) per MB of sample (baseValue * dataScale). default of 0.00002 => 34 Kg in stock
 
