@@ -352,12 +352,6 @@ namespace KERBALISM
 		/// <summary>connection info</summary>
 		public ConnectionInfo Connection => connection; ConnectionInfo connection;
 
-		//public override IConnectionInfo ConnectionInfo => connection;
-
-		/// <summary>true if all command modules are hibernating (limited control and no transmission)</summary>
-		public bool Hibernating { get; private set; }
-		public bool hasNonHibernatingCommandModules = false;
-
 		/// <summary>enabled volume in m^3</summary>
 		public double Volume => volume; double volume;
 
@@ -719,8 +713,6 @@ namespace KERBALISM
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 
-			//connection = new ConnectionInfo();
-			//CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
 		private void InitializeCommHandler(ProtoVessel pv, bool isSerenityGroundController)
@@ -859,37 +851,8 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(Vessel);
 
 			// communications info
-			//connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
-			if(CommHandler != null)
-			{
-				CommHandler.UpdateConnection(connection);
-			} else {
-				UnityEngine.Debug.Log("Kerbalism: CommHandler is NULL");
-			}
-			/*
-			// check ModuleCommand hibernation
-			if (isSerenityGroundController)
-				hasNonHibernatingCommandModules = true;
-
-			if (Hibernating != !hasNonHibernatingCommandModules)
-			{
-				Hibernating = !hasNonHibernatingCommandModules;
-				if (!Hibernating)
-				{
-					deviceTransmit = true; //DeviceTransmit = true;
-					Lib.Log("deviceTransmit = true", Lib.LogLevel.Message);
-				}
-			}
-
-			// this flag will be set by the ModuleCommand harmony patches / background update
-			hasNonHibernatingCommandModules = false;
-
-			if (Hibernating)
-			{
-				deviceTransmit = false; // DeviceTransmit = false;
-				Lib.Log("deviceTransmit = false", Lib.LogLevel.Message);
-			}
-			*/
+			CommHandler.UpdateConnection(connection);
+			
 			// habitat data
 			habitatInfo.Update(Vessel);
 			volume = Habitat.Tot_volume(Vessel);

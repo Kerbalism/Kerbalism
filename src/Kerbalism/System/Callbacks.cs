@@ -117,8 +117,6 @@ namespace KERBALISM
 			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
-			//GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
-
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
@@ -171,13 +169,6 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(vessel);
 			//vessel.KerbalismData().UpdateOnVesselModified();
 		}
-
-		//public IEnumerator NetworkInitialized()
-		//{
-		//	yield return new WaitForSeconds(2);
-		//	Communications.NetworkInitialized = true;
-		//	RemoteTech.Startup();
-		//}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{

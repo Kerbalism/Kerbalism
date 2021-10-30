@@ -140,13 +140,9 @@
     <Compile Include="Comms\CommHandlerCommNetBase.cs" />
     <Compile Include="Comms\CommHandlerCommNetSerenity.cs" />
     <Compile Include="Comms\CommHandlerCommNetVessel.cs" />
-    <Compile Include="Comms\CommHandlerEditor.cs" />
-    <Compile Include="Comms\CommHandlerEditorCommNet.cs" />
-    <Compile Include="Comms\CommHandlerEditorRemoteTech.cs" />
     <Compile Include="Comms\CommHandlerRemoteTech.cs" />
     <Compile Include="Comms\CommsMessages.cs" />
     <Compile Include="Comms\ConnectionInfo.cs" />
-    <Compile Include="Comms\ConnectionInfoEditor.cs" />
     <Compile Include="Comms\IConnectionInfo.cs" />
     <Compile Include="Contracts\CrossBelt.cs" />
     <Compile Include="Contracts\CrossHeliopause.cs" />

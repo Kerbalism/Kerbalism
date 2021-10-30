@@ -913,7 +913,7 @@ namespace KERBALISM
 		}
 
 		// I have no idea what to do about RT, so we're using the stock formula value
-		public static double DataRateDampingExponentRT { get { return DataRateDampingExponent; } } // caused stack overflow lol, fixed
+		public static double DataRateDampingExponentRT { get { return DataRateDampingExponent; } }
 		#endregion
 	}
 } // KERBALISM
