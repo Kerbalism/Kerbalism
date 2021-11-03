@@ -77,7 +77,7 @@ namespace KERBALISM
 						double dist = RemoteTech.GetCommsDistance(currentID, iterationID);
 						double maxDist = RemoteTech.GetCommsMaxDistance(currentID, iterationID);
 						double linkStrength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
-						linkStrength = Math.Pow(linkStrength, Settings.DataRateDampingExponentRT);
+						linkStrength = Math.Pow(linkStrength, Sim.DataRateDampingExponentRT);
 						if(linkStrength < lowestStrength)
 							lowestStrength = linkStrength;
 

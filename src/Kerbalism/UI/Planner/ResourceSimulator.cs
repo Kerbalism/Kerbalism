@@ -192,7 +192,7 @@ namespace KERBALISM.Planner
 							case "ModuleRTAntennaPassive":
 								Process_rtantenna(m);
 								break;
-							case "ModuleRTAntenna":
+							//case "ModuleRTAntenna":
 							case "AntennaDataTransmitterRemoteTech":
 								Process_rtantenna_transmitter(m as AntennaDataTransmitterRemoteTech);
 								break;
