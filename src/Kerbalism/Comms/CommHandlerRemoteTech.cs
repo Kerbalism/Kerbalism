@@ -65,34 +65,33 @@ namespace KERBALISM
 			{
 				if (controlPath.Length > 0)
 				{
-					double dist = RemoteTech.GetCommsDistance(vd.VesselId, controlPath[0]);
-					double maxDist = RemoteTech.GetCommsMaxDistance(vd.VesselId, controlPath[0]);
-					connection.strength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
-					connection.strength = Math.Pow(connection.strength, Sim.DataRateDampingExponentRT);
+					connection.control_path.Clear();
+					Guid currentID = vd.VesselId;
+					double lowestStrength = double.MaxValue;
 
-					connection.rate = baseRate * connection.strength;
-
-					// If using relay, get the lowest rate
-					if (connection.Status != LinkStatus.direct_link)
+					// since RemoteTech doesn't have a concept of signal strength like CommNet, we have to iterate
+					// over the connection chain to find the link with the lowest connection strenth.
+					// this will give correct values even if this vessel is directly connected to KSC
+					foreach (Guid iterationID in controlPath)
 					{
-						Vessel target = FlightGlobals.FindVessel(controlPath[0]);
-						target.TryGetVesselDataTemp(out VesselData vd);
-						ConnectionInfo ci = vd.Connection;
-						connection.strength *= ci.strength;
-						connection.rate = Math.Min(ci.rate, connection.rate);
-					}
-				}
+						double dist = RemoteTech.GetCommsDistance(currentID, iterationID);
+						double maxDist = RemoteTech.GetCommsMaxDistance(currentID, iterationID);
+						double linkStrength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
+						linkStrength = Math.Pow(linkStrength, Settings.DataRateDampingExponentRT);
+						if(linkStrength < lowestStrength)
+							lowestStrength = linkStrength;
 
-				connection.control_path.Clear();
-				Guid i = vd.VesselId;
-				foreach (Guid id in controlPath)
-				{
-					var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 50);
-					var value = Lib.HumanReadablePerc(Math.Ceiling((1 - (RemoteTech.GetCommsDistance(i, id) / RemoteTech.GetCommsMaxDistance(i, id))) * 10000) / 10000, "F2");
-					var tooltip = "Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsDistance(i, id)) +
-						"\nMax Distance: " + Lib.HumanReadableDistance(RemoteTech.GetCommsMaxDistance(i, id));
-					connection.control_path.Add(new string[] { name, value, tooltip });
-					i = id;
+						// Add all values to the UI element
+						var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(currentID) + " \\ " + RemoteTech.GetSatelliteName(iterationID), 50);
+						var value = Lib.HumanReadablePerc(Math.Ceiling(linkStrength * 10000) / 10000, "F2");
+						var tooltip = "Distance: " + Lib.HumanReadableDistance(dist) + "\nMax Distance: " + Lib.HumanReadableDistance(maxDist);
+						connection.control_path.Add(new string[] { name, value, tooltip });
+
+						currentID = iterationID;
+					}
+
+					connection.strength = lowestStrength;
+					connection.rate = baseRate * lowestStrength;
 				}
 			}
 
@@ -111,11 +110,17 @@ namespace KERBALISM
 				RemoteTech.SetCommsBlackout(v.id, connection.storm);
 			}
 
-			baseRate = 1.0;
+			baseRate = 0.0;
 			connection.ec = 0.0;
 			connection.ec_idle = 0.0;
-			int transmitterCount = 0;
+			double highestDataRate = double.Epsilon;
 
+			// Since RemoteTech is all about building comm networks by pointing dishes, we need to tweak some things.
+			// Before we multiplied all transmitters together and then calculated a kind of an average for the rate,
+			// now, we look for the highest transmitter available that is activated on the vessel currently.
+			// this one will also determine the additional transmission energy cost with its packetResourceCost value.
+			// The best way would be if RemoteTech provided API to get all the antenna partModules that actually make
+			// up the current connection chain, then check for the lowest transmission rate, consume energy on all of them etc...
 			if (v.loaded)
 			{
 				if (loadedTransmitters == null)
@@ -142,13 +147,20 @@ namespace KERBALISM
 					// calculate external transmitters
 					else
 					{
-						//ModuleResource mResource = pm.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
 						// only include data rate and ec cost if transmitter is active
 						if (Lib.ReflectionValue<bool>(pm, "IsRTActive"))
 						{
-							baseRate *= (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
-							connection.ec += RemoteTech.GetModuleRTAntennaConsumption(pm); // mResource.rate;
-							transmitterCount++;
+							double dataRate = (Lib.ReflectionValue<float>(pm, "RTPacketSize") / Lib.ReflectionValue<float>(pm, "RTPacketInterval"));
+							connection.ec_idle += RemoteTech.GetModuleRTAntennaConsumption(pm);
+							// Transmit data only with the antenna that has highest transmission data rate, and also consume that
+							// antennas energy transmission rate, based on the antenna's efficiency in configs
+							if (dataRate > highestDataRate)
+							{
+								highestDataRate = dataRate;
+								baseRate = dataRate;
+								float packetResourceCost = Lib.ReflectionValue<float>(pm, "RTPacketResourceCost");
+								connection.ec = dataRate * packetResourceCost;
+							}
 						}
 					}
 				}
@@ -180,29 +192,39 @@ namespace KERBALISM
 						if (!Lib.Proto.GetBool(mdt.protoTransmitter, "IsRTActive", false))
 							continue;
 
-						//ModuleResource mResource = mdt.prefab.resHandler.inputResources.Find(r => r.name == "ElectricCharge");
 						float? packet_size = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketSize");
 						float? packet_Interval = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketInterval");
 
-						//if (mResource != null && packet_size != null && packet_Interval != null)
 						if (packet_size != null && packet_Interval != null)
 						{
-							baseRate *= (float)packet_size / (float)packet_Interval;
-							connection.ec += RemoteTech.GetModuleRTAntennaConsumption(mdt.prefab); ; // mResource.rate;
-							transmitterCount++;
+							double dataRate = (float)packet_size / (float)packet_Interval;
+							connection.ec_idle += RemoteTech.GetModuleRTAntennaConsumption(mdt.prefab);
+							if(dataRate > highestDataRate)
+							{
+								baseRate = highestDataRate;
+								float? packetResourceCost = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketResourceCost");
+								if(packetResourceCost != null)
+									connection.ec = dataRate * (float)packetResourceCost;
+							}
 						}
 					}
 				}
 			}
 
-			if (transmitterCount > 1)
-				baseRate = Math.Pow(baseRate, 1.0 / transmitterCount);
-			else if (transmitterCount == 0)
-				baseRate = 0.0;
+			// With RemoteTech it is very common to build satellites with 3 or more relay antennas becuase of the fact the they
+			// can only point in a certain direction, usually only covering a single target with their small cone of vision.
+			// The compensation that RemoteTech users see is that many of the later dishes can reach longer than CommNet counterparts
+			// at the cost of a much higher energy consumption for even establishing connection without transferring data.
+			// I think it would be too much to add the "transmission energy" consumption of all the active antennas on the vessel even though
+			// there will only be one of these antennas that actually is transmitting the data. So find the one with the highest data rate
+			// and apply the transmissionCost per package for that one.
 
-			connection.ec_idle *= Settings.TransmitterPassiveEcFactor; // apply passive factor to "internal" antennas always-consumed rate
-			connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor; // add "transmit" antennas always-consumed rate
-			connection.ec *= Settings.TransmitterActiveEcFactor; // adjust "transmit" antennas transmit-only rate by the factor
+			//connection.ec_idle *= Settings.TransmitterPassiveEcFactor; // apply passive factor to "internal" antennas always-consumed rate
+			//connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor; // add "transmit" antennas always-consumed rate
+			//connection.ec *= Settings.TransmitterActiveEcFactor; // adjust "transmit" antennas transmit-only rate by the factor
+
+			// This is what RemoteTech users are used to, high energy costs just to have antenna running even without transferring data
+			connection.ec += connection.ec_idle;
 
 			connection.hasActiveAntenna = connection.ec_idle > 0.0;
 		}
