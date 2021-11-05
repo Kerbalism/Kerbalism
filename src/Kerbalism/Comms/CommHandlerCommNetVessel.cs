@@ -107,6 +107,9 @@ namespace KERBALISM
 			else if (transmitterCount == 0)
 				baseRate = 0.0;
 
+			// Apply Antenna Speed value from ksp in game settings
+			baseRate *= PreferencesScience.Instance.transmitFactor;
+
 			// when transmitting, transmitters need more EC for the signal amplifiers.
 			// while not transmitting, transmitters only use 10-20% of that
 			// Note : ec_idle is substracted from ec before consumption in Science.Update().
