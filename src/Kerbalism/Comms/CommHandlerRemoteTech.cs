@@ -65,33 +65,47 @@ namespace KERBALISM
 			{
 				if (controlPath.Length > 0)
 				{
-					connection.control_path.Clear();
-					Guid currentID = vd.VesselId;
-					double lowestStrength = double.MaxValue;
+					double dist = RemoteTech.GetCommsDistance(vd.VesselId, controlPath[0]);
+					double maxDist = RemoteTech.GetCommsMaxDistance(vd.VesselId, controlPath[0]);
+					connection.strength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
+					connection.strength = Math.Pow(connection.strength, Sim.DataRateDampingExponentRT);
 
-					// since RemoteTech doesn't have a concept of signal strength like CommNet, we have to iterate
-					// over the connection chain to find the link with the lowest connection strenth.
-					// this will give correct values even if this vessel is directly connected to KSC
-					foreach (Guid iterationID in controlPath)
+					connection.rate = baseRate * connection.strength;
+
+					// If using relay, get the lowest rate
+					if (connection.Status != LinkStatus.direct_link)
 					{
-						double dist = RemoteTech.GetCommsDistance(currentID, iterationID);
-						double maxDist = RemoteTech.GetCommsMaxDistance(currentID, iterationID);
-						double linkStrength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
-						linkStrength = Math.Pow(linkStrength, Sim.DataRateDampingExponentRT);
-						if(linkStrength < lowestStrength)
-							lowestStrength = linkStrength;
-
-						// Add all values to the UI element
-						var name = Lib.Ellipsis(RemoteTech.GetSatelliteName(currentID) + " \\ " + RemoteTech.GetSatelliteName(iterationID), 50);
-						var value = Lib.HumanReadablePerc(Math.Ceiling(linkStrength * 10000) / 10000, "F2");
-						var tooltip = "Distance: " + Lib.HumanReadableDistance(dist) + "\nMax Distance: " + Lib.HumanReadableDistance(maxDist);
-						connection.control_path.Add(new string[] { name, value, tooltip });
-
-						currentID = iterationID;
+						// Check the connection link on the next vessel in the connection chain
+						// to find the lowest data rate, this value can be one tick inaccurate depending on order of
+						// processing of vessel connections, but is negligible
+						Vessel target = FlightGlobals.FindVessel(controlPath[0]);
+						target.TryGetVesselDataTemp(out VesselData vd);
+						ConnectionInfo ci = vd.Connection;
+						connection.rate = Math.Min(ci.rate, connection.rate);
 					}
+				}
 
-					connection.strength = lowestStrength;
-					connection.rate = baseRate * lowestStrength;
+				connection.control_path.Clear();
+				Guid i = vd.VesselId;
+				foreach (Guid id in controlPath)
+				{
+					double linkDistance = RemoteTech.GetCommsDistance(i, id);
+					double linkMaxDistance = RemoteTech.GetCommsMaxDistance(i, id);
+					double signalStrength = 1 - (linkDistance / linkMaxDistance);
+					signalStrength = Math.Pow(signalStrength, Sim.DataRateDampingExponentRT);
+
+					string[] controlPoint = new string[3];
+
+					// satellite name
+					controlPoint[0] = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 50);
+					// signal strength
+					controlPoint[1] = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
+					// tooltip info
+					controlPoint[2] = Lib.BuildString("Distance: ", Lib.HumanReadableDistance(linkDistance),
+						" (Max: ", Lib.HumanReadableDistance(linkMaxDistance), ")");
+					
+					connection.control_path.Add(controlPoint);
+					i = id;
 				}
 			}
 
@@ -201,15 +215,21 @@ namespace KERBALISM
 							connection.ec_idle += RemoteTech.GetModuleRTAntennaConsumption(mdt.prefab);
 							if(dataRate > highestDataRate)
 							{
-								baseRate = highestDataRate;
 								float? packetResourceCost = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketResourceCost");
 								if(packetResourceCost != null)
+								{
+									highestDataRate = dataRate;
+									baseRate = dataRate;
 									connection.ec = dataRate * (float)packetResourceCost;
+								}
 							}
 						}
 					}
 				}
 			}
+
+			// Apply Antenna Speed value from ksp in game settings
+			baseRate *= PreferencesScience.Instance.transmitFactor;
 
 			// With RemoteTech it is very common to build satellites with 3 or more relay antennas becuase of the fact the they
 			// can only point in a certain direction, usually only covering a single target with their small cone of vision.
@@ -219,14 +239,23 @@ namespace KERBALISM
 			// there will only be one of these antennas that actually is transmitting the data. So find the one with the highest data rate
 			// and apply the transmissionCost per package for that one.
 
-			//connection.ec_idle *= Settings.TransmitterPassiveEcFactor; // apply passive factor to "internal" antennas always-consumed rate
-			//connection.ec_idle += connection.ec * Settings.TransmitterPassiveEcFactor; // add "transmit" antennas always-consumed rate
-			//connection.ec *= Settings.TransmitterActiveEcFactor; // adjust "transmit" antennas transmit-only rate by the factor
-
 			// This is what RemoteTech users are used to, high energy costs just to have antenna running even without transferring data
+			connection.ec_idle *= Settings.TransmitterPassiveEcFactorRT; // apply passive factor to "internal" antennas always-consumed rate
 			connection.ec += connection.ec_idle;
+			connection.ec *= Settings.TransmitterActiveEcFactorRT;
 
 			connection.hasActiveAntenna = connection.ec_idle > 0.0;
+		}
+
+		public override double GetTransmissionCost(double transmittedTotal, double elapsed_s)
+		{
+			// I think a better model to calculate transmission cost with RemoteTech is to factor in the distance of
+			// transmission. An antenna wouldn't have to "scream" as loud if the recieving satellite or station were close.
+
+			// The Connection.strength value is already prepared with the correct value to the next satellite in the chain at this point
+			// Better connection strength means cheaper transmission energy cost, 5% at minimum
+			double strength = vd.Connection.strength < 0.95 ? vd.Connection.strength : 0.95;
+			return ((vd.Connection.ec - vd.Connection.ec_idle) * (1 - strength)) * (transmittedTotal / (vd.Connection.rate * elapsed_s));
 		}
 
 		private void GetTransmittersLoaded(Vessel v)

@@ -6,13 +6,12 @@ using UnityEngine;
 namespace KERBALISM
 {
 	/// <summary>
-	/// Helper module to simply display some information about transmitting data with Remote Tech, only gets used if RemoteTech is installed
+	/// Helper module to simply display some information about transmitting data with Remote Tech in the KSP UI, only gets used if RemoteTech is installed
 	/// </summary>
 	public class AntennaDataTransmitterRemoteTech : PartModule
 	{
 		// TODO: Add some localization support, haven't look into that yet...
 		const string MODULE_DISPLAY_NAME = "Antenna Data Transmitter";
-		//const string MODULE_NAME = "AntennaDataTransmitterRemoteTech";
 
 		[KSPField]
 		public float
@@ -28,7 +27,6 @@ namespace KERBALISM
 
 		public override string GetInfo()
 		{
-			//moduleName = MODULE_NAME;
 			Specifics specs = new Specifics();
 
 			// Since the Module Manager only add this PartModule to Parts that have ModuleRTAntenna (in RemoteTech.cfg), we can be sure
@@ -59,7 +57,7 @@ namespace KERBALISM
 						double idleEnergyCost = this.energyCost;
 
 						specs.Add(Local.DataTransmitter_ECidle, Lib.Color(Lib.HumanReadableRate(idleEnergyCost), Lib.Kolor.Orange));//"EC (idle)"
-						specs.Add(Local.DataTransmitter_ECTX, Lib.Color(Lib.HumanReadableRate(transmissionEnergyCost + idleEnergyCost), Lib.Kolor.Orange));//"EC (transmitting)"
+						specs.Add(Local.DataTransmitter_ECTX + " Max", Lib.Color(Lib.HumanReadableRate(transmissionEnergyCost + idleEnergyCost), Lib.Kolor.Orange));//"EC (transmitting)"
 						specs.Add("");
 						specs.Add(Local.DataTransmitter_Maxspeed, Lib.HumanReadableDataRate(dataRate));//"Max. speed"
 						break;

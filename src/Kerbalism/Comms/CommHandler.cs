@@ -111,6 +111,16 @@ namespace KERBALISM
 		/// </summary>
 		public void ResetPartTransmitters() => resetTransmitters = true;
 
+		/// <summary>
+		/// Get the cost for transmitting data with this CommHandler
+		/// </summary>
+		/// <param name="transmittedTotal">Amount of the total capacity of data that can be sent</param>
+		/// <param name="elapsed_s"></param>
+		/// <returns></returns>
+		public virtual double GetTransmissionCost(double transmittedTotal, double elapsed_s)
+		{
+			return (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedTotal / (vd.Connection.rate * elapsed_s));
+		}
 
 		/// <summary>
 		/// update the fields that can be used as an input by API handlers
@@ -119,8 +129,7 @@ namespace KERBALISM
 		{
 			connection.transmitting = vd.filesTransmitted.Count > 0;
 			connection.storm = vd.EnvStorm;
-			//connection.powered = vd.ResHandler.ElectricCharge.CriticalConsumptionSatisfied;
-			connection.powered = true;
+			connection.powered = vd.Powered;
 		}
 
 		protected virtual bool NetworkIsReady => true;

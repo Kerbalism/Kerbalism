@@ -948,7 +948,7 @@ namespace KERBALISM
 				// exponent = log_strengthAt2AU(dataRate / baseRate)
 				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
 
-				// 2.5 seems good rating for RemoteTech
+				// 2.4 seems good for RemoteTech
 				return DataRateDampingExponent;
 			}
 		}

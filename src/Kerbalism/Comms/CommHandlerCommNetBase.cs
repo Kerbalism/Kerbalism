@@ -68,6 +68,7 @@ namespace KERBALISM
 				double linkMaxDistance = Math.Sqrt(antennaPower * link.end.antennaRelay.power);
 				double signalStrength = 1 - (linkDistance / linkMaxDistance);
 				signalStrength = (3 - (2 * signalStrength)) * Math.Pow(signalStrength, 2);
+				signalStrength = Math.Pow(signalStrength, Sim.DataRateDampingExponent);
 
 				string[] controlPoint = new string[3];
 
