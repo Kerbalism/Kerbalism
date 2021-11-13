@@ -1001,6 +1001,9 @@ namespace KERBALISM
 		}
 		// Note : config / code base unit for data rate / size is in megabyte (1000^2 bytes)
 		// For UI purposes we use the decimal units (B/kB/MB...), not the binary (1024^2 bytes) units
+
+		public const double bitsPerMB = 1000.0 * 1000.0 * 8.0;
+
 		public const double BPerMB = 1000.0 * 1000.0;
 		public const double kBPerMB = 1000.0;
 		public const double GBPerMB = 1.0 / 1000.0;

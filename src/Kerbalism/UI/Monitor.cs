@@ -265,7 +265,7 @@ namespace KERBALISM
 			if (Features.Reliability) Indicator_reliability(p, v, vd);
 
 			// signal indicator
-			if (API.Comm.handlers.Count > 0 || HighLogic.fetch.currentGame.Parameters.Difficulty.EnableCommNet) Indicator_signal(p, v, vd);
+			if (Features.Science) Indicator_signal(p, v, vd);
 
 			// done
 			return true;
@@ -660,7 +660,7 @@ namespace KERBALISM
 
 			// create icon status
 			Texture2D image = Textures.signal_red;
-			switch (conn.status)
+			switch (conn.Status)
 			{
 				case LinkStatus.direct_link:
 					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength

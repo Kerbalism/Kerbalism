@@ -90,7 +90,7 @@ namespace KERBALISM
 			vd.filesTransmitted.Clear();
 
 			// check connection
-			if (vd.Connection == null
+			if (!vd.CommHandler.IsReady
 				|| !vd.Connection.linked
 				|| vd.Connection.rate <= 0.0
 				|| !vd.deviceTransmit
@@ -169,8 +169,8 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			// consume EC cost for transmission (ec_idle is consumed above)
-			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
-			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / (vd.Connection.rate * elapsed_s));
+			double transmittedTotal = totalTransmitCapacity - remainingTransmitCapacity;
+			double transmissionCost = vd.CommHandler.GetTransmissionCost(transmittedTotal, elapsed_s);
 			ec.Consume(transmissionCost * elapsed_s, ResourceBroker.CommsXmit);
 		}
 

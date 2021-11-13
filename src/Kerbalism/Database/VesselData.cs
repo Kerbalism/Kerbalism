@@ -26,6 +26,10 @@ namespace KERBALISM
 		// time since last update
 		private double secSinceLastEval;
 
+		/// <summary>
+		/// Comms handler for this vessel, evaluate and expose data about the vessel antennas and comm link
+		/// </summary>
+		public CommHandler CommHandler { get; private set; }
 
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
@@ -79,6 +83,9 @@ namespace KERBALISM
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		public double scienceTransmitted;
+
+		// persist that so we don't have to do an expensive check every time
+		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 		#endregion
 
 		#region evaluated environment properties
@@ -149,6 +156,9 @@ namespace KERBALISM
 
 		/// <summary> [environment] true if vessel is inside exosphere</summary>
 		public bool EnvStorm => inStorm; bool inStorm;
+
+		/// <summary> [environment] true if vessel currently experienced a solar storm</summary>
+		public double EnvStormRadiation => stormRadiation; public double stormRadiation;
 
 		/// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>
 		public double EnvGammaTransparency => gammaTransparency; double gammaTransparency;
@@ -637,8 +647,8 @@ namespace KERBALISM
 				foreach (ProtoPartSnapshot protopart in Vessel.protoVessel.protoPartSnapshots)
 					parts.Add(protopart.flightID, new PartData(protopart));
 
-
 			FieldsDefaultInit(vessel.protoVessel);
+			InitializeCommHandler(vessel.protoVessel, vessel.protoVessel.vesselType == VesselType.DeployedScienceController);
 
 			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -671,6 +681,9 @@ namespace KERBALISM
 				Load(node);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
+
+			InitializeCommHandler(protoVessel, protoVessel.vesselType == VesselType.DeployedScienceController);
+
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
@@ -689,6 +702,9 @@ namespace KERBALISM
 			cfg_show = true;
 			deviceTransmit = true;
 
+			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
+			isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
+
 			stormData = new StormData(null);
 			habitatInfo = new VesselHabitatInfo(null);
 			computer = new Computer(null);
@@ -696,6 +712,13 @@ namespace KERBALISM
 			scansat_id = new List<uint>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
+
+		}
+
+		private void InitializeCommHandler(ProtoVessel pv, bool isSerenityGroundController)
+		{
+			connection = new ConnectionInfo();
+			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
 		private void Load(ConfigNode node)
@@ -828,8 +851,8 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(Vessel);
 
 			// communications info
-			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
-
+			CommHandler.UpdateConnection(connection);
+			
 			// habitat data
 			habitatInfo.Update(Vessel);
 			volume = Habitat.Tot_volume(Vessel);
@@ -917,6 +940,16 @@ namespace KERBALISM
 			thermosphere = Sim.InsideThermosphere(Vessel);
 			exosphere = Sim.InsideExosphere(Vessel);
 			inStorm = Storm.InProgress(Vessel);
+
+			if(inStorm)
+			{
+				var sunActivity = Radiation.Info(mainSun.SunData.body).SolarActivity(false) / 2.0;
+				stormRadiation = PreferencesRadiation.Instance.StormRadiation * mainSun.SunlightFactor * (sunActivity + 0.5);
+			} else
+			{
+				stormRadiation = 0.0;
+			}
+
 			vesselSituations.Update();
 
 			// other stuff

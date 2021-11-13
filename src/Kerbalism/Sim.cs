@@ -835,6 +835,139 @@ namespace KERBALISM
 			return 1.0 - Math.Min(AU, 1.0); // 0 at 1AU -> 1 at sun position
 		}
 		#endregion
+
+		#region SIGNAL
+		private static double dampingExponent = 0;
+		public static double DataRateDampingExponent
+		{
+			get
+			{
+				if (dampingExponent != 0)
+					return dampingExponent;
+
+				if (Settings.DampingExponentOverride != 0)
+					return Settings.DampingExponentOverride;
+
+				// KSP calculates the signal strength using a cubic formula based on distance (see below).
+				// Based on that signal strength, we calculate a data rate. The goal is to get data rates that
+				// are comparable to what NASA gets near Mars, depending on the distance between Earth and Mars
+				// (~0.36 AU - ~2.73 AU).
+				// The problem is that KSPs formula would be somewhat correct for signal strength in reality,
+				// but the stock system is only 1/10th the size of the real solar system. Picture this: Jools
+				// orbit is about as far removed from the sun as the real Mercury, which means that all other
+				// planets would orbit the sun at a distance that is even smaller. In game, distance plays a
+				// much smaller role than it would in reality, because the in-game distances are very small,
+				// so signal strength just doesn't degrade fast enough with distance.
+				//
+				// We cannot change how KSP calculates signal strength, so we apply a damping formula
+				// for the data rate. Basically, it goes like this:
+				//
+				// data rate = base rate * signal strength
+				// (base rate would be the max. rate at 0 distance)
+				//
+				// To degrade the data rate with distance, Kerbalism will do this instead:
+				//
+				// data rate = base rate * (signal strength ^ damping exponent)
+				// (this works because signal strength will always be in the range [0..1])
+				//
+				// The problem is, we don't know which solar system we'll be in, and how big it will be.
+				// Popular systems like JNSQ are 2.7 times bigger than stock, RSS is 10 times bigger.
+				// So we try to find a damping exponent that gives good results for the solar system we're in,
+				// based on the distance of the home planet to the sun (1 AU).
+
+				// range of DSN at max. level
+				var maxDsnRange = GameVariables.Instance.GetDSNRange(1f);
+
+				// signal strength at ~ average earth - mars distance
+				var strengthAt2AU = SignalStrength(maxDsnRange, 2 * AU);
+
+				// For our estimation, we assume a base rate similar to the stock communotron 88-88
+				var baseRate = 0.48;
+
+				// At 2 AU, this is the rate we want to get out of it
+				var desiredRateAt2AU = 0.3;
+
+				// dataRate = baseRate * (strengthAt2AU ^ exponent)
+				// so...
+				// exponent = log_strengthAt2AU(dataRate / baseRate)
+				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+
+				Lib.Log($"Calculated DataRateDampingExponent: {dampingExponent.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")})");
+
+				return dampingExponent;
+			}
+		}
+
+		public static double DataRateDampingExponentRT
+		{
+			get
+			{
+				if (dampingExponent != 0)
+					return dampingExponent;
+
+				if (Settings.DampingExponentOverride != 0)
+					return Settings.DampingExponentOverride;
+
+				// Since RemoteTech Mission Control KSC maximum range never exceeds 75Mm we can't use exactly the same logic as CommNet.
+				// What we do here is take Duna as a reference and pretend that it is Mars.
+
+				// Lets take a look at some real world examples
+				// https://www.researchgate.net/figure/Calculation-of-Received-Power-from-space-probes-based-on-online-DSN-data-given-on-May_tbl1_308019760	
+
+				// [ Satellite ]	[ Power output ]	[ Distance from Earth ]		[ Data rate ]
+				//	Voyager 1			20W, 47 dBi			134 au						159 bps
+				//	Voyager 2			20W, 47 dBi			111 au						160 bps
+				//	New Horizons		12W, 42 dBi			35 au						4.21 kbps
+				//	Cassini				20W, 46.6 dBi		9 au						22.12 kbps
+				//	Dawn				100W, 39.6 dBi		3.5 au						125 kbps
+				//	Rosetta				28W, 42.5 dBi		2.8 au						52.42 kbps
+				//	SOHO (omni ant)		10W					4.4 Moon distance			245.76 kbps
+
+				// https://mars.nasa.gov/mro/mission/communications/
+				// Also, the Mars Reconnaissance Orbiter sends data to Earth, the data rate is about 500 to 4000 kilobits per second.
+				// ie. between 62.5 kB/s - 500 kB/s
+				// https://en.wikipedia.org/wiki/Mars_Reconnaissance_Orbiter
+				// The spacecraft carries two 100-watt X-band amplifiers (one of which is a backup), one 35-watt Ka-band amplifier
+				// so, 135 W to transmit?
+
+				// For our estimation, we assume a base reach similar to the Reflectron KR-14 that has
+				// similar specs to Mars Reconnaissance Orbiter
+				double testRange = 60000000000.0; // 60Gm
+
+				// signal strength at ~ farthest earth - mars distance, Duna is at 2.53 au with stock ksp solar sytem
+				double strengthAt2AU = SignalStrength(testRange, 2.53 * AU);	// 34.4 Gm w stock solar system
+
+				// For our estimation, we assume a base rate similar to the Reflectron KR-14
+				double baseRate = 0.4815;
+
+				// At 2 AU, this is the rate we want to get out of it
+				double desiredRateAt2AU = 0.05;
+
+				// dataRate = baseRate * (strengthAt2AU ^ exponent)
+				// so...
+				// exponent = log_strengthAt2AU(dataRate / baseRate)
+				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+
+				// 2.4 seems good for RemoteTech
+				return DataRateDampingExponent;
+			}
+		}
+
+		public static double SignalStrength(double maxRange, double distance)
+		{
+			if (distance > maxRange)
+				return 0.0;
+
+			double relativeDistance = 1.0 - (distance / maxRange);
+			double strength = (3.0 - (2.0 * relativeDistance)) * (relativeDistance * relativeDistance);
+
+			if (strength < 0)
+				return 0.0;
+
+			return strength;
+		}
+
+		#endregion
 	}
 } // KERBALISM
 

@@ -190,8 +190,11 @@ namespace KERBALISM.Planner
 								Process_cryotank(p, m);
 								break;
 							case "ModuleRTAntennaPassive":
-							case "ModuleRTAntenna":
 								Process_rtantenna(m);
+								break;
+							//case "ModuleRTAntenna":
+							case "AntennaDataTransmitterRemoteTech":
+								Process_rtantenna_transmitter(m as AntennaDataTransmitterRemoteTech);
 								break;
 							case "ModuleDataTransmitter":
 							case "ModuleDataTransmitterFeedeable": // NearFutureExploration derivative
@@ -678,18 +681,16 @@ namespace KERBALISM.Planner
 			Resource("ElectricCharge").Consume(total_cost, "cryotank");
 		}
 
-
 		void Process_rtantenna(PartModule m)
 		{
-			switch (m.moduleName)
-			{
-				case "ModuleRTAntennaPassive":
-					Resource("ElectricCharge").Consume(0.0005, "communications (control)");   // 3km range needs approx 0.5 Watt
-					break;
-				case "ModuleRTAntenna":
-					Resource("ElectricCharge").Consume(m.resHandler.inputResources.Find(r => r.name == "ElectricCharge").rate, "communications (transmitting)");
-					break;
-			}
+			Resource("ElectricCharge").Consume(0.0005, "communications (control)");   // 3km range needs approx 0.5 Watt
+		}
+
+		// following the naming conventions that I see here.
+		void Process_rtantenna_transmitter(AntennaDataTransmitterRemoteTech adt)
+		{
+			Resource("ElectricCharge").Consume(adt.energyCost, "communications (idle)");
+			Resource("ElectricCharge").Consume(adt.packetResourceCost * adt.packetSize / adt.packetInterval, "communications (transmitting)");
 		}
 
 		void Process_datatransmitter(ModuleDataTransmitter mdt)

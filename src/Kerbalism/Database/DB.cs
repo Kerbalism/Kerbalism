@@ -278,7 +278,52 @@ namespace KERBALISM
         public static Dictionary<string, StormData> storms;     // store data per-body
         public static LandmarkData landmarks;                  // store landmark data
         public static UIData ui;                               // store ui data
-    }
+
+		#region VESSELDATA METHODS
+
+		public static bool TryGetVesselDataTemp(this Vessel vessel, out VesselData vesselData)
+		{
+			if (!vessels.TryGetValue(vessel.id, out vesselData))
+			{
+				Lib.LogStack($"Could not get VesselData for vessel {vessel.vesselName}", Lib.LogLevel.Error);
+				return false;
+			}
+			return true;
+		}
+
+		/// <summary>
+		/// Get the VesselData for this vessel, if it exists. Typically, you will need this in a Foreach on FlightGlobals.Vessels
+		/// </summary>
+		public static bool TryGetVesselData(this Vessel vessel, out VesselData vesselData)
+		{
+			if (!vessels.TryGetValue(vessel.id, out vesselData))
+				return false;
+
+			return true;
+		}
+
+		/// <summary>
+		/// Get the VesselData for this vessel. Will return null if that vessel isn't yet created in the DB, which can happen if this is called too early. <br/>
+		/// Typically it's safe to use from partmodules FixedUpdate() and OnStart(), but not in Awake() and probably not from Update()<br/>
+		/// Also, don't use this in a Foreach on FlightGlobals.Vessels, check the result of TryGetVesselData() instead
+		/// </summary>
+		public static VesselData GetVesselData(this Vessel vessel)
+		{
+			if (!vessels.TryGetValue(vessel.id, out VesselData vesselData))
+			{
+				Lib.LogStack($"Could not get VesselData for vessel {vessel.vesselName}");
+				return null;
+			}
+			return vesselData;
+		}
+
+		public static bool TryGetVesselData(this ProtoVessel protoVessel, out VesselData vesselData)
+		{
+			return vessels.TryGetValue(protoVessel.vesselID, out vesselData);
+		}
+
+		#endregion
+	}
 
 
 } // KERBALISM

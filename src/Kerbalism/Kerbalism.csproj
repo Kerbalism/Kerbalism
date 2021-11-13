@@ -19,6 +19,7 @@
     <SignAssembly>False</SignAssembly>
     <RootNamespace>KERBALISM</RootNamespace>
     <AssemblyName>Kerbalism</AssemblyName>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <!-- /////////////////////////////////////////////////// -->
   <!-- //////////// DEBUG CONFIGURATION SETUP //////////// -->
@@ -56,7 +57,7 @@
     <DebugType Condition="'$(DebugTypeOverride)' == ''">none</DebugType>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
     <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
   </PropertyGroup>
@@ -135,8 +136,14 @@
     <Compile Include="Automation\Devices\Panel.cs" />
     <Compile Include="Automation\Devices\Process.cs" />
     <Compile Include="Automation\Devices\Ring.cs" />
-    <Compile Include="Comms\AntennaInfoCommNet.cs" />
-    <Compile Include="Comms\AntennaInfoRT.cs" />
+    <Compile Include="Comms\CommHandler.cs" />
+    <Compile Include="Comms\CommHandlerCommNetBase.cs" />
+    <Compile Include="Comms\CommHandlerCommNetSerenity.cs" />
+    <Compile Include="Comms\CommHandlerCommNetVessel.cs" />
+    <Compile Include="Comms\CommHandlerRemoteTech.cs" />
+    <Compile Include="Comms\CommsMessages.cs" />
+    <Compile Include="Comms\ConnectionInfo.cs" />
+    <Compile Include="Comms\IConnectionInfo.cs" />
     <Compile Include="Contracts\CrossBelt.cs" />
     <Compile Include="Contracts\CrossHeliopause.cs" />
     <Compile Include="Contracts\MannedOrbit.cs" />
@@ -150,6 +157,7 @@
     <Compile Include="Database\VesselSituations.cs" />
     <Compile Include="External\BackgroundResources.cs" />
     <Compile Include="LocalizationCache.cs" />
+    <Compile Include="Modules\AntennaDataTransmitterRemoteTech.cs" />
     <Compile Include="Modules\KebalismSentinel.cs" />
     <Compile Include="Patches\RefillEVAPropellant.cs" />
     <Compile Include="Science\SubjectData.cs" />
@@ -185,8 +193,6 @@
     <Compile Include="Science\Hijacker.cs" />
     <Compile Include="Science\Sample.cs" />
     <Compile Include="Science\Science.cs" />
-    <Compile Include="Comms\ConnectionInfo.cs" />
-    <Compile Include="Comms\Communications.cs" />
     <Compile Include="Science\ScienceDB.cs" />
     <Compile Include="Science\ScienceSituation.cs" />
     <Compile Include="Science\Situation.cs" />
@@ -273,7 +279,6 @@
     <Compile Include="Automation\Devices\Sickbay.cs" />
     <Compile Include="Modules\KerbalismScansat.cs" />
     <Compile Include="Patches\DeployedScienceExperiment_SendDataToComms.cs" />
-    <Compile Include="Comms\AntennaInfoSerenity.cs" />
     <Compile Include="Utility\Serenity.cs" />
     <Compile Include="Patches\VesselRecovery_OnVesselRecovered.cs" />
     <Compile Include="Radiation\Radiation.cs" />
