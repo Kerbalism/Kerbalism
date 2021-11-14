@@ -31,6 +31,8 @@ namespace KERBALISM
 		/// </summary>
 		public CommHandler CommHandler { get; private set; }
 
+		public Drive TransmitBufferDrive { get; private set; }
+
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
 
@@ -475,12 +477,21 @@ namespace KERBALISM
 
 			// don't update more than every second of game time
 			if (!forced && secSinceLastEval < 1.0)
+			{
+				UpdateTransmitBufferDrive(elapsedSeconds);
 				return;
-
+			}
+			
 			EvaluateEnvironment(secSinceLastEval);
 			EvaluateStatus();
+			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
 			Evaluated = true;
+		}
+
+		private void UpdateTransmitBufferDrive(double elapsedSec)
+		{
+			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
 		}
 
 		/// <summary>
@@ -718,6 +729,7 @@ namespace KERBALISM
 		private void InitializeCommHandler(ProtoVessel pv, bool isSerenityGroundController)
 		{
 			connection = new ConnectionInfo();
+			TransmitBufferDrive = new Drive("buffer drive", 0, 0);
 			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
@@ -852,7 +864,7 @@ namespace KERBALISM
 
 			// communications info
 			CommHandler.UpdateConnection(connection);
-			
+
 			// habitat data
 			habitatInfo.Update(Vessel);
 			volume = Habitat.Tot_volume(Vessel);

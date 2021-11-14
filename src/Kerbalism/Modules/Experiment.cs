@@ -553,7 +553,7 @@ namespace KERBALISM
 
 				if (drive.GetFileSend(subjectData.Id))
 				{
-					warpDrive = Cache.WarpCache(v);
+					warpDrive = vd.TransmitBufferDrive;
 					available += warpDrive.FileCapacityAvailable();
 					if (double.IsNaN(available)) Lib.LogStack("warpDrive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 				}

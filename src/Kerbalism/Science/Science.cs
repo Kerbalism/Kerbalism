@@ -150,13 +150,15 @@ namespace KERBALISM
 				// save transmit rate for the file, and add it to the VesselData list of files being transmitted
 				if (xmitFile.isInWarpCache && xmitFile.realDriveFile != null)
 				{
-					xmitFile.realDriveFile.transmitRate = transmitted / elapsed_s;
+					xmitFile.realDriveFile.transmitRate += transmitted / elapsed_s;
 					vd.filesTransmitted.Add(xmitFile.realDriveFile);
 				}
 				else
 				{
-					xmitFile.file.transmitRate = transmitted / elapsed_s;
-					vd.filesTransmitted.Add(xmitFile.file);
+					if (xmitFile.file.transmitRate == 0.0)
+						vd.filesTransmitted.Add(xmitFile.file);
+
+					xmitFile.file.transmitRate += transmitted / elapsed_s;
 				}
 
 				if (xmitScienceValue > 0.0)
@@ -177,7 +179,7 @@ namespace KERBALISM
 		private static void GetFilesToTransmit(Vessel v, VesselData vd)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
-			Drive warpCache = Cache.WarpCache(v);
+			Drive warpCache = vd.TransmitBufferDrive;
 
 			xmitFiles.Clear();
 			List<SubjectData> filesToRemove = new List<SubjectData>();
