@@ -131,7 +131,6 @@ namespace KERBALISM
 		}
 
 		// caches
-		private static Dictionary<Guid, Drive> warp_caches;
 		private static Dictionary<Guid, Dictionary<string, System.Object>> vesselObjects;
 	}
 
