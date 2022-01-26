@@ -2438,6 +2438,13 @@ namespace KERBALISM
 			return reslib.Contains( name ) ? reslib[name] : null;
 		}
 
+		/// <summary>Returns resource localized display name</summary>
+		public static string GetResourceDisplayName(string name)
+		{
+			var res = GetDefinition(name);
+			return res == null ? "N.A. (" + name + ")" : res.displayName;
+		}
+
 		/// <summary> Returns name of propellant used on eva </summary>
 		public static string EvaPropellantName()
 		{
