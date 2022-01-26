@@ -245,7 +245,7 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 			specs.Add(Local.Harvester_info1, ((HarvestTypes)type).ToString());//"type"
-			specs.Add(Local.Harvester_info2, resource);//"resource"
+			specs.Add(Local.Harvester_info2, Lib.GetResourceDisplayName(resource));//"resource"
 			if (min_abundance > double.Epsilon) specs.Add(Local.Harvester_info3, Lib.HumanReadablePerc(min_abundance, "F2"));//"min abundance"
 			if (type == 2 && min_pressure > double.Epsilon) specs.Add(Local.Harvester_info4, Lib.HumanReadablePressure(min_pressure));//"min pressure"
 			specs.Add(Local.Harvester_info5, Lib.HumanReadableRate(rate));//"extraction rate"
