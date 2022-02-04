@@ -371,6 +371,15 @@ namespace KERBALISM
 				}
 				else if (IsROC)
 				{
+					// This is a failsafe in case :
+					// - a mod add a ROC definition but breaking grounds isn't installed
+					// - an intermittent bug causing ROCManager.Instance to be null (seems caused by Kopernicus, see https://github.com/Kopernicus/Kopernicus/issues/499) 
+					if (ROCManager.Instance == null)
+					{
+						Lib.Log($"Can't parse ModuleInfo for {ExperimentId} on part={ap.name} : ROCManager is null", Lib.LogLevel.Warning);
+						continue;
+					}
+
 					string rocType = ExperimentId.Substring(ExperimentId.IndexOf('_') + 1);
 					ROCDefinition rocDef = ROCManager.Instance.rocDefinitions.Find(p => p.type == rocType);
 					if (rocDef != null)
