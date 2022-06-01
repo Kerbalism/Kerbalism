@@ -551,6 +551,7 @@ namespace KERBALISM
 			ResetReliabilityStatus();
 			habitatInfo = new VesselHabitatInfo(null);
 			EvaluateStatus();
+			CommHandler.ResetPartTransmitters();
 
 			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
 		}

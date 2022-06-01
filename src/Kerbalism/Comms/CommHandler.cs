@@ -9,13 +9,15 @@ namespace KERBALISM
 	public class CommHandler
 	{
 		private static bool CommNetStormPatchApplied = false;
-		private bool resetTransmitters;
+
 		protected VesselData vd;
+
+		private bool transmittersDirty;
 
 		/// <summary>
 		/// false while the network isn't initialized or when the transmitter list is not up-to-date
 		/// </summary>
-		public bool IsReady => NetworkIsReady && resetTransmitters == false;
+		public bool IsReady => NetworkIsReady && !transmittersDirty;
 
 		/// <summary>
 		/// pseudo ctor for getting the right handler type
@@ -43,25 +45,26 @@ namespace KERBALISM
 			if (API.Comm.handlers.Count > 0)
 			{
 				handler = new CommHandler();
-				Lib.Log("created new CommHandler", Lib.LogLevel.Message);
+				Lib.LogDebug("Created new API CommHandler", Lib.LogLevel.Message);
 			}
 			else if (RemoteTech.Installed)
 			{
 				handler = new CommHandlerRemoteTech();
-				Lib.Log("created new CommHandlerRemoteTech", Lib.LogLevel.Message);
+				Lib.LogDebug("Created new CommHandlerRemoteTech", Lib.LogLevel.Message);
 			}
 			else if (isGroundController)
 			{
 				handler = new CommHandlerCommNetSerenity();
-				Lib.Log("created new CommHandlerCommNetSerenity", Lib.LogLevel.Message);
+				Lib.LogDebug("Created new CommHandlerCommNetSerenity", Lib.LogLevel.Message);
 			}
-			else {
+			else
+			{
 				handler = new CommHandlerCommNetVessel();
-				Lib.Log("created new CommHandlerCommNetVessel", Lib.LogLevel.Message);
+				Lib.LogDebug("Created new CommHandlerCommNetVessel", Lib.LogLevel.Message);
 			}
 				
 			handler.vd = vd;
-			handler.resetTransmitters = true;
+			handler.transmittersDirty = true;
 
 			return handler;
 		}
@@ -78,10 +81,10 @@ namespace KERBALISM
 			{
 				if (NetworkIsReady)
 				{
-					if (resetTransmitters)
+					if (transmittersDirty)
 					{
 						UpdateTransmitters(connection, true);
-						resetTransmitters = false;
+						transmittersDirty = false;
 					}
 					else
 					{
@@ -93,6 +96,7 @@ namespace KERBALISM
 			}
 			else
 			{
+				transmittersDirty = false;
 				try
 				{
 					API.Comm.handlers[0].Invoke(null, new object[] { connection, vd.Vessel });
@@ -109,7 +113,7 @@ namespace KERBALISM
 		/// Clear and re-find all transmitters partmodules on the vessel.
 		/// Must be called when parts have been removed / added on the vessel.
 		/// </summary>
-		public void ResetPartTransmitters() => resetTransmitters = true;
+		public void ResetPartTransmitters() => transmittersDirty = true;
 
 		/// <summary>
 		/// Get the cost for transmitting data with this CommHandler
