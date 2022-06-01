@@ -91,10 +91,13 @@ namespace KERBALISM
 			ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
 
 			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
+			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
 			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 2);
 			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 0.33f);
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
-			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
+			ShieldingEfficiencyEasyMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyEasyMult", 1.1f);
+			ShieldingEfficiencyModerateMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyModerateMult", 0.9f);
+			ShieldingEfficiencyHardMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyHardMult", 0.8f);
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
@@ -194,6 +197,9 @@ namespace KERBALISM
 		public static int StormDurationHours;
 		public static float StormEjectionSpeed;
 		public static float ShieldingEfficiency;
+		public static float ShieldingEfficiencyEasyMult;
+		public static float ShieldingEfficiencyModerateMult;
+		public static float ShieldingEfficiencyHardMult;
 		public static float StormRadiation;
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad
