@@ -19,6 +19,9 @@ namespace KERBALISM.Planner
 			// set the ui styles
 			SetStyles();
 
+			// Compute sorted body indices
+			ComputeSortedBodyIndices();
+
 			// set default body index to home
 			body_index = FlightGlobals.GetHomeBodyIndex();
 
@@ -84,6 +87,24 @@ namespace KERBALISM.Planner
 			devbuild_style.stretchHeight = true;
 			devbuild_style.fontSize = Styles.ScaleInteger(12);
 			devbuild_style.alignment = TextAnchor.MiddleCenter;
+		}
+
+		///<summary>Constructed a list of CB indices that is sorted (hierarchically) by SMA</summary>
+		private static void ComputeSortedBodyIndices()
+		{
+			void SortBodiesAndAppendIndicesToList(List<CelestialBody> bodies)
+			{
+				bodies.Sort((a, b) => a.orbit.semiMajorAxis.CompareTo(b.orbit.semiMajorAxis));
+				foreach (var body in bodies)
+				{
+					sorted_body_indices.Add(body.flightGlobalsIndex);
+					if (body.orbitingBodies.Count > 0)
+					{
+						SortBodiesAndAppendIndicesToList(new List<CelestialBody>(body.orbitingBodies));
+					}
+				}
+			}
+			SortBodiesAndAppendIndicesToList(new List<CelestialBody>(Planetarium.fetch.Sun.orbitingBodies));
 		}
 		#endregion
 
@@ -207,9 +228,17 @@ namespace KERBALISM.Planner
 				// body selector
 				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].name, Local.Planner_Targetbody), leftmenu_style);//"Target body"
 				if (Lib.IsClicked())
-				{ body_index = (body_index + 1) % FlightGlobals.Bodies.Count; if (body_index == 0) ++body_index; enforceUpdate = true; }
+				{
+					var sorted_index = sorted_body_indices.IndexOf(body_index);
+					body_index = sorted_body_indices[(sorted_index + 1) % sorted_body_indices.Count];
+					enforceUpdate = true;
+				}
 				else if (Lib.IsClicked(1))
-				{ body_index = (body_index - 1) % FlightGlobals.Bodies.Count; if (body_index == 0) body_index = FlightGlobals.Bodies.Count - 1; enforceUpdate = true; }
+				{
+					var sorted_index = sorted_body_indices.IndexOf(body_index);
+					body_index = sorted_body_indices[(sorted_index - 1) % sorted_body_indices.Count];
+					enforceUpdate = true;
+				}
 
 				// sunlight selector
 				switch (sunlight)
@@ -575,6 +604,7 @@ namespace KERBALISM.Planner
 
 		// body/situation/sunlight indexes
 		private static int body_index;
+		private static List<int> sorted_body_indices = new List<int>();
 		private static int situation_index = 2;     // orbit
 		public enum SunlightState { SunlightNominal = 0, SunlightSimulated = 1, Shadow = 2 }
 		private static SunlightState sunlight = SunlightState.SunlightSimulated;
