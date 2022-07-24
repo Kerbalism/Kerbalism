@@ -6,6 +6,18 @@
 
 Kerbalism is a mod for Kerbal Space Program that alters the game to add life support, radiation, ISRU chains, part and engine failures and an entirely new way of doing science.
 
+#### Features summary :
+
+- **Life support** : Kerbals consume food, water and oxygen and will die if they aren't provided. Various processes can be added to recycle or produce those resources in situ.
+- **Stress** : Kerbals require adequate living space, atmospheric pressure and comforts. When those are lacking, they will get more and more stressed and start making mistakes.
+- **Radiation** : Kerbalism simulate the space radiation environement and radiation from local sources. A vessel must be adequately shielded and mission planning must be adjusted to avoid the most deadly places like planetary radiation belts.
+- **Reliability** : Components have a limited operational lifetime and will fail over time, and engines have a limited amount of ignitions and a limited burn time.
+- **ISRU** : Instead of the easy "ore to everything" stock system, producing and processing resources in situ uses a semi-realistic set of extraction and conversion rules.
+- **Science over time** : Experiments produce data over time. The data is also transmitted over time, making science collection an automated background mechanism instead of the stock click-spammy system. Kerbalism also removes the stock labs "infinite science" mechanism, rebalance the stock experiments and add many probe, satellite and late-game manned experiments.
+- **Background processing** : All vessels are simulated continuously, not only the currently active one. Life support, resource processing, experiments and data transmission are simulated in the background, even during time warp.
+- **Vessels management** : Kerbalism provide a centralized user interface to monitor and control all your vessels. Many actions can be performed without having to switch to a vessel.
+- **Mission planning** : The editor user interface allow to evaluate your vessel design against the various environments and provide extended information about all aspects of the mod.
+
 ### Frequently Asked Questions: [FAQ]
 
 ## Current version: 3.15
@@ -29,9 +41,10 @@ Two packages are required :
 
 **Requirements**
 
-- [Module Manager] : must be installed in GameData
-- [CommunityResourcePack] : must be installed in GameData
-- [HarmonyKSP] : must be installed in GameData
+- [Module Manager]
+- [HarmonyKSP]
+- [KSPCommunityFixes]
+- [CommunityResourcePack] (required by **KerbalismConfig** only, third-party config packs might not require it) 
 
 **Configuration packs**
 
@@ -46,15 +59,6 @@ Several alternate configuration packs have been created by third party modders :
 
 Make sure to install exactly one configuration pack only.\
 Don't combine packs unless there is explicit instructions to do so.
-
-**Installation checklist** for the "GameData" folder required content : 
-
-- `000_Harmony` (folder)
-- `CommunityResourcePack` (folder, might not be required by third-party config packs)
-- `KSPCommunityFixes` (folder)
-- `Kerbalism` (folder)
-- `KerbalismConfig` (folder, can be replaced by a third-party config pack)
-- `ModuleManager.X.X.X.dll` (file)
 
 ## Mod compatibility and support
 
