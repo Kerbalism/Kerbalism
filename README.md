@@ -18,7 +18,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 - **Vessels management** : Kerbalism provide a centralized user interface to monitor and control all your vessels. Many actions can be performed without having to switch to a vessel.
 - **Mission planning** : The editor user interface allow to evaluate your vessel design against the various environments and provide extended information about all aspects of the mod.
 
-### Frequently Asked Questions: [FAQ]
+For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
 ## Current version: 3.15
  
