@@ -89,8 +89,6 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 This mod is released under the [Unlicense], which mean it's in the public domain.
 
-It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether there is a new version available. Data is only read from the Internet and no personal information is sent. For more control, download the full [KSP-AVC Plugin].
-
 
 [Github releases]: https://github.com/Kerbalism/Kerbalism/releases
 [Github wiki]: https://github.com/Kerbalism/Kerbalism/wiki
@@ -109,8 +107,6 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [HarmonyKSP]: https://github.com/KSPModdingLibs/HarmonyKSP/releases
 [KSPCommunityFixes]: https://github.com/KSPModdingLibs/KSPCommunityFixes/releases
-[MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
-[KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 [CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/197082-ckan
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 
