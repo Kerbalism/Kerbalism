@@ -1,3 +1,26 @@
+## v3.15 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2022-07-24
+
+### Changes since the last release
+* Added italian localization (@leonardfactory)
+* Backported Comms handling from Kerbalism 4 (@KoOz, @gotmachine)
+* Backported RemoteTech support from Kerbalism 4 (@KoOz)
+* Reworked antenna balance support configs for RemoteTech (@KoOz)
+* Bodies are now sorted by SMA in planner UI (@Al2Me6)
+* Made shielding efficiency difficulty presets configurable in Settings.cfg (@gotmachine)
+* Resource names are now properly localized (@leonardfactory)
+* Fixed issue #819 : Fatal error on science DB compilation when ROCManager isn't available (@gotmachine)
+* Fixed issue #799 : Sample mass not being included in vessel mass in the editor (@gotmachine)
+* Fixed issue #748 : Disabled ModuleAsteroidDrill background processing. Code isn't working anymore and needs a refactor (@gotmachine)
+* Fixed issue #775 : Lab Experiments don't use the right scientist level requirements(@RoadWarrior9)
+* Fixed issue #745 : Serenity deployed experiments take 10 times longer than stock (@Nistenf)
+* Config tweak : Fix antenna EC calculation typo (@shult12)
+* Config tweak : Adjusted drive capacities for Stock, Restock+ and RLA probes (@hypodronic)
+* Mod support : Pebkac experiment fix (@Gordon-Dry)
+* Mod support : Updated Near Future Spacecraft science support configs (@Vulpodrac)
+* Mod support : Updated SSPX support configs (@SiCaRiO, @Vulpodrac, @AlexL)
+
 ## v3.14 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2021-06-25

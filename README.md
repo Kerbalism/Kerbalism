@@ -4,18 +4,17 @@
 
 ***Hundreds of Kerbals were killed in the making of this mod.***
 
-Kerbalism is a mod for Kerbal Space Program that alters the game to add life support, radiation, failures and an entirely new way of doing science.
+Kerbalism is a mod for Kerbal Space Program that alters the game to add life support, radiation, ISRU chains, part and engine failures and an entirely new way of doing science.
 
 ### Frequently Asked Questions: [FAQ]
 
-## Current version: 3.14
-
-**What's new** : [New and Noteworthy]   
+## Current version: 3.15
+ 
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
 **KSP version** : 1.8.x to 1.12.x  
-**Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP]  
+**Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
 
 ## Download and installation
@@ -24,7 +23,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 Two packages are required :
 - **Kerbalism** is the core plugin, always required.
-- **KerbalismConfig** is the default configuration pack.\
+- **KerbalismConfig** is the official configuration pack.\
   It can be be replaced by other packs distributed elsewhere.
 
 **Requirements**
@@ -33,17 +32,25 @@ Two packages are required :
 - [CommunityResourcePack] : must be installed in GameData
 - [HarmonyKSP] : must be installed in GameData
 
-**Third-party configuration packs**
+**Configuration packs**
+
+The Kerbalism official configuration pack is a feature set maintained by the Kerbalism contributors. It tries to achieve a good balance between realism, difficulty and complexity, is primarily balanced against the stock game and has a "current space tech" scope. Mixing it with other mods that significantly change the stock scale, scope or gameplay isn't well supported and not recommended for a good experience.
+
+Several alternate configuration packs have been created by third party modders :
+
+- [ROKerbalism](https://github.com/Standecco/ROKerbalism) : Official config pack for RO and [RP1](https://github.com/KSP-RO/RP-0), maintained by the RP1 team.
+- [SIMPLEX](https://spacedock.info/mod/2300) : Stockalike simplified life support and ISRU designed to work well with the SIMPLEX tech tree and other mods by theJesuit.
+- [SkyhawkKerbalism](https://forum.kerbalspaceprogram.com/index.php?/topic/208204-skyhawk-kerbalism-v01-alpha-release/) : A [BDB](https://forum.kerbalspaceprogram.com/index.php?/topic/122020-1123-bluedog-design-bureau-stockalike-saturn-apollo-and-more-v1103-%D0%BB%D1%83%D0%BD%D0%B0-17june2022/) focused profile with revamped LS, science and ISRU going alongside a custom tech tree by CessnaSkyhawk.
+- [LessRealThanReal(ism)](https://forum.kerbalspaceprogram.com/index.php?/topic/189978-112-less-real-than-realism-rp-1-with-less-r-v203/) : A config pack part of a larger mod based on RP1 but made to played at stock scales without RO. 
 
 Make sure to install exactly one configuration pack only.\
 Don't combine packs unless there is explicit instructions to do so.
-- [ROKerbalism](https://github.com/Standecco/ROKerbalism) for Realism Overhaul / RP-1 by standecco
-- [SIMPLEX](https://spacedock.info/mod/2300) by theJesuit - Stockalike / Simplified life support
 
 **Installation checklist** for the "GameData" folder required content : 
 
 - `000_Harmony` (folder)
-- `CommunityResourcePack` (folder)
+- `CommunityResourcePack` (folder, might not be required by third-party config packs)
+- `KSPCommunityFixes` (folder)
 - `Kerbalism` (folder)
 - `KerbalismConfig` (folder, can be replaced by a third-party config pack)
 - `ModuleManager.X.X.X.dll` (file)
@@ -100,6 +107,7 @@ It includes [MiniAVC]. If you opt-in, it will use the Internet to check whether 
 [Module Manager]: https://ksp.sarbian.com/jenkins/job/ModuleManager/lastStableBuild/
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [HarmonyKSP]: https://github.com/KSPModdingLibs/HarmonyKSP/releases
+[KSPCommunityFixes]: https://github.com/KSPModdingLibs/KSPCommunityFixes/releases
 [MiniAVC]: https://ksp.cybutek.net/miniavc/Documents/README.htm
 [KSP-AVC Plugin]: https://forum.kerbalspaceprogram.com/index.php?/topic/72169-13-12-ksp-avc-add-on-version-checker-plugin-1162-miniavc-ksp-avc-online-2016-10-13/
 [CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/197082-ckan
