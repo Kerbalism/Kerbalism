@@ -1,6 +1,8 @@
 ﻿using CommNet;
 using KSP.Localization;
 using System;
+using System.Reflection;
+using HarmonyLib;
 
 namespace KERBALISM
 {
@@ -15,33 +17,32 @@ namespace KERBALISM
 		{
 			Vessel v = vd.Vessel;
 
-			if (v == null || v.connection == null || !connection.powered || !v.connection.IsConnected || connection.storm)
+			bool vIsNull = v == null || v.connection == null;
+
+			connection.linked = !vIsNull && connection.powered && v.connection.IsConnected;
+
+			if (!connection.linked)
 			{
-				connection.linked = false;
 				connection.strength = 0.0;
 				connection.rate = 0.0;
 				connection.target_name = string.Empty;
 				connection.control_path.Clear();
 
-				// is loss of connection due to a storm ?
-				// Note : we are setting CommNetVessel.plasmaMult and CommNetVessel.inPlasma with
-				// a Harmony postfix on CommNetVessel.OnNetworkPreUpdate() when a storm is in progress
-				if (connection.storm)
-					connection.Status = LinkStatus.storm;
-				// is loss of connection due to plasma blackout
-				else if (vd.EnvInAtmosphere && v != null && v.connection != null && v.connection.InPlasma) //// calling InPlasma causes a StackOverflow ??? Lib.ReflectionValue<bool>(v.connection, "inPlasma")
-					connection.Status = LinkStatus.plasma;
+				if (!vIsNull && v.connection.InPlasma)
+				{
+					if (connection.storm)
+						connection.Status = LinkStatus.storm;
+					else
+						connection.Status = LinkStatus.plasma;
+				}
 				else
+				{
 					connection.Status = LinkStatus.no_link;
+				}
 
 				return;
 			}
 
-			// force a CommNet update for this vessel, if it is unloaded.
-			if (!v.loaded)
-				Lib.ReflectionValue(v.connection, "unloadedDoOnce", true);
-
-			connection.linked = true;
 			CommLink firstLink = v.connection.ControlPath.First;
 			connection.Status = firstLink.hopType == HopType.Home ? LinkStatus.direct_link : LinkStatus.indirect_link;
 			connection.strength = firstLink.signalStrength;
@@ -97,6 +98,82 @@ namespace KERBALISM
 		private static Vessel CommNodeToVessel(CommNode node)
 		{
 			return node?.transform?.gameObject.GetComponent<Vessel>();
+		}
+
+		public static void ApplyHarmonyPatches()
+		{
+			MethodInfo CommNetVessel_OnNetworkPreUpdate_Info = AccessTools.Method(typeof(CommNetVessel), nameof(CommNetVessel.OnNetworkPreUpdate));
+
+			Loader.HarmonyInstance.Patch(CommNetVessel_OnNetworkPreUpdate_Info,
+				new HarmonyMethod(AccessTools.Method(typeof(CommHandlerCommNetBase), nameof(CommNetVessel_OnNetworkPreUpdate_Prefix))));
+
+			Loader.HarmonyInstance.Patch(CommNetVessel_OnNetworkPreUpdate_Info,
+				null, new HarmonyMethod(AccessTools.Method(typeof(CommHandlerCommNetBase), nameof(CommNetVessel_OnNetworkPreUpdate_Postfix))));
+
+			MethodInfo CommNetVessel_OnNetworkPostUpdate_Info = AccessTools.Method(typeof(CommNetVessel), nameof(CommNetVessel.OnNetworkPostUpdate));
+
+			Loader.HarmonyInstance.Patch(CommNetVessel_OnNetworkPostUpdate_Info,
+				new HarmonyMethod(AccessTools.Method(typeof(CommHandlerCommNetBase), nameof(CommNetVessel_OnNetworkPostUpdate_Prefix))));
+
+			MethodInfo CommNetVessel_GetSignalStrengthModifier_Info = AccessTools.Method(typeof(CommNetVessel), nameof(CommNetVessel.GetSignalStrengthModifier));
+
+			Loader.HarmonyInstance.Patch(CommNetVessel_GetSignalStrengthModifier_Info,
+				new HarmonyMethod(AccessTools.Method(typeof(CommHandlerCommNetBase), nameof(CommNetVessel_GetSignalStrengthModifier_Prefix))));
+		}
+
+		// ensure unloadedDoOnce is true for unloaded vessels
+		private static void CommNetVessel_OnNetworkPreUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
+		{
+			if (!__instance.Vessel.loaded && __instance.CanComm)
+				___unloadedDoOnce = true;
+		}
+
+
+		// ensure unloadedDoOnce is true for unloaded vessels
+		private static void CommNetVessel_OnNetworkPostUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
+		{
+			if (!__instance.Vessel.loaded && __instance.CanComm)
+				___unloadedDoOnce = true;
+		}
+
+
+		// apply storm radiation factor to the comm strength multiplier used by stock for plasma blackout
+		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance, ref bool ___inPlasma, ref double ___plasmaMult)
+		{
+			if (!__instance.CanComm || !__instance.Vessel.TryGetVesselData(out VesselData vd))
+				return;
+
+			if (vd.EnvStormRadiation > 0.0)
+			{
+				___inPlasma = true;
+				___plasmaMult = vd.EnvStormRadiation * 2.0 / PreferencesRadiation.Instance.StormRadiation; // We should probably have a threshold setting instead of this hardcoded formula
+				___plasmaMult = Math.Max(1.0 - ___plasmaMult, 0.0);
+			}
+		}
+
+		// apply storm radiation factor to the comm strength multiplier used by stock for plasma blackout
+		private static bool CommNetVessel_GetSignalStrengthModifier_Prefix(CommNetVessel __instance, bool ___canComm, bool ___inPlasma, double ___plasmaMult, out double __result)
+		{
+			if (!___canComm)
+			{
+				__result = 0.0;
+				return false;
+			}
+
+			if (!___inPlasma)
+			{
+				__result = 1.0;
+				return false;
+			}
+
+			if (__instance.Vessel.TryGetVesselData(out VesselData vd) && vd.EnvStormRadiation > 0.0)
+			{
+				__result = ___plasmaMult;
+				return false;
+			}
+
+			__result = 0.0;
+			return true;
 		}
 	}
 }

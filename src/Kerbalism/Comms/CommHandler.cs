@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using CommNet;
-using HarmonyLib;
 
 namespace KERBALISM
 {
@@ -38,7 +34,7 @@ namespace KERBALISM
 
 				if (API.Comm.handlers.Count == 0 && !RemoteTech.Installed)
 				{
-					CommNetStormPatch();
+					CommHandlerCommNetBase.ApplyHarmonyPatches();
 				}
 			}
 
@@ -141,33 +137,5 @@ namespace KERBALISM
 		protected virtual void UpdateNetwork(ConnectionInfo connection) { }
 
 		protected virtual void UpdateTransmitters(ConnectionInfo connection, bool searchTransmitters) { }
-
-		private static FieldInfo commNetVessel_inPlasma;
-		private static FieldInfo commNetVessel_plasmaMult;
-
-		private static void CommNetStormPatch()
-		{
-			commNetVessel_inPlasma = AccessTools.Field(typeof(CommNetVessel), "inPlasma");
-			commNetVessel_plasmaMult = AccessTools.Field(typeof(CommNetVessel), "plasmaMult");
-
-			MethodInfo CommNetVessel_OnNetworkPreUpdate_Info = AccessTools.Method(typeof(CommNetVessel), nameof(CommNetVessel.OnNetworkPreUpdate));
-			MethodInfo CommNetVessel_OnNetworkPreUpdate_Postfix_Info = AccessTools.Method(typeof(CommHandler), nameof(CommNetVessel_OnNetworkPreUpdate_Postfix));
-
-			//Loader.HarmonyInstance.Patch(CommNetVessel_OnNetworkPreUpdate_Info, null, new HarmonyMethod(CommNetVessel_OnNetworkPreUpdate_Postfix_Info));
-		}
-
-		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance)
-		{
-			if (!__instance.Vessel.TryGetVesselData(out VesselData vd))
-				return;
-
-			if (vd.EnvStormRadiation > 0.0)
-			{
-				commNetVessel_inPlasma.SetValue(__instance, true);
-				double stormIntensity = vd.EnvStormRadiation / PreferencesRadiation.Instance.StormRadiation;
-				stormIntensity = Lib.Clamp(stormIntensity, 0.0, 1.0);
-				commNetVessel_plasmaMult.SetValue(__instance, stormIntensity);
-			}
-		}
 	}
 }
