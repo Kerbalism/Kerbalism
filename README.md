@@ -9,18 +9,18 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 #### Features summary :
 
 - **Life support** : Kerbals consume food, water and oxygen and will die if they aren't provided. Various processes can be added to recycle or produce those resources in situ.
-- **Stress** : Kerbals require adequate living space, atmospheric pressure and comforts. When those are lacking, they will get more and more stressed and start making mistakes.
-- **Radiation** : Kerbalism simulate the space radiation environement and radiation from local sources. A vessel must be adequately shielded and mission planning must be adjusted to avoid the most deadly places like planetary radiation belts.
-- **Reliability** : Components have a limited operational lifetime and will fail over time, and engines have a limited amount of ignitions and a limited burn time.
+- **Stress** : Without adequate living space, atmospheric pressure and comforts, Kerbals will get stressed and start making mission-threatening mistakes.
+- **Radiation** : Kerbalism simulate the space radiation environment and radiation from local sources. A vessel must be adequately shielded and mission planning must be adjusted to avoid the most deadly places like planetary radiation belts.
+- **Reliability** : Components have a limited operational lifetime and will fail over time. Engines have a limited amount of ignitions and a limited burn time.
 - **ISRU** : Instead of the easy "ore to everything" stock system, producing and processing resources in situ uses a semi-realistic set of extraction and conversion rules.
-- **Science over time** : Experiments produce data over time. The data is also transmitted over time, making science collection an automated background mechanism instead of the stock click-spammy system. Kerbalism also removes the stock labs "infinite science" mechanism, rebalance the stock experiments and add many probe, satellite and late-game manned experiments.
-- **Background processing** : All vessels are simulated continuously, not only the currently active one. Life support, resource processing, experiments and data transmission are simulated in the background, even during time warp.
-- **Vessels management** : Kerbalism provide a centralized user interface to monitor and control all your vessels. Many actions can be performed without having to switch to a vessel.
-- **Mission planning** : The editor user interface allow to evaluate your vessel design against the various environments and provide extended information about all aspects of the mod.
+- **Science over time** : Experiments produce data over time, up to several years. This data is also transmitted over time, making science collection a relaxing background mechanism instead of the stock click-spammy system. Kerbalism also replace the stock labs "infinite science", rebalance existing experiments and add many probe, satellite and late-game manned experiments.
+- **Background processing** : All vessels are simulated continuously, not only the currently active one. Life support, resource processing, experiments and data transmission are simulated in the background while keeping a low performance overhead.
+- **Vessels management** : All vessels can be monitored and controlled to some extent from a centralized user interface available in all scenes.
+- **Mission planning** : The editor user interface allow to evaluate your vessel design against various environments and provide extended information about all aspects of the mod.
 
 For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
-## Current version: 3.15
+## Current version: 3.16
  
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  

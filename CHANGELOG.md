@@ -1,3 +1,10 @@
+## v3.16 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2022-08-02
+
+### Changes since the last release
+* Fixed CommNet state stopping being updated on unloaded vessels after a while or on certain map events.
+
 ## v3.15 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2022-07-24
