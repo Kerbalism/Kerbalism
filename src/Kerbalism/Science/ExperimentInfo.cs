@@ -402,11 +402,12 @@ namespace KERBALISM
 
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
 						{
-							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(body.name), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
+							CelestialBody Body = FlightGlobals.GetBodyByName(body.name);
+							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(Body.displayName.LocalizeRemoveGender()), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
 							foreach (string biome in body.biomes)
 							{
 								ModuleInfo += "\n- ";
-								ModuleInfo += biome;
+								ModuleInfo += ScienceUtil.GetBiomedisplayName(Body, biome); // biome;
 							}
 						}
 					}
