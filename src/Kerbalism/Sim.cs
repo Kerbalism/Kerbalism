@@ -742,11 +742,12 @@ namespace KERBALISM
 		}
 
 
-		// return proportion of ionizing radiation not blocked by atmosphere
+		// return proportion of ionizing radiation not blocked by atmosphere or celestial body
 		public static double GammaTransparency(CelestialBody body, double altitude)
 		{
 			// deal with underwater & fp precision issues
 			altitude = Math.Abs(altitude);
+			double factor = 1.0;
 
 			// get pressure
 			double static_pressure = body.GetPressure(altitude);
@@ -759,16 +760,19 @@ namespace KERBALISM
 				double Ra = body.Radius + altitude;
 				double Ya = body.atmosphereDepth - altitude;
 				double path = Math.Sqrt(Ra * Ra + 2.0 * Ra * Ya + Ya * Ya) - Ra;
-				double factor = body.GetSolarPowerFactor(density) * Ya / path;
+				factor = body.GetSolarPowerFactor(density) * Ya / path;
 
 				// poor man atmosphere composition contribution
 				if (body.atmosphereContainsOxygen || body.ocean)
 				{
 					factor = 1.0 - Math.Pow(1.0 - factor, 0.015);
 				}
-				return factor;
 			}
-			return 1.0;
+			// Celestial body shielding
+			double visualHalfAngle = Math.Atan(body.Radius / Math.Max(1,altitude));
+			factor *= 1 - visualHalfAngle / Math.PI;
+
+			return factor;
 		}
 
 
