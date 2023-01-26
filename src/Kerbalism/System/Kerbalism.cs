@@ -39,6 +39,12 @@ namespace KERBALISM
 
 		/// <summary> Is the one-time main menu init done. Becomes true after loading, when the the main menu is shown, and never becomes false again</summary>
 		public static bool IsCoreMainMenuInitDone { get; set; } = false;
+		
+		/// <summary> Is the on-scene load secondary init to ensure dumping works properly. Becomes true after loading, and false on loads</summary>
+		public static bool IsSecondaryGameInitDone { get; set; } = false;
+		
+		/// <summary> Is the on-scene load secondary init's countdown timer to ensure it fires late enough. Init fires it drops to 0 and IsSecondaryGameInitDone is false.  On loads it resets to 100.</summary>
+		public static int SecondaryGameInitCounter { get; set; } = 100;
 
 		/// <summary> Is the one-time on game load init done. Becomes true after the first OnLoad() of a game, and never becomes false again</summary>
 		public static bool IsCoreGameInitDone { get; set; } = false;
@@ -102,6 +108,8 @@ namespace KERBALISM
 
 		public override void OnLoad(ConfigNode node)
 		{
+			Kerbalism.IsSecondaryGameInitDone = false;
+			Kerbalism.SecondaryGameInitCounter = 100;
 			// everything in there will be called only one time : the first time a game is loaded from the main menu
 			if (!IsCoreGameInitDone)
 			{
@@ -248,6 +256,30 @@ namespace KERBALISM
 
 		void FixedUpdate()
 		{
+			if (!Kerbalism.IsSecondaryGameInitDone)
+			{
+				Kerbalism.SecondaryGameInitCounter--;
+			}
+			if (Kerbalism.SecondaryGameInitCounter <= 0 && !Kerbalism.IsSecondaryGameInitDone)
+			{
+				Kerbalism.IsSecondaryGameInitDone = true;
+				foreach (Vessel unloadedVessel in FlightGlobals.VesselsUnloaded)
+				{
+					unloadedVessel.protoVessel.LoadObjects();
+					foreach (Part part in unloadedVessel.Parts)
+					{
+						foreach (PartModule partModule in part.Modules)
+						{
+							if (partModule.moduleName.Equals("ProcessController"))
+							{
+								ProcessController processController = (ProcessController)partModule;
+								processController.enabled = true;
+								processController.Start();
+							}
+						}
+					}
+				}
+			}
 			// remove control locks in any case
 			Misc.ClearLocks();
 
