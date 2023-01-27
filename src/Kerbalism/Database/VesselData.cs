@@ -662,7 +662,7 @@ namespace KERBALISM
 					parts.Add(protopart.flightID, new PartData(protopart));
 
 			FieldsDefaultInit(vessel.protoVessel);
-			InitializeCommHandler(vessel.protoVessel, vessel.protoVessel.vesselType == VesselType.DeployedScienceController);
+			InitializeCommHandler();
 
 			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -696,11 +696,12 @@ namespace KERBALISM
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
 
-			InitializeCommHandler(protoVessel, protoVessel.vesselType == VesselType.DeployedScienceController);
+			InitializeCommHandler();
 
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
+		// note : this method should work even with a null ProtoVessel
 		private void FieldsDefaultInit(ProtoVessel pv)
 		{
 			msg_signal = false;
@@ -717,7 +718,7 @@ namespace KERBALISM
 			deviceTransmit = true;
 
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
-			isSerenityGroundController = pv.vesselType == VesselType.DeployedScienceController;
+			isSerenityGroundController = pv != null && pv.vesselType == VesselType.DeployedScienceController;
 
 			stormData = new StormData(null);
 			habitatInfo = new VesselHabitatInfo(null);
@@ -730,7 +731,7 @@ namespace KERBALISM
 
 		}
 
-		private void InitializeCommHandler(ProtoVessel pv, bool isSerenityGroundController)
+		private void InitializeCommHandler()
 		{
 			connection = new ConnectionInfo();
 			TransmitBufferDrive = new Drive("buffer drive", 0, 0);
@@ -750,6 +751,8 @@ namespace KERBALISM
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 			cfg_show = Lib.ConfigValue(node, "cfg_show", true);
+
+			isSerenityGroundController = Lib.ConfigValue(node, "isGroundCtrl", false);
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
@@ -823,6 +826,8 @@ namespace KERBALISM
 			node.AddValue("cfg_highlights", cfg_highlights);
 			node.AddValue("cfg_showlink", cfg_showlink);
 			node.AddValue("cfg_show", cfg_show);
+
+			node.AddValue("isGroundCtrl", isSerenityGroundController);
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 

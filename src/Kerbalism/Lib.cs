@@ -1287,6 +1287,9 @@ namespace KERBALISM
 		///<summary>return crew count of a protovessel</summary>
 		public static int CrewCount(ProtoVessel pv)
 		{
+			if (pv == null)
+				return 0;
+
 			return pv.vesselType == VesselType.EVA ? 1 : pv.GetVesselCrew().Count();
 		}
 
