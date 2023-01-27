@@ -885,7 +885,8 @@ namespace KERBALISM
 				var baseRate = 0.48;
 
 				// At 2 AU, this is the rate we want to get out of it
-				var desiredRateAt2AU = 0.3;
+				// Value selected so we match pre-comms refactor damping exponent of ~6 in stock
+				var desiredRateAt2AU = 0.3925;
 
 				// dataRate = baseRate * (strengthAt2AU ^ exponent)
 				// so...
