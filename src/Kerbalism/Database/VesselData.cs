@@ -86,6 +86,8 @@ namespace KERBALISM
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		public double scienceTransmitted;
 
+		public Dictionary<Process, DumpSpecs.ActiveValve> dumpValves;
+
 		// persist that so we don't have to do an expensive check every time
 		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 		#endregion
@@ -721,6 +723,7 @@ namespace KERBALISM
 			habitatInfo = new VesselHabitatInfo(null);
 			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
+			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
 			scansat_id = new List<uint>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
@@ -758,9 +761,32 @@ namespace KERBALISM
 			computer = new Computer(node.GetNode("computer"));
 
 			supplies = new Dictionary<string, SupplyData>();
-			foreach (var supply_node in node.GetNode("supplies").GetNodes())
+			ConfigNode suppliesNode = node.GetNode("supplies");
+			if (suppliesNode != null)
 			{
-				supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
+				foreach (ConfigNode supply_node in suppliesNode.nodes)
+				{
+					supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
+				}
+			}
+
+			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
+			ConfigNode dumpSpecsNode = node.GetNode("dump_specs");
+			if (dumpSpecsNode != null)
+			{
+				foreach (ConfigNode.Value dumpValue in node.GetNode("dump_specs").values)
+				{
+					Process process = Profile.processes.Find(p => p.name == dumpValue.name);
+					if (process == null || !int.TryParse(dumpValue.value, out int dumpIndex))
+						continue;
+
+					DumpSpecs.ActiveValve valve = new DumpSpecs.ActiveValve(process.dump)
+					{
+						ValveIndex = dumpIndex
+					};
+
+					dumpValves.Add(process, valve);
+				}
 			}
 
 			scansat_id = new List<uint>();
@@ -772,7 +798,7 @@ namespace KERBALISM
 			ConfigNode partsNode = new ConfigNode();
 			if (node.TryGetNode("parts", ref partsNode))
 			{
-				foreach (ConfigNode partDataNode in partsNode.GetNodes())
+				foreach (ConfigNode partDataNode in partsNode.nodes)
 				{
 					PartData partData;
 					if (parts.TryGetValue(Lib.Parse.ToUInt(partDataNode.name), out partData))
@@ -810,6 +836,12 @@ namespace KERBALISM
 			foreach (var p in supplies)
 			{
 				p.Value.Save(supplies_node.AddNode(DB.To_safe_key(p.Key)));
+			}
+
+			var dump_node = node.AddNode("dump_specs");
+			foreach (KeyValuePair<Process, DumpSpecs.ActiveValve> dumpSpec in dumpValves)
+			{
+				dump_node.AddValue(dumpSpec.Key.name, dumpSpec.Value.ValveIndex);
 			}
 
 			foreach (uint id in scansat_id)

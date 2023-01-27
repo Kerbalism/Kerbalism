@@ -81,12 +81,21 @@ namespace KERBALISM
 
 			// parse dump specs
 			dump = new DumpSpecs(Lib.ConfigValue(node, "dump", "false"), Lib.ConfigValue(node, "dump_valve", "false"));
+			defaultDumpValve = new DumpSpecs.ActiveValve(dump);
 		}
 
-		private void ExecuteRecipe(double k, VesselResources resources,  double elapsed_s, ResourceRecipe recipe)
+		private void ExecuteRecipe(double k, VesselData vd, VesselResources resources, double elapsed_s)
 		{
 			// only execute processes if necessary
 			if (Math.Abs(k) < double.Epsilon) return;
+
+			ResourceRecipe recipe = new ResourceRecipe(broker);
+
+			if (!vd.dumpValves.TryGetValue(this, out DumpSpecs.ActiveValve dumpValve))
+			{
+				dumpValve = defaultDumpValve;
+				defaultDumpValve.ValveIndex = defaultDumpValveIndex;
+			}
 
 			foreach (var p in inputs)
 			{
@@ -94,7 +103,7 @@ namespace KERBALISM
 			}
 			foreach (var p in outputs)
 			{
-				recipe.AddOutput(p.Key, p.Value * k * elapsed_s, dump.Check(p.Key));
+				recipe.AddOutput(p.Key, p.Value * k * elapsed_s, dumpValve.Check(p.Key));
 			}
 			foreach (var p in cures)
 			{
@@ -113,8 +122,7 @@ namespace KERBALISM
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
 
-			ResourceRecipe recipe = new ResourceRecipe(broker);
-			ExecuteRecipe(k, resources, elapsed_s, recipe);
+			ExecuteRecipe(k, vd, resources, elapsed_s);
 		}
 
 		public string name;                           // unique name for the process
@@ -124,6 +132,8 @@ namespace KERBALISM
 		public Dictionary<string, double> outputs;    // output resources and rates
 		public Dictionary<string, double> cures;      // cures and rates
 		public DumpSpecs dump;                        // set of output resources that should dump overboard
+		public DumpSpecs.ActiveValve defaultDumpValve;
+		public int defaultDumpValveIndex;
 		public ResourceBroker broker;
 	}
 

@@ -354,7 +354,7 @@ namespace KERBALISM.Planner
 			}
 			foreach (KeyValuePair<string, double> output in pr.outputs)
 			{
-				recipe.Output(output.Key, output.Value * k, pr.dump.Check(output.Key));
+				recipe.Output(output.Key, output.Value * k, pr.defaultDumpValve.Check(output.Key));
 			}
 			recipes.Add(recipe);
 		}
