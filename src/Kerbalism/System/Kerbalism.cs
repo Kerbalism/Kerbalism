@@ -261,17 +261,20 @@ namespace KERBALISM
 			if (Kerbalism.SecondaryGameInitCounter <= 0 && !Kerbalism.IsSecondaryGameInitDone)
 			{
 				Kerbalism.IsSecondaryGameInitDone = true;
-				foreach (Vessel unloadedVessel in FlightGlobals.VesselsUnloaded)
+				foreach (Vessel vessel in FlightGlobals.VesselsUnloaded)
 				{
-					unloadedVessel.protoVessel.LoadObjects();
-					foreach (Part part in unloadedVessel.Parts)
+					foreach (ProtoPartSnapshot part in vessel.protoVessel.protoPartSnapshots)
 					{
-						foreach (PartModule partModule in part.Modules)
+						foreach (ProtoPartModuleSnapshot partModule in part.modules)
 						{
 							if (partModule.moduleName.Equals("ProcessController"))
 							{
-								ProcessController processController = (ProcessController)partModule;
+								Part hostPart = part.Load(vessel.protoVessel.vesselRef, false);
+								int refID = hostPart.Modules.Count + 1;
+								ProcessController processController = (ProcessController)partModule.Load(hostPart, ref refID);
 								processController.Start();
+								UnityEngine.Object.Destroy(processController.gameObject);
+								UnityEngine.Object.Destroy(hostPart.gameObject);
 							}
 						}
 					}
