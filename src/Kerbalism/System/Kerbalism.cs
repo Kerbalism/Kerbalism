@@ -273,7 +273,6 @@ namespace KERBALISM
 							if (partModule.moduleName.Equals("ProcessController"))
 							{
 								ProcessController processController = (ProcessController)partModule;
-								processController.enabled = true;
 								processController.Start();
 							}
 						}
