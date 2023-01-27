@@ -263,21 +263,22 @@ namespace KERBALISM
 				Kerbalism.IsSecondaryGameInitDone = true;
 				foreach (Vessel vessel in FlightGlobals.VesselsUnloaded)
 				{
-					foreach (ProtoPartSnapshot part in vessel.protoVessel.protoPartSnapshots)
+					vessel.protoVessel.LoadObjects();
+					foreach (Part part in vessel.Parts)
 					{
-						foreach (ProtoPartModuleSnapshot partModule in part.modules)
+						foreach (PartModule partModule in part.Modules)
 						{
 							if (partModule.moduleName.Equals("ProcessController"))
 							{
-								Part hostPart = part.Load(vessel.protoVessel.vesselRef, false);
-								int refID = hostPart.Modules.Count + 1;
-								ProcessController processController = (ProcessController)partModule.Load(hostPart, ref refID);
-								processController.Start();
-								UnityEngine.Object.Destroy(processController.gameObject);
-								UnityEngine.Object.Destroy(hostPart.gameObject);
+								((ProcessController)partModule).Start();
 							}
 						}
+						if (vessel.rootPart != part)
+						{
+							UnityEngine.Object.Destroy(part.gameObject);
+						}
 					}
+					vessel.parts.Clear();
 				}
 			}
 			// remove control locks in any case
