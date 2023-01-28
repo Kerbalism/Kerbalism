@@ -15,11 +15,11 @@ namespace KERBALISM
 		public List<ScienceSituation> situations { get; private set; } = new List<ScienceSituation>();
 		public List<VirtualBiome> virtualBiomes { get; private set; } = new List<VirtualBiome>();
 
-		public string BodyTitle => body.name;
+		public string BodyTitle => body.displayName.LocalizeRemoveGender();
 		public string BiomeTitle => biome != null ? biome.displayname : string.Empty;
 
-		public string BodyName => body.name;
-		public string BiomeName => biome != null ? biome.name.Replace(" ", string.Empty) : string.Empty;
+		public string BodyName => body.displayName.LocalizeRemoveGender();
+		public string BiomeName => biome != null ? biome.displayname.Replace(" ", string.Empty) : string.Empty;
 
 		public string FirstSituationTitle =>
 			biome != null
