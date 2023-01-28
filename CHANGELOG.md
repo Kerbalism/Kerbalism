@@ -1,3 +1,23 @@
+## v3.17 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2023-01-28
+
+### Changes since the last release
+* Fixed issue #811 : MP transferred to jetpack when going on EVA is not registered correctly (@gotmachine)
+* Fixed issue #500 : Process dump settings aren't handled/persisted correctly (also fix #337 and #834) (@gotmachine)
+* Fixed issue #833 : Ensure VesselData can always be created even if ProtoVessel is null (@gotmachine)
+* Fixed issue #845 : Make isSerenityGroundController persistent to prevent loosing comms when vessel type is changed manually (@gotmachine)
+* Tweaked automatic DataRateDampingExponent calculations so result in stock is ~6, matching original value in Kerbalism 3.14 (@gotmachine)
+* Added stock cargo part support for Kerbalism parts (@OnlyLightMatters)
+* SSPX support : Added greenhouse to aquaculture-375-1, changed cupola-greenhouse-125-1 from 1/90 to 1/6 of kerbalism greenhouse (@DangerNoodle9000)
+* SSPX support : Tweaked analysis speed of some labs (@DangerNoodle9000)
+* US2 support : Added support for sabatier reactor (@DangerNoodle9000)
+* Science : Added back automatic conversion of all modded labs to the Kerbalism version (see issue #762) (@DangerNoodle9000)
+* Added body/biome localization in a few additional places (@tinygrox)
+* Improved zh-cn localization (@tinygrox)
+* Improved ru localization (@deVDem)
+* Added partial fr-fr localization (@vinix38)
+
 ## v3.16 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2022-08-02
