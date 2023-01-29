@@ -72,18 +72,21 @@ namespace KERBALISM
 				issue = DetectIssue(abundance);
 
 				// update ui
-				Events["Toggle"].guiActive = deployed;
-				Fields["Abundance"].guiActive = deployed;
-				if (deployed)
+				if (part.IsPAWVisible())
 				{
-					string status = !running
-					  ? Local.Harvester_stopped//"stopped"
-					  : issue.Length == 0
-					  ? Local.Harvester_running//"running"
-					  : Lib.BuildString("<color=yellow>", issue, "</color>");
+					Events["Toggle"].guiActive = deployed;
+					Fields["Abundance"].guiActive = deployed;
+					if (deployed)
+					{
+						string status = !running
+							? Local.Harvester_stopped//"stopped"
+							: issue.Length == 0
+								? Local.Harvester_running//"running"
+								: Lib.BuildString("<color=yellow>", issue, "</color>");
 
-					Events["Toggle"].guiName = Lib.StatusToggle(title, status);
-					Abundance = abundance > double.Epsilon ? Lib.HumanReadablePerc(abundance, "F2") : Local.Harvester_none;//"none"
+						Events["Toggle"].guiName = Lib.StatusToggle(title, status);
+						Abundance = abundance > double.Epsilon ? Lib.HumanReadablePerc(abundance, "F2") : Local.Harvester_none;//"none"
+					}
 				}
 			}
 		}

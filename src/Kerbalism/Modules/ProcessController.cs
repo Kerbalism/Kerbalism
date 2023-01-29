@@ -140,6 +140,9 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			// update rmb ui
 			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
 			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dumpValve.ValveTitle);//"Dump"

@@ -1498,6 +1498,14 @@ namespace KERBALISM
 			EditorLogic.fetch.SetBackup();
 		}
 
+		/// <summary>
+		/// Return true if the Part Action Window for this part is shown, false otherwise
+		/// </summary>
+		public static bool IsPAWVisible(this Part part)
+		{
+			return part.PartActionWindow != null && part.PartActionWindow.isActiveAndEnabled;
+		}
+
 		#endregion
 
 		#region PART VOLUME/SURFACE

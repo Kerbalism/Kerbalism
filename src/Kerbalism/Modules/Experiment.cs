@@ -262,6 +262,9 @@ namespace KERBALISM
 
 		public virtual void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			// in flight
 			if (Lib.IsFlight())
 			{

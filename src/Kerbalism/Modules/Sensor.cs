@@ -46,7 +46,8 @@ namespace KERBALISM
 				if (!vd.IsSimulated) return;
 
 				// update status
-				Status = Telemetry_content(vessel, vd, type);
+				if (part.IsPAWVisible())
+					Status = Telemetry_content(vessel, vd, type);
 
 				// if there is a pin animation
 				if (pin.Length > 0)

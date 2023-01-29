@@ -123,7 +123,9 @@ namespace KERBALISM
 			RemovePatients(removeList);
 
 			Configure(running, slots, cureEverybody);
-			UpdateActions();
+
+			if (part.IsPAWVisible())
+				UpdateActions();
 		}
 
 		private void RemovePatients(List<string> patientNames)

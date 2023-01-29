@@ -104,22 +104,25 @@ namespace KERBALISM
 				if (plants_anim != null) plants_anim.Still(growth);
 
 				// update ui
-				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
-				Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? status : Local.Greenhouse_disabled);//"Greenhouse""disabled"
-				Fields["status_natural"].guiActive = active && growth < 0.99;
-				Fields["status_artificial"].guiActive = active && growth < 0.99;
-				Fields["status_tta"].guiActive = active && growth < 0.99;
-				status_natural = Lib.HumanReadableFlux(natural);
-				status_artificial = Lib.HumanReadableFlux(artificial);
-				status_tta = Lib.HumanReadableDuration(tta);
+				if (part.IsPAWVisible())
+				{
+					string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
+					Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? status : Local.Greenhouse_disabled);//"Greenhouse""disabled"
+					Fields["status_natural"].guiActive = active && growth < 0.99;
+					Fields["status_artificial"].guiActive = active && growth < 0.99;
+					Fields["status_tta"].guiActive = active && growth < 0.99;
+					status_natural = Lib.HumanReadableFlux(natural);
+					status_artificial = Lib.HumanReadableFlux(artificial);
+					status_tta = Lib.HumanReadableDuration(tta);
 
-				// show/hide harvest buttons
-				bool manned = FlightGlobals.ActiveVessel.isEVA || Lib.CrewCount(vessel) > 0;
-				Events["Harvest"].active = manned && growth >= 0.99;
-				Events["EmergencyHarvest"].active = manned && growth >= 0.5 && growth < 0.99;
+					// show/hide harvest buttons
+					bool manned = FlightGlobals.ActiveVessel.isEVA || Lib.CrewCount(vessel) > 0;
+					Events["Harvest"].active = manned && growth >= 0.99;
+					Events["EmergencyHarvest"].active = manned && growth >= 0.5 && growth < 0.99;
+				}
 			}
 			// in editor
-			else
+			else if (part.IsPAWVisible())
 			{
 				// update ui
 				Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? Local.Greenhouse_enabled : Local.Greenhouse_disabled);//"Greenhouse""enabled""disabled"

@@ -67,6 +67,9 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			if (Lib.IsFlight())
 			{
 				// get status text

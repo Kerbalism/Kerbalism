@@ -26,10 +26,18 @@ namespace KERBALISM
 			{
 				Events["Toggle"].active = toggle;
 			}
+			else
+			{
+				enabled = false;
+				isEnabled = false;
+			}
 		}
 
 		void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			Events["Toggle"].guiName = Lib.StatusToggle
 			(
 			  Local.StatuToggle_Simulate.Format(title),//String.Format("Simulate {0} in planner", title)

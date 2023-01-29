@@ -133,6 +133,9 @@ namespace KERBALISM
 		public void Update()
 		{
 			// update ui
+			if (!part.IsPAWVisible())
+				return;
+
 			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none;//"none"
 			Events["Toggle"].guiName = Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED);
 		}

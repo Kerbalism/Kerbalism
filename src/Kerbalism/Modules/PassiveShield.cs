@@ -67,6 +67,9 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			// update ui
 			Status = deployed ? Lib.BuildString(Local.PassiveShield_absorbing ," ", Lib.HumanReadableRadiation(Math.Abs(radiation))) : disabledTitle;//"absorbing
 			Events["Toggle"].guiName = Lib.StatusToggle(title, deployed ? disengageActionTitle : engageActionTitle);

@@ -189,7 +189,7 @@ namespace KERBALISM
 				}
 			}
 
-			if (Lib.IsFlight())
+			if (part.IsPAWVisible() && Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
 				Events["ToggleUI"].guiName = Lib.StatusToggle(Local.HardDrive_Data, drive.Empty() ? Local.HardDrive_Dataempty : drive.Size());//"Data""empty"
