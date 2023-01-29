@@ -1,6 +1,6 @@
 ## v3.17 for all versions of KSP from 1.8.0 to 1.12.x
 
- - 2023-01-28
+ - 2023-01-29
 
 ### Changes since the last release
 * Fixed issue #811 : MP transferred to jetpack when going on EVA is not registered correctly (@gotmachine)
@@ -8,6 +8,7 @@
 * Fixed issue #833 : Ensure VesselData can always be created even if ProtoVessel is null (@gotmachine)
 * Fixed issue #845 : Make isSerenityGroundController persistent to prevent loosing comms when vessel type is changed manually (@gotmachine)
 * Tweaked automatic DataRateDampingExponent calculations so result in stock is ~6, matching original value in Kerbalism 3.14 (@gotmachine)
+* Performance tweak : Prevent PartModule PAW update code from running when PAW isn't shown, provide very significant perf gains (-0.7ms / frame on a basic space station) (@gotmachine)
 * Added stock cargo part support for Kerbalism parts (@OnlyLightMatters)
 * SSPX support : Added greenhouse to aquaculture-375-1, changed cupola-greenhouse-125-1 from 1/90 to 1/6 of kerbalism greenhouse (@DangerNoodle9000)
 * SSPX support : Tweaked analysis speed of some labs (@DangerNoodle9000)
