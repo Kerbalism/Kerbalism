@@ -21,13 +21,13 @@ namespace KERBALISM
 				{
 					dumpType = DumpType.DumpValve;
 					dumpValves.Add(new List<string>());
-					dumpValvesNames.Add("Nothing");
+					dumpValvesTitles.Add("Nothing");
 
 					foreach (string dumpValve in Lib.Tokenize(dump_valves, ','))
 					{
 						List<string> resources = Lib.Tokenize(dumpValve, '&');
 						dumpValves.Add(resources);
-						dumpValvesNames.Add(string.Join(", ", resources));
+						dumpValvesTitles.Add(string.Join(", ", resources));
 					}
 				}
 			}
@@ -41,7 +41,7 @@ namespace KERBALISM
 			{
 				dumpType = DumpType.DumpValve;
 				dumpValves.Add(Lib.Tokenize(always_dump, ','));
-				dumpValvesNames.Add(always_dump);
+				dumpValvesTitles.Add(always_dump);
 			}
 		}
 
@@ -52,9 +52,12 @@ namespace KERBALISM
 			DumpValve
 		}
 
+		// dump type
 		private DumpType dumpType = DumpType.NeverDump;
+		// list of resource names to be dumped for each dump valve entry
 		private List<List<string>> dumpValves = new List<List<string>>();
-		private List<string> dumpValvesNames = new List<string>();
+		// UI title of each dump valve (note : can't be localized due to https://github.com/JadeOfMaar/RationalResources/issues/25)
+		private List<string> dumpValvesTitles = new List<string>();
 
 		public sealed class ActiveValve
 		{
@@ -69,7 +72,7 @@ namespace KERBALISM
 
 			public bool CanSwitchValves => _dumpSpecs.dumpValves.Count > 1;
 
-			public string ValveTitle => current < _dumpSpecs.dumpValvesNames.Count ? _dumpSpecs.dumpValvesNames[current] : string.Empty;
+			public string ValveTitle => current < _dumpSpecs.dumpValvesTitles.Count ? _dumpSpecs.dumpValvesTitles[current] : string.Empty;
 
 			/// <summary> activates or returns the current dump valve index </summary>
 			public int ValveIndex

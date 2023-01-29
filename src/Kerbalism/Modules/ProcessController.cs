@@ -35,6 +35,10 @@ namespace KERBALISM
 
 		public override void OnLoad(ConfigNode node)
 		{
+			// Set the process default valve according to the default valve defined in the module.
+			// This is silly and can cause multiple module configs to fight over what the default
+			// value should be. This config setting should really be in the process definition,
+			// but it's in the module for backward compatibility reasons.
 			if (valve_i > 0 && HighLogic.LoadedScene == GameScenes.LOADING)
 			{
 				Process process = Profile.processes.Find(x => x.modifiers.Contains(resource));
@@ -60,6 +64,16 @@ namespace KERBALISM
 			// configure on start, must be executed with enabled true on parts first load.
 			Configure(true);
 
+			// The dump valve instance is acquired either from the game-wide instance in the editor
+			// or from the persisted VesselData instance in flight.
+			// Since we have no means to persist vessel-level dump settings in a ShipConstruct
+			// (aka in the editor), we persist the dump valve index in the module and use it unless
+			// the VesselData ActiveValve instance exists already.
+			// Note that this system can lead to weirdness in the editor. Since dump spec is global
+			// and never reset, new vessels will use whatever valve was last active. Also, loading
+			// a subassembly or merging a craft will result in the current craft to be updated to
+			// whatever the setting is on the loaded craft. This isn't really fixable without
+			// implementing a vessel-level persistence mechanism for ShipConstructs.
 			Process process = Profile.processes.Find(x => x.modifiers.Contains(resource));
 			if (Lib.IsEditor() || vessel == null)
 			{
@@ -76,7 +90,6 @@ namespace KERBALISM
 					dumpValve.ValveIndex = persistentValveIndex > -1 ? persistentValveIndex : valve_i;
 					vd.dumpValves.Add(process, dumpValve);
 				}
-				valve_i = dumpValve.ValveIndex;
 			}
 
 			// set dump valve ui button
