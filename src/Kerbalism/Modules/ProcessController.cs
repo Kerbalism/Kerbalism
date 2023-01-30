@@ -46,6 +46,7 @@ namespace KERBALISM
 				process.defaultDumpValveIndex = process.defaultDumpValve.ValveIndex;
 			}
 
+			ModuleInfo = GetInfo();
 			node.TryGetValue(nameof(persistentValveIndex), ref persistentValveIndex);
 		}
 
