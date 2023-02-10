@@ -9,7 +9,7 @@ namespace KERBALISM
 
 	public class PreferencesReliability : GameParameters.CustomParameterNode
 	{
-		[GameParameters.CustomParameterUI("#KERBALISM_HighlightMalfunctions", toolTip = "#KERBALISM_HighlightMalfunctions_desc")]//Highlight Malfunctions--Highlight faild parts in flight
+		[GameParameters.CustomParameterUI("#KERBALISM_HighlightMalfunctions", toolTip = "#KERBALISM_HighlightMalfunctions_desc")]//Highlight Malfunctions--Highlight failed parts in flight
 		public bool highlights = true;
 
 		[GameParameters.CustomParameterUI("#KERBALISM_PartMalfunctions", toolTip = "#KERBALISM_PartMalfunctions_desc")]//Part Malfunctions--Allow engine failures based on part age and mean time between failures
