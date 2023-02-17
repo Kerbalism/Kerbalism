@@ -35,7 +35,7 @@ namespace KERBALISM
 			HeadLamps(kerbal, kerbal.lampOn && (!need_ec || ec.Amount > double.Epsilon));
 
 			// if dead
-			if (IsDead(v))
+			if (IsDeadEVA(v))
 			{
 				// enforce freezed state
 				Freeze(kerbal);
@@ -50,10 +50,12 @@ namespace KERBALISM
 
 
 		// return true if the vessel is a kerbal eva, and is flagged as dead
-		public static bool IsDead(Vessel v)
+		public static bool IsDeadEVA(Vessel v)
 		{
 			if (!v.isEVA) return false;
-			return DB.Kerbal(Lib.CrewList(v)[0].name).eva_dead;
+			List<ProtoCrewMember> crew = Lib.CrewList(v);
+			if (crew.Count == 0) return true;
+			return DB.Kerbal(crew[0].name).eva_dead;
 		}
 
 

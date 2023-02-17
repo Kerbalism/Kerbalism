@@ -624,7 +624,7 @@ namespace KERBALISM
 		public static void SetLocks(Vessel v)
 		{
 			// lock controls for EVA death
-			if (EVA.IsDead(v))
+			if (EVA.IsDeadEVA(v))
 			{
 				InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, "eva_dead_lock");
 			}

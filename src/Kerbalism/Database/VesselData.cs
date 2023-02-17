@@ -461,7 +461,7 @@ namespace KERBALISM
 			is_rescue = Misc.IsRescueMission(Vessel);
 
 			// dead EVA are not valid vessels
-			is_eva_dead = EVA.IsDead(Vessel);
+			is_eva_dead = EVA.IsDeadEVA(Vessel);
 
 			return is_vessel && !is_rescue && !is_eva_dead;
 		}

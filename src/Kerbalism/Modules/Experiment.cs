@@ -890,7 +890,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v))
+			if (v == null || EVA.IsDeadEVA(v))
 				return;
 
 			if (prepare_cs == null)
@@ -932,7 +932,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v))
+			if (v == null || EVA.IsDeadEVA(v))
 				return false;
 
 			if (reset_cs == null)
