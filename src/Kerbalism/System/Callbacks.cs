@@ -117,8 +117,6 @@ namespace KERBALISM
 			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
-			GameEvents.CommNet.OnNetworkInitialized.Add(() => Kerbalism.Fetch.StartCoroutine(NetworkInitialized()));
-
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
@@ -170,13 +168,6 @@ namespace KERBALISM
 
 			Cache.PurgeVesselCaches(vessel);
 			//vessel.KerbalismData().UpdateOnVesselModified();
-		}
-
-		public IEnumerator NetworkInitialized()
-		{
-			yield return new WaitForSeconds(2);
-			Communications.NetworkInitialized = true;
-			RemoteTech.Startup();
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
@@ -283,15 +274,23 @@ namespace KERBALISM
 
 			if (propContainers.Count > 0)
 			{
+				bool transferred = false;
 				foreach (ProtoPartResourceSnapshot propContainer in propContainers)
 				{
 					if (propContainer.amount < propContainer.maxAmount)
 					{
 						double vesselPropTransferred = vesselHatch.RequestResource(evaPropName, propContainer.maxAmount - propContainer.amount);
-						propContainer.amount = Math.Min(propContainer.amount + vesselPropTransferred, propContainer.maxAmount);
+						if (vesselPropTransferred > 0.0)
+						{
+							transferred = true;
+							propContainer.amount = Math.Min(propContainer.amount + vesselPropTransferred, propContainer.maxAmount);
+						}
 					}
 					evaPropQuantity += propContainer.amount;
 				}
+
+				if (hasJetPack && transferred && kerbalEVA.ModuleInventoryPartReference != null)
+					GameEvents.onModuleInventoryChanged.Fire(kerbalEVA.ModuleInventoryPartReference);
 			}
 #endif
 

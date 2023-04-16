@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.Localization;
+using Smooth.Algebraics;
+using System.Diagnostics;
 
 
 namespace KERBALISM
@@ -20,19 +22,37 @@ namespace KERBALISM
 		// but we find useful to set running to true in the cfg node for some processes, and not others
 		[KSPField(isPersistant = true)] public bool running;
 
-		// index of currently active dump valve
-		[KSPField(isPersistant = true)] public int valve_i = 0;
+		// index of the default dump valve
+		[KSPField] public int valve_i = 0;
 
 		// caching of GetInfo() for automation tooltip
 		public string ModuleInfo { get; private set; }
 
-		private DumpSpecs dump_specs;
+		private DumpSpecs.ActiveValve dumpValve;
+		private int persistentValveIndex = -1;
 		private bool broken = false;
 		private bool isConfigurable = false;
 
 		public override void OnLoad(ConfigNode node)
 		{
-			ModuleInfo = GetInfo();
+			// Set the process default valve according to the default valve defined in the module.
+			// This is silly and can cause multiple module configs to fight over what the default
+			// value should be. This config setting should really be in the process definition,
+			// but it's in the module for backward compatibility reasons.
+			if (valve_i > 0 && HighLogic.LoadedScene == GameScenes.LOADING)
+			{
+				Process process = Profile.processes.Find(x => x.modifiers.Contains(resource));
+				process.defaultDumpValve.ValveIndex = valve_i;
+				process.defaultDumpValveIndex = process.defaultDumpValve.ValveIndex;
+			}
+
+			node.TryGetValue(nameof(persistentValveIndex), ref persistentValveIndex);
+		}
+
+		public override void OnSave(ConfigNode node)
+		{
+			if (dumpValve != null)
+				node.AddValue(nameof(persistentValveIndex), dumpValve.ValveIndex);
 		}
 
 		public void Start()
@@ -44,15 +64,36 @@ namespace KERBALISM
 			// configure on start, must be executed with enabled true on parts first load.
 			Configure(true);
 
-			// get dump specs for associated process
-			dump_specs = Profile.processes.Find(x => x.modifiers.Contains(resource)).dump;
+			// The dump valve instance is acquired either from the game-wide instance in the editor
+			// or from the persisted VesselData instance in flight.
+			// Since we have no means to persist vessel-level dump settings in a ShipConstruct
+			// (aka in the editor), we persist the dump valve index in the module and use it unless
+			// the VesselData ActiveValve instance exists already.
+			// Note that this system can lead to weirdness in the editor. Since dump spec is global
+			// and never reset, new vessels will use whatever valve was last active. Also, loading
+			// a subassembly or merging a craft will result in the current craft to be updated to
+			// whatever the setting is on the loaded craft. This isn't really fixable without
+			// implementing a vessel-level persistence mechanism for ShipConstructs.
+			Process process = Profile.processes.Find(x => x.modifiers.Contains(resource));
+			if (Lib.IsEditor() || vessel == null)
+			{
+				dumpValve = process.defaultDumpValve;
+				if (persistentValveIndex > -1)
+					dumpValve.ValveIndex = persistentValveIndex;
+			}
+			else
+			{
+				VesselData vd = vessel.GetVesselData();
+				if (!vd.dumpValves.TryGetValue(process, out dumpValve))
+				{
+					dumpValve = new DumpSpecs.ActiveValve(process.dump);
+					dumpValve.ValveIndex = persistentValveIndex > -1 ? persistentValveIndex : valve_i;
+					vd.dumpValves.Add(process, dumpValve);
+				}
+			}
 
 			// set dump valve ui button
-			Events["DumpValve"].active = dump_specs.AnyValves;
-
-			// set active dump valve
-			dump_specs.ValveIndex = valve_i;
-			valve_i = dump_specs.ValveIndex;
+			Events["DumpValve"].active = dumpValve.CanSwitchValves;
 
 			// set action group ui
 			Actions["Action"].guiName = Lib.BuildString(Local.ProcessController_Start_Stop, " ", title);//"Start/Stop
@@ -99,9 +140,12 @@ namespace KERBALISM
 
 		public void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			// update rmb ui
 			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
-			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dump_specs.valves[valve_i]);//"Dump"
+			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dumpValve.ValveTitle);//"Dump"
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//Processes
@@ -113,7 +157,7 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_ProcessController_Dump", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//"Dump""Processes"
 		public void DumpValve()
 		{
-			valve_i = dump_specs.NextValve;
+			dumpValve.NextValve();
 
 			// refresh VAB/SPH ui
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -155,13 +199,13 @@ namespace KERBALISM
 				foreach (KeyValuePair<string, double> pair in process.inputs)
 				{
 					if (!process.modifiers.Contains(pair.Key))
-						specs.Add(pair.Key, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+						specs.Add(Lib.GetResourceDisplayName(pair.Key), Lib.BuildString(" <color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 					else
 						specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 				}
 				foreach (KeyValuePair<string, double> pair in process.outputs)
 				{
-					specs.Add(pair.Key, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+					specs.Add(Lib.GetResourceDisplayName(pair.Key), Lib.BuildString(" <color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
 				}
 			}
 			return specs;

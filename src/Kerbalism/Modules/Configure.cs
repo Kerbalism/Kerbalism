@@ -396,7 +396,7 @@ namespace KERBALISM
 			{
 				// disable for dead eva kerbals
 				Vessel v = FlightGlobals.ActiveVessel;
-				if (v == null || EVA.IsDead(v)) return;
+				if (v == null || EVA.IsDeadEVA(v)) return;
 
 				// check trait
 				if (!reconfigure_cs.Check(v))
@@ -458,11 +458,11 @@ namespace KERBALISM
 				if (setup.tech.Length > 0)
 				{
 					if (!org.ContainsKey(setup.tech)) org.Add(setup.tech, new List<string>());
-					org[setup.tech].Add(setup.name);
+					org[setup.tech].Add(setup.title);
 				}
 				else
 				{
-					specs.Add(Lib.BuildString("• <b>", setup.name, "</b>"));
+					specs.Add(Lib.BuildString("• <b>", setup.title, "</b>"));
 				}
 			}
 
@@ -471,7 +471,7 @@ namespace KERBALISM
 			{
 				// shortcuts
 				string tech_id = pair.Key;
-				List<string> setup_names = pair.Value;
+				List<string> setup_titles = pair.Value;
 
 				// get tech title
 				// note: non-stock technologies will return empty titles, so we use tech-id directly in that case
@@ -491,10 +491,10 @@ namespace KERBALISM
 				//specs.Add(string.Empty);
 				//specs.Add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
 
-				// add setup names
-				foreach (string setup_name in setup_names)
+				// add setup titles
+				foreach (string setup_title in setup_titles)
 				{
-					specs.Add(Lib.BuildString("• <b>", setup_name, "</b>\n   at ", Lib.Color(tech_title, Lib.Kolor.Science)));
+					specs.Add(Lib.BuildString("• <b>", setup_title, "</b>\n   at ", Lib.Color(tech_title, Lib.Kolor.Science)));
 				}
 			}
 
@@ -584,11 +584,11 @@ namespace KERBALISM
 			// only allow reconfiguration if there are more setups than slots
 			if (unlocked.Count <= selected.Count)
 			{
-				p.AddSection(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc);
+				p.AddSection(Lib.Ellipsis(setup.title, Styles.ScaleStringLength(70)), setup.desc);
 			}
 			else
 			{
-				p.AddSection(Lib.Ellipsis(setup.name, Styles.ScaleStringLength(70)), setup.desc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
+				p.AddSection(Lib.Ellipsis(setup.title, Styles.ScaleStringLength(70)), setup.desc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
 			}
 
 			// render details
@@ -641,6 +641,7 @@ namespace KERBALISM
 		{
 			// parse basic data
 			name = Lib.ConfigValue(node, "name", string.Empty);
+			title = Lib.ConfigValue(node, "title", name);
 			desc = Lib.ConfigValue(node, "desc", string.Empty);
 			tech = Lib.ConfigValue(node, "tech", string.Empty);
 			cost = Lib.ConfigValue(node, "cost", 0.0);
@@ -665,6 +666,7 @@ namespace KERBALISM
 		{
 			// load basic data
 			archive.Load(out name);
+			archive.Load(out title);
 			archive.Load(out desc);
 			archive.Load(out tech);
 			archive.Load(out cost);
@@ -686,6 +688,7 @@ namespace KERBALISM
 		{
 			// save basic data
 			archive.Save(name);
+			archive.Save(title);
 			archive.Save(desc);
 			archive.Save(tech);
 			archive.Save(cost);
@@ -752,7 +755,7 @@ namespace KERBALISM
 				foreach (ConfigureResource cr in visible_resources)
 				{
 					// add capacity info
-					details.Add(new Detail(cr.name, Lib.Parse.ToDouble(cr.maxAmount).ToString("F2")));
+					details.Add(new Detail(Lib.GetResourceDisplayName(cr.name), Lib.Parse.ToDouble(cr.maxAmount).ToString("F2")));
 				}
 			}
 
@@ -781,6 +784,7 @@ namespace KERBALISM
 		}
 
 		public string name;
+		public string title;
 		public string desc;
 		public string tech;
 		public double cost;

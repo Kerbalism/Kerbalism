@@ -1,10 +1,9 @@
+using System;
 using System.Collections.Generic;
 
 
 namespace KERBALISM
 {
-
-
 	/// <summary>
 	/// Contains a list of resources that can be dumped overboard
 	/// </summary>
@@ -17,100 +16,110 @@ namespace KERBALISM
 			// if always_dump is empty or false: configure dump valves if any requested
 			if (always_dump.Length == 0 || string.Equals(always_dump, "false", System.StringComparison.OrdinalIgnoreCase))
 			{
-				any = false;
-				list = new List<string>();
-
 				// if dump_valves is empty or false then don't do anything
-				if (dump_valves.Length == 0 || string.Equals(dump_valves, "false", System.StringComparison.OrdinalIgnoreCase))
+				if (dump_valves.Length > 0 && !string.Equals(dump_valves, "false", System.StringComparison.OrdinalIgnoreCase))
 				{
-					AnyValves = false;
-					valves = new List<string>();
-					valves.Insert(0, "None");
-				}
-				// create list of dump valves
-				else
-				{
-					AnyValves = true;
-					valves = Lib.Tokenize(dump_valves, ',');
-					valves.Insert(0, "None");
-					for (int i = 0; i < valves.Count; i++)
-						valves[i] = valves[i].Replace("&", ", ");
+					dumpType = DumpType.DumpValve;
+					dumpValves.Add(new List<string>());
+					dumpValvesTitles.Add("Nothing");
+
+					foreach (string dumpValve in Lib.Tokenize(dump_valves, ','))
+					{
+						List<string> resources = Lib.Tokenize(dumpValve, '&');
+						dumpValves.Add(resources);
+						dumpValvesTitles.Add(string.Join(", ", resources));
+					}
 				}
 			}
 			// if true: dump everything
 			else if (string.Equals(always_dump, "true", System.StringComparison.OrdinalIgnoreCase))
 			{
-				any = true;
-				list = new List<string>();
-				AnyValves = false;
-				valves = new List<string>();
-				valves.Insert(0, "None");
+				dumpType = DumpType.AlwaysDump;
 			}
 			// all other cases: dump only specified resources in always_dump
 			else
 			{
-				any = false;
-				list = Lib.Tokenize(always_dump, ',');
-				AnyValves = false;
-				valves = new List<string>();
-				valves.Insert(0, "None");
+				dumpType = DumpType.DumpValve;
+				dumpValves.Add(Lib.Tokenize(always_dump, ','));
+				dumpValvesTitles.Add(always_dump);
 			}
 		}
 
-		// methods
-
-		/// <summary> returns true if any dump valves exist for the process </summary>
-		public bool AnyValves { get; private set; } = false;
-
-		/// <summary> activates or returns the current dump valve index </summary>
-		public int ValveIndex
+		private enum DumpType
 		{
-			get { return AnyValves ? valve_i : 0; }
-			set
+			NeverDump,
+			AlwaysDump,
+			DumpValve
+		}
+
+		// dump type
+		private DumpType dumpType = DumpType.NeverDump;
+		// list of resource names to be dumped for each dump valve entry
+		private List<List<string>> dumpValves = new List<List<string>>();
+		// UI title of each dump valve (note : can't be localized due to https://github.com/JadeOfMaar/RationalResources/issues/25)
+		private List<string> dumpValvesTitles = new List<string>();
+
+		public sealed class ActiveValve
+		{
+			private DumpSpecs _dumpSpecs;
+			public DumpSpecs DumpSpecs => _dumpSpecs;
+			private int current;
+
+			public ActiveValve(DumpSpecs dumpSpecs)
 			{
-				valve_i = (!AnyValves || value > valves.Count - 1 || value < 0) ? 0 : value;
-				if (AnyValves) DeployValve();
+				_dumpSpecs = dumpSpecs;
 			}
-		}
 
-		/// <summary> activates the next dump valve and returns its index </summary>
-		public int NextValve
-		{
-			get
+			public bool CanSwitchValves => _dumpSpecs.dumpValves.Count > 1;
+
+			public string ValveTitle => current < _dumpSpecs.dumpValvesTitles.Count ? _dumpSpecs.dumpValvesTitles[current] : string.Empty;
+
+			/// <summary> activates or returns the current dump valve index </summary>
+			public int ValveIndex
 			{
-				valve_i = valve_i >= valves.Count - 1 ? 0 : ++valve_i;
-				if (AnyValves) DeployValve();
-				return valve_i;
+				get => current;
+				set
+				{
+					if (value < 0 || value >= _dumpSpecs.dumpValves.Count)
+						value = 0;
+
+					current = value;
+				}
 			}
-			private set { }
-		}
 
-		/// <summary> deploys the current dump valve to the dump list </summary>
-		private void DeployValve()
-		{
-			if (!AnyValves || valve_i <= 0)
-				list.Clear();
-			else
-				list = Lib.Tokenize(valves[valve_i], ',');
-		}
+			/// <summary> activates the next dump valve and returns its index </summary>
+			public int NextValve()
+			{
+				if (_dumpSpecs.dumpValves.Count == 0)
+					current = 0;
+				else
+					current = ++current % _dumpSpecs.dumpValves.Count;
 
-		/// <summary> returns true if the specified resource should be dumped </summary>
-		public bool Check(string res_name)
-		{
-			return any || list.Contains(res_name);
-		}
+				return current;
+			}
 
-		/// <summary> true if any resources should be dumped </summary>
-		private readonly bool any = false;
-		/// <summary> list of resources to dump overboard </summary>
-		private List<string> list;
-		/// <summary> index of currently active dump valve </summary>
-		private int valve_i = 0;
-		/// <summary> list of dump valves the user can choose from </summary>
-		public readonly List<string> valves;
+			/// <summary> returns true if the specified resource should be dumped </summary>
+			public bool Check(string res_name)
+			{
+				switch (_dumpSpecs.dumpType)
+				{
+					case DumpType.NeverDump:
+						return false;
+					case DumpType.AlwaysDump:
+						return true;
+					case DumpType.DumpValve:
+						List<string> valve = _dumpSpecs.dumpValves[current];
+						int i = valve.Count;
+						while (i-- > 0)
+							if (valve[i] == res_name)
+								return true;
+						break;
+				}
+
+				return false;
+			}
+		}
 	}
-
-
 } // KERBALISM
 
 

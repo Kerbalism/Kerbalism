@@ -212,49 +212,53 @@ namespace KERBALISM
 					}
 				}
 
-				Status = string.Empty;
-
 				// update ui
-				if (broken)
+				if (part.IsPAWVisible())
 				{
-					Status = critical ? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red) : Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);//"critical failure""malfunction"
-				}
-				else
-				{
-					if (PreferencesReliability.Instance.engineFailures && (rated_operation_duration > 0 || rated_ignitions > 0))
+					Status = string.Empty;
+
+					if (broken)
 					{
-						if (rated_operation_duration > 0)
+						Status = critical ? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red) : Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);//"critical failure""malfunction"
+					}
+					else
+					{
+						if (PreferencesReliability.Instance.engineFailures && (rated_operation_duration > 0 || rated_ignitions > 0))
 						{
-							double effective_duration = EffectiveDuration(quality, rated_operation_duration);
-							Status = Lib.BuildString(Local.Reliability_burnremaining ," ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));//"remaining burn:"
+							if (rated_operation_duration > 0)
+							{
+								double effective_duration = EffectiveDuration(quality, rated_operation_duration);
+								Status = Lib.BuildString(Local.Reliability_burnremaining, " ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));//"remaining burn:"
+							}
+							if (rated_ignitions > 0)
+							{
+								int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
+								Status = Lib.BuildString(Status,
+									(string.IsNullOrEmpty(Status) ? "" : ", "),
+									Local.Reliability_ignitions, " ", Math.Max(0, effective_ignitions - ignitions).ToString());//"ignitions:"
+							}
 						}
-						if (rated_ignitions > 0)
+
+						if (rated_radiation > 0)
 						{
-							int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
-							Status = Lib.BuildString(Status,
-								(string.IsNullOrEmpty(Status) ? "" : ", "),
-								Local.Reliability_ignitions ," ", Math.Max(0, effective_ignitions - ignitions).ToString());//"ignitions:"
+							var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
+							var current = vessel.KerbalismData().EnvRadiation * 3600.0;
+							if (rated < current)
+							{
+								Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange));//"taking radiation damage"
+							}
 						}
 					}
 
-					if(rated_radiation > 0)
+					if (string.IsNullOrEmpty(Status)) Status = Local.Generic_NOMINAL;//"nominal"
+
+					Events["Inspect"].active = !broken && !needMaintenance;
+					Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
+
+					if (needMaintenance)
 					{
-						var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-						var current = vessel.KerbalismData().EnvRadiation * 3600.0;
-						if(rated < current)
-						{
-							Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange));//"taking radiation damage"
-						}
+						Events["Repair"].guiName = Local.Reliability_Service.Format("<b>" + title + "</b>");//Lib.BuildString("Service <<1>>")
 					}
-				}
-
-				if (string.IsNullOrEmpty(Status)) Status = Local.Generic_NOMINAL;//"nominal"
-
-				Events["Inspect"].active = !broken && !needMaintenance;
-				Events["Repair"].active = repair_cs && (broken || needMaintenance) && !critical;
-
-				if(needMaintenance) {
-					Events["Repair"].guiName = Local.Reliability_Service.Format("<b>"+title+"</b>");//Lib.BuildString("Service <<1>>")
 				}
 
 				RunningCheck();
@@ -275,40 +279,43 @@ namespace KERBALISM
 			else
 			{
 				// update ui
-				Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>"+title+"</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
-
-				Status = string.Empty;
-				if(mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
+				if (part.IsPAWVisible())
 				{
-					double effective_mtbf = EffectiveMTBF(quality, mtbf);
-					Status = Lib.BuildString(Status,
+					Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + title + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
+
+					Status = string.Empty;
+					if (mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
+					{
+						double effective_mtbf = EffectiveMTBF(quality, mtbf);
+						Status = Lib.BuildString(Status,
 							(string.IsNullOrEmpty(Status) ? "" : ", "),
-							Local.Reliability_MTBF +" ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
-				}
+							Local.Reliability_MTBF + " ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
+					}
 
-				if (rated_operation_duration > 0 && PreferencesReliability.Instance.engineFailures)
-				{
-					double effective_duration = EffectiveDuration(quality, rated_operation_duration);
-					Status = Lib.BuildString(Status,
-						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						Local.Reliability_Burntime +" ",//"Burn time:
-						Lib.HumanReadableDuration(effective_duration));
-				}
+					if (rated_operation_duration > 0 && PreferencesReliability.Instance.engineFailures)
+					{
+						double effective_duration = EffectiveDuration(quality, rated_operation_duration);
+						Status = Lib.BuildString(Status,
+							(string.IsNullOrEmpty(Status) ? "" : ", "),
+							Local.Reliability_Burntime + " ",//"Burn time:
+							Lib.HumanReadableDuration(effective_duration));
+					}
 
-				if (rated_ignitions > 0 && PreferencesReliability.Instance.engineFailures)
-				{
-					int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
-					Status = Lib.BuildString(Status,
-						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						Local.Reliability_ignitions +" ", effective_ignitions.ToString());//"ignitions:
-				}
+					if (rated_ignitions > 0 && PreferencesReliability.Instance.engineFailures)
+					{
+						int effective_ignitions = EffectiveIgnitions(quality, rated_ignitions);
+						Status = Lib.BuildString(Status,
+							(string.IsNullOrEmpty(Status) ? "" : ", "),
+							Local.Reliability_ignitions + " ", effective_ignitions.ToString());//"ignitions:
+					}
 
-				if (rated_radiation > 0 && PreferencesReliability.Instance.mtbfFailures)
-				{
-					var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-					Status = Lib.BuildString(Status,
-						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						Lib.HumanReadableRadiation(r / 3600.0));
+					if (rated_radiation > 0 && PreferencesReliability.Instance.mtbfFailures)
+					{
+						var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
+						Status = Lib.BuildString(Status,
+							(string.IsNullOrEmpty(Status) ? "" : ", "),
+							Lib.HumanReadableRadiation(r / 3600.0));
+					}
 				}
 			}
 		}
@@ -505,7 +512,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDeadEVA(v)) return;
 
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
@@ -546,7 +553,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDeadEVA(v)) return;
 
 			// check trait
 			if (!repair_cs.Check(v))

@@ -92,10 +92,6 @@ namespace KERBALISM
 			// enable global access
 			Fetch = this;
 
-			// You just don't know what you are doing, no ?
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
-
 			SerenityEnabled = Expansions.ExpansionsLoader.IsExpansionInstalled("Serenity");
 		}
 
@@ -209,10 +205,6 @@ namespace KERBALISM
 				Lib.Log(fatalError, Lib.LogLevel.Error);
 				LoadFailedPopup(fatalError);
 			}
-
-			// I'm smelling the hacky mess in here.
-			Communications.NetworkInitialized = false;
-			Communications.NetworkInitializing = false;
 
 			// detect if this is a different savegame
 			if (DB.uid != savegame_uid)
@@ -345,7 +337,7 @@ namespace KERBALISM
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Comms");
-					Communications.Update(v, vd, ec, elapsed_s);
+					CommsMessages.Update(v, vd, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
 					// Habitat equalization
@@ -424,7 +416,7 @@ namespace KERBALISM
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Comms");
-				Communications.Update(last_v, last_vd, last_ec, last_time);
+				CommsMessages.Update(last_v, last_vd, last_time);
 				UnityEngine.Profiling.Profiler.EndSample();
 
 				UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Unloaded.Profile");
@@ -473,12 +465,6 @@ namespace KERBALISM
 		{
 			if (!didSanityCheck)
 				SanityCheck();
-
-			if (!Communications.NetworkInitializing)
-			{
-				Communications.NetworkInitializing = true;
-				StartCoroutine(Callbacks.NetworkInitialized());
-			}
 
 			// attach map renderer to planetarium camera once
 			if (MapView.MapIsEnabled && map_camera_script == null)
@@ -638,7 +624,7 @@ namespace KERBALISM
 		public static void SetLocks(Vessel v)
 		{
 			// lock controls for EVA death
-			if (EVA.IsDead(v))
+			if (EVA.IsDeadEVA(v))
 			{
 				InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, "eva_dead_lock");
 			}

@@ -262,6 +262,9 @@ namespace KERBALISM
 
 		public virtual void Update()
 		{
+			if (!part.IsPAWVisible())
+				return;
+
 			// in flight
 			if (Lib.IsFlight())
 			{
@@ -553,7 +556,7 @@ namespace KERBALISM
 
 				if (drive.GetFileSend(subjectData.Id))
 				{
-					warpDrive = Cache.WarpCache(v);
+					warpDrive = vd.TransmitBufferDrive;
 					available += warpDrive.FileCapacityAvailable();
 					if (double.IsNaN(available)) Lib.LogStack("warpDrive.FileCapacityAvailable() returned NaN", Lib.LogLevel.Error);
 				}
@@ -887,7 +890,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v))
+			if (v == null || EVA.IsDeadEVA(v))
 				return;
 
 			if (prepare_cs == null)
@@ -929,7 +932,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v))
+			if (v == null || EVA.IsDeadEVA(v))
 				return false;
 
 			if (reset_cs == null)
@@ -1202,8 +1205,19 @@ namespace KERBALISM
 		}
 
 		// IPartMassModifier
-		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) {
-			if (Double.IsNaN(remainingSampleMass))
+		public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
+		{
+			if (Lib.IsEditor())
+			{
+				if (ExpInfo != null && ExpInfo.SampleMass > 0.0 && !sample_collecting)
+				{
+					return (float)(ExpInfo.SampleMass * sample_amount);
+				}
+
+				return 0f;
+			}
+
+			if (double.IsNaN(remainingSampleMass))
 			{
 #if DEBUG || DEVBUILD // this is logspammy, don't do it in releases
 				Lib.Log("Experiment remaining sample mass is NaN " + experiment_id, Lib.LogLevel.Error);

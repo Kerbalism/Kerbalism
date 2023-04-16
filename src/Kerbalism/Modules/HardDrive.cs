@@ -189,7 +189,7 @@ namespace KERBALISM
 				}
 			}
 
-			if (Lib.IsFlight())
+			if (part.IsPAWVisible() && Lib.IsFlight())
 			{
 				// show DATA UI button, with size info
 				Events["ToggleUI"].guiName = Lib.StatusToggle(Local.HardDrive_Data, drive.Empty() ? Local.HardDrive_Dataempty : drive.Size());//"Data""empty"
@@ -200,7 +200,7 @@ namespace KERBALISM
 
 				// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
 				Vessel v = FlightGlobals.ActiveVessel;
-				Events["StoreData"].active = !IsPrivate() && v != null && v.isEVA && !EVA.IsDead(v);
+				Events["StoreData"].active = !IsPrivate() && v != null && v.isEVA && !EVA.IsDeadEVA(v);
 
 				// hide TransferLocation button
 				var transferVisible = !IsPrivate();
@@ -285,7 +285,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDeadEVA(v)) return;
 
 			// transfer data
 			if(!Drive.Transfer(drive, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
@@ -303,7 +303,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDeadEVA(v)) return;
 
 			// transfer data
 			if(!Drive.Transfer(v, drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))

@@ -362,42 +362,51 @@ namespace KERBALISM
                 configured = false;
             }
 
-            // update ui
-            string status_str = string.Empty;
             switch (state)
             {
                 case State.enabled:
-                    if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
-                    {
-                        // No inflatable can be enabled been pressurizing
-                        status_str = Local.Habitat_pressurizing;
-                    }
-                    else
-                    {
-                        status_str = Local.Generic_ENABLED;
-                    }
-                    Set_pressurized(true);
-
-					// GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
-					Events["Toggle"].guiActive = false;
+	                Set_pressurized(true);
+	                // GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
+	                Events["Toggle"].guiActive = false;
 					break;
                 case State.disabled:
-                    status_str = Local.Generic_DISABLED;
-                    Set_pressurized(false);
+	                Set_pressurized(false);
                     break;
                 case State.pressurizing:
-                    status_str = Get_inflate_string().Length == 0 ? Local.Habitat_pressurizing : Local.Habitat_inflating;
-                    status_str += string.Format("{0:p2}", perctDeployed);
-                    Set_pressurized(false);
+	                Set_pressurized(false);
                     break;
                 case State.depressurizing:
-                    status_str = Get_inflate_string().Length == 0 ? Local.Habitat_depressurizing : Local.Habitat_deflating;
-                    status_str += string.Format("{0:p2}", perctDeployed);
-                    Set_pressurized(false);
+	                Set_pressurized(false);
                     break;
             }
 
-            Events["Toggle"].guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
+			if (part.IsPAWVisible())
+			{
+				string status_str = string.Empty;
+				switch (state)
+				{
+					case State.enabled:
+						// No inflatable can be enabled been pressurizing
+						if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
+							status_str = Local.Habitat_pressurizing;
+						else
+							status_str = Local.Generic_ENABLED;
+						break;
+					case State.disabled:
+						status_str = Local.Generic_DISABLED;
+						break;
+					case State.pressurizing:
+						status_str = Get_inflate_string().Length == 0 ? Local.Habitat_pressurizing : Local.Habitat_inflating;
+						status_str += string.Format("{0:p2}", perctDeployed);
+						break;
+					case State.depressurizing:
+						status_str = Get_inflate_string().Length == 0 ? Local.Habitat_depressurizing : Local.Habitat_deflating;
+						status_str += string.Format("{0:p2}", perctDeployed);
+						break;
+				}
+
+				Events["Toggle"].guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
+			}
 
             // Changing this animation when we expect rotation will not work because
             // Unity disables other animations when playing the inflation animation.

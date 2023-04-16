@@ -48,11 +48,12 @@ namespace KERBALISM
 			// signal
 			UnlinkedControl = Lib.ConfigEnum(cfg, "UnlinkedControl", UnlinkedCtrl.none);
 			DataRateMinimumBitsPerSecond = Lib.ConfigValue(cfg, "DataRateMinimumBitsPerSecond", 1.0f);
-			DataRateDampingExponent = Lib.ConfigValue(cfg, "DataRateDampingExponent", 6.0f);
-			DataRateDampingExponentRT = Lib.ConfigValue(cfg, "DataRateDampingExponentRT", 6.0f);
 			DataRateSurfaceExperiment = Lib.ConfigValue(cfg, "DataRateSurfaceExperiment", 0.3f);
 			TransmitterActiveEcFactor = Lib.ConfigValue(cfg, "TransmitterActiveEcFactor", 1.5);
 			TransmitterPassiveEcFactor = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactor", 0.04);
+			TransmitterActiveEcFactorRT = Lib.ConfigValue(cfg, "TransmitterActiveEcFactorRT", 1.0);
+			TransmitterPassiveEcFactorRT = Lib.ConfigValue(cfg, "TransmitterPassiveEcFactorRT", 1.0);
+			DampingExponentOverride = Lib.ConfigValue(cfg, "DampingExponentOverride", 0.0);
 
 			// science
 			ScienceDialog = Lib.ConfigValue(cfg, "ScienceDialog", true);
@@ -90,10 +91,13 @@ namespace KERBALISM
 			ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
 
 			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
+			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
 			StormDurationHours = Lib.ConfigValue(cfg, "StormDurationHours", 2);
 			StormEjectionSpeed = Lib.ConfigValue(cfg, "StormEjectionSpeed", 0.33f);
 			ShieldingEfficiency = Lib.ConfigValue(cfg, "ShieldingEfficiency", 0.9f);
-			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
+			ShieldingEfficiencyEasyMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyEasyMult", 1.1f);
+			ShieldingEfficiencyModerateMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyModerateMult", 0.9f);
+			ShieldingEfficiencyHardMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyHardMult", 0.8f);
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
 
@@ -146,13 +150,13 @@ namespace KERBALISM
 		// signal
 		public static UnlinkedCtrl UnlinkedControl;             // available control for unlinked vessels: 'none', 'limited' or 'full'
 		public static float DataRateMinimumBitsPerSecond;       // as long as there is a control connection, the science data rate will never go below this.
-		public static float DataRateDampingExponent;            // how much to damp data rate. stock is equivalent to 1, 6 gives nice values, RSS would use 4
-		public static float DataRateDampingExponentRT;          // same for RemoteTech
 		public static float DataRateSurfaceExperiment;          // transmission rate for surface experiments (Serenity DLC)
 		public static double TransmitterActiveEcFactor;         // how much of the configured EC rate is used while transmitter is active
 		public static double TransmitterPassiveEcFactor;        // how much of the configured EC rate is used while transmitter is passive
-
-		// science
+		public static double TransmitterActiveEcFactorRT;       // RemoteTech, how much of the configured EC rate is used while transmitter is active, (transmitting)
+		public static double TransmitterPassiveEcFactorRT;      // RemoteTech, how much of the configured EC rate is used while transmitter is passive, (idle)
+		public static double DampingExponentOverride;           // Kerbalism will calculate a damping exponent to achieve good data communication rates (see log file, search for DataRateDampingExponent). If the calculated value is not good for you, you can set your own.
+																// science
 		public static bool ScienceDialog;                       // keep showing the stock science dialog
 		public static double AsteroidSampleMassPerMB;           // When taking an asteroid sample, mass (in t) per MB of sample (baseValue * dataScale). default of 0.00002 => 34 Kg in stock
 
@@ -193,6 +197,9 @@ namespace KERBALISM
 		public static int StormDurationHours;
 		public static float StormEjectionSpeed;
 		public static float ShieldingEfficiency;
+		public static float ShieldingEfficiencyEasyMult;
+		public static float ShieldingEfficiencyModerateMult;
+		public static float ShieldingEfficiencyHardMult;
 		public static float StormRadiation;
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad

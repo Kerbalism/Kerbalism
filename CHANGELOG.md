@@ -1,3 +1,54 @@
+## v3.17 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2023-01-29
+
+### Changes since the last release
+* Fixed issue #811 : MP transferred to jetpack when going on EVA is not registered correctly (@gotmachine)
+* Fixed issue #500 : Process dump settings aren't handled/persisted correctly (also fix #337 and #834) (@gotmachine)
+* Fixed issue #833 : Ensure VesselData can always be created even if ProtoVessel is null (@gotmachine)
+* Fixed issue #845 : Make isSerenityGroundController persistent to prevent loosing comms when vessel type is changed manually (@gotmachine)
+* Tweaked automatic DataRateDampingExponent calculations so result in stock is ~6, matching original value in Kerbalism 3.14 (@gotmachine)
+* Performance tweak : Prevent PartModule PAW update code from running when PAW isn't shown, provide very significant perf gains (-0.7ms / frame on a basic space station) (@gotmachine)
+* Added stock cargo part support for Kerbalism parts (@OnlyLightMatters)
+* SSPX support : Added greenhouse to aquaculture-375-1, changed cupola-greenhouse-125-1 from 1/90 to 1/6 of kerbalism greenhouse (@DangerNoodle9000)
+* SSPX support : Tweaked analysis speed of some labs (@DangerNoodle9000)
+* US2 support : Added support for sabatier reactor (@DangerNoodle9000)
+* Science : Added back automatic conversion of all modded labs to the Kerbalism version (see issue #762) (@DangerNoodle9000)
+* Added body/biome localization in a few additional places (@tinygrox)
+* Improved zh-cn localization (@tinygrox)
+* Improved ru localization (@deVDem)
+* Added partial fr-fr localization (@vinix38)
+
+## v3.16 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2022-08-02
+
+### Changes since the last release
+* Fixed CommNet state stopping being updated on unloaded vessels after a while or on certain map events.
+
+## v3.15 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2022-07-24
+
+### Changes since the last release
+* Added italian localization (@leonardfactory)
+* Backported Comms handling from Kerbalism 4 (@KoOz, @gotmachine)
+* Backported RemoteTech support from Kerbalism 4 (@KoOz)
+* Reworked antenna balance support configs for RemoteTech (@KoOz)
+* Bodies are now sorted by SMA in planner UI (@Al2Me6)
+* Made shielding efficiency difficulty presets configurable in Settings.cfg (@gotmachine)
+* Resource names are now properly localized (@leonardfactory)
+* Fixed issue #819 : Fatal error on science DB compilation when ROCManager isn't available (@gotmachine)
+* Fixed issue #799 : Sample mass not being included in vessel mass in the editor (@gotmachine)
+* Fixed issue #748 : Disabled ModuleAsteroidDrill background processing. Code isn't working anymore and needs a refactor (@gotmachine)
+* Fixed issue #775 : Lab Experiments don't use the right scientist level requirements(@RoadWarrior9)
+* Fixed issue #745 : Serenity deployed experiments take 10 times longer than stock (@Nistenf)
+* Config tweak : Fix antenna EC calculation typo (@shult12)
+* Config tweak : Adjusted drive capacities for Stock, Restock+ and RLA probes (@hypodronic)
+* Mod support : Pebkac experiment fix (@Gordon-Dry)
+* Mod support : Updated Near Future Spacecraft science support configs (@Vulpodrac)
+* Mod support : Updated SSPX support configs (@SiCaRiO, @Vulpodrac, @AlexL)
+
 ## v3.14 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2021-06-25

@@ -90,7 +90,7 @@ namespace KERBALISM
 			vd.filesTransmitted.Clear();
 
 			// check connection
-			if (vd.Connection == null
+			if (!vd.CommHandler.IsReady
 				|| !vd.Connection.linked
 				|| vd.Connection.rate <= 0.0
 				|| !vd.deviceTransmit
@@ -150,13 +150,15 @@ namespace KERBALISM
 				// save transmit rate for the file, and add it to the VesselData list of files being transmitted
 				if (xmitFile.isInWarpCache && xmitFile.realDriveFile != null)
 				{
-					xmitFile.realDriveFile.transmitRate = transmitted / elapsed_s;
+					xmitFile.realDriveFile.transmitRate += transmitted / elapsed_s;
 					vd.filesTransmitted.Add(xmitFile.realDriveFile);
 				}
 				else
 				{
-					xmitFile.file.transmitRate = transmitted / elapsed_s;
-					vd.filesTransmitted.Add(xmitFile.file);
+					if (xmitFile.file.transmitRate == 0.0)
+						vd.filesTransmitted.Add(xmitFile.file);
+
+					xmitFile.file.transmitRate += transmitted / elapsed_s;
 				}
 
 				if (xmitScienceValue > 0.0)
@@ -169,15 +171,15 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			// consume EC cost for transmission (ec_idle is consumed above)
-			double transmittedCapacity = totalTransmitCapacity - remainingTransmitCapacity;
-			double transmissionCost = (vd.Connection.ec - vd.Connection.ec_idle) * (transmittedCapacity / (vd.Connection.rate * elapsed_s));
+			double transmittedTotal = totalTransmitCapacity - remainingTransmitCapacity;
+			double transmissionCost = vd.CommHandler.GetTransmissionCost(transmittedTotal, elapsed_s);
 			ec.Consume(transmissionCost * elapsed_s, ResourceBroker.CommsXmit);
 		}
 
 		private static void GetFilesToTransmit(Vessel v, VesselData vd)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
-			Drive warpCache = Cache.WarpCache(v);
+			Drive warpCache = vd.TransmitBufferDrive;
 
 			xmitFiles.Clear();
 			List<SubjectData> filesToRemove = new List<SubjectData>();

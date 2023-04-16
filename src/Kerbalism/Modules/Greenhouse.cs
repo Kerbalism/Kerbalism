@@ -104,22 +104,25 @@ namespace KERBALISM
 				if (plants_anim != null) plants_anim.Still(growth);
 
 				// update ui
-				string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
-				Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? status : Local.Greenhouse_disabled);//"Greenhouse""disabled"
-				Fields["status_natural"].guiActive = active && growth < 0.99;
-				Fields["status_artificial"].guiActive = active && growth < 0.99;
-				Fields["status_tta"].guiActive = active && growth < 0.99;
-				status_natural = Lib.HumanReadableFlux(natural);
-				status_artificial = Lib.HumanReadableFlux(artificial);
-				status_tta = Lib.HumanReadableDuration(tta);
+				if (part.IsPAWVisible())
+				{
+					string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
+					Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? status : Local.Greenhouse_disabled);//"Greenhouse""disabled"
+					Fields["status_natural"].guiActive = active && growth < 0.99;
+					Fields["status_artificial"].guiActive = active && growth < 0.99;
+					Fields["status_tta"].guiActive = active && growth < 0.99;
+					status_natural = Lib.HumanReadableFlux(natural);
+					status_artificial = Lib.HumanReadableFlux(artificial);
+					status_tta = Lib.HumanReadableDuration(tta);
 
-				// show/hide harvest buttons
-				bool manned = FlightGlobals.ActiveVessel.isEVA || Lib.CrewCount(vessel) > 0;
-				Events["Harvest"].active = manned && growth >= 0.99;
-				Events["EmergencyHarvest"].active = manned && growth >= 0.5 && growth < 0.99;
+					// show/hide harvest buttons
+					bool manned = FlightGlobals.ActiveVessel.isEVA || Lib.CrewCount(vessel) > 0;
+					Events["Harvest"].active = manned && growth >= 0.99;
+					Events["EmergencyHarvest"].active = manned && growth >= 0.5 && growth < 0.99;
+				}
 			}
 			// in editor
-			else
+			else if (part.IsPAWVisible())
 			{
 				// update ui
 				Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? Local.Greenhouse_enabled : Local.Greenhouse_disabled);//"Greenhouse""enabled""disabled"
@@ -378,7 +381,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDeadEVA(v)) return;
 
 			// produce reduced quantity of food, proportional to current growth
 			ResourceCache.Produce(vessel, crop_resource, crop_size, ResourceBroker.Greenhouse);
@@ -387,7 +390,7 @@ namespace KERBALISM
 			growth = 0.0;
 
 			// show message
-			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + crop_resource + "</color>")));//"On <<1>>""harvest produced <<1>>", 
+			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + Lib.GetResourceDisplayName(crop_resource) + "</color>")));//"On <<1>>""harvest produced <<1>>", 
 
 			// record first harvest
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
@@ -398,7 +401,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDead(v)) return;
+			if (v == null || EVA.IsDeadEVA(v)) return;
 
 			// calculate reduced harvest size
 			double reduced_harvest = crop_size * growth * 0.5;
@@ -435,7 +438,7 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 
-			specs.Add(Local.Greenhouse_info1, Lib.HumanReadableAmount(crop_size, " " + crop_resource));//"Harvest size"
+			specs.Add(Local.Greenhouse_info1, Lib.HumanReadableAmount(crop_size, " " + Lib.GetResourceDisplayName(crop_resource)));//"Harvest size"
 			specs.Add(Local.Greenhouse_info2, Lib.HumanReadableDuration(1.0 / crop_rate));//"Harvest time"
 			specs.Add(Local.Greenhouse_info3, Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
 			if (pressure_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info4, Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));//"Pressure tolerance"
@@ -461,13 +464,13 @@ namespace KERBALISM
 					dis_WACO2 = true;
 				}
 				else
-					specs.Add(input.name, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate), "</color>"));
+					specs.Add(Lib.GetResourceDisplayName(input.name), Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate), "</color>"));
 			}
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>"+Local.Greenhouse_Byproducts +"</color>");//By-products
 			foreach (ModuleResource output in resHandler.outputResources)
 			{
-				specs.Add(output.name, Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
+				specs.Add(Lib.GetResourceDisplayName(output.name), Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
 			}
 			return specs;
 		}

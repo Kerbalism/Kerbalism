@@ -26,6 +26,12 @@ namespace KERBALISM
 		// time since last update
 		private double secSinceLastEval;
 
+		/// <summary>
+		/// Comms handler for this vessel, evaluate and expose data about the vessel antennas and comm link
+		/// </summary>
+		public CommHandler CommHandler { get; private set; }
+
+		public Drive TransmitBufferDrive { get; private set; }
 
 		#region non-evaluated non-persisted fields
 		// there are probably a lot of candidates for this in the current codebase
@@ -79,6 +85,11 @@ namespace KERBALISM
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		public double scienceTransmitted;
+
+		public Dictionary<Process, DumpSpecs.ActiveValve> dumpValves;
+
+		// persist that so we don't have to do an expensive check every time
+		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 		#endregion
 
 		#region evaluated environment properties
@@ -149,6 +160,9 @@ namespace KERBALISM
 
 		/// <summary> [environment] true if vessel is inside exosphere</summary>
 		public bool EnvStorm => inStorm; bool inStorm;
+
+		/// <summary> [environment] true if vessel currently experienced a solar storm</summary>
+		public double EnvStormRadiation => stormRadiation; public double stormRadiation;
 
 		/// <summary> [environment] proportion of ionizing radiation not blocked by atmosphere</summary>
 		public double EnvGammaTransparency => gammaTransparency; double gammaTransparency;
@@ -447,7 +461,7 @@ namespace KERBALISM
 			is_rescue = Misc.IsRescueMission(Vessel);
 
 			// dead EVA are not valid vessels
-			is_eva_dead = EVA.IsDead(Vessel);
+			is_eva_dead = EVA.IsDeadEVA(Vessel);
 
 			return is_vessel && !is_rescue && !is_eva_dead;
 		}
@@ -465,12 +479,21 @@ namespace KERBALISM
 
 			// don't update more than every second of game time
 			if (!forced && secSinceLastEval < 1.0)
+			{
+				UpdateTransmitBufferDrive(elapsedSeconds);
 				return;
-
+			}
+			
 			EvaluateEnvironment(secSinceLastEval);
 			EvaluateStatus();
+			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
 			Evaluated = true;
+		}
+
+		private void UpdateTransmitBufferDrive(double elapsedSec)
+		{
+			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
 		}
 
 		/// <summary>
@@ -530,6 +553,7 @@ namespace KERBALISM
 			ResetReliabilityStatus();
 			habitatInfo = new VesselHabitatInfo(null);
 			EvaluateStatus();
+			CommHandler.ResetPartTransmitters();
 
 			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
 		}
@@ -637,8 +661,8 @@ namespace KERBALISM
 				foreach (ProtoPartSnapshot protopart in Vessel.protoVessel.protoPartSnapshots)
 					parts.Add(protopart.flightID, new PartData(protopart));
 
-
 			FieldsDefaultInit(vessel.protoVessel);
+			InitializeCommHandler();
 
 			Lib.LogDebug("VesselData ctor (new vessel) : id '" + VesselId + "' (" + Vessel.vesselName + "), part count : " + parts.Count);
 			UnityEngine.Profiling.Profiler.EndSample();
@@ -671,9 +695,13 @@ namespace KERBALISM
 				Load(node);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
+
+			InitializeCommHandler();
+
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
+		// note : this method should work even with a null ProtoVessel
 		private void FieldsDefaultInit(ProtoVessel pv)
 		{
 			msg_signal = false;
@@ -689,13 +717,25 @@ namespace KERBALISM
 			cfg_show = true;
 			deviceTransmit = true;
 
+			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
+			isSerenityGroundController = pv != null && pv.vesselType == VesselType.DeployedScienceController;
+
 			stormData = new StormData(null);
 			habitatInfo = new VesselHabitatInfo(null);
 			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
+			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
 			scansat_id = new List<uint>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
+
+		}
+
+		private void InitializeCommHandler()
+		{
+			connection = new ConnectionInfo();
+			TransmitBufferDrive = new Drive("buffer drive", 0, 0);
+			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
 		private void Load(ConfigNode node)
@@ -712,6 +752,8 @@ namespace KERBALISM
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
 			cfg_show = Lib.ConfigValue(node, "cfg_show", true);
 
+			isSerenityGroundController = Lib.ConfigValue(node, "isGroundCtrl", false);
+
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
 			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
@@ -722,9 +764,32 @@ namespace KERBALISM
 			computer = new Computer(node.GetNode("computer"));
 
 			supplies = new Dictionary<string, SupplyData>();
-			foreach (var supply_node in node.GetNode("supplies").GetNodes())
+			ConfigNode suppliesNode = node.GetNode("supplies");
+			if (suppliesNode != null)
 			{
-				supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
+				foreach (ConfigNode supply_node in suppliesNode.nodes)
+				{
+					supplies.Add(DB.From_safe_key(supply_node.name), new SupplyData(supply_node));
+				}
+			}
+
+			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
+			ConfigNode dumpSpecsNode = node.GetNode("dump_specs");
+			if (dumpSpecsNode != null)
+			{
+				foreach (ConfigNode.Value dumpValue in node.GetNode("dump_specs").values)
+				{
+					Process process = Profile.processes.Find(p => p.name == dumpValue.name);
+					if (process == null || !int.TryParse(dumpValue.value, out int dumpIndex))
+						continue;
+
+					DumpSpecs.ActiveValve valve = new DumpSpecs.ActiveValve(process.dump)
+					{
+						ValveIndex = dumpIndex
+					};
+
+					dumpValves.Add(process, valve);
+				}
 			}
 
 			scansat_id = new List<uint>();
@@ -736,7 +801,7 @@ namespace KERBALISM
 			ConfigNode partsNode = new ConfigNode();
 			if (node.TryGetNode("parts", ref partsNode))
 			{
-				foreach (ConfigNode partDataNode in partsNode.GetNodes())
+				foreach (ConfigNode partDataNode in partsNode.nodes)
 				{
 					PartData partData;
 					if (parts.TryGetValue(Lib.Parse.ToUInt(partDataNode.name), out partData))
@@ -762,6 +827,8 @@ namespace KERBALISM
 			node.AddValue("cfg_showlink", cfg_showlink);
 			node.AddValue("cfg_show", cfg_show);
 
+			node.AddValue("isGroundCtrl", isSerenityGroundController);
+
 			node.AddValue("deviceTransmit", deviceTransmit);
 
 			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
@@ -774,6 +841,12 @@ namespace KERBALISM
 			foreach (var p in supplies)
 			{
 				p.Value.Save(supplies_node.AddNode(DB.To_safe_key(p.Key)));
+			}
+
+			var dump_node = node.AddNode("dump_specs");
+			foreach (KeyValuePair<Process, DumpSpecs.ActiveValve> dumpSpec in dumpValves)
+			{
+				dump_node.AddValue(dumpSpec.Key.name, dumpSpec.Value.ValveIndex);
 			}
 
 			foreach (uint id in scansat_id)
@@ -828,7 +901,7 @@ namespace KERBALISM
 			critical = Reliability.HasCriticalFailure(Vessel);
 
 			// communications info
-			connection = ConnectionInfo.Update(Vessel, powered, EnvBlackout);
+			CommHandler.UpdateConnection(connection);
 
 			// habitat data
 			habitatInfo.Update(Vessel);
@@ -917,6 +990,16 @@ namespace KERBALISM
 			thermosphere = Sim.InsideThermosphere(Vessel);
 			exosphere = Sim.InsideExosphere(Vessel);
 			inStorm = Storm.InProgress(Vessel);
+
+			if(inStorm)
+			{
+				var sunActivity = Radiation.Info(mainSun.SunData.body).SolarActivity(false) / 2.0;
+				stormRadiation = PreferencesRadiation.Instance.StormRadiation * mainSun.SunlightFactor * (sunActivity + 0.5);
+			} else
+			{
+				stormRadiation = 0.0;
+			}
+
 			vesselSituations.Update();
 
 			// other stuff

@@ -252,6 +252,9 @@ namespace KERBALISM
 			// Do nothing else in the editor
 			if (Lib.IsEditor()) return;
 
+			// Don't update PAW if not needed
+			if (!part.IsPAWVisible()) return;
+
 			// Update tracked body selection button (Kopernicus multi-star support)
 			if (Events["ManualTracking"].active && (state == PanelState.Extended || state == PanelState.ExtendedFixed || state == PanelState.Static))
 			{

@@ -1001,6 +1001,9 @@ namespace KERBALISM
 		}
 		// Note : config / code base unit for data rate / size is in megabyte (1000^2 bytes)
 		// For UI purposes we use the decimal units (B/kB/MB...), not the binary (1024^2 bytes) units
+
+		public const double bitsPerMB = 1000.0 * 1000.0 * 8.0;
+
 		public const double BPerMB = 1000.0 * 1000.0;
 		public const double kBPerMB = 1000.0;
 		public const double GBPerMB = 1.0 / 1000.0;
@@ -1284,6 +1287,9 @@ namespace KERBALISM
 		///<summary>return crew count of a protovessel</summary>
 		public static int CrewCount(ProtoVessel pv)
 		{
+			if (pv == null)
+				return 0;
+
 			return pv.vesselType == VesselType.EVA ? 1 : pv.GetVesselCrew().Count();
 		}
 
@@ -1490,6 +1496,14 @@ namespace KERBALISM
 				if (StageManager.Instance != null) StageManager.Instance.SortIcons(true);
 			}
 			EditorLogic.fetch.SetBackup();
+		}
+
+		/// <summary>
+		/// Return true if the Part Action Window for this part is shown, false otherwise
+		/// </summary>
+		public static bool IsPAWVisible(this Part part)
+		{
+			return part.PartActionWindow != null && part.PartActionWindow.isActiveAndEnabled;
 		}
 
 		#endregion
@@ -2436,6 +2450,13 @@ namespace KERBALISM
 
 			// return the resource definition, or null if it doesn't exist
 			return reslib.Contains( name ) ? reslib[name] : null;
+		}
+
+		/// <summary>Returns resource localized display name</summary>
+		public static string GetResourceDisplayName(string name)
+		{
+			var res = GetDefinition(name);
+			return res == null ? "N.A. (" + name + ")" : res.displayName;
 		}
 
 		/// <summary> Returns name of propellant used on eva </summary>
