@@ -343,6 +343,10 @@ namespace KERBALISM
 				return;
 			}
 
+			// Keep resetting launchUT in prelaunch state. It is possible for that value to come from craft file which could result in panels being degraded from the start.
+			if (Lib.IsFlight() && vessel != null && vessel.situation == Vessel.Situations.PRELAUNCH)
+				launchUT = Planetarium.GetUniversalTime();
+
 			// can't produce anything if not deployed, broken, etc
 			PanelState newState = SolarPanel.GetState();
 			if (state != newState)
