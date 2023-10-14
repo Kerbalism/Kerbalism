@@ -86,7 +86,7 @@ namespace KERBALISM
 			return v.orbit.period;
 		}
 
-		/// <summary>Period in shadow of the vessels orbit.<br/>
+		/// <summary>Fraction of orbital period in shadow for a vessel.<br/>
 		/// Limitations:<br/>
 		/// 1. This method assumes the orbit is an ellipse / circle which is not
 		/// changing or being altered by other bodies.<br/>
@@ -96,92 +96,144 @@ namespace KERBALISM
 		/// 3. The method does not take into account darkness caused by eclipses
 		/// of a different body than the orbited body, for example, orbiting
 		/// Laythe but Jool blocks the sun.<br/>
-		/// 4. The method calculates the longest amount of time spent in darkness, which for
-		/// some orbits (e.g.polar orbits) will only be experienced periodically.
-		/// It ignores inclination, the argument of periapsis and the beta angle
-		/// (the angle the sun is in relation to the orbit). Even polar orbits above the
-		/// day/night terminator line (which would be in the sun all the time) will
-		/// be treated as orbits passing the nadir at apoapsis.<br/>
-		/// 5. We err on the light side: if more than half the orbit period is calculated
-		/// to be in shadow by this formula, we invert the result and assume it is in light
-		/// instead.
+		/// 4. For elliptical orbits, this method approximates the actual
+		/// amount of occlusion encountered when beta angle is below the
+		/// threshold for constant sun (beta*), by taking advantage of the fact
+		/// that the difference 1 degree makes being larger as beta* approaches
+		/// zero, at the same time as the proportional increase in occlusion
+		/// _area_ tapers off as the plane approaches the body's horizon. This
+		/// is anything but exact, but is close enough for reasonable results.
 		/// </summary>
-		public static double ShadowPeriod(Vessel v)
+		public static double EclipseFraction(Vessel v, CelestialBody sun, Vector3d sunVec)
 		{
-			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
-				return v.mainBody.rotationPeriod * 0.5;
+			var obt = v.orbitDriver?.orbit;
+			if (obt == null)
+				return 0;
 
-			// the old method: this calculates the period for circular orbits
-			// double Ra = v.altitude + v.mainBody.Radius;
-			// double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
-			// return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
-
-			// Calculation for elliptical orbits
-
-			// see https://wiki.kerbalspaceprogram.com/wiki/Orbit_darkness_time
-
-			// Limitations:
-			//
-			// - This method assumes the orbit is an ellipse / circle which is not
-			// changing or being altered by other bodies.
-			//
-			// - It also assumes the sun's rays are parallel across the orbiting
-			// planet, although all bodies are small enough and far enough from the
-			// sun for this to be nearly true.
-			//
-			// - The method does not take into account darkness caused by eclipses
-			// of a different body than the orbited body, for example, orbiting
-			// Laythe but Jool blocks the sun.
-			//
-			// - The method gives the longest amount of time spent in darkness, which for some
-			// orbits (e.g.polar orbits), will only be experienced periodically.
-			
-			// The formula:
-			// Td = (2ab / h) (asin(R/b) + eR/b)
-			// a is the semi-major axis
-			// b the semi-minor axis
-			// h the specific angular momentum
-			// e the eccentricity
-			// R the radius of the planet or moon
-			// For reference these terms can be calculated by knowing the apoapsis(Ap), periapsis(Pe) and body to orbit:
-			// h = sqrt(lµ)
-			// l = (2 * ra * rp) / (ra + rp)
-			// µ = G * M, the gravitational parameter
-			// ra = Ap + R (apoapsis from center of the body)
-			// rp = Pe + R (periapsis from center of the body)
-
-			var R = v.mainBody.Radius;
-			var ra = v.orbit.ApR;
-			var rp = v.orbit.PeR;
-			var a = v.orbit.semiMajorAxis;
-			var b = v.orbit.semiMinorAxis;
-			var e = v.orbit.eccentricity;
-			var l = (2 * ra * rp) / (ra + rp);
-			var µ = v.mainBody.gravParameter;
-			var h = Math.Sqrt(l * µ);
-
-			var Td = (2 * a * b / h) * (Math.Asin(R / b) + e * R / b);
-
-			// err on the light side:
-			// if more than half the orbit duration is in shadow, invert
-			// the result. this will be wrong when the apoapsis is near nadir.
-			// this is just... WRONG, I know, but it is wrong in a good way.
-			// f.i. a very eccentric orbit with the apoapsis above one of the
-			// poles won't be assumed to spend most of the time in shadow.
-			if (Td > v.orbit.period / 2)
-				Td = v.orbit.period - Td;
-
-			// fix #635 : some orbit parameters will be NaN (or 0, IDK) on some occasions.
-			// Since this code is going away in 4.0 anyway, I won't bother fixing it properly, 
-			// just fallback to the the old circular orbit method if the result is NaN.
-			if (double.IsNaN(Td))
+			bool incNaN = double.IsNaN(obt.inclination);
+			if (Lib.Landed(v) || incNaN)
 			{
-				double Ra2 = v.altitude + v.mainBody.Radius;
-				double h2 = Math.Sqrt(Ra2 * v.mainBody.gravParameter);
-				Td = (2.0 * Ra2 * Ra2 / h2) * Math.Asin(v.mainBody.Radius / Ra2);
+				var mb = v.mainBody;
+				if (sun == mb)
+				{
+					return 0;
+				}
+
+				if (mb.referenceBody == sun && mb.tidallyLocked)
+				{
+					Vector3d vPos = incNaN ? (Vector3d)v.transform.position : v.orbitDriver.pos + mb.position;
+					// We have to refind orbit pos in case inc is NaN
+					return Vector3d.Dot(sunVec, mb.position - vPos) < 0 ? 0 : 1.0;
+				}
+
+				// Just assume half the body's rotation period (note that
+				// for landed vessels, the orbital period is considered the
+				// body's rotation period).
+				return 0.5 * mb.rotationPeriod;
 			}
 
-			return Td;
+			double e = obt.eccentricity;
+			if (e >= 1d)
+			{
+				// This is wrong, of course, but given the speed of an escape trajectory
+				// you'll be in shadow for a very miniscule fraction of the period.
+				return 0;
+			}
+			Vector3d planeNormal = Vector3d.Cross(v.orbitDriver.vel, -v.orbitDriver.pos).normalized;
+			double sunDot = Math.Abs(Vector3d.Dot(sunVec, planeNormal));
+			double betaAngle = Math.PI * 0.5d - Math.Acos(sunDot);
+
+			double a = obt.semiMajorAxis;
+			double R = obt.referenceBody.Radius;
+
+			// Now, branch depending on if we're in a low-ecc orbit
+			// We check locally for betaStar because we might bail early in the Kerbalism case
+			double frac;
+			if (e < 0.1d)
+				frac = FracEclipseCircular(betaAngle, a, R);
+			else
+				frac = FracEclipseElliptical(v, betaAngle, a, R, e, sunVec);
+
+			return frac;
+		}
+
+		/// <summary>
+		/// This computes eclipse fraction for circular orbits
+		/// (well, realy circular _low_ orbits, but at higher altitudes
+		/// you're not spending much time in shadow anyway).
+		/// </summary>
+		/// <param name="betaAngle">The beta angle (angle between the solar normal and its projection on the orbital plane)</param>
+		/// <param name="sma">The semi-major axis</param>
+		/// <param name="R">The body's radius</param>
+		/// <returns></returns>
+		private static double FracEclipseCircular(double betaAngle, double sma, double R)
+		{
+			// from https://commons.erau.edu/cgi/viewcontent.cgi?article=1412&context=ijaaa
+			// beta* is the angle above which there is no occlusion of the orbit
+			double betaStar = Math.Asin(R / sma);
+			if (Math.Abs(betaAngle) >= betaStar)
+				return 0;
+
+			double avgHeight = sma - R;
+			return (1.0 / Math.PI) * Math.Acos(Math.Sqrt(avgHeight * avgHeight + 2.0 * R * avgHeight) / (sma * Math.Cos(betaAngle)));
+		}
+
+		/// <summary>
+		/// An analytic solution to the fraction of an orbit eclipsed by its primary
+		/// </summary>
+		/// <param name="v">The vessel</param>
+		/// <param name="betaAngle">The beta angle (angle between the solar normal and its projection on the orbital plane)</param>
+		/// <param name="a">semi-major axis</param>
+		/// <param name="R">body radius</param>
+		/// <param name="e">eccentricity</param>
+		/// <param name="sunVec">The normalized vector to the sun</param>
+		/// <returns></returns>
+		private static double FracEclipseElliptical(Vessel v, double betaAngle, double a, double R, double e, Vector3d sunVec)
+		{
+			var obt = v.orbit;
+			double b = obt.semiMinorAxis;
+			// Just bail if we were going to report NaN, or we're in a weird state
+			// We've likely avoided this already due to the eccentricity check in the main call, though
+			if (a < b || b < R)
+				return 0;
+
+			// Compute where the Pe is with respect to the sun
+			Vector3d PeToBody = -Planetarium.Zup.WorldToLocal(obt.semiLatusRectum / (1d + e) * obt.OrbitFrame.X).xzy;
+			Vector3d orthog = Vector3d.Cross(obt.referenceBody.GetFrameVel().xzy.normalized, sunVec);
+			Vector3d PeToBodyProj = (PeToBody - orthog * Vector3d.Dot(PeToBody, orthog)).normalized;
+			// Use these to calculate true anomaly for this projected orbit
+			double tA = Math.Acos(Vector3d.Dot(sunVec, PeToBodyProj));
+
+			// Get distance to ellipse edge
+			double r = a * (1.0 - e * e) / (1.0 + e * Math.Cos(tA));
+
+			double betaStar = Math.Asin(R / r);
+			double absBeta = Math.Abs(betaAngle);
+			if (absBeta >= betaStar)
+				return 0d;
+
+			// Get the vector to the center of the eclipse
+			double vecToHalfEclipsePortion = Math.Asin(R / r);
+			// Get the true anomalies at the front and rear of the eclipse portion
+			double vAhead = tA + vecToHalfEclipsePortion;
+			double vBehind = tA - vecToHalfEclipsePortion;
+			vAhead *= 0.5;
+			vBehind *= 0.5;
+			double ePlusOneSqrt = Math.Sqrt(1 + e);
+			double eMinusOneSqrt = Math.Sqrt(1 - e);
+			// Calculate eccentric and mean anomalies
+			double EAAhead = 2.0 * Math.Atan2(eMinusOneSqrt * Math.Sin(vAhead), ePlusOneSqrt * Math.Cos(vAhead));
+			double MAhead = EAAhead - e * Math.Sin(EAAhead);
+			double EABehind = 2.0 * Math.Atan2(eMinusOneSqrt * Math.Sin(vBehind), ePlusOneSqrt * Math.Cos(vBehind));
+			double Mbehind = EABehind - e * Math.Sin(EABehind);
+			// Finally, calculate the eclipse fraction from mean anomalies
+			double eclipseFrac = (MAhead - Mbehind) / (2.0 * Math.PI);
+			// This is not quite correct I think, but it'll be close enough.
+			// We just lerp between 0 occlusion at beta = betaStar, and full occlusion
+			// at beta = 0. This takes advantage of the difference 1 degree makes being larger
+			// as beta approaches zero, at the same time as the proportional increase in
+			// occlusion *area* tapers off as the plane approaches the body's horizon.
+			return eclipseFrac * absBeta / betaStar;
 		}
 
 		/// <summary>
