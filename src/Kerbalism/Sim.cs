@@ -239,44 +239,162 @@ namespace KERBALISM
 		/// <summary>
 		/// This expects to be called repeatedly
 		/// </summary>
-		public static double SampleSunFactor(Vessel v, double elapsedSeconds)
+		public static double SampleSunFactor(Vessel v, double elapsedSeconds, CelestialBody sun)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Sim.SunFactor2");
 
-			// assume 50% exposure for landed vessels (half the period is night)
-			// this is bad for inclined bodies, but we're not landing on uranus
-			// any time soon
-			if(Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
-				return 0.5;
+			bool isSurf = Lib.Landed(v);
+			if (v.orbitDriver == null || v.orbitDriver.orbit == null || (!isSurf && double.IsNaN(v.orbit.inclination)))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return 1d; // fail safe
+			}
 
 			int sunSamples = 0;
-			int sampleCount = 0;
 
 			var now = Planetarium.GetUniversalTime();
-			double step = Math.Max(120.0, elapsedSeconds / 40);
-			var sun = v.KerbalismData().EnvMainSun.SunData.body;
-			var occluders = v.KerbalismData().EnvVisibleBodies;
-			double calculatedDuration = 0;
-			double maxCalculation = Math.Min(elapsedSeconds * 1.5, v.orbit.period);
 
-			// calculate for one orbit or 1.5 times the amount we need, whichever is shorter
-			while (calculatedDuration < maxCalculation)
+			var vd = v.KerbalismData();
+			List<CelestialBody> occluders = vd.EnvVisibleBodies;
+
+			// set up CB position caches
+			bodyCache.SetForOccluders(occluders);
+
+			// Set max time to calc
+			double maxCalculation = elapsedSeconds * 1.01d;
+
+			// cache values for speed
+			double semiLatusRectum = 0d;
+			CelestialBody mb = v.mainBody;
+			Vector3d surfPos;
+			Vector3d polarAxis;
+			if (isSurf)
 			{
-				Vector3d position = v.orbit.getPositionAtUT(now + sampleCount * step);
-				Vector3d direction;
-				double distance;
-				if (IsBodyVisible(v, position, sun, occluders, out direction, out distance))
-					sunSamples++;
+				surfPos = mb.GetRelSurfacePosition(v.latitude, v.longitude, v.altitude);
+                // Doing this manually instead of swizzling surfPos avoids one of the two swizzles
+                surfPos = (surfPos.x * mb.BodyFrame.X + surfPos.z * mb.BodyFrame.Y + surfPos.y * mb.BodyFrame.Z).xzy;
 
-				sampleCount++;
-				calculatedDuration = step * sampleCount;
+				// This will not be quite correct for Principia but at least it's
+				// using the BodyFrame, which Principia clobbers, rather than the
+				// transform.
+				polarAxis = mb.BodyFrame.Rotation.swizzle * Vector3d.up;
+			}
+			else
+			{
+				semiLatusRectum = v.orbit.semiLatusRectum;
+				maxCalculation = Math.Min(maxCalculation, v.orbit.period);
+				surfPos = new Vector3d();
+				polarAxis = new Vector3d();
+			}
+
+			// Set up timimg
+			double stepLength = Math.Max(120d, elapsedSeconds * (1d / 40d));
+			int sampleCount;
+			if (stepLength > maxCalculation)
+			{
+				stepLength = maxCalculation;
+				sampleCount = 1;
+			}
+			else
+			{
+				sampleCount = (int)Math.Ceiling(maxCalculation / stepLength);
+				stepLength = maxCalculation / (double)sampleCount;
+			}
+
+			for (int i = sampleCount; i-- > 0;)
+			{
+				double ut = now - i * stepLength;
+				bodyCache.SetForUT(ut, occluders);
+				Vector3d bodyPos = bodyCache.GetBodyPosition(mb.flightGlobalsIndex);
+				Vector3d pos;
+				if (isSurf)
+				{
+					// Rotate the surface position based on where the body would have rotated in the past
+					// Note: rotation is around *down* so we flip the sign of the rotation
+					pos = QuaternionD.AngleAxis(mb.rotPeriodRecip * i * stepLength * 360d, polarAxis) * surfPos;
+				}
+				else
+				{
+					pos = FastGetRelativePositionAtUT(v.orbit, ut, semiLatusRectum);
+				}
+				// Apply the body's position
+				pos += bodyPos;
+
+				bool vis = IsSunVisibleAtTime(v, pos, sun, occluders, isSurf);
+				if (vis)
+					++sunSamples;
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			double sunFactor = (double)sunSamples / (double)sampleCount;
-			// Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + step);
+			//Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + stepLength);
 			return sunFactor;
+		}
+
+		/// <summary>
+		/// A version of IsBodyVisibleAt that is optimized for suns
+		/// and supports using arbitrary time (assuming bodyCache is set)
+		/// </summary>
+		/// <param name="vessel"></param>
+		/// <param name="vesselPos">Vessel position at time</param>
+		/// <param name="sun"></param>
+		/// <param name="sunIdx">The body index of the sun</param>
+		/// <param name="occluders"></param>
+		/// <param name="UT"></param>
+		/// <param name="isSurf">is the vessel landed</param>
+		/// <returns></returns>
+		internal static bool IsSunVisibleAtTime(Vessel vessel, Vector3d vesselPos, CelestialBody sun, List<CelestialBody> occluders, bool isSurf)
+		{
+			// generate ray parameters
+			Vector3d sunPos = bodyCache.GetBodyPosition(sun.flightGlobalsIndex) - vesselPos;
+			var sunDir = sunPos;
+			var sunDist = sunDir.magnitude;
+			sunDir /= sunDist;
+			sunDist -= sun.Radius;
+
+			// for very small bodies the analytic method is very unreliable at high latitudes
+			// So we use a modified version of the analytic method (unlike IsBodyVisible)
+			bool ignoreMainbody = false;
+			if (isSurf && vessel.mainBody.Radius < 100000.0)
+			{
+				ignoreMainbody = true;
+				Vector3d mainBodyPos = bodyCache.GetBodyPosition(vessel.mainBody.flightGlobalsIndex);
+				Vector3d mainBodyDir = (mainBodyPos - vesselPos).normalized;
+				double dotSunBody = Vector3d.Dot(mainBodyDir, sunDir);
+				Vector3d mainBodyDirProjected = mainBodyDir * dotSunBody;
+
+				// Assume the sun is far enough away that we can treat the line from the vessel
+				// to the sun as parallel to the line from the body center to the sun, which means
+				// we can ignore testing further if we're very close to the plane orthogonal to the
+				// sun vector but on the opposite side of the body from the sun.
+				// We don't strictly test dot to give ourselves approx half a degree of slop
+				if (mainBodyDirProjected.sqrMagnitude > 0.0001d && dotSunBody > 0d)
+				{
+					return false;
+				}
+			}
+
+			// check if the ray intersect one of the provided bodies
+			for (int i = occluders.Count; i-- > 0;)
+			{
+				CelestialBody occludingBody = occluders[i];
+				if (occludingBody == sun)
+					continue;
+				if (ignoreMainbody && occludingBody == vessel.mainBody)
+					continue;
+
+				Vector3d toBody = bodyCache.GetBodyPosition(occludingBody.flightGlobalsIndex) - vesselPos;
+				// projection of origin->body center ray over the raytracing direction
+				double k = Vector3d.Dot(toBody, sunDir);
+				// the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
+				// simplified from 'start + dir * k - body.position'
+				bool hit = k > 0d && k < sunDist && (sunDir * k - toBody).magnitude < occludingBody.Radius;
+				if (hit)
+					return false;
+			}
+
+			return true;
 		}
 
 		// return rotation speed at body surface
@@ -454,6 +572,151 @@ namespace KERBALISM
 				return solarFluxTotal / (Math.PI * 4 * distance * distance);
 			}
 		}
+
+		/// <summary>
+		/// A cache to speed calculation of body positions at a given UT, based on
+		/// as set of occluders. Used when calculating solar exposure at analytic rates.
+		/// This creates storage for each body in FlightGlobals, but only caches
+		/// a lookup from occluder to body index, and then for each relevant occluder
+		/// and its parents a lookup to each parent (and on up the chain) and the
+		/// semilatus rectum. Then when set for a UT, it calculates positions
+		/// for each occluder on up the chain to the root CB.
+		/// </summary>
+		public class BodyCache
+		{
+			private Vector3d[] positions = null;
+			private int[] parents;
+			private double[] semiLatusRectums;
+
+			public Vector3d GetBodyPosition(int idx) { return positions[idx]; }
+
+			/// <summary>
+			/// Check and, if uninitialized, setup the body caches
+			/// </summary>
+			private void CheckInitBodies()
+			{
+				int c = FlightGlobals.Bodies.Count;
+				if (positions != null && positions.Length == c)
+					return;
+
+				positions = new Vector3d[c];
+				parents = new int[c];
+				semiLatusRectums = new double[c];
+
+				for (int i = 0; i < c; ++i)
+				{
+					var cb = FlightGlobals.Bodies[i];
+					// Set parent index lookup
+					var parent = cb.orbitDriver?.orbit?.referenceBody;
+					if (parent != null && parent != cb)
+					{
+						parents[i] = parent.flightGlobalsIndex;
+					}
+					else
+					{
+						parents[i] = -1;
+					}
+				}
+			}
+
+			/// <summary>
+			/// Initialize the cache for a set of occluders. This
+			/// will set up the lookups for the occluder bodies and
+			/// cache the semi-latus recturm for each body and its
+			/// parents
+			/// </summary>
+			/// <param name="occluders"></param>
+			public void SetForOccluders(List<CelestialBody> occluders)
+			{
+				CheckInitBodies();
+
+				// Now clear all SLRs and then set only the relevant ones
+				// (i.e. the occluders, their parents, their grandparents, etc)
+				for (int i = semiLatusRectums.Length; i-- > 0;)
+					semiLatusRectums[i] = double.MaxValue;
+				for (int i = occluders.Count; i-- > 0;)
+					SetSLRs(occluders[i].flightGlobalsIndex);
+			}
+
+			private void SetSLRs(int i)
+			{
+				// Check if set
+				if (semiLatusRectums[i] != double.MaxValue)
+					return;
+
+				// Check if parent
+				int pIdx = parents[i];
+				if (pIdx == -1)
+				{
+					semiLatusRectums[i] = 1d;
+					return;
+				}
+
+				semiLatusRectums[i] = FlightGlobals.Bodies[i].orbit.semiLatusRectum;
+				SetSLRs(pIdx);
+			}
+
+			/// <summary>
+			/// Set the occluder body positions at the given UT
+			/// </summary>
+			/// <param name="ut"></param>
+			public void SetForUT(double ut, List<CelestialBody> occluders)
+			{
+				// Start from unknown positions
+				for (int i = positions.Length; i-- > 0;)
+					positions[i] = new Vector3d(double.MaxValue, double.MaxValue);
+
+				// Fill positions at UT, recursively (skipping calculated parents)
+				for (int i = occluders.Count; i-- > 0;)
+					SetForUTInternal(occluders[i].flightGlobalsIndex, ut);
+			}
+
+			private void SetForUTInternal(int i, double ut)
+			{
+				// If we've already been here, bail
+				if (positions[i].x != double.MaxValue)
+					return;
+
+				// Check if we have a parent. If not
+				// position is just the body's position
+				var cb = FlightGlobals.Bodies[i];
+				int pIdx = parents[i];
+				if (pIdx == -1)
+				{
+					positions[i] = cb.position;
+					return;
+				}
+
+				// If we do have a parent, recurse and then
+				// set position based on newly-set parent's pos
+				SetForUTInternal(pIdx, ut);
+				positions[i] = positions[pIdx] + FastGetRelativePositionAtUT(cb.orbit, ut, semiLatusRectums[i]);
+			}
+		}
+
+		/// <summary>
+		/// A fast version of KSP's GetRelativePositionAtUT.
+		/// It skips a bunch of steps and uses cached values
+		/// </summary>
+		/// <param name="orbit"></param>
+		/// <param name="UT"></param>
+		/// <param name="semiLatusRectum"></param>
+		/// <returns></returns>
+		private static Vector3d FastGetRelativePositionAtUT(Orbit orbit, double UT, double semiLatusRectum)
+		{
+			double T = orbit.getObtAtUT(UT);
+
+			double M = T * orbit.meanMotion;
+			double E = orbit.solveEccentricAnomaly(M, orbit.eccentricity);
+			double v = orbit.GetTrueAnomaly(E);
+
+			double cos = Math.Cos(v);
+			double sin = Math.Sin(v);
+			Vector3d pos = semiLatusRectum / (1.0 + orbit.eccentricity * cos) * (orbit.OrbitFrame.X * cos + orbit.OrbitFrame.Y * sin);
+			return Planetarium.Zup.WorldToLocal(pos).xzy;
+		}
+
+		static readonly BodyCache bodyCache = new BodyCache();
 
 		static double au = 0.0;
 		/// <summary> Distance between the home body and its main sun</summary>

@@ -283,7 +283,7 @@ namespace KERBALISM
 						if (Settings.UseSamplingSunFactor)
 							// sampling estimation of the portion of orbit that is in sunlight
 							// until we will calculate again
-							sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds);
+							sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds, sunData.body);
 
 						else
 							// analytical estimation of the portion of orbit that was in sunlight.
