@@ -124,6 +124,19 @@ namespace KERBALISM
 			return false;
 		}
 
+		private static bool? hasPrincipia = null;
+		public static bool HasPrincipia
+		{
+			get
+			{
+				if (!hasPrincipia.HasValue)
+				{
+					hasPrincipia = HasAssembly("ksp_plugin_adapter");
+				}
+				return hasPrincipia.Value;
+			}
+		}
+
 		///<summary>swap two variables</summary>
 		public static void Swap<T>(ref T a, ref T b)
 		{
