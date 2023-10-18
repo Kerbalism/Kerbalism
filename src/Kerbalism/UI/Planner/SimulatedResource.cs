@@ -218,11 +218,12 @@ namespace KERBALISM.Planner
 			IDictionary<string, Wrapper> red = !invert ? consumers : producers;
 
 			StringBuilder sb = new StringBuilder();
+			int id = resource_name.GetHashCode();
 			foreach (KeyValuePair<string, Wrapper> pair in green)
 			{
 				if (sb.Length > 0)
 					sb.Append("\n");
-				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.Kolor.PosRate, true));
+				sb.Append(Lib.Color(Lib.HumanOrSIRate(pair.Value.value, id), Lib.Kolor.PosRate, true));
 				sb.Append("\t");
 				sb.Append(pair.Key);
 			}
@@ -230,7 +231,7 @@ namespace KERBALISM.Planner
 			{
 				if (sb.Length > 0)
 					sb.Append("\n");
-				sb.Append(Lib.Color(Lib.HumanReadableRate(pair.Value.value), Lib.Kolor.NegRate, true));
+				sb.Append(Lib.Color(Lib.HumanOrSIRate(pair.Value.value, id), Lib.Kolor.NegRate, true));
 				sb.Append("\t");
 				sb.Append(pair.Key);
 			}

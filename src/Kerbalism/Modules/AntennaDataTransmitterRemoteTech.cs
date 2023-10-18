@@ -56,8 +56,8 @@ namespace KERBALISM
 						double transmissionEnergyCost = this.packetResourceCost * dataRate;
 						double idleEnergyCost = this.energyCost;
 
-						specs.Add(Local.DataTransmitter_ECidle, Lib.Color(Lib.HumanReadableRate(idleEnergyCost), Lib.Kolor.Orange));//"EC (idle)"
-						specs.Add(Local.DataTransmitter_ECTX + " Max", Lib.Color(Lib.HumanReadableRate(transmissionEnergyCost + idleEnergyCost), Lib.Kolor.Orange));//"EC (transmitting)"
+						specs.Add(Local.DataTransmitter_ECidle, Lib.Color(Lib.HumanOrSIRate(idleEnergyCost, Lib.ECResID), Lib.Kolor.Orange));//"EC (idle)"
+						specs.Add(Local.DataTransmitter_ECTX + " Max", Lib.Color(Lib.HumanOrSIRate(transmissionEnergyCost + idleEnergyCost, Lib.ECResID), Lib.Kolor.Orange));//"EC (transmitting)"
 						specs.Add("");
 						specs.Add(Local.DataTransmitter_Maxspeed, Lib.HumanReadableDataRate(dataRate));//"Max. speed"
 						break;
