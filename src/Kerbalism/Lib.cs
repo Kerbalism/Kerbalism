@@ -1004,12 +1004,14 @@ namespace KERBALISM
 
 		public const double bitsPerMB = 1000.0 * 1000.0 * 8.0;
 
+		public const double bPerMB = 1000.0 * 1000.0 * 8;
 		public const double BPerMB = 1000.0 * 1000.0;
 		public const double kBPerMB = 1000.0;
 		public const double GBPerMB = 1.0 / 1000.0;
 		public const double TBPerMB = 1.0 / (1000.0 * 1000.0);
 
-		public const double MBPerBTenth = 1.0 / (1000.0 * 1000.0 * 10.0);
+		public const double MBPerBitTenth = 1.0 / (1000.0 * 1000.0 * 10.0 * 8.0);
+		public const double MBPerB = 1.0 / (1000.0 * 1000.0);
 		public const double MBPerkB = 1.0 / 1000.0;
 		public const double MBPerGB = 1000.0;
 		public const double MBPerTB = 1000.0 * 1000.0;
@@ -1017,8 +1019,10 @@ namespace KERBALISM
 		///<summary> Format data size, the size parameter is in MB (megabytes) </summary>
 		public static string HumanReadableDataSize(double size)
 		{
-			if (size < MBPerBTenth)  // min size is 0.1 byte
+			if (size < MBPerBitTenth)  // min size is 0.1 bit
 				return Local.Generic_NONE;//"none"
+			if (size < MBPerB)
+				return (size * bPerMB).ToString("0.0 b");
 			if (size < MBPerkB)
 				return (size * BPerMB).ToString("0.0 B");
 			if (size < 1.0)
@@ -1034,8 +1038,10 @@ namespace KERBALISM
 		///<summary> Format data rate, the rate parameter is in MB/s </summary>
 		public static string HumanReadableDataRate(double rate)
 		{
-			if (rate < MBPerBTenth)  // min rate is 0.1 byte/s
+			if (rate < MBPerBitTenth)  // min rate is 0.1 bit/s
 				return Local.Generic_NONE;//"none"
+			if (rate < MBPerB)
+				return (rate * bPerMB).ToString("0.0 b/s");
 			if (rate < MBPerkB)
 				return (rate * BPerMB).ToString("0.0 B/s");
 			if (rate < 1.0)
