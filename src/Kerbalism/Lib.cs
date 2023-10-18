@@ -773,6 +773,91 @@ namespace KERBALISM
 		}
 		#endregion
 
+		#region RESOURCE UNIT INFOS
+
+		public static readonly int ECResID = "ElectricCharge".GetHashCode();
+
+		public sealed class ResourceUnitInfo : IConfigNode
+		{
+			// We have to disable the "never assigned" warning
+			// because ConfigNode deserialization is what actually
+			// assigns some of these fields
+#pragma warning disable CS0649
+			[Persistent]
+			private string name;
+			public string Name => name;
+			[Persistent]
+			private string rateUnit;
+			public string RateUnit => rateUnit;
+			[Persistent]
+			private bool useRatePostfix = true;
+			public bool UseRatePostfix => useRatePostfix;
+			[Persistent]
+			private string amountUnit;
+			public string AmountUnit => amountUnit;
+			[Persistent]
+			private double multiplierToUnit = 1d;
+			public double MultiplierToUnit => multiplierToUnit;
+			[Persistent]
+			private bool useHuman = false;
+			public bool UseHuman => useHuman;
+#pragma warning restore CS0649
+
+			private bool isValid;
+			public bool IsValid => isValid;
+
+			public void Load(ConfigNode node)
+			{
+				ConfigNode.LoadObjectFromConfig(this, node);
+				if (string.IsNullOrEmpty(rateUnit))
+					rateUnit = amountUnit;
+				if (!useHuman && useRatePostfix && rateUnit != null)
+					rateUnit += Local.Generic_perSecond;
+
+				isValid = !string.IsNullOrEmpty(name) && rateUnit != null && amountUnit != null;
+			}
+
+			public void Save(ConfigNode node)
+			{
+				ConfigNode.CreateConfigFromObject(this, node);
+			}
+		}
+
+		private static readonly Dictionary<int, ResourceUnitInfo> resourceUnitInfos = new Dictionary<int, ResourceUnitInfo>();
+
+		public static void LoadResourceUnitInfo()
+		{
+			resourceUnitInfos.Clear();
+
+			ConfigNode[] defs = GameDatabase.Instance.GetConfigNodes("RESOURCE_DEFINITION");
+			foreach (var node in defs)
+			{
+				var info = new ResourceUnitInfo();
+				info.Load(node);
+				if (info.IsValid)
+					resourceUnitInfos[info.Name.GetHashCode()] = info;
+			}
+			//Lib.Log("ResourceUnitInfo: Loaded " + resourceUnitInfos.Count + " infos from " + defs.Length + " nodes.");
+		}
+
+		public static ResourceUnitInfo GetResourceUnitInfo(PartResourceDefinition res)
+		{
+			return GetResourceUnitInfo(res.id);
+		}
+
+		public static ResourceUnitInfo GetResourceUnitInfo(string resName)
+		{
+			return GetResourceUnitInfo(resName.GetHashCode());
+		}
+
+		public static ResourceUnitInfo GetResourceUnitInfo(int id)
+		{
+			resourceUnitInfos.TryGetValue(id, out var info);
+			return info;
+		}
+
+		#endregion
+
 		#region HUMAN READABLE
 
 		public const string InlineSpriteScience = "<sprite=\"CurrencySpriteAsset\" name=\"Science\" color=#6DCFF6>";
