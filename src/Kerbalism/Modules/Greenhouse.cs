@@ -443,7 +443,7 @@ namespace KERBALISM
 			specs.Add(Local.Greenhouse_info3, Lib.HumanReadableFlux(light_tolerance));//"Lighting tolerance"
 			if (pressure_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info4, Lib.HumanReadablePressure(Sim.PressureAtSeaLevel() * pressure_tolerance));//"Pressure tolerance"
 			if (radiation_tolerance > double.Epsilon) specs.Add(Local.Greenhouse_info5, Lib.HumanReadableRadiation(radiation_tolerance));//"Radiation tolerance"
-			specs.Add(Local.Greenhouse_info6, Lib.HumanReadableRate(ec_rate));//"Lamps EC rate"
+			specs.Add(Local.Greenhouse_info6, Lib.HumanOrSIRate(ec_rate, Lib.ECResID));//"Lamps EC rate"
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>" + Local.Greenhouse_info7 + "</color>");//Required resources
 
@@ -459,18 +459,18 @@ namespace KERBALISM
 					ModuleResource sec;
 					if (input.name == "WasteAtmosphere") sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
 					else sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
-					specs.Add(Local.Greenhouse_CarbonDioxide, Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate + sec.rate), "</color>"));//"CarbonDioxide"
+					specs.Add(Local.Greenhouse_CarbonDioxide, Lib.BuildString("<color=#ffaa00>", Lib.HumanOrSIRate(input.rate + sec.rate, "CarbonDioxide".GetHashCode()), " </color>"));//"CarbonDioxide"
 					specs.Add(Local.Greenhouse_CarbonDioxide_desc);//"Crops can also use the CO2 in the atmosphere without a scrubber."
 					dis_WACO2 = true;
 				}
 				else
-					specs.Add(Lib.GetResourceDisplayName(input.name), Lib.BuildString("<color=#ffaa00>", Lib.HumanReadableRate(input.rate), "</color>"));
+					specs.Add(Lib.GetResourceDisplayName(input.name), Lib.BuildString("<color=#ffaa00>", Lib.HumanOrSIRate(input.rate, input.id), "</color>"));
 			}
 			specs.Add(string.Empty);
 			specs.Add("<color=#00ffff>"+Local.Greenhouse_Byproducts +"</color>");//By-products
 			foreach (ModuleResource output in resHandler.outputResources)
 			{
-				specs.Add(Lib.GetResourceDisplayName(output.name), Lib.BuildString("<color=#00ff00>", Lib.HumanReadableRate(output.rate), "</color>"));
+				specs.Add(Lib.GetResourceDisplayName(output.name), Lib.BuildString("<color=#00ff00>", Lib.HumanOrSIRate(output.rate, output.id), "</color>"));
 			}
 			return specs;
 		}

@@ -318,9 +318,9 @@ namespace KERBALISM.Planner
 
 			// render the panel section
 			p.AddSection(Local.Planner_ELECTRICCHARGE);//"ELECTRIC CHARGE"
-			p.AddContent(Local.Planner_storage, Lib.HumanReadableAmount(res.storage), tooltip);//"storage"
-			p.AddContent(Local.Planner_consumed, Lib.HumanReadableRate(res.consumed), tooltip);//"consumed"
-			p.AddContent(Local.Planner_produced, Lib.HumanReadableRate(res.produced), tooltip);//"produced"
+			p.AddContent(Local.Planner_storage, Lib.HumanOrSIAmount(res.storage, Lib.ECResID), tooltip);//"storage"
+			p.AddContent(Local.Planner_consumed, Lib.HumanOrSIRate(res.consumed, Lib.ECResID), tooltip);//"consumed"
+			p.AddContent(Local.Planner_produced, Lib.HumanOrSIRate(res.produced, Lib.ECResID), tooltip);//"produced"
 			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.Lifetime()));//"duration"
 		}
 
@@ -344,9 +344,9 @@ namespace KERBALISM.Planner
 			p.AddSection(Lib.SpacesOnCaps(resource.displayName).ToUpper(), string.Empty,
 				() => { p.Prev(ref resource_index, panel_resource.Count); enforceUpdate = true; },
 				() => { p.Next(ref resource_index, panel_resource.Count); enforceUpdate = true; });
-			p.AddContent(Local.Planner_storage, Lib.HumanReadableAmount(res.storage), tooltip);//"storage"
-			p.AddContent(Local.Planner_consumed, Lib.HumanReadableRate(res.consumed), tooltip);//"consumed"
-			p.AddContent(Local.Planner_produced, Lib.HumanReadableRate(res.produced), tooltip);//"produced"
+			p.AddContent(Local.Planner_storage, Lib.HumanOrSIAmount(res.storage, resource.id), tooltip);//"storage"
+			p.AddContent(Local.Planner_consumed, Lib.HumanOrSIRate(res.consumed, resource.id), tooltip);//"consumed"
+			p.AddContent(Local.Planner_produced, Lib.HumanOrSIRate(res.produced, resource.id), tooltip);//"produced"
 			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.Lifetime()));//"duration"
 		}
 
