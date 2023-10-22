@@ -16,6 +16,7 @@ namespace KERBALISM
 				trait = string.Empty;
 				level = 0;
 				enabled = false;
+				crewOnly = false;
 			}
 			// if true: enabled, any trait
 			else if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
@@ -23,6 +24,15 @@ namespace KERBALISM
 				trait = string.Empty;
 				level = 0;
 				enabled = true;
+				crewOnly = false;
+			}
+			// if crew only is specified: set the crewOnly bool
+			else if (string.Equals(value, "crewonly", StringComparison.OrdinalIgnoreCase))
+			{
+				trait = string.Empty;
+				level = 0;
+				enabled = true;
+				crewOnly = true;
 			}
 			// all other cases: enabled, specified trait and experience
 			else
@@ -36,6 +46,7 @@ namespace KERBALISM
 				trait = tokens.Count > 0 ? tokens[0] : string.Empty;
 				level = tokens.Count > 1 ? Lib.Parse.ToUInt(tokens[1]) : 0;
 				enabled = true;
+				crewOnly = false;
 			}
 		}
 
@@ -73,6 +84,7 @@ namespace KERBALISM
 		/// </summary>
 		public bool Check(ProtoCrewMember c)
 		{
+			if (crewOnly && c.type == ProtoCrewMember.KerbalType.Tourist) return false;
 			return trait.Length == 0 || (c.trait == trait && c.experienceLevel >= level);
 		}
 
@@ -144,6 +156,7 @@ namespace KERBALISM
 		public string trait;    // trait specified, or empty for any trait
 		public uint level;    // experience level specified
 		public bool enabled;  // can also specify 'disabled' state
+		public bool crewOnly; // whether it has to be type crew, or whether tourists can be used
 	}
 
 
