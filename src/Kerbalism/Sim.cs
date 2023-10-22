@@ -86,7 +86,7 @@ namespace KERBALISM
 			return v.orbit.period;
 		}
 
-		/// <summary>Period in shadow of the vessels orbit.<br/>
+		/// <summary>Fraction of orbital period in shadow for a vessel.<br/>
 		/// Limitations:<br/>
 		/// 1. This method assumes the orbit is an ellipse / circle which is not
 		/// changing or being altered by other bodies.<br/>
@@ -96,135 +96,305 @@ namespace KERBALISM
 		/// 3. The method does not take into account darkness caused by eclipses
 		/// of a different body than the orbited body, for example, orbiting
 		/// Laythe but Jool blocks the sun.<br/>
-		/// 4. The method calculates the longest amount of time spent in darkness, which for
-		/// some orbits (e.g.polar orbits) will only be experienced periodically.
-		/// It ignores inclination, the argument of periapsis and the beta angle
-		/// (the angle the sun is in relation to the orbit). Even polar orbits above the
-		/// day/night terminator line (which would be in the sun all the time) will
-		/// be treated as orbits passing the nadir at apoapsis.<br/>
-		/// 5. We err on the light side: if more than half the orbit period is calculated
-		/// to be in shadow by this formula, we invert the result and assume it is in light
-		/// instead.
+		/// 4. For elliptical orbits, this method approximates the actual
+		/// amount of occlusion encountered when beta angle is below the
+		/// threshold for constant sun (beta*), by taking advantage of the fact
+		/// that the difference 1 degree makes being larger as beta* approaches
+		/// zero, at the same time as the proportional increase in occlusion
+		/// _area_ tapers off as the plane approaches the body's horizon. This
+		/// is anything but exact, but is close enough for reasonable results.
 		/// </summary>
-		public static double ShadowPeriod(Vessel v)
+		public static double EclipseFraction(Vessel v, CelestialBody sun, Vector3d sunVec)
 		{
-			if (Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
-				return v.mainBody.rotationPeriod * 0.5;
+			var obt = v.orbitDriver?.orbit;
+			if (obt == null)
+				return 0;
 
-			// the old method: this calculates the period for circular orbits
-			// double Ra = v.altitude + v.mainBody.Radius;
-			// double h = Math.Sqrt(Ra * v.mainBody.gravParameter);
-			// return (2.0 * Ra * Ra / h) * Math.Asin(v.mainBody.Radius / Ra);
-
-			// Calculation for elliptical orbits
-
-			// see https://wiki.kerbalspaceprogram.com/wiki/Orbit_darkness_time
-
-			// Limitations:
-			//
-			// - This method assumes the orbit is an ellipse / circle which is not
-			// changing or being altered by other bodies.
-			//
-			// - It also assumes the sun's rays are parallel across the orbiting
-			// planet, although all bodies are small enough and far enough from the
-			// sun for this to be nearly true.
-			//
-			// - The method does not take into account darkness caused by eclipses
-			// of a different body than the orbited body, for example, orbiting
-			// Laythe but Jool blocks the sun.
-			//
-			// - The method gives the longest amount of time spent in darkness, which for some
-			// orbits (e.g.polar orbits), will only be experienced periodically.
-			
-			// The formula:
-			// Td = (2ab / h) (asin(R/b) + eR/b)
-			// a is the semi-major axis
-			// b the semi-minor axis
-			// h the specific angular momentum
-			// e the eccentricity
-			// R the radius of the planet or moon
-			// For reference these terms can be calculated by knowing the apoapsis(Ap), periapsis(Pe) and body to orbit:
-			// h = sqrt(lµ)
-			// l = (2 * ra * rp) / (ra + rp)
-			// µ = G * M, the gravitational parameter
-			// ra = Ap + R (apoapsis from center of the body)
-			// rp = Pe + R (periapsis from center of the body)
-
-			var R = v.mainBody.Radius;
-			var ra = v.orbit.ApR;
-			var rp = v.orbit.PeR;
-			var a = v.orbit.semiMajorAxis;
-			var b = v.orbit.semiMinorAxis;
-			var e = v.orbit.eccentricity;
-			var l = (2 * ra * rp) / (ra + rp);
-			var µ = v.mainBody.gravParameter;
-			var h = Math.Sqrt(l * µ);
-
-			var Td = (2 * a * b / h) * (Math.Asin(R / b) + e * R / b);
-
-			// err on the light side:
-			// if more than half the orbit duration is in shadow, invert
-			// the result. this will be wrong when the apoapsis is near nadir.
-			// this is just... WRONG, I know, but it is wrong in a good way.
-			// f.i. a very eccentric orbit with the apoapsis above one of the
-			// poles won't be assumed to spend most of the time in shadow.
-			if (Td > v.orbit.period / 2)
-				Td = v.orbit.period - Td;
-
-			// fix #635 : some orbit parameters will be NaN (or 0, IDK) on some occasions.
-			// Since this code is going away in 4.0 anyway, I won't bother fixing it properly, 
-			// just fallback to the the old circular orbit method if the result is NaN.
-			if (double.IsNaN(Td))
+			bool incNaN = double.IsNaN(obt.inclination);
+			if (Lib.Landed(v) || incNaN)
 			{
-				double Ra2 = v.altitude + v.mainBody.Radius;
-				double h2 = Math.Sqrt(Ra2 * v.mainBody.gravParameter);
-				Td = (2.0 * Ra2 * Ra2 / h2) * Math.Asin(v.mainBody.Radius / Ra2);
+				var mb = v.mainBody;
+				if (sun == mb)
+				{
+					return 0;
+				}
+
+				if (mb.referenceBody == sun && mb.tidallyLocked)
+				{
+					Vector3d vPos = incNaN ? (Vector3d)v.transform.position : v.orbitDriver.pos + mb.position;
+					// We have to refind orbit pos in case inc is NaN
+					return Vector3d.Dot(sunVec, mb.position - vPos) < 0 ? 0 : 1.0;
+				}
+
+				// Just assume half the body's rotation period (note that
+				// for landed vessels, the orbital period is considered the
+				// body's rotation period).
+				return 0.5 * mb.rotationPeriod;
 			}
 
-			return Td;
+			double e = obt.eccentricity;
+			if (e >= 1d)
+			{
+				// This is wrong, of course, but given the speed of an escape trajectory
+				// you'll be in shadow for a very miniscule fraction of the period.
+				return 0;
+			}
+			Vector3d planeNormal = Vector3d.Cross(v.orbitDriver.vel, -v.orbitDriver.pos).normalized;
+			double sunDot = Math.Abs(Vector3d.Dot(sunVec, planeNormal));
+			double betaAngle = Math.PI * 0.5d - Math.Acos(sunDot);
+
+			double a = obt.semiMajorAxis;
+			double R = obt.referenceBody.Radius;
+
+			// Now, branch depending on if we're in a low-ecc orbit
+			// We check locally for betaStar because we might bail early in the Kerbalism case
+			double frac;
+			if (e < 0.1d)
+				frac = FracEclipseCircular(betaAngle, a, R);
+			else
+				frac = FracEclipseElliptical(v, betaAngle, a, R, e, sunVec);
+
+			return frac;
+		}
+
+		/// <summary>
+		/// This computes eclipse fraction for circular orbits
+		/// (well, realy circular _low_ orbits, but at higher altitudes
+		/// you're not spending much time in shadow anyway).
+		/// </summary>
+		/// <param name="betaAngle">The beta angle (angle between the solar normal and its projection on the orbital plane)</param>
+		/// <param name="sma">The semi-major axis</param>
+		/// <param name="R">The body's radius</param>
+		/// <returns></returns>
+		private static double FracEclipseCircular(double betaAngle, double sma, double R)
+		{
+			// from https://commons.erau.edu/cgi/viewcontent.cgi?article=1412&context=ijaaa
+			// beta* is the angle above which there is no occlusion of the orbit
+			double betaStar = Math.Asin(R / sma);
+			if (Math.Abs(betaAngle) >= betaStar)
+				return 0;
+
+			double avgHeight = sma - R;
+			return (1.0 / Math.PI) * Math.Acos(Math.Sqrt(avgHeight * avgHeight + 2.0 * R * avgHeight) / (sma * Math.Cos(betaAngle)));
+		}
+
+		/// <summary>
+		/// An analytic solution to the fraction of an orbit eclipsed by its primary
+		/// </summary>
+		/// <param name="v">The vessel</param>
+		/// <param name="betaAngle">The beta angle (angle between the solar normal and its projection on the orbital plane)</param>
+		/// <param name="a">semi-major axis</param>
+		/// <param name="R">body radius</param>
+		/// <param name="e">eccentricity</param>
+		/// <param name="sunVec">The normalized vector to the sun</param>
+		/// <returns></returns>
+		private static double FracEclipseElliptical(Vessel v, double betaAngle, double a, double R, double e, Vector3d sunVec)
+		{
+			var obt = v.orbit;
+			double b = obt.semiMinorAxis;
+			// Just bail if we were going to report NaN, or we're in a weird state
+			// We've likely avoided this already due to the eccentricity check in the main call, though
+			if (a < b || b < R)
+				return 0;
+
+			// Compute where the Pe is with respect to the sun
+			Vector3d PeToBody = -Planetarium.Zup.WorldToLocal(obt.semiLatusRectum / (1d + e) * obt.OrbitFrame.X).xzy;
+			Vector3d orthog = Vector3d.Cross(obt.referenceBody.GetFrameVel().xzy.normalized, sunVec);
+			Vector3d PeToBodyProj = (PeToBody - orthog * Vector3d.Dot(PeToBody, orthog)).normalized;
+			// Use these to calculate true anomaly for this projected orbit
+			double tA = Math.Acos(Vector3d.Dot(sunVec, PeToBodyProj));
+
+			// Get distance to ellipse edge
+			double r = a * (1.0 - e * e) / (1.0 + e * Math.Cos(tA));
+
+			double betaStar = Math.Asin(R / r);
+			double absBeta = Math.Abs(betaAngle);
+			if (absBeta >= betaStar)
+				return 0d;
+
+			// Get the vector to the center of the eclipse
+			double vecToHalfEclipsePortion = Math.Asin(R / r);
+			// Get the true anomalies at the front and rear of the eclipse portion
+			double vAhead = tA + vecToHalfEclipsePortion;
+			double vBehind = tA - vecToHalfEclipsePortion;
+			vAhead *= 0.5;
+			vBehind *= 0.5;
+			double ePlusOneSqrt = Math.Sqrt(1 + e);
+			double eMinusOneSqrt = Math.Sqrt(1 - e);
+			// Calculate eccentric and mean anomalies
+			double EAAhead = 2.0 * Math.Atan2(eMinusOneSqrt * Math.Sin(vAhead), ePlusOneSqrt * Math.Cos(vAhead));
+			double MAhead = EAAhead - e * Math.Sin(EAAhead);
+			double EABehind = 2.0 * Math.Atan2(eMinusOneSqrt * Math.Sin(vBehind), ePlusOneSqrt * Math.Cos(vBehind));
+			double Mbehind = EABehind - e * Math.Sin(EABehind);
+			// Finally, calculate the eclipse fraction from mean anomalies
+			double eclipseFrac = (MAhead - Mbehind) / (2.0 * Math.PI);
+			// This is not quite correct I think, but it'll be close enough.
+			// We just lerp between 0 occlusion at beta = betaStar, and full occlusion
+			// at beta = 0. This takes advantage of the difference 1 degree makes being larger
+			// as beta approaches zero, at the same time as the proportional increase in
+			// occlusion *area* tapers off as the plane approaches the body's horizon.
+			return eclipseFrac * absBeta / betaStar;
 		}
 
 		/// <summary>
 		/// This expects to be called repeatedly
 		/// </summary>
-		public static double SampleSunFactor(Vessel v, double elapsedSeconds)
+		public static double SampleSunFactor(Vessel v, double elapsedSeconds, CelestialBody sun)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Sim.SunFactor2");
 
-			// assume 50% exposure for landed vessels (half the period is night)
-			// this is bad for inclined bodies, but we're not landing on uranus
-			// any time soon
-			if(Lib.Landed(v) || double.IsNaN(v.orbit.inclination) || v.orbit == null)
-				return 0.5;
+			bool isSurf = Lib.Landed(v);
+			if (v.orbitDriver == null || v.orbitDriver.orbit == null || (!isSurf && double.IsNaN(v.orbit.inclination)))
+			{
+				UnityEngine.Profiling.Profiler.EndSample();
+				return 1d; // fail safe
+			}
 
 			int sunSamples = 0;
-			int sampleCount = 0;
 
 			var now = Planetarium.GetUniversalTime();
-			double step = Math.Max(120.0, elapsedSeconds / 40);
-			var sun = v.KerbalismData().EnvMainSun.SunData.body;
-			var occluders = v.KerbalismData().EnvVisibleBodies;
-			double calculatedDuration = 0;
-			double maxCalculation = Math.Min(elapsedSeconds * 1.5, v.orbit.period);
 
-			// calculate for one orbit or 1.5 times the amount we need, whichever is shorter
-			while (calculatedDuration < maxCalculation)
+			var vd = v.KerbalismData();
+			List<CelestialBody> occluders = vd.EnvVisibleBodies;
+
+			// set up CB position caches
+			bodyCache.SetForOccluders(occluders);
+
+			// Set max time to calc
+			double maxCalculation = elapsedSeconds * 1.01d;
+
+			// cache values for speed
+			double semiLatusRectum = 0d;
+			CelestialBody mb = v.mainBody;
+			Vector3d surfPos;
+			Vector3d polarAxis;
+			if (isSurf)
 			{
-				Vector3d position = v.orbit.getPositionAtUT(now + sampleCount * step);
-				Vector3d direction;
-				double distance;
-				if (IsBodyVisible(v, position, sun, occluders, out direction, out distance))
-					sunSamples++;
+				surfPos = mb.GetRelSurfacePosition(v.latitude, v.longitude, v.altitude);
+                // Doing this manually instead of swizzling surfPos avoids one of the two swizzles
+                surfPos = (surfPos.x * mb.BodyFrame.X + surfPos.z * mb.BodyFrame.Y + surfPos.y * mb.BodyFrame.Z).xzy;
 
-				sampleCount++;
-				calculatedDuration = step * sampleCount;
+				// This will not be quite correct for Principia but at least it's
+				// using the BodyFrame, which Principia clobbers, rather than the
+				// transform.
+				polarAxis = mb.BodyFrame.Rotation.swizzle * Vector3d.up;
+			}
+			else
+			{
+				semiLatusRectum = v.orbit.semiLatusRectum;
+				maxCalculation = Math.Min(maxCalculation, v.orbit.period);
+				surfPos = new Vector3d();
+				polarAxis = new Vector3d();
+			}
+
+			// Set up timimg
+			double stepLength = Math.Max(120d, elapsedSeconds * (1d / 40d));
+			int sampleCount;
+			if (stepLength > maxCalculation)
+			{
+				stepLength = maxCalculation;
+				sampleCount = 1;
+			}
+			else
+			{
+				sampleCount = (int)Math.Ceiling(maxCalculation / stepLength);
+				stepLength = maxCalculation / (double)sampleCount;
+			}
+
+			for (int i = sampleCount; i-- > 0;)
+			{
+				double ut = now - i * stepLength;
+				bodyCache.SetForUT(ut, occluders);
+				Vector3d bodyPos = bodyCache.GetBodyPosition(mb.flightGlobalsIndex);
+				Vector3d pos;
+				if (isSurf)
+				{
+					// Rotate the surface position based on where the body would have rotated in the past
+					// Note: rotation is around *down* so we flip the sign of the rotation
+					pos = QuaternionD.AngleAxis(mb.rotPeriodRecip * i * stepLength * 360d, polarAxis) * surfPos;
+				}
+				else
+				{
+					pos = FastGetRelativePositionAtUT(v.orbit, ut, semiLatusRectum);
+				}
+				// Apply the body's position
+				pos += bodyPos;
+
+				bool vis = IsSunVisibleAtTime(v, pos, sun, occluders, isSurf);
+				if (vis)
+					++sunSamples;
 			}
 
 			UnityEngine.Profiling.Profiler.EndSample();
 
 			double sunFactor = (double)sunSamples / (double)sampleCount;
-			// Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + step);
+			//Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + stepLength);
 			return sunFactor;
+		}
+
+		/// <summary>
+		/// A version of IsBodyVisibleAt that is optimized for suns
+		/// and supports using arbitrary time (assuming bodyCache is set)
+		/// </summary>
+		/// <param name="vessel"></param>
+		/// <param name="vesselPos">Vessel position at time</param>
+		/// <param name="sun"></param>
+		/// <param name="sunIdx">The body index of the sun</param>
+		/// <param name="occluders"></param>
+		/// <param name="UT"></param>
+		/// <param name="isSurf">is the vessel landed</param>
+		/// <returns></returns>
+		internal static bool IsSunVisibleAtTime(Vessel vessel, Vector3d vesselPos, CelestialBody sun, List<CelestialBody> occluders, bool isSurf)
+		{
+			// generate ray parameters
+			Vector3d sunPos = bodyCache.GetBodyPosition(sun.flightGlobalsIndex) - vesselPos;
+			var sunDir = sunPos;
+			var sunDist = sunDir.magnitude;
+			sunDir /= sunDist;
+			sunDist -= sun.Radius;
+
+			// for very small bodies the analytic method is very unreliable at high latitudes
+			// So we use a modified version of the analytic method (unlike IsBodyVisible)
+			bool ignoreMainbody = false;
+			if (isSurf && vessel.mainBody.Radius < 100000.0)
+			{
+				ignoreMainbody = true;
+				Vector3d mainBodyPos = bodyCache.GetBodyPosition(vessel.mainBody.flightGlobalsIndex);
+				Vector3d mainBodyDir = (mainBodyPos - vesselPos).normalized;
+				double dotSunBody = Vector3d.Dot(mainBodyDir, sunDir);
+				Vector3d mainBodyDirProjected = mainBodyDir * dotSunBody;
+
+				// Assume the sun is far enough away that we can treat the line from the vessel
+				// to the sun as parallel to the line from the body center to the sun, which means
+				// we can ignore testing further if we're very close to the plane orthogonal to the
+				// sun vector but on the opposite side of the body from the sun.
+				// We don't strictly test dot to give ourselves approx half a degree of slop
+				if (mainBodyDirProjected.sqrMagnitude > 0.0001d && dotSunBody > 0d)
+				{
+					return false;
+				}
+			}
+
+			// check if the ray intersect one of the provided bodies
+			for (int i = occluders.Count; i-- > 0;)
+			{
+				CelestialBody occludingBody = occluders[i];
+				if (occludingBody == sun)
+					continue;
+				if (ignoreMainbody && occludingBody == vessel.mainBody)
+					continue;
+
+				Vector3d toBody = bodyCache.GetBodyPosition(occludingBody.flightGlobalsIndex) - vesselPos;
+				// projection of origin->body center ray over the raytracing direction
+				double k = Vector3d.Dot(toBody, sunDir);
+				// the ray doesn't hit body if its minimal analytical distance along the ray is less than its radius
+				// simplified from 'start + dir * k - body.position'
+				bool hit = k > 0d && k < sunDist && (sunDir * k - toBody).magnitude < occludingBody.Radius;
+				if (hit)
+					return false;
+			}
+
+			return true;
 		}
 
 		// return rotation speed at body surface
@@ -402,6 +572,151 @@ namespace KERBALISM
 				return solarFluxTotal / (Math.PI * 4 * distance * distance);
 			}
 		}
+
+		/// <summary>
+		/// A cache to speed calculation of body positions at a given UT, based on
+		/// as set of occluders. Used when calculating solar exposure at analytic rates.
+		/// This creates storage for each body in FlightGlobals, but only caches
+		/// a lookup from occluder to body index, and then for each relevant occluder
+		/// and its parents a lookup to each parent (and on up the chain) and the
+		/// semilatus rectum. Then when set for a UT, it calculates positions
+		/// for each occluder on up the chain to the root CB.
+		/// </summary>
+		public class BodyCache
+		{
+			private Vector3d[] positions = null;
+			private int[] parents;
+			private double[] semiLatusRectums;
+
+			public Vector3d GetBodyPosition(int idx) { return positions[idx]; }
+
+			/// <summary>
+			/// Check and, if uninitialized, setup the body caches
+			/// </summary>
+			private void CheckInitBodies()
+			{
+				int c = FlightGlobals.Bodies.Count;
+				if (positions != null && positions.Length == c)
+					return;
+
+				positions = new Vector3d[c];
+				parents = new int[c];
+				semiLatusRectums = new double[c];
+
+				for (int i = 0; i < c; ++i)
+				{
+					var cb = FlightGlobals.Bodies[i];
+					// Set parent index lookup
+					var parent = cb.orbitDriver?.orbit?.referenceBody;
+					if (parent != null && parent != cb)
+					{
+						parents[i] = parent.flightGlobalsIndex;
+					}
+					else
+					{
+						parents[i] = -1;
+					}
+				}
+			}
+
+			/// <summary>
+			/// Initialize the cache for a set of occluders. This
+			/// will set up the lookups for the occluder bodies and
+			/// cache the semi-latus recturm for each body and its
+			/// parents
+			/// </summary>
+			/// <param name="occluders"></param>
+			public void SetForOccluders(List<CelestialBody> occluders)
+			{
+				CheckInitBodies();
+
+				// Now clear all SLRs and then set only the relevant ones
+				// (i.e. the occluders, their parents, their grandparents, etc)
+				for (int i = semiLatusRectums.Length; i-- > 0;)
+					semiLatusRectums[i] = double.MaxValue;
+				for (int i = occluders.Count; i-- > 0;)
+					SetSLRs(occluders[i].flightGlobalsIndex);
+			}
+
+			private void SetSLRs(int i)
+			{
+				// Check if set
+				if (semiLatusRectums[i] != double.MaxValue)
+					return;
+
+				// Check if parent
+				int pIdx = parents[i];
+				if (pIdx == -1)
+				{
+					semiLatusRectums[i] = 1d;
+					return;
+				}
+
+				semiLatusRectums[i] = FlightGlobals.Bodies[i].orbit.semiLatusRectum;
+				SetSLRs(pIdx);
+			}
+
+			/// <summary>
+			/// Set the occluder body positions at the given UT
+			/// </summary>
+			/// <param name="ut"></param>
+			public void SetForUT(double ut, List<CelestialBody> occluders)
+			{
+				// Start from unknown positions
+				for (int i = positions.Length; i-- > 0;)
+					positions[i] = new Vector3d(double.MaxValue, double.MaxValue);
+
+				// Fill positions at UT, recursively (skipping calculated parents)
+				for (int i = occluders.Count; i-- > 0;)
+					SetForUTInternal(occluders[i].flightGlobalsIndex, ut);
+			}
+
+			private void SetForUTInternal(int i, double ut)
+			{
+				// If we've already been here, bail
+				if (positions[i].x != double.MaxValue)
+					return;
+
+				// Check if we have a parent. If not
+				// position is just the body's position
+				var cb = FlightGlobals.Bodies[i];
+				int pIdx = parents[i];
+				if (pIdx == -1)
+				{
+					positions[i] = cb.position;
+					return;
+				}
+
+				// If we do have a parent, recurse and then
+				// set position based on newly-set parent's pos
+				SetForUTInternal(pIdx, ut);
+				positions[i] = positions[pIdx] + FastGetRelativePositionAtUT(cb.orbit, ut, semiLatusRectums[i]);
+			}
+		}
+
+		/// <summary>
+		/// A fast version of KSP's GetRelativePositionAtUT.
+		/// It skips a bunch of steps and uses cached values
+		/// </summary>
+		/// <param name="orbit"></param>
+		/// <param name="UT"></param>
+		/// <param name="semiLatusRectum"></param>
+		/// <returns></returns>
+		private static Vector3d FastGetRelativePositionAtUT(Orbit orbit, double UT, double semiLatusRectum)
+		{
+			double T = orbit.getObtAtUT(UT);
+
+			double M = T * orbit.meanMotion;
+			double E = orbit.solveEccentricAnomaly(M, orbit.eccentricity);
+			double v = orbit.GetTrueAnomaly(E);
+
+			double cos = Math.Cos(v);
+			double sin = Math.Sin(v);
+			Vector3d pos = semiLatusRectum / (1.0 + orbit.eccentricity * cos) * (orbit.OrbitFrame.X * cos + orbit.OrbitFrame.Y * sin);
+			return Planetarium.Zup.WorldToLocal(pos).xzy;
+		}
+
+		static readonly BodyCache bodyCache = new BodyCache();
 
 		static double au = 0.0;
 		/// <summary> Distance between the home body and its main sun</summary>
