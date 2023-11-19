@@ -229,43 +229,69 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.SyncAll");
 			if (v.loaded)
 			{
-				Dictionary<string, List<PartResource>> resInfos = new Dictionary<string, List<PartResource>>(resources.Count);
+				Dictionary<int, ResourceInfo.TankSet<PartResource>> resInfos = new Dictionary<int, ResourceInfo.TankSet<PartResource>>(resources.Count);
 				foreach (ResourceInfo resInfo in resources.Values)
-					resInfos.Add(resInfo.ResourceName, new List<PartResource>());
+					resInfos.Add(resInfo.ResourceID, new ResourceInfo.TankSet<PartResource>());
 
 				foreach (Part p in v.Parts)
 				{
+					// reverse order
+					int partPri = int.MaxValue - p.GetResourcePriority();
 					foreach (PartResource r in p.Resources.dict.Values)
 					{
-						if (r.flowState && resInfos.ContainsKey(r.resourceName))
+						var sl = resInfos[r.info.id];
+						if (r.flowState && resInfos.ContainsKey(r.info.id))
 						{
-							resInfos[r.resourceName].Add(r);
+							int pri = Settings.UseResourcePriority || r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
+							if (!sl.TryGetValue(pri, out var lst))
+							{
+								lst = new ResourceInfo.TanksAndAmounts<PartResource>();
+								sl[pri] = lst;
+							}
+							lst.tanks.Add(r);
+							lst.amount += r.amount;
+							lst.maxAmount += r.maxAmount;
+							sl.amount += r.amount;
+							sl.maxAmount += r.maxAmount;
 						}
 					}
 				}
 
 				foreach (ResourceInfo resInfo in resources.Values)
-					resInfo.Sync(v, vd, elapsed_s, resInfos[resInfo.ResourceName], null);
+					resInfo.Sync(v, vd, elapsed_s, resInfos[resInfo.ResourceID], null);
 			}
 			else
 			{
-				Dictionary<string, List<ProtoPartResourceSnapshot>> resInfos = new Dictionary<string, List<ProtoPartResourceSnapshot>>(resources.Count);
+				Dictionary<int, ResourceInfo.TankSet<ProtoPartResourceSnapshot>> resInfos = new Dictionary<int, ResourceInfo.TankSet<ProtoPartResourceSnapshot>>(resources.Count);
 				foreach (ResourceInfo resInfo in resources.Values)
-					resInfos.Add(resInfo.ResourceName, new List<ProtoPartResourceSnapshot>());
+					resInfos.Add(resInfo.ResourceID, new ResourceInfo.TankSet<ProtoPartResourceSnapshot>());
 
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
+					// reverse order
+					int partPri = int.MaxValue - ((p.partInfo.partPrefab.resourcePriorityUseParentInverseStage ? p.parent.inverseStageIndex : p.inverseStageIndex) * 10 + p.resourcePriorityOffset);
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (r.flowState && resInfos.ContainsKey(r.resourceName))
+						var sl = resInfos[r.definition.id];
+						if (r.flowState && resInfos.ContainsKey(r.definition.id))
 						{
-							resInfos[r.resourceName].Add(r);
+							int pri = Settings.UseResourcePriority || r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
+							if (!sl.TryGetValue(pri, out var lst))
+							{
+								lst = new ResourceInfo.TanksAndAmounts<ProtoPartResourceSnapshot>();
+								sl[pri] = lst;
+							}
+							lst.tanks.Add(r);
+							lst.amount += r.amount;
+							lst.maxAmount += r.maxAmount;
+							sl.amount += r.amount;
+							sl.maxAmount += r.maxAmount;
 						}
 					}
 				}
 
 				foreach (ResourceInfo resInfo in resources.Values)
-					resInfo.Sync(v, vd, elapsed_s, null, resInfos[resInfo.ResourceName]);
+					resInfo.Sync(v, vd, elapsed_s, null, resInfos[resInfo.ResourceName.GetHashCode()]);
 			}
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
@@ -330,8 +356,20 @@ namespace KERBALISM
 	/// </summary>
 	public sealed class ResourceInfo
 	{
+		private string resourceName;
 		/// <summary> Associated resource name</summary>
-		public string ResourceName { get; private set; }
+		public string ResourceName
+		{
+			get { return resourceName; }
+			set
+			{
+				resourceName = value;
+				resourceID = value.GetHashCode();
+			}
+		}
+
+		private int resourceID;
+		public int ResourceID => resourceID;
 
 		/// <summary> Rate of change in amount per-second, this is purely for visualization</summary>
 		public double Rate { get; private set; }
@@ -453,12 +491,25 @@ namespace KERBALISM
 				brokersResourceAmounts.Add(broker, -quantity);
 		}
 
+		public class TankSet<T> : SortedList<int, TanksAndAmounts<T>>
+		{
+			public double amount;
+			public double maxAmount;
+		}
+
+		public class TanksAndAmounts<T>
+		{
+			public List<T> tanks = new List<T>();
+			public double amount = 0;
+			public double maxAmount = 0;
+		}
+
 		/// <summary>synchronize resources from cache to vessel</summary>
 		/// <remarks>
 		/// this function will also sync from vessel to cache so you can always use the
 		/// ResourceInfo interface to get information about resources
 		/// </remarks>
-		public void Sync(Vessel v, VesselData vd, double elapsed_s, List<PartResource> loadedResList, List<ProtoPartResourceSnapshot> unloadedResList)
+		public void Sync(Vessel v, VesselData vd, double elapsed_s, TankSet<PartResource> loadedResList, TankSet<ProtoPartResourceSnapshot> unloadedResList)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.Sync");
 			// # OVERVIEW
@@ -503,19 +554,13 @@ namespace KERBALISM
 
 			if (v.loaded)
 			{
-				foreach (PartResource r in loadedResList)
-				{
-					Amount += r.amount;
-					Capacity += r.maxAmount;
-				}
+				Amount = loadedResList.amount;
+				Capacity = loadedResList.maxAmount;
 			}
 			else
 			{
-				foreach (ProtoPartResourceSnapshot r in unloadedResList)
-				{
-					Amount += r.amount;
-					Capacity += r.maxAmount;
-				}
+				Amount = unloadedResList.amount;
+				Capacity = unloadedResList.maxAmount;
 			}
 
 			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
@@ -533,35 +578,128 @@ namespace KERBALISM
 			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
 			Deferred = Lib.Clamp(Deferred, -Amount, Capacity - Amount);
 
-			// apply deferred consumption/production to all parts, simulating ALL_VESSEL_BALANCED
+			// apply deferred consumption/production to all parts
+			// If the resource has a flowmode that respects priority, we'll be doing this in
+			// order. If it doesn't, there will only be one priority.
 			// - iterating again is faster than using a temporary list of valid PartResources
 			// - avoid very small values in deferred consumption/production
+			// NOTE: Could avoid a lot of duplicated code if we used a wrapper for PartResource vs ProtoPartResourceSnapshot
+			// but that would generate rather more garbage each frame by allocating one wrapper per tank
 			if (Math.Abs(Deferred) > 1e-10)
 			{
+				double defRemaining = Deferred;
 				if (v.loaded)
 				{
-					foreach (PartResource r in loadedResList)
+					foreach (var kvp in loadedResList)
 					{
-						// calculate consumption/production coefficient for the part
-						double k = Deferred < 0.0
-						  ? r.amount / Amount
-						  : (r.maxAmount - r.amount) / (Capacity - Amount);
+						if (defRemaining < 0d)
+						{
+							if (kvp.Value.amount == 0d)
+								continue;
 
-						// apply deferred consumption/production
-						r.amount += Deferred * k;
+							if (defRemaining <= -kvp.Value.amount)
+							{
+								defRemaining += kvp.Value.amount;
+								foreach (var r in kvp.Value.tanks)
+									r.amount = 0d;
+
+								continue;
+							}
+
+							// We know that the delta is less than what is available
+							foreach (var r in kvp.Value.tanks)
+							{
+								// calculate consumption/production coefficient for the part
+								double k = r.amount / kvp.Value.amount;
+
+								// apply deferred consumption/production
+								r.amount += defRemaining * k;
+							}
+							break;
+						}
+						else
+						{
+							double free = kvp.Value.maxAmount - kvp.Value.amount;
+
+							if (free == 0d)
+								continue;
+							if (defRemaining >= free)
+							{
+								defRemaining -= kvp.Value.maxAmount - kvp.Value.amount;
+								foreach (var r in kvp.Value.tanks)
+									r.amount = r.maxAmount;
+
+								continue;
+							}
+
+							// We know that the delta is less than what is available
+							foreach (var r in kvp.Value.tanks)
+							{
+								// calculate consumption/production coefficient for the part
+								double k = (r.maxAmount - r.amount) / free;
+
+								// apply deferred consumption/production
+								r.amount += defRemaining * k;
+							}
+							break;
+						}
 					}
 				}
 				else
 				{
-					foreach (ProtoPartResourceSnapshot r in unloadedResList)
+					foreach (var kvp in unloadedResList)
 					{
-						// calculate consumption/production coefficient for the part
-						double k = Deferred < 0.0
-						  ? r.amount / Amount
-						  : (r.maxAmount - r.amount) / (Capacity - Amount);
+						if (defRemaining < 0d)
+						{
+							if (kvp.Value.amount == 0d)
+								continue;
 
-						// apply deferred consumption/production
-						r.amount += Deferred * k;
+							if (defRemaining <= -kvp.Value.amount)
+							{
+								defRemaining += kvp.Value.amount;
+								foreach (var r in kvp.Value.tanks)
+									r.amount = 0d;
+
+								continue;
+							}
+
+							// We know that the delta is less than what is available
+							foreach (var r in kvp.Value.tanks)
+							{
+								// calculate consumption/production coefficient for the part
+								double k = r.amount / kvp.Value.amount;
+
+								// apply deferred consumption/production
+								r.amount += defRemaining * k;
+							}
+							break;
+						}
+						else
+						{
+							double free = kvp.Value.maxAmount - kvp.Value.amount;
+
+							if (free == 0d)
+								continue;
+							if (defRemaining >= free)
+							{
+								defRemaining -= kvp.Value.maxAmount - kvp.Value.amount;
+								foreach (var r in kvp.Value.tanks)
+									r.amount = r.maxAmount;
+
+								continue;
+							}
+
+							// We know that the delta is less than what is available
+							foreach (var r in kvp.Value.tanks)
+							{
+								// calculate consumption/production coefficient for the part
+								double k = (r.maxAmount - r.amount) / free;
+
+								// apply deferred consumption/production
+								r.amount += defRemaining * k;
+							}
+							break;
+						}
 					}
 				}
 			}
