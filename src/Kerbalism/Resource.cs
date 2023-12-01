@@ -236,13 +236,15 @@ namespace KERBALISM
 				foreach (Part p in v.Parts)
 				{
 					// reverse order
-					int partPri = int.MaxValue - p.GetResourcePriority();
+					int partPri = Settings.UseResourcePriority
+						? (int.MaxValue - p.GetResourcePriority())
+						: 1;
 					foreach (PartResource r in p.Resources.dict.Values)
 					{
 						var sl = resInfos[r.info.id];
 						if (r.flowState && resInfos.ContainsKey(r.info.id))
 						{
-							int pri = Settings.UseResourcePriority || r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
+							int pri = r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
 							if (!sl.TryGetValue(pri, out var lst))
 							{
 								lst = new ResourceInfo.TanksAndAmounts<PartResource>();
@@ -269,13 +271,15 @@ namespace KERBALISM
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
 					// reverse order
-					int partPri = int.MaxValue - ((p.partInfo.partPrefab.resourcePriorityUseParentInverseStage ? p.parent.inverseStageIndex : p.inverseStageIndex) * 10 + p.resourcePriorityOffset);
+					int partPri = Settings.UseResourcePriority
+						? (int.MaxValue - ((p.partInfo.partPrefab.resourcePriorityUseParentInverseStage ? p.parent.inverseStageIndex : p.inverseStageIndex) * 10 + p.resourcePriorityOffset))
+						: 1;
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
 						var sl = resInfos[r.definition.id];
 						if (r.flowState && resInfos.ContainsKey(r.definition.id))
 						{
-							int pri = Settings.UseResourcePriority || r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
+							int pri = r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
 							if (!sl.TryGetValue(pri, out var lst))
 							{
 								lst = new ResourceInfo.TanksAndAmounts<ProtoPartResourceSnapshot>();
