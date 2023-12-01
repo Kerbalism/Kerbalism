@@ -126,10 +126,10 @@ namespace KERBALISM
 					return Vector3d.Dot(sunVec, mb.position - vPos) < 0 ? 0 : 1.0;
 				}
 
-				// Just assume half the body's rotation period (note that
-				// for landed vessels, the orbital period is considered the
-				// body's rotation period).
-				return 0.5 * mb.rotationPeriod;
+				// Just assume half the time, since for non-tidally-locked
+				// bodies without axial tilt, for sufficiently large timesteps
+				// half the time will be spent in sunlight.
+				return 0.5;
 			}
 
 			double e = obt.eccentricity;
