@@ -186,26 +186,28 @@ namespace KERBALISM
 	/// </summary>
 	public sealed class VesselResources
 	{
-		private Dictionary<string, ResourceInfo> resources = new Dictionary<string, ResourceInfo>(32);
+		private Dictionary<int, ResourceInfo> resources = new Dictionary<int, ResourceInfo>(32);
+		private ResourceInfo GetResInfo(string resName) { resources.TryGetValue(resName.GetHashCode(), out var ri); return ri; }
 		private List<ResourceRecipe> recipes = new List<ResourceRecipe>(4);
 
 		/// <summary> return a VesselResources handler </summary>
 		public ResourceInfo GetResource(Vessel v, string resource_name)
 		{
 			// try to get existing entry if any
-			ResourceInfo res;
-			if (resources.TryGetValue(resource_name, out res)) return res;
+			ResourceInfo res = GetResInfo(resource_name);
+			if (res != null) return res;
 
 			// create new entry
 			res = new ResourceInfo(v, resource_name);
 
 			// remember new entry
-			resources.Add(resource_name, res);
+			resources.Add(resource_name.GetHashCode(), res);
 
 			// return new entry
 			return res;
 		}
 
+		
 		/// <summary>
 		/// Main vessel resource simulation update method.
 		/// Execute all recipes to get final deferred amounts, then for each resource apply deferred requests, 
@@ -225,78 +227,58 @@ namespace KERBALISM
 			// PartResourceList is slow and VERY garbagey to iterate over (because it's a dictionary disguised as a list),
 			// so acquiring a full list of all resources in a single loop is faster and less ram consuming than a
 			// "n ResourceInfo" * "n parts" * "n PartResource" loop (can easily result in 1000+ calls to p.Resources.dict.Values)
-			// It's also faster for unloaded vessels in the case of the ProtoPartResourceSnapshot lists, at the cost of a bit of garbage
+			// It's also faster for unloaded vessels in the case of the ProtoPartResourceSnapshot lists
+			// Note: there is a static setup cost since the PR and PPRS wrappers (and the tanksets) have to be instantiated
+			// the first time they're used, but all created objects are stored and reused each execution
+			// so there shouldn't be much garbage creation at all (indeed there will only be new garbage when the cache
+			// is insufficient).
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.SyncAll");
+
+			// Create sync sets for each resource, based on whether the vessel is loaded (wrappers for PartResource)
+			// or unloaded (wrappers for ProtoPartResourceSnapshot). Store priority as well for resources that use a
+			// priority-aware flow mode (and when the setting is enabled).
 			if (v.loaded)
 			{
-				Dictionary<int, ResourceInfo.TankSet<PartResource>> resInfos = new Dictionary<int, ResourceInfo.TankSet<PartResource>>(resources.Count);
-				foreach (ResourceInfo resInfo in resources.Values)
-					resInfos.Add(resInfo.ResourceID, new ResourceInfo.TankSet<PartResource>());
-
 				foreach (Part p in v.Parts)
 				{
-					// reverse order
-					int partPri = Settings.UseResourcePriority
-						? (int.MaxValue - p.GetResourcePriority())
-						: 1;
+					int partPri = Settings.UseResourcePriority ? p.GetResourcePriority() : 1;
 					foreach (PartResource r in p.Resources.dict.Values)
 					{
-						var sl = resInfos[r.info.id];
-						if (r.flowState && resInfos.ContainsKey(r.info.id))
+						if (r.flowState && resources.TryGetValue(r.info.id, out var resInfo))
 						{
 							int pri = r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.info.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
-							if (!sl.TryGetValue(pri, out var lst))
-							{
-								lst = new ResourceInfo.TanksAndAmounts<PartResource>();
-								sl[pri] = lst;
-							}
-							lst.tanks.Add(r);
-							lst.amount += r.amount;
-							lst.maxAmount += r.maxAmount;
-							sl.amount += r.amount;
-							sl.maxAmount += r.maxAmount;
+							resInfo.AddToSyncSet(r, pri);
 						}
 					}
 				}
-
-				foreach (ResourceInfo resInfo in resources.Values)
-					resInfo.Sync(v, vd, elapsed_s, resInfos[resInfo.ResourceID], null);
 			}
 			else
 			{
-				Dictionary<int, ResourceInfo.TankSet<ProtoPartResourceSnapshot>> resInfos = new Dictionary<int, ResourceInfo.TankSet<ProtoPartResourceSnapshot>>(resources.Count);
-				foreach (ResourceInfo resInfo in resources.Values)
-					resInfos.Add(resInfo.ResourceID, new ResourceInfo.TankSet<ProtoPartResourceSnapshot>());
-
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
-					// reverse order
 					int partPri = Settings.UseResourcePriority
-						? (int.MaxValue - ((p.partInfo.partPrefab.resourcePriorityUseParentInverseStage ? p.parent.inverseStageIndex : p.inverseStageIndex) * 10 + p.resourcePriorityOffset))
+						? ((p.partInfo.partPrefab.resourcePriorityUseParentInverseStage ? p.parent.inverseStageIndex : p.inverseStageIndex) * 10 + p.resourcePriorityOffset)
 						: 1;
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						var sl = resInfos[r.definition.id];
-						if (r.flowState && resInfos.ContainsKey(r.definition.id))
+						if (r.flowState && resources.TryGetValue(r.definition.id, out var resInfo))
 						{
 							int pri = r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL_BALANCE || r.definition.resourceFlowMode == ResourceFlowMode.ALL_VESSEL ? 1 : partPri;
-							if (!sl.TryGetValue(pri, out var lst))
-							{
-								lst = new ResourceInfo.TanksAndAmounts<ProtoPartResourceSnapshot>();
-								sl[pri] = lst;
-							}
-							lst.tanks.Add(r);
-							lst.amount += r.amount;
-							lst.maxAmount += r.maxAmount;
-							sl.amount += r.amount;
-							sl.maxAmount += r.maxAmount;
+							resInfo.AddToSyncSet(r, pri);
 						}
 					}
 				}
-
-				foreach (ResourceInfo resInfo in resources.Values)
-					resInfo.Sync(v, vd, elapsed_s, null, resInfos[resInfo.ResourceName.GetHashCode()]);
 			}
+
+			// Now sync each resource
+			foreach (ResourceInfo resInfo in resources.Values)
+			{
+				resInfo.Sync(v, vd, elapsed_s);
+				resInfo.ClearSyncSet();
+			}
+
+			ResourceInfo.ResetSyncCaches();
+
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 
@@ -360,6 +342,352 @@ namespace KERBALISM
 	/// </summary>
 	public sealed class ResourceInfo
 	{
+		#region Sync Set classes etc
+
+		/// <summary>
+		/// This lets us use CachedObject<T> to
+		/// avoid retyping the caching code
+		/// </summary>
+		public interface IResettable
+		{
+			void Reset();
+		}
+
+
+		/// <summary>
+		/// A simple object cache, will support any class
+		/// with a parameterless constructor that implements IResettable
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		public class CachedObject<T> where T : class, IResettable, new()
+		{
+			private List<T> objects = new List<T>();
+			private int active = 0;
+
+			/// <summary>
+			/// Returns a new T from the cache or, if there aren't
+			/// any free, creates a new one and adds it to the cache
+			/// </summary>
+			/// <returns></returns>
+			public T Next()
+			{
+				if (active < objects.Count)
+					return objects[active++];
+
+				var next = new T();
+				++active;
+				objects.Add(next);
+				return next;
+			}
+
+			/// <summary>
+			/// Frees an object, resetting it and returning
+			/// it to the cache, compacting the active set
+			/// </summary>
+			/// <param name="obj"></param>
+			public void Free(T obj)
+			{
+				for (int i = active; i-- > 0;)
+				{
+					var o = objects[i];
+					if (o == obj)
+					{
+						--active;
+						objects[i] = objects[active];
+						objects[active] = obj;
+						obj.Reset();
+						break;
+					}
+				}
+			}
+
+			/// <summary>
+			/// Resets all objects in the cache and
+			/// makes them all available
+			/// </summary>
+			public void Reset()
+			{
+				for (int i = active; i-- > 0;)
+					objects[i].Reset();
+
+				active = 0;
+			}
+
+			/// <summary>
+			/// Fully clears the cache. This will expose the objects to GC!
+			/// </summary>
+			public void Clear()
+			{
+				objects.Clear();
+				active = 0;
+			}
+		}
+
+		/// <summary>
+		/// Since stock has two separate resource classes (PartResource
+		/// and ProtoPartResourceSnapshot), but they share the same attributes,
+		/// we create a baseclass wrapper for them
+		/// </summary>
+		public abstract class Wrap : IResettable
+		{
+			public abstract double amount { get; set; }
+			public abstract double maxAmount { get; set; }
+
+			public abstract void Reset();
+		}
+
+		public class WrapPR : Wrap
+		{
+			private PartResource res;
+
+			public override double amount { get => res.amount; set => res.amount = value; }
+			public override double maxAmount { get => res.maxAmount; set => res.maxAmount = value; }
+
+			public void Link(PartResource r) { res = r; }
+
+			public override void Reset() { res = null; }
+		}
+
+		public class WrapPPRS : Wrap
+		{
+			private ProtoPartResourceSnapshot res;
+
+			public override double amount { get => res.amount; set => res.amount = value; }
+			public override double maxAmount { get => res.maxAmount; set => res.maxAmount = value; }
+
+			public void Link(ProtoPartResourceSnapshot r) { res = r; }
+
+			public override void Reset() { res = null; }
+		}
+
+		/// <summary>
+		/// A holder for a series of tanksets, stored in priority order.
+		/// The tanksets contain resource wrappers rather than resources directly.
+		/// The total amount and maxAmount for all tanks is stored.
+		/// </summary>
+		public class PriorityTankSets : IResettable
+		{
+			private List<TankSet> sets = new List<TankSet>(5);
+			public double amount;
+			public double maxAmount;
+
+			public void Add(Wrap rw, int pri)
+			{
+				amount += rw.amount;
+				maxAmount += rw.maxAmount;
+
+				int low = 0;
+				int high = sets.Count - 1;
+				TankSet ts;
+				while (low <= high)
+				{
+					int mid = low + (high - low) / 2;
+					ts = sets[mid];
+					if (ts.priority == pri)
+					{
+						ts.Add(rw);
+						return;
+					}
+
+					if (ts.priority < pri)
+						low = mid + 1;
+					else
+						high = mid - 1;
+				}
+				ts = cachedTS.Next();
+				ts.priority = pri;
+				ts.Add(rw);
+				sets.Insert(low, ts);
+			}
+
+			/// <summary>
+			/// Applies a resource delta, in priority order.
+			/// Note we pull from highest-priority tanks first,
+			/// and push to lowest-priority tanks first.
+			/// NOTE: This delta will already have been clamped to
+			/// [-amount, maxAmount]
+			/// </summary>
+			/// <param name="delta"></param>
+			public void ApplyDelta(double delta)
+			{
+				// pulling
+				if (delta < 0)
+				{
+					// remaining delta is made positive for easy
+					// comparison
+					double remD = -delta;
+					// start at the back (highest priority first)
+					for (int i = sets.Count; i-- > 0;)
+					{
+						var ts = sets[i];
+
+						// If the set has nothing for us, skip
+						if (ts.amount == 0)
+							continue;
+
+						// If the set has less resource than we want,
+						// empty it and continue
+						if (ts.amount < remD)
+						{
+							remD -= ts.amount;
+							ts.Empty();
+							continue;
+						}
+
+						// If we get here, we know we have
+						// enough resource to cover the delta.
+						// No need to update remD.
+						ts.ApplyDelta(-remD);
+						break;
+					}
+				}
+				else
+				{
+					double remD = delta;
+					// start at the front (lowest priority first)
+					for (int i = 0, iC = sets.Count; i < iC; ++i)
+					{
+						var ts = sets[i];
+						double free = ts.maxAmount - ts.amount;
+
+						// if the set has no free space, skip
+						if (free == 0)
+							continue;
+
+						// if the set has less headroom than we need,
+						// fill it completely and continue
+						if (free < remD)
+						{
+							remD -= free;
+							ts.Fill();
+							continue;
+						}
+
+						// if we get here, we know we have the headroom
+						// to cover the delta
+						ts.ApplyDelta(remD);
+						break;
+					}
+				}
+
+				amount += delta;
+			}
+
+			public void Reset()
+			{
+				amount = 0;
+				maxAmount = 0;
+				sets.Clear();
+			}
+		}
+
+		public class TankSet : IResettable
+		{
+			public int priority;
+			private List<Wrap> tanks = new List<Wrap>(20);
+			public double amount = 0;
+			public double maxAmount = 0;
+
+			public void Reset()
+			{
+				amount = 0;
+				maxAmount = 0;
+				tanks.Clear();
+			}
+
+			public void Add(Wrap r)
+			{
+				amount += r.amount;
+				maxAmount += r.maxAmount;
+				tanks.Add(r);
+			}
+
+			public void Fill()
+			{
+				amount = maxAmount;
+				for (int i = tanks.Count; i-- > 0;)
+				{
+					var t = tanks[i];
+					t.amount = t.maxAmount;
+				}
+			}
+
+			public void Empty()
+			{
+				amount = 0;
+				for (int i = tanks.Count; i-- > 0;)
+					tanks[i].amount = 0;
+			}
+
+			public void ApplyDelta(double delta)
+			{
+				// If we're pulling, then the ratio per tank is
+				// its amount / [total amount of all tanks].
+				// If we're pushing, then the ratio is
+				// [maxAmount - amount] / [total maxAmount - total amount of all tanks]
+				// Also, because the tank wrappers have properties, cache the values.
+				if (delta > 0)
+				{
+					double recip = maxAmount - amount;
+					if (recip > 0)
+						recip = 1d / recip;
+
+					for (int i = tanks.Count; i-- > 0;)
+					{
+						var t = tanks[i];
+						double a = t.amount;
+						double m = t.maxAmount;
+						t.amount = a + delta * (m - a) * recip;
+					}
+				}
+				else
+				{
+					double recip = amount > 0 ? 1d / amount : 0;
+
+					for (int i = tanks.Count; i-- > 0;)
+					{
+						var t = tanks[i];
+						double a = t.amount;
+						t.amount = a + delta * a * recip;
+					}
+				}
+				amount += delta;
+			}
+		}
+
+		private PriorityTankSets pts = new PriorityTankSets();
+		private static CachedObject<TankSet> cachedTS = new CachedObject<TankSet>();
+		private static CachedObject<WrapPR> cachedPR = new CachedObject<WrapPR>();
+		private static CachedObject<WrapPPRS> cachedPPRS = new CachedObject<WrapPPRS>();
+
+		public void AddToSyncSet(PartResource r, int pri)
+		{
+			var wrap = cachedPR.Next();
+			wrap.Link(r);
+			pts.Add(wrap, pri);
+		}
+
+		public void AddToSyncSet(ProtoPartResourceSnapshot r, int pri)
+		{
+			var wrap = cachedPPRS.Next();
+			wrap.Link(r);
+			pts.Add(wrap, pri);
+		}
+
+		public void ClearSyncSet()
+		{
+			pts.Reset();
+		}
+
+		public static void ResetSyncCaches()
+		{
+			cachedTS.Reset();
+			cachedPR.Reset();
+			cachedPPRS.Reset();
+		}
+
+		#endregion
+
 		private string resourceName;
 		/// <summary> Associated resource name</summary>
 		public string ResourceName
@@ -426,9 +754,9 @@ namespace KERBALISM
 			{
 				foreach (Part p in v.Parts)
 				{
-					foreach (PartResource r in p.Resources)
+					foreach (PartResource r in p.Resources.dict.Values)
 					{
-						if (r.resourceName == ResourceName)
+						if (r.info.id == resourceID)
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
@@ -449,7 +777,7 @@ namespace KERBALISM
 				{
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (r.flowState && r.resourceName == ResourceName)
+						if (r.flowState && r.definition.id == resourceID)
 						{
 							if (r.flowState) // has the user chosen to make a flowable resource flow
 							{
@@ -495,35 +823,22 @@ namespace KERBALISM
 				brokersResourceAmounts.Add(broker, -quantity);
 		}
 
-		public class TankSet<T> : SortedList<int, TanksAndAmounts<T>>
-		{
-			public double amount;
-			public double maxAmount;
-		}
-
-		public class TanksAndAmounts<T>
-		{
-			public List<T> tanks = new List<T>();
-			public double amount = 0;
-			public double maxAmount = 0;
-		}
-
 		/// <summary>synchronize resources from cache to vessel</summary>
 		/// <remarks>
 		/// this function will also sync from vessel to cache so you can always use the
 		/// ResourceInfo interface to get information about resources
 		/// </remarks>
-		public void Sync(Vessel v, VesselData vd, double elapsed_s, TankSet<PartResource> loadedResList, TankSet<ProtoPartResourceSnapshot> unloadedResList)
+		public void Sync(Vessel v, VesselData vd, double elapsed_s)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.Sync");
 			// # OVERVIEW
 			// - consumption/production is accumulated in "Deferred", then this function called
-			// - save previous step amount/capacity
-			// - part loop 1 : detect new amount/capacity
+			// - VesselResources.Sync will fill our sync set (and collect current amount/capacity) prior to call
+			// - on call, save previous step amount/capacity
 			// - if amount has changed, this mean there is non-Kerbalism producers/consumers on the vessel
 			// - if non-Kerbalism producers are detected on a loaded vessel, prevent high timewarp rates
 			// - clamp "Deferred" to amount/capacity
-			// - part loop 2 : apply "Deferred" to all parts
+			// - apply "Deferred" to all parts
 			// - apply "Deferred" to amount
 			// - calculate change rate per-second
 			// - calculate resource level
@@ -550,22 +865,11 @@ namespace KERBALISM
 			// remember vessel-wide capacity currently known, to detect flow state changes
 			double oldCapacity = Capacity;
 
-			// iterate over all enabled resource containers and detect amount/capacity again
+			// Use detected amount/capacity
 			// - this detect production/consumption from stock and third-party mods
 			//   that by-pass the resource cache, and flow state changes in general
-			Amount = 0.0;
-			Capacity = 0.0;
-
-			if (v.loaded)
-			{
-				Amount = loadedResList.amount;
-				Capacity = loadedResList.maxAmount;
-			}
-			else
-			{
-				Amount = unloadedResList.amount;
-				Capacity = unloadedResList.maxAmount;
-			}
+			Amount = pts.amount;
+			Capacity = pts.maxAmount;
 
 			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
 			double unsupportedBrokersRate = Amount - oldAmount;
@@ -585,131 +889,12 @@ namespace KERBALISM
 			// apply deferred consumption/production to all parts
 			// If the resource has a flowmode that respects priority, we'll be doing this in
 			// order. If it doesn't, there will only be one priority.
-			// - iterating again is faster than using a temporary list of valid PartResources
 			// - avoid very small values in deferred consumption/production
-			// NOTE: Could avoid a lot of duplicated code if we used a wrapper for PartResource vs ProtoPartResourceSnapshot
-			// but that would generate rather more garbage each frame by allocating one wrapper per tank
 			if (Math.Abs(Deferred) > 1e-10)
-			{
-				double defRemaining = Deferred;
-				if (v.loaded)
-				{
-					foreach (var kvp in loadedResList)
-					{
-						if (defRemaining < 0d)
-						{
-							if (kvp.Value.amount == 0d)
-								continue;
-
-							if (defRemaining <= -kvp.Value.amount)
-							{
-								defRemaining += kvp.Value.amount;
-								foreach (var r in kvp.Value.tanks)
-									r.amount = 0d;
-
-								continue;
-							}
-
-							// We know that the delta is less than what is available
-							foreach (var r in kvp.Value.tanks)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = r.amount / kvp.Value.amount;
-
-								// apply deferred consumption/production
-								r.amount += defRemaining * k;
-							}
-							break;
-						}
-						else
-						{
-							double free = kvp.Value.maxAmount - kvp.Value.amount;
-
-							if (free == 0d)
-								continue;
-							if (defRemaining >= free)
-							{
-								defRemaining -= kvp.Value.maxAmount - kvp.Value.amount;
-								foreach (var r in kvp.Value.tanks)
-									r.amount = r.maxAmount;
-
-								continue;
-							}
-
-							// We know that the delta is less than what is available
-							foreach (var r in kvp.Value.tanks)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = (r.maxAmount - r.amount) / free;
-
-								// apply deferred consumption/production
-								r.amount += defRemaining * k;
-							}
-							break;
-						}
-					}
-				}
-				else
-				{
-					foreach (var kvp in unloadedResList)
-					{
-						if (defRemaining < 0d)
-						{
-							if (kvp.Value.amount == 0d)
-								continue;
-
-							if (defRemaining <= -kvp.Value.amount)
-							{
-								defRemaining += kvp.Value.amount;
-								foreach (var r in kvp.Value.tanks)
-									r.amount = 0d;
-
-								continue;
-							}
-
-							// We know that the delta is less than what is available
-							foreach (var r in kvp.Value.tanks)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = r.amount / kvp.Value.amount;
-
-								// apply deferred consumption/production
-								r.amount += defRemaining * k;
-							}
-							break;
-						}
-						else
-						{
-							double free = kvp.Value.maxAmount - kvp.Value.amount;
-
-							if (free == 0d)
-								continue;
-							if (defRemaining >= free)
-							{
-								defRemaining -= kvp.Value.maxAmount - kvp.Value.amount;
-								foreach (var r in kvp.Value.tanks)
-									r.amount = r.maxAmount;
-
-								continue;
-							}
-
-							// We know that the delta is less than what is available
-							foreach (var r in kvp.Value.tanks)
-							{
-								// calculate consumption/production coefficient for the part
-								double k = (r.maxAmount - r.amount) / free;
-
-								// apply deferred consumption/production
-								r.amount += defRemaining * k;
-							}
-							break;
-						}
-					}
-				}
-			}
+				pts.ApplyDelta(Deferred);
 
 			// update amount, to get correct rate and levels at all times
-			Amount += Deferred;
+			Amount = pts.amount;
 
 			// reset deferred production/consumption
 			Deferred = 0.0;
