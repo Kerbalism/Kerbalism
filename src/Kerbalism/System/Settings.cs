@@ -108,6 +108,7 @@ namespace KERBALISM
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
+			UseResourcePriority = Lib.ConfigValue(cfg, "UseResourcePriority", false);
 
 			// debug / logging
 			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
@@ -213,6 +214,7 @@ namespace KERBALISM
 		public static bool CheckForCRP;
 
 		public static bool UseSamplingSunFactor;
+		public static bool UseResourcePriority;
 
 		// debug / logging
 		public static bool VolumeAndSurfaceLogging;
