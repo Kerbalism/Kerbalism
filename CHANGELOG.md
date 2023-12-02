@@ -1,3 +1,12 @@
+## v3.19 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2023-12-02
+
+ ### Changes since the last release
+ * Fixed NaN propagation issue due to typo in landed solar fraction code following last update refactors (@NathanKell)
+ * Added `UseResourcePriority` option in Settings.cfg. When enabled, resource consumption/production will respect stage and flow priorities instead of being split equally amongst all resource containers (@NathanKell)
+ * Added hand-tuned reliability configs for BDB engines (@Dragon)
+
 ## v3.18 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2023-10-22
