@@ -77,7 +77,7 @@ namespace KERBALISM
 			}
 
 			// configure on start
-			Configure(true, slots, cureEverybody);
+			Configure(isEnabled & running, slots, cureEverybody);
 
 			UpdateActions();
 		}
@@ -122,7 +122,7 @@ namespace KERBALISM
 			}
 			RemovePatients(removeList);
 
-			Configure(running, slots, cureEverybody);
+			Configure(isEnabled & running, slots, cureEverybody);
 
 			if (part.IsPAWVisible())
 				UpdateActions();
