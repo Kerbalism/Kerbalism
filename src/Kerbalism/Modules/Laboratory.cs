@@ -222,7 +222,7 @@ namespace KERBALISM
 			Specifics specs = new Specifics();
 			specs.Add(Local.Laboratory_Researcher, new CrewSpecs(researcher).Info());
 			if (cleaner) specs.Add(Local.Laboratory_CanClean);
-			specs.Add(Local.Laboratory_ECrate, Lib.HumanReadableRate(ec_rate));
+			specs.Add(Local.Laboratory_ECrate, Lib.HumanOrSIRate(ec_rate, Lib.ECResID));
 			specs.Add(Local.Laboratory_rate, Lib.HumanReadableDataRate(analysis_rate));
 			return specs;
 		}

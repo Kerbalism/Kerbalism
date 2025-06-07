@@ -46,6 +46,7 @@ namespace KERBALISM
 				process.defaultDumpValveIndex = process.defaultDumpValve.ValveIndex;
 			}
 
+			ModuleInfo = GetInfo();
 			node.TryGetValue(nameof(persistentValveIndex), ref persistentValveIndex);
 		}
 
@@ -199,13 +200,13 @@ namespace KERBALISM
 				foreach (KeyValuePair<string, double> pair in process.inputs)
 				{
 					if (!process.modifiers.Contains(pair.Key))
-						specs.Add(Lib.GetResourceDisplayName(pair.Key), Lib.BuildString(" <color=#ffaa00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+						specs.Add(Lib.GetResourceDisplayName(pair.Key), Lib.BuildString(" <color=#ffaa00>", Lib.HumanOrSIRate(pair.Value * capacity, pair.Key.GetHashCode()), "</color>"));
 					else
 						specs.Add(Local.ProcessController_info1, Lib.HumanReadableDuration(0.5 / pair.Value));//"Half-life"
 				}
 				foreach (KeyValuePair<string, double> pair in process.outputs)
 				{
-					specs.Add(Lib.GetResourceDisplayName(pair.Key), Lib.BuildString(" <color=#00ff00>", Lib.HumanReadableRate(pair.Value * capacity), "</color>"));
+					specs.Add(Lib.GetResourceDisplayName(pair.Key), Lib.BuildString(" <color=#00ff00>", Lib.HumanOrSIRate(pair.Value * capacity, pair.Key.GetHashCode()), "</color>"));
 				}
 			}
 			return specs;

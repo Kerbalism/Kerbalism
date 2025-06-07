@@ -124,8 +124,8 @@ namespace KERBALISM
 				results[i] = new RequireResult(Requires[i]);
 				switch (Requires[i].require)
 				{
-					case Require.OrbitMinInclination   : TestReq((c, r) => c >= r, v.orbit.inclination,         (double)Requires[i].value, results[i]); break;
-					case Require.OrbitMaxInclination   : TestReq((c, r) => c <= r, v.orbit.inclination,         (double)Requires[i].value, results[i]); break;
+					case Require.OrbitMinInclination   : TestReq((c, r) => c >= r, Lib.PrincipiaCorrectInclination(v.orbit),  (double)Requires[i].value, results[i]); break;
+					case Require.OrbitMaxInclination   : TestReq((c, r) => c <= r, Lib.PrincipiaCorrectInclination(v.orbit),  (double)Requires[i].value, results[i]); break;
 					case Require.OrbitMinEccentricity  : TestReq((c, r) => c >= r, v.orbit.eccentricity,        (double)Requires[i].value, results[i]); break;
 					case Require.OrbitMaxEccentricity  : TestReq((c, r) => c <= r, v.orbit.eccentricity,        (double)Requires[i].value, results[i]); break;
 					case Require.OrbitMinArgOfPeriapsis: TestReq((c, r) => c >= r, v.orbit.argumentOfPeriapsis, (double)Requires[i].value, results[i]); break;

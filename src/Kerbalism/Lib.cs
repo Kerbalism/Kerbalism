@@ -124,6 +124,42 @@ namespace KERBALISM
 			return false;
 		}
 
+		private static bool? hasPrincipia = null;
+		public static bool HasPrincipia
+		{
+			get
+			{
+				if (!hasPrincipia.HasValue)
+				{
+					hasPrincipia = HasAssembly("ksp_plugin_adapter");
+				}
+				return hasPrincipia.Value;
+			}
+		}
+
+		public static double PrincipiaCorrectInclination(Orbit o)
+		{
+			if (HasPrincipia && o.referenceBody != (FlightGlobals.currentMainBody ?? Planetarium.fetch.Home))
+			{
+				Vector3d polarAxis = o.referenceBody.BodyFrame.Z;
+
+				double hSqrMag = o.h.sqrMagnitude;
+				if (hSqrMag == 0d)
+				{
+					return Math.Acos(Vector3d.Dot(polarAxis, o.pos) / o.pos.magnitude) * (180.0 / Math.PI);
+				}
+				else
+				{
+					Vector3d orbitZ = o.h / Math.Sqrt(hSqrMag);
+					return Math.Atan2((orbitZ - polarAxis).magnitude, (orbitZ + polarAxis).magnitude) * (2d * (180.0 / Math.PI));
+				}
+			}
+			else
+			{
+				return o.inclination;
+			}
+		}
+
 		///<summary>swap two variables</summary>
 		public static void Swap<T>(ref T a, ref T b)
 		{
@@ -274,6 +310,9 @@ namespace KERBALISM
 		{
 			get
 			{
+				if (!GameSettings.KERBIN_TIME)
+					return 24.0;
+
 				if (hoursInDay == -1.0)
 				{
 					if (FlightGlobals.ready || IsEditor())
@@ -283,7 +322,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
+						return 6.0;
 					}
 
 				}
@@ -297,6 +336,9 @@ namespace KERBALISM
 		{
 			get
 			{
+				if (!GameSettings.KERBIN_TIME)
+					return 365.0;
+
 				if (daysInYear == -1.0)
 				{
 					if (FlightGlobals.ready || IsEditor())
@@ -306,7 +348,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						return GameSettings.KERBIN_TIME ? 426.0 : 365.0;
+						return 426.0;
 					}
 				}
 				return daysInYear;
@@ -767,6 +809,199 @@ namespace KERBALISM
 		}
 		#endregion
 
+		#region RESOURCE UNIT INFOS
+
+		public static readonly int ECResID = "ElectricCharge".GetHashCode();
+
+		public sealed class ResourceUnitInfo : IConfigNode
+		{
+			// We have to disable the "never assigned" warning
+			// because ConfigNode deserialization is what actually
+			// assigns some of these fields
+#pragma warning disable CS0649
+			[Persistent]
+			private string name;
+			public string Name => name;
+			[Persistent]
+			private string rateUnit;
+			public string RateUnit => rateUnit;
+			[Persistent]
+			private bool useRatePostfix = true;
+			public bool UseRatePostfix => useRatePostfix;
+			[Persistent]
+			private string amountUnit;
+			public string AmountUnit => amountUnit;
+			[Persistent]
+			private double multiplierToUnit = 1d;
+			public double MultiplierToUnit => multiplierToUnit;
+			[Persistent]
+			private bool useHuman = false;
+			public bool UseHuman => useHuman;
+#pragma warning restore CS0649
+
+			private bool isValid;
+			public bool IsValid => isValid;
+
+			public void Load(ConfigNode node)
+			{
+				ConfigNode.LoadObjectFromConfig(this, node);
+				if (string.IsNullOrEmpty(rateUnit))
+					rateUnit = amountUnit;
+				if (!useHuman && useRatePostfix && rateUnit != null)
+					rateUnit += Local.Generic_perSecond;
+
+				isValid = !string.IsNullOrEmpty(name) && rateUnit != null && amountUnit != null;
+			}
+
+			public void Save(ConfigNode node)
+			{
+				ConfigNode.CreateConfigFromObject(this, node);
+			}
+		}
+
+		private static readonly Dictionary<int, ResourceUnitInfo> resourceUnitInfos = new Dictionary<int, ResourceUnitInfo>();
+
+		public static void LoadResourceUnitInfo()
+		{
+			resourceUnitInfos.Clear();
+
+			ConfigNode[] defs = GameDatabase.Instance.GetConfigNodes("RESOURCE_DEFINITION");
+			foreach (var node in defs)
+			{
+				var info = new ResourceUnitInfo();
+				info.Load(node);
+				if (info.IsValid)
+					resourceUnitInfos[info.Name.GetHashCode()] = info;
+			}
+			//Lib.Log("ResourceUnitInfo: Loaded " + resourceUnitInfos.Count + " infos from " + defs.Length + " nodes.");
+		}
+
+		public static ResourceUnitInfo GetResourceUnitInfo(PartResourceDefinition res)
+		{
+			return GetResourceUnitInfo(res.id);
+		}
+
+		public static ResourceUnitInfo GetResourceUnitInfo(string resName)
+		{
+			return GetResourceUnitInfo(resName.GetHashCode());
+		}
+
+		public static ResourceUnitInfo GetResourceUnitInfo(int id)
+		{
+			resourceUnitInfos.TryGetValue(id, out var info);
+			return info;
+		}
+
+		#endregion
+
+		#region SI UNITS
+
+		public static string HumanOrSIRate(double rate, string unit, int sigFigs = 3, string precision = "F3", bool longPrefix = false)
+		{
+			if (Settings.UseSIUnits)
+				return SIRate(rate, unit, sigFigs, longPrefix);
+
+			return HumanReadableRate(rate, precision);
+		}
+
+		public static string HumanOrSIRate(double rate, int resID, int sigFigs = 3, string precision = "F3", bool longPrefix = false)
+		{
+			if (Settings.UseSIUnits && GetResourceUnitInfo(resID) is ResourceUnitInfo rui)
+			{
+				if (rui.UseHuman)
+					HumanReadableRate(rate, precision, rui.RateUnit);
+				else
+					return SIRate(rate, rui, sigFigs, longPrefix);
+			}
+
+			return HumanReadableRate(rate, precision);
+		}
+
+		public static string HumanOrSIAmount(double amount, int resID, int sigFigs = 3, string append = "", bool longPrefix = false)
+		{
+			if (Settings.UseSIUnits && GetResourceUnitInfo(resID) is ResourceUnitInfo rui)
+			{
+				if (rui.UseHuman)
+					return HumanReadableAmount(amount, rui.AmountUnit);
+				else
+					return SIAmount(amount, rui, sigFigs, longPrefix);
+			}
+
+			return HumanReadableAmount(amount, append);
+		}
+
+		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
+		public static string SIRate(double rate, string unit, int sigFigs = 3, bool longPrefix = false)
+		{
+			if (rate == 0.0) return Local.Generic_NONE;//"none"
+			rate = Math.Abs(rate);
+
+			return KSPUtil.PrintSI(rate, unit, sigFigs, longPrefix);
+		}
+
+		public static string SIRate(double rate, int resID, int sigFigs = 3, bool longPrefix = false)
+		{
+			return SIRate(rate, GetResourceUnitInfo(resID), sigFigs, longPrefix);
+		}
+
+		public static string SIRate(double rate, ResourceUnitInfo rui, int sigFigs = 3, bool longPrefix = false)
+		{
+			return SIRate(rate * rui.MultiplierToUnit, rui.RateUnit, sigFigs, longPrefix);
+		}
+
+		public static string SIAmount(double amount, string unit, int sigFigs = 3, bool longPrefix = false)
+		{
+			return KSPUtil.PrintSI(amount, unit, sigFigs, longPrefix);
+		}
+
+		public static string SIAmount(double rate, int resID, int sigFigs = 3, bool longPrefix = false)
+		{
+			return SIAmount(rate, GetResourceUnitInfo(resID), sigFigs, longPrefix);
+		}
+
+		public static string SIAmount(double rate, ResourceUnitInfo rui, int sigFigs = 3, bool longPrefix = false)
+		{
+			return SIAmount(rate * rui.MultiplierToUnit, rui.AmountUnit, sigFigs, longPrefix);
+		}
+
+		///<summary> Pretty-print flux (value is in W/m^2)</summary>
+		public static string SIFlux(double flux)
+		{
+			return KSPUtil.PrintSI(flux, "W/m²");
+		}
+
+		///<summary> Pretty-print magnetic strength </summary>
+		public static string SIField(double strength)
+		{
+			return KSPUtil.PrintSI(strength * 0.000001d, "T"); //< strength is micro-tesla
+		}
+
+		///<summary> Pretty-print radiation rate (value is in rem) </summary>
+		public static string SIRadiation(double rad, bool nominal = true)
+		{
+			if (nominal && rad <= Radiation.Nominal) return Local.Generic_NOMINAL;//"nominal"
+
+			rad *= 3600.0;
+			var unit = "rem/h";
+
+			if (Settings.RadiationInSievert)
+			{
+				rad /= 100.0;
+				unit = "Sv/h";
+			}
+
+			return KSPUtil.PrintSI(rad, unit, 3);
+		}
+
+		///<summary> Pretty-print pressure (value is in kPa) </summary>
+		public static string SIPressure(double v)
+		{
+			v *= 1000d;
+			return KSPUtil.PrintSI(v, "Pa");
+		}
+
+		#endregion
+
 		#region HUMAN READABLE
 
 		public const string InlineSpriteScience = "<sprite=\"CurrencySpriteAsset\" name=\"Science\" color=#6DCFF6>";
@@ -775,18 +1010,18 @@ namespace KERBALISM
 		public const string InlineSpriteFlask = "<sprite=\"CurrencySpriteAsset\" name=\"Flask\" color=#CE5DAE>";
 
 		///<summary> Pretty-print a resource rate (rate is per second). Return an absolute value if a negative one is provided</summary>
-		public static string HumanReadableRate(double rate, string precision = "F3")
+		public static string HumanReadableRate(double rate, string precision = "F3", string unit = "")
 		{
 			if (rate == 0.0) return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perSecond);//"/s"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perSecond);//"/s"
 			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perMinute);//"/m"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
 			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perHour);//"/h"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perHour);//"/h"
 			rate *= HoursInDay;  // per-day
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), Local.Generic_perDay);//"/d"
-			return BuildString((rate * DaysInYear).ToString(precision), Local.Generic_perYear);//"/y"
+			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perDay);//"/d"
+			return BuildString((rate * DaysInYear).ToString(precision), unit, Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
@@ -909,18 +1144,27 @@ namespace KERBALISM
 		///<summary> Pretty-print flux </summary>
 		public static string HumanReadableFlux(double flux)
 		{
+			if (Settings.UseSIUnits)
+				return SIFlux(flux);
+
 			return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>
 		public static string HumanReadableField(double strength)
 		{
+			if (Settings.UseSIUnits)
+				return SIField(strength);
+
 			return BuildString(strength.ToString("F1"), " uT"); //< micro-tesla
 		}
 
 		///<summary> Pretty-print radiation rate </summary>
 		public static string HumanReadableRadiation(double rad, bool nominal = true)
 		{
+			if (Settings.UseSIUnits)
+				return SIRadiation(rad, nominal);
+
 			if (nominal && rad <= Radiation.Nominal) return Local.Generic_NOMINAL;//"nominal"
 
 			rad *= 3600.0;
@@ -956,6 +1200,9 @@ namespace KERBALISM
 		///<summary> Pretty-print pressure (value is in kPa) </summary>
 		public static string HumanReadablePressure(double v)
 		{
+			if (Settings.UseSIUnits)
+				return SIPressure(v);
+
 			return Lib.BuildString(v.ToString("F1"), " kPa");
 		}
 
@@ -1004,12 +1251,14 @@ namespace KERBALISM
 
 		public const double bitsPerMB = 1000.0 * 1000.0 * 8.0;
 
+		public const double bPerMB = 1000.0 * 1000.0 * 8;
 		public const double BPerMB = 1000.0 * 1000.0;
 		public const double kBPerMB = 1000.0;
 		public const double GBPerMB = 1.0 / 1000.0;
 		public const double TBPerMB = 1.0 / (1000.0 * 1000.0);
 
-		public const double MBPerBTenth = 1.0 / (1000.0 * 1000.0 * 10.0);
+		public const double MBPerBitTenth = 1.0 / (1000.0 * 1000.0 * 10.0 * 8.0);
+		public const double MBPerB = 1.0 / (1000.0 * 1000.0);
 		public const double MBPerkB = 1.0 / 1000.0;
 		public const double MBPerGB = 1000.0;
 		public const double MBPerTB = 1000.0 * 1000.0;
@@ -1017,8 +1266,10 @@ namespace KERBALISM
 		///<summary> Format data size, the size parameter is in MB (megabytes) </summary>
 		public static string HumanReadableDataSize(double size)
 		{
-			if (size < MBPerBTenth)  // min size is 0.1 byte
+			if (size < MBPerBitTenth)  // min size is 0.1 bit
 				return Local.Generic_NONE;//"none"
+			if (size < MBPerB)
+				return (size * bPerMB).ToString("0.0 b");
 			if (size < MBPerkB)
 				return (size * BPerMB).ToString("0.0 B");
 			if (size < 1.0)
@@ -1034,8 +1285,10 @@ namespace KERBALISM
 		///<summary> Format data rate, the rate parameter is in MB/s </summary>
 		public static string HumanReadableDataRate(double rate)
 		{
-			if (rate < MBPerBTenth)  // min rate is 0.1 byte/s
+			if (rate < MBPerBitTenth)  // min rate is 0.1 bit/s
 				return Local.Generic_NONE;//"none"
+			if (rate < MBPerB)
+				return (rate * bPerMB).ToString("0.0 b/s");
 			if (rate < MBPerkB)
 				return (rate * BPerMB).ToString("0.0 B/s");
 			if (rate < 1.0)

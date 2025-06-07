@@ -279,18 +279,16 @@ namespace KERBALISM
 					{
 						// get sun direction and distance
 						Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
-						// analytical estimation of the portion of orbit that was in sunlight.
-						// it has some limitations, see the comments on Sim.ShadowPeriod
 
 						if (Settings.UseSamplingSunFactor)
 							// sampling estimation of the portion of orbit that is in sunlight
 							// until we will calculate again
-							sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds);
+							sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds, sunData.body);
 
 						else
 							// analytical estimation of the portion of orbit that was in sunlight.
-							// it has some limitations, see the comments on Sim.ShadowPeriod
-							sunInfo.sunlightFactor = 1.0 - Sim.ShadowPeriod(v) / Sim.OrbitalPeriod(v);
+							// it has some limitations, see the comments on Sim.EclipseFraction
+							sunInfo.sunlightFactor = 1.0 - Sim.EclipseFraction(v, sunData.body, sunInfo.direction);
 
 
 						// get atmospheric absorbtion

@@ -181,50 +181,18 @@ namespace KERBALISM
 
 		public static int GetBiomeIndex(Vessel vessel)
 		{
-			double lat = vessel.latitude * 0.01745329238474369;
-			double lon = vessel.longitude * 0.01745329238474369;
-			return GetBiomeIndex(vessel.mainBody, lat, lon);
-		}
+			CBAttributeMapSO biomeMap = vessel.mainBody.BiomeMap;
+			if (biomeMap == null)
+				return -1;
 
-		public static int GetBiomeIndex(CelestialBody body, double lat, double lon)
-		{
-			int currentBiomeIndex = -1;
-			if (body.BiomeMap != null)
-			{
-				CBAttributeMapSO biomeMap = body.BiomeMap;
-				// CBAttributeMapSO.GetAtt
-				lon -= Math.PI / 2.0;
-				lon = UtilMath.WrapAround(lon, 0.0, Math.PI * 2.0);
-				double y = lat * (1.0 / Math.PI) + 0.5;
-				double x = 1.0 - lon * 0.15915494309189535;
-				Color pixelColor = biomeMap.GetPixelColor(x, y);
-				currentBiomeIndex = 0; // this is mandatory because the first biome is a used as fallback in the stock code (!)
-				float currentSqrMag = float.MaxValue;
-				for (int i = 0; i < biomeMap.Attributes.Length; i++)
-				{
-					if (!biomeMap.Attributes[i].notNear)
-					{
-						float sqrMag = RGBColorSqrMag(pixelColor, biomeMap.Attributes[i].mapColor);
-						if (sqrMag < currentSqrMag && (biomeMap.nonExactThreshold == -1f || sqrMag < biomeMap.nonExactThreshold))
-						{
-							currentBiomeIndex = i;
-							currentSqrMag = sqrMag;
-						}
-					}
-				}
-			}
+			double lat = ((vessel.latitude + 180.0 + 90.0) % 180.0 - 90.0) * UtilMath.Deg2Rad; // clamp and convert to radians
+			double lon = ((vessel.longitude + 360.0 + 180.0) % 360.0 - 180.0) * UtilMath.Deg2Rad; // clamp and convert to radians
+			CBAttributeMapSO.MapAttribute biome = biomeMap.GetAtt(lat, lon);
+			for (int i = biomeMap.Attributes.Length; i-- > 0;)
+				if (biomeMap.Attributes[i] == biome)
+					return i;
 
-			return currentBiomeIndex;
-		}
-
-		private static float RGBColorSqrMag(Color colA, Color colB)
-		{
-			float num = colA.r - colB.r;
-			float num2 = num * num;
-			num = colA.g - colB.g;
-			num2 += num * num;
-			num = colA.b - colB.b;
-			return num2 + num * num;
+			return -1;
 		}
 	}
 }

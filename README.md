@@ -20,7 +20,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
-## Current version: 3.17
+## Current version: 3.19
  
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
@@ -60,9 +60,20 @@ Several alternate configuration packs have been created by third party modders :
 Make sure to install exactly one configuration pack only.\
 Don't combine packs unless there is explicit instructions to do so.
 
+## Important notice
+
+Kerbalism hasn't been under active developement since many years now. Despite various minor bugs and shortcomings, the mod is still functional and can be quite fun to play with.
+However, do note that due to the lack of maintainance, there are a lot of compatibility issues with the wider modding ecosystem.
+
+In the current state of things, **Kerbalism is best played in a very lightly modded game**.
+
+In particular, mods introducing mechanisms or features that greatly differ from the stock ones are very likely to cause issues.
+This notably include most "future scope" mods like KSPIE, Near Future Tech, Far Future Tech, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
+Many large part packs are also improperly supported, BDB notably, but a few others too.
+
 ## Mod compatibility and support
 
-Checking the **[mod compatibility]** page is **mandatory before installing Kerbalism on a heavily modded game**.
+The **[mod compatibility]** page is quite outdated, but can still help to avoid some issues.
 
 Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
 

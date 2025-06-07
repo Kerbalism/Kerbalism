@@ -1114,9 +1114,9 @@ namespace KERBALISM
 			specs.Add(string.Empty);
 			specs.Add(Lib.Color(Local.Module_Experiment_Specifics_info8, Lib.Kolor.Cyan, true));//"Needs:"
 
-			specs.Add(Local.Module_Experiment_Specifics_info9, Lib.HumanReadableRate(prefab.ec_rate));//"EC"
+			specs.Add(Local.Module_Experiment_Specifics_info9, Lib.HumanOrSIRate(prefab.ec_rate, Lib.ECResID));//"EC"
 			foreach (var p in ParseResources(prefab.resources))
-				specs.Add(p.Key, Lib.HumanReadableRate(p.Value));
+				specs.Add(p.Key, Lib.HumanOrSIRate(p.Value, p.Key.GetHashCode()));
 
 			if (prefab.crew_prepare.Length > 0)
 			{

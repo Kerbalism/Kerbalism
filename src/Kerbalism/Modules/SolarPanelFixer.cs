@@ -32,9 +32,10 @@ namespace KERBALISM
 	public class SolarPanelFixer : PartModule
 	{
 		#region Declarations
-		/// <summary>Unit to show in the UI, this is the only configurable field for this module</summary>
+		/// <summary>Unit to show in the UI, this is the only configurable field for this module. Default is actually set in OnLoad and if a rateUnit is set for ElectricCharge and this is not specified, the rateUnit will be used instead.</summary>
 		[KSPField]
-		public string EcUIUnit = "EC/s";
+		public string EcUIUnit = string.Empty;
+		public bool hasRUI = false; // are we using a ResourceUnitInfo?
 
 		/// <summary>Main PAW info label</summary>
 		[KSPField(guiActive = true, guiActiveEditor = false, guiName = "#KERBALISM_SolarPanelFixer_Solarpanel")]//Solar panel
@@ -159,7 +160,18 @@ namespace KERBALISM
 		public override void OnLoad(ConfigNode node)
 		{
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
+			{
 				prefabDefinesTimeEfficCurve = node.HasNode("timeEfficCurve");
+				if (string.IsNullOrEmpty(EcUIUnit))
+				{
+					var rui = Lib.GetResourceUnitInfo(Lib.ECResID);
+					hasRUI = rui != null;
+					if (hasRUI)
+						EcUIUnit = rui.RateUnit;
+					else
+						EcUIUnit = "EC/s";
+				}
+			}
 			if (SolarPanel == null && !GetSolarPanelModule())
 				return;
 
@@ -273,23 +285,24 @@ namespace KERBALISM
 				Fields["panelStatus"].guiActive = true;
 
 			// Update main status field text
+			bool addRate = false;
 			switch (exposureState)
 			{
 				case ExposureState.InShadow:
 					panelStatus = "<color=#ff2222>"+Local.SolarPanelFixer_inshadow +"</color>";//in shadow
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
+					addRate = true;
 					break;
 				case ExposureState.OccludedTerrain:
 					panelStatus = "<color=#ff2222>"+Local.SolarPanelFixer_occludedbyterrain +"</color>";//occluded by terrain
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
+					addRate = true;
 					break;
 				case ExposureState.OccludedPart:
 					panelStatus = Lib.BuildString("<color=#ff2222>", Local.SolarPanelFixer_occludedby.Format(mainOccludingPart), "</color>");//occluded by 
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
+					addRate = true;
 					break;
 				case ExposureState.BadOrientation:
 					panelStatus = "<color=#ff2222>"+Local.SolarPanelFixer_badorientation +"</color>";//bad orientation
-					if (currentOutput > 0.001) panelStatus = Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
+					addRate = true;
 					break;
 				case ExposureState.Disabled:
 					switch (state)
@@ -304,9 +317,19 @@ namespace KERBALISM
 					break;
 				case ExposureState.Exposed:
 					sb.Length = 0;
-					sb.Append(currentOutput.ToString(rateFormat));
-					sb.Append(" ");
-					sb.Append(EcUIUnit);
+					if (Settings.UseSIUnits)
+					{
+						if (hasRUI)
+							sb.Append(Lib.SIRate(currentOutput, Lib.ECResID));
+						else
+							sb.Append(Lib.SIRate(currentOutput, EcUIUnit));
+					}
+					else
+					{
+						sb.Append(currentOutput.ToString(rateFormat));
+						sb.Append(" ");
+						sb.Append(EcUIUnit);
+					}
 					if (analyticSunlight)
 					{
 						sb.Append(", ");
@@ -331,6 +354,20 @@ namespace KERBALISM
 					panelStatus = sb.ToString();
 					break;
 			}
+			if (addRate && currentOutput > 0.001)
+			{
+				if (Settings.UseSIUnits)
+				{
+					if (hasRUI)
+						Lib.BuildString(Lib.SIRate(currentOutput, Lib.ECResID), ", ", panelStatus);
+					else
+						Lib.BuildString(Lib.SIRate(currentOutput, EcUIUnit), ", ", panelStatus);
+				}
+				else
+				{
+					Lib.BuildString(currentOutput.ToString(rateFormat), " ", EcUIUnit, ", ", panelStatus);
+				}
+			}
 		}
 
 		public void FixedUpdate()
@@ -342,6 +379,10 @@ namespace KERBALISM
 				UnityEngine.Profiling.Profiler.EndSample();
 				return;
 			}
+
+			// Keep resetting launchUT in prelaunch state. It is possible for that value to come from craft file which could result in panels being degraded from the start.
+			if (Lib.IsFlight() && vessel != null && vessel.situation == Vessel.Situations.PRELAUNCH)
+				launchUT = Planetarium.GetUniversalTime();
 
 			// can't produce anything if not deployed, broken, etc
 			PanelState newState = SolarPanel.GetState();

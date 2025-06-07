@@ -100,6 +100,7 @@ namespace KERBALISM
 			ShieldingEfficiencyHardMult = Lib.ConfigValue(cfg, "ShieldingEfficiencyHardMult", 0.8f);
 			ExternRadiation = Lib.ConfigValue(cfg, "ExternRadiation", 0.04f);
 			RadiationInSievert = Lib.ConfigValue(cfg, "RadiationInSievert", false);
+			UseSIUnits = Lib.ConfigValue(cfg, "UseSIUnits", false);
 
 			ModsIncompatible = Lib.ConfigValue(cfg, "ModsIncompatible", MODS_INCOMPATIBLE);
 			ModsWarning = Lib.ConfigValue(cfg, "ModsWarning", MODS_WARNING);
@@ -107,6 +108,7 @@ namespace KERBALISM
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
+			UseResourcePriority = Lib.ConfigValue(cfg, "UseResourcePriority", false);
 
 			// debug / logging
 			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
@@ -203,6 +205,7 @@ namespace KERBALISM
 		public static float StormRadiation;
 		public static float ExternRadiation;
 		public static bool RadiationInSievert; // use Sievert iso. rad
+		public static bool UseSIUnits; // use SI units instead of human-readable pretty-printing when available
 
 		// sanity check settings
 		public static string ModsIncompatible;
@@ -211,6 +214,7 @@ namespace KERBALISM
 		public static bool CheckForCRP;
 
 		public static bool UseSamplingSunFactor;
+		public static bool UseResourcePriority;
 
 		// debug / logging
 		public static bool VolumeAndSurfaceLogging;

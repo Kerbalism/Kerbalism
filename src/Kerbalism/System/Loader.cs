@@ -106,6 +106,11 @@ namespace KERBALISM
 			}
 		}
 
+		public static void ModuleManagerPostLoad()
+		{
+			Lib.LoadResourceUnitInfo();
+		}
+
 		void SaveHabitatData()
 		{
 			ConfigNode fakeNode = new ConfigNode();

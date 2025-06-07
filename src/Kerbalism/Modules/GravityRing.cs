@@ -289,7 +289,10 @@ namespace KERBALISM
 		{
 			Specifics specs = new Specifics();
 			specs.Add(Local.GravityRing_info1, "firm-ground");//"bonus"
-			specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
+			if (Settings.UseSIUnits)
+				specs.Add(Local.Deploy_actualCost, Lib.SIRate(ec_rate, Lib.ECResID));
+			else
+				specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
 			specs.Add(Local.GravityRing_info2, deploy.Length > 0 ? Local.GravityRing_yes : Local.GravityRing_no);//"deployable""yes""no"
 			return specs;
 		}

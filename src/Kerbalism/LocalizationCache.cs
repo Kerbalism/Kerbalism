@@ -1092,7 +1092,7 @@ namespace KERBALISM
 		////////////////////////////////////////////////////////////////////
 		public static string Preferences_Reliability = GetLoc("Preferences_Reliability"); // "Reliability"
 		public static string HighlightMalfunctions = GetLoc("HighlightMalfunctions"); // "Highlight Malfunctions"
-		public static string HighlightMalfunctions_desc = GetLoc("HighlightMalfunctions_desc"); // "Highlight faild parts in flight"
+		public static string HighlightMalfunctions_desc = GetLoc("HighlightMalfunctions_desc"); // "Highlight failed parts in flight"
 		public static string PartMalfunctions = GetLoc("PartMalfunctions"); // "Part Malfunctions"
 		public static string PartMalfunctions_desc = GetLoc("PartMalfunctions_desc"); // "Allow engine failures based on part age and mean time between failures"
 		public static string CriticalFailureRate = GetLoc("CriticalFailureRate"); // "Critical Failure Rate"

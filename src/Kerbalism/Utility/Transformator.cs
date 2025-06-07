@@ -55,8 +55,8 @@ namespace KERBALISM
 
 		public void DoSpin()
 		{
-			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.fixedDeltaTime * spinAccel);
-			float spin = Mathf.Clamp(TimeWarp.fixedDeltaTime * CurrentSpinRate, -10.0f, 10.0f);
+			CurrentSpinRate = Mathf.MoveTowards(CurrentSpinRate, rotationRateGoal * SpinRate, TimeWarp.deltaTime * spinAccel);
+			float spin = Mathf.Clamp(TimeWarp.deltaTime * CurrentSpinRate, -10.0f, 10.0f);
 			//Lib.Log("Transform {0} spin rate {1}", name, CurrentSpinRate);
 			// Part rotation
 			if (transform != null) transform.Rotate(Vector3.forward * spin);

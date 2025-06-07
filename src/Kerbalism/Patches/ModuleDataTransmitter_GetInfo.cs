@@ -38,11 +38,11 @@ namespace KERBALISM
 			double ec = __instance.DataResourceCost * __instance.DataRate;
 
 			Specifics specs = new Specifics();
-			specs.Add(Local.DataTransmitter_ECidle, Lib.Color(Lib.HumanReadableRate(ec * Settings.TransmitterPassiveEcFactor), Lib.Kolor.Orange));//"EC (idle)"
+			specs.Add(Local.DataTransmitter_ECidle, Lib.Color(Lib.HumanOrSIRate(ec * Settings.TransmitterPassiveEcFactor, Lib.ECResID), Lib.Kolor.Orange));//"EC (idle)"
 
 			if (__instance.antennaType != AntennaType.INTERNAL) 
 			{
-				specs.Add(Local.DataTransmitter_ECTX, Lib.Color(Lib.HumanReadableRate(ec * Settings.TransmitterActiveEcFactor), Lib.Kolor.Orange));//"EC (transmitting)"
+				specs.Add(Local.DataTransmitter_ECTX, Lib.Color(Lib.HumanOrSIRate(ec * Settings.TransmitterActiveEcFactor, Lib.ECResID), Lib.Kolor.Orange));//"EC (transmitting)"
 				specs.Add("");
 				specs.Add(Local.DataTransmitter_Maxspeed, Lib.HumanReadableDataRate(__instance.DataRate));//"Max. speed"
 			}

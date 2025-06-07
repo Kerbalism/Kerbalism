@@ -1,3 +1,33 @@
+## v3.19 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2023-12-02
+
+ ### Changes since the last release
+ * Fixed NaN propagation issue due to typo in landed solar fraction code following last update refactors (@NathanKell)
+ * Added `UseResourcePriority` option in Settings.cfg. When enabled, resource consumption/production will respect stage and flow priorities instead of being split equally amongst all resource containers (@NathanKell)
+ * Added hand-tuned reliability configs for BDB engines (@Dragon)
+
+## v3.18 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2023-10-22
+
+ ### Changes since the last release
+ * Fixed exception spam when an EVA kerbal died from stock reasons. (@gotmachine)
+ * Fixed probes being stuck in the hibernating state. (@gotmachine)
+ * Fixed missing process controler module info (process rates in the device manager tooltip), was removed by mistake in recent changes. (@gotmachine)
+ * Use stock biome getting method instead of custom version which didn't implement the bilinear filter and wasn't working reliably in some corner cases. (@gotmachine)
+ * Fixed issue #861 : B9PartSwitch HabTech2 patch broken (@JonnyOThan)
+ * Fixed solar panels using degradation curve being degraded from the start. (@siimav)
+ * Improved analytic sun exposure speed and accuracy (@NathanKell)
+ * Add "crewOnly" config option to CrewSpecs to prevent tourists from running CrewSpecs experiments (@NathanKell)
+ * Add support for SI units (@NathanKell)
+ * Fix handling of inclination for experiments when Principia is installed (@NathanKell)
+ * Fix #851 : TV/RDU are now optional through a configure module, preventing their (massive) cost to forcefully apply to all parts having them once the relevant tech is researched. (@gotmachine)
+ * Make WasteProcessor able to dump excess Ammonia (@avafyi)
+ * Fixed visually incorrect GravityRing rotation speed (@JonnyOThan)
+ * Chinese translation fixes (@plotut)
+ * Spelling fix : "faild" -> "failed" (@Nile)
+
 ## v3.17 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2023-01-29
