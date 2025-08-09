@@ -1706,26 +1706,22 @@ namespace KERBALISM
 
 		public static int CrewCount(Part part)
 		{
-			// outside of the editors, it is easy
 			if (!Lib.IsEditor())
-			{
 				return part.protoModuleCrew.Count;
-			}
 
-			// in the editor we need something more involved
-			Int64 part_id = 4294967296L + part.GetInstanceID();
-			var manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			var part_manifest = manifest.GetCrewableParts().Find(k => k.PartID == part_id);
-			if (part_manifest != null)
+			if (ShipConstruction.ShipManifest != null)
 			{
-				int result = 0;
-				foreach (var s in part_manifest.partCrew)
+				PartCrewManifest pcm = ShipConstruction.ShipManifest.GetPartCrewManifest(part.craftID);
+				if (pcm != null)
 				{
-					if (!string.IsNullOrEmpty(s)) result++;
+					string[] partCrew = pcm.partCrew;
+					int count = 0;
+					for (int j = partCrew.Length; j-- > 0;)
+						if (!string.IsNullOrEmpty(partCrew[j]))
+							count++;
+					return count;
 				}
-				return result;
 			}
-
 			return 0;
 		}
 
