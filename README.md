@@ -20,7 +20,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
-## Current version: 3.19
+## Current version: 3.20
  
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
@@ -62,8 +62,8 @@ Don't combine packs unless there is explicit instructions to do so.
 
 ## Important notice
 
-Kerbalism hasn't been under active developement since many years now. Despite various minor bugs and shortcomings, the mod is still functional and can be quite fun to play with.
-However, do note that due to the lack of maintainance, there are a lot of compatibility issues with the wider modding ecosystem.
+Kerbalism hasn't been under full active developement since many years now. Despite various minor bugs and shortcomings, the mod is still functional and can be quite fun to play with.
+However, do note that due to the lack of maintainance, there are a lot of compatibility issues with the wider modding ecosystem.  R-T-B is maintaining it now and doing his best, but the reality is there are probably more integration bugs than he has time to fix.  So PR's are most welcome.
 
 In the current state of things, **Kerbalism is best played in a very lightly modded game**.
 

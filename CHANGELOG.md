@@ -1,3 +1,15 @@
+## v3.20 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2025-08-09
+
+ ### Changes since the last release
+ *  Fix for sickbays erroneously consuming resources after rendezvous #884 (@DougWagner)
+ *  Change LifeSupportAtmoLoss from nitrogen to atmosphere. And fix EVAs available. #910 (@KerballOne)
+ *  Fix broken Radiation Emitters outside of Flight Scene #911(@R-T-B)
+ *  Update Unkerballed Start compatibility #909 (@hypodronic)
+ *  Add habitats for pressurized modules in Stockalike Station Parts Redux #896 (@jessicest)
+ *  A fix for editor lag as documented in issue #864 (@R-T-B)
+
 ## v3.19 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2023-12-02
