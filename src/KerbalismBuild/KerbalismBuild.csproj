@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -33,7 +32,7 @@
   <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <ErrorReport>prompt</ErrorReport>
@@ -44,9 +43,7 @@
     <StartProgram>KSP_x64.exe</StartProgram>
     <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
-
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
-
   <!-- /////////////////////////////////////////////////// -->
   <!-- //// USER-DEFINED OVERRIDES (UserConfigDevEnv.xml) //// -->
   <!-- /////////////////////////////////////////////////// -->
@@ -60,7 +57,6 @@
       </PropertyGroup>
     </When>
   </Choose>
-  
   <!-- /////////////////////////////////////////////////// -->
   <!-- ///////////// DEFAULT BUILD TARGET //////////////// -->
   <!-- /////////////////////////////////////////////////// -->

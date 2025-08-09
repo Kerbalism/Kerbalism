@@ -10,6 +10,7 @@
     <AssemblyName>KerbalismBootstrap</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <Deterministic>false</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -18,6 +19,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -27,22 +29,19 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
   <Import Condition="Exists('..\..\BuildSystem\ProjectsCommonProperties.xml')" Project="..\..\BuildSystem\ProjectsCommonProperties.xml" />
-
-
   <PropertyGroup>
     <!-- The bootstrapper need to work on pre-1.8 KSP versions, so we keep it targeting .NET 3.5 -->
     <!-- this require it to be built against pre-1.8 dlls-->
     <!-- Note that in the debug configuration it will use whatever framework version is defined in UserConfigDevEnv.xml -->
-    <TargetFrameworkVersion>$(FrameworkVersionOverride)</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Debug'">$(KSPDevPath)\$(KSPDevDllsRelativePath)</EffectiveKSPDllPath>
     <EffectiveKSPDllPath Condition="'$(Configuration)' == 'Release'">$(KSPReferenceDllsPathPR)</EffectiveKSPDllPath>
   </PropertyGroup>
-
   <ItemGroup>
-    
     <!-- System Dlls -->
     <Reference Include="System">
       <Private>False</Private>
@@ -56,7 +55,6 @@
     <Reference Include="System.Xml.Linq">
       <Private>False</Private>
     </Reference>
-
     <!-- KSP Dlls -->
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp.dll">
       <Private>False</Private>
@@ -64,13 +62,11 @@
     <Reference Include="$(EffectiveKSPDllPath)\Assembly-CSharp-firstpass.dll">
       <Private>False</Private>
     </Reference>
-    
     <!-- load all UnityEngine Dlls (since 1.8 we only need those) -->
     <Reference Include="$(EffectiveKSPDllPath)\UnityEngine*.dll">
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-
   <ItemGroup>
     <Compile Include="Bootstrap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
