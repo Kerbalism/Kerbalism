@@ -289,7 +289,7 @@ namespace KERBALISM
 							if (rad < 0) tot += rad;
 							else
 							{
-								tot += rad * Lib.Proto.GetDouble(m, "radiation_factor");
+								tot += rad * Lib.Proto.GetDouble(m, "radiation_impact");
 							}
 						}
 					}
