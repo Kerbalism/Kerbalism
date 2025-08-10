@@ -1265,7 +1265,7 @@ namespace KERBALISM
 				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
 
 				// 2.4 seems good for RemoteTech
-				if (dampingExponent.ToString("F4") == "NaN")
+				if (double.IsNaN(dampingExponent))
 				{
 					Lib.Log("dampingExponent is " + dampingExponent + ",... setting to 2.4");
 					dampingExponent = 2.4;
