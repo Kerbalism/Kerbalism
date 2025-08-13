@@ -1,3 +1,12 @@
+## v3.21 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2025-08-13
+
+ ### Changes since the last release
+ *  Error handling fallback for NaN dampingExponent when using RemoteTech #914 (@KerballOne)
+ *  As RemoteTech's last major bug was fixed above, removed it from the mod warning list. (@R-T-B)
+ *  Improvements to the NFE RTG Profiles (more parts supported) (@R-T-B)
+ 
 ## v3.20 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2025-08-09
