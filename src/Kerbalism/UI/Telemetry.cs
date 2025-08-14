@@ -113,13 +113,12 @@ namespace KERBALISM
 				{
 					if (vd.Evas > 1)
 					{
-						p.AddContent(Local.TELEMETRY_EVATips1, null, null);
+						p.AddContent(Local.TELEMETRY_EVAStatus, Local.TELEMETRY_EVAStatus1, null); //safe
 					}
 					else if (vd.Evas <= 1)
 					{
-						p.AddContent(Local.TELEMETRY_EVATips2, null, null);
+						p.AddContent(Local.TELEMETRY_EVAStatus, Local.TELEMETRY_EVAStatus1, null); //risky
 					}
-
 				}
 				//if (Features.Pressure && Settings.LifeSupportAtmoLoss > 0) p.AddContent(Local.TELEMETRY_EVAsavailable, vd.EnvBreathable ? Local.TELEMETRY_EnvBreathable : Lib.HumanReadableInteger(vd.Evas), vd.EnvBreathable ? Local.TELEMETRY_Breathableatm : Local.TELEMETRY_approx);//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
 			}

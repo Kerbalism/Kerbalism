@@ -594,8 +594,9 @@ namespace KERBALISM
 		public static string TELEMETRY_comfort = GetLoc("TELEMETRY_comfort"); // "comfort"
 		public static string TELEMETRY_EVAsavailable = GetLoc("TELEMETRY_EVAsavailable"); // "EVA's available"
 		public static string TELEMETRY_EnvBreathable = GetLoc("TELEMETRY_EnvBreathable"); // "infinite"
-		public static string TELEMETRY_EVATips1 = GetLoc("TELEMETRY_EVATips1"); //EVA tips 1st line
-		public static string TELEMETRY_EVATips2 = GetLoc("TELEMETRY_EVATips2"); //EVA tips 2nd line
+		public static string TELEMETRY_EVAStatus = GetLoc("TELEMETRY_EVAStatus"); //EVA Status base
+		public static string TELEMETRY_EVAStatus1 = GetLoc("TELEMETRY_EVAStatus1"); //EVA status safe
+		public static string TELEMETRY_EVAStatus2 = GetLoc("TELEMETRY_EVAStatus2"); //EVA status risky
 		public static string TELEMETRY_Breathableatm = GetLoc("TELEMETRY_Breathableatm"); // "breathable atmosphere"
 		public static string TELEMETRY_approx = GetLoc("TELEMETRY_approx"); // "approx (derived from stored N2)"
 		public static string TELEMETRY_TRANSMISSION = GetLoc("TELEMETRY_TRANSMISSION"); // "TRANSMISSION"
