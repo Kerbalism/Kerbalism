@@ -364,7 +364,7 @@ namespace KERBALISM
 		public double Pressure => pressure; double pressure;
 
 		/// <summary>number of EVA's using available Nitrogen</summary>
-		//public uint Evas => evas; uint evas;
+		public uint Evas => evas; uint evas;
 
 		/// <summary>waste atmosphere amount versus total atmosphere amount</summary>
 		public double Poisoning => poisoning; double poisoning;
@@ -907,7 +907,7 @@ namespace KERBALISM
 			surface = Habitat.Tot_surface(Vessel);
 			pressure = Math.Min(Habitat.Pressure(Vessel), habitatInfo.MaxPressure);
 
-			//evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
+			evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
 			poisoning = Habitat.Poisoning(Vessel);
 			shielding = Habitat.Shielding(Vessel);
 			livingSpace = Habitat.Living_space(Vessel);
