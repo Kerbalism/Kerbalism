@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using KSP.Localization;
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -26,7 +27,7 @@ namespace KERBALISM
 		[KSPField] public float counterWeightSpinAccelerationRate = 2.0f;
 
 		private bool waitRotation = false;
-		public bool isHabitat = false;
+		public bool isDeployedByHabitat = false;
 
 		// animations
 		public Animator deploy_anim;
@@ -43,7 +44,7 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// get animations
-			deploy_anim = new Animator(part, deploy);
+			GetDeployAnimator();
 
 			if (rotateIsTransform) rotate_transf = new Transformator(part, rotate, SpinRate, SpinAccelerationRate);
 			else rotate_anim = new Animator(part, rotate);
@@ -52,17 +53,30 @@ namespace KERBALISM
 			else counterWeightRotate_anim = new Animator(part, counterWeightRotate);
 
 			// set animation state / invert animation
-			deploy_anim.Still(deployed ? 1.0f : 0.0f);
-			deploy_anim.Stop();
+			if (!isDeployedByHabitat)
+			{
+				deploy_anim.Still(deployed ? 1.0f : 0.0f);
+				deploy_anim.Stop();
+			}
 
 			Update();
 		}
 
-		public bool Is_rotating()
+		public Animator GetDeployAnimator()
+		{
+			if (deploy_anim == null)
+			{
+				deploy_anim = new Animator(part, deploy);
+				deploy_anim.reversed = animBackwards;
+			}
+			return deploy_anim;
+		}
+
+		public bool IsRotating()
 		{
 			if (rotateIsTransform)
 			{
-				return rotate_transf.IsRotating() && !rotate_transf.IsStopping();
+				return rotate_transf.IsRotating();
 			}
 			return rotate_anim.Playing();
 		}
@@ -137,7 +151,7 @@ namespace KERBALISM
 
 		bool Should_start_rotation()
 		{
-			return (isHabitat && deployed) || (!isHabitat && !deploy_anim.Playing());
+			return (isDeployedByHabitat && deployed) || (!isDeployedByHabitat && !deploy_anim.Playing());
 		}
 
 		bool Is_consuming_energy()
@@ -162,7 +176,7 @@ namespace KERBALISM
 			if (part.IsPAWVisible())
 			{
 				Events["Toggle"].guiName = deployed ? Local.Generic_RETRACT : Local.Generic_DEPLOY;
-				Events["Toggle"].active = (deploy.Length > 0) && (part.FindModuleImplementing<Habitat>() == null) && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
+				Events["Toggle"].active = !isDeployedByHabitat && deploy_anim.IsDefined && !deploy_anim.Playing() && !waitRotation && ResourceCache.GetResource(vessel, "ElectricCharge").Amount > ec_rate;
 			}
 
 			// in flight
@@ -196,17 +210,10 @@ namespace KERBALISM
 				// When is not rotating
 				if (waitRotation)
 				{
-					if (rotateIsTransform && !rotate_transf.IsRotating())
+					if ((rotateIsTransform && !rotate_transf.IsRotating()) || (!rotateIsTransform && !rotate_anim.Playing()))
 					{
 						// start retract animation in the correct direction, when is not rotating
-						if (animBackwards) deploy_anim.Play(deployed, false);
-						else deploy_anim.Play(!deployed, false);
-						waitRotation = false;
-					}
-					else if (!rotateIsTransform && !rotate_anim.Playing())
-					{
-						if (animBackwards) deploy_anim.Play(deployed, false);
-						else deploy_anim.Play(!deployed, false);
+						deploy_anim.Play(!deployed, false);
 						waitRotation = false;
 					}
 				}
@@ -260,14 +267,12 @@ namespace KERBALISM
 				// stop loop animation if exist and we are retracting
 				if (rotateIsTransform && !rotate_transf.IsRotating())
 				{
-					if (animBackwards) deploy_anim.Play(deployed, false);
-					else deploy_anim.Play(!deployed, false);
+					deploy_anim.Play(!deployed, false);
 					waitRotation = false;
 				}
 				else if (!rotateIsTransform && !rotate_anim.Playing())
 				{
-					if (animBackwards) deploy_anim.Play(deployed, false);
-					else deploy_anim.Play(!deployed, false);
+					deploy_anim.Play(!deployed, false);
 				}
 			}
 

@@ -340,9 +340,6 @@ namespace KERBALISM
 					CommsMessages.Update(v, vd, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
-					// Habitat equalization
-					ResourceBalance.Equalizer(v);
-
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Science");
 					// transmit science data
 					Science.Update(v, vd, ec, elapsed_s);

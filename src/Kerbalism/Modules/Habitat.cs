@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq.Expressions;
 using KSP.Localization;
 using UnityEngine;
 
@@ -8,14 +9,45 @@ namespace KERBALISM
 {
     public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
-        // config
-        [KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
+		// habitat state
+		public enum State
+		{
+			/// <summary> hab is enabled : it is deployed/inflated, can hold crew and its atmo can flow </summary>
+			enabled = 0,
+			/// <summary> hab is disabled : it might or might not be deployed/inflated, it can't hold crew and its atmo can't flow</summary>
+			disabled = 1,
+			/// <summary> hab is being inflated and going to the enabled state, only applies if deployable and inflateRequiresPressure is true</summary>
+			inflating = 2,
+			/// <summary> hab is being deployed and going to the enabled state, only applies if deployable and inflateRequiresPressure is false</summary>
+			deploying = 3,
+			/// <summary> hab has been deployed and is waiting for pressure level to be enough for the vessel to be kept pressurized before going to the enabled state</summary>
+			waitingForPressure = 4,
+			/// <summary> hab is being retracted and going to the disabled state, only applies if deployable</summary>
+			retracting = 5,
+			/// <summary> hab is waiting for the gravity ring to stop its rotation to be able to go in the retracting state</summary>
+			waitingForGravityRing = 6,
+			/// <summary> depreciated, kept around for backwark compat</summary>
+			pressurizing = 2,
+			/// <summary> depreciated, kept around for backwark compat</summary>
+			depressurizing = 0
+		}
+
+		// volume / surface cache
+		public static Dictionary<string, Lib.PartVolumeAndSurfaceInfo> habitatDatabase;
+		public const string habitatDataCacheNodeName = "KERBALISM_HABITAT_INFO";
+		public static string HabitatDataCachePath => Path.Combine(Lib.KerbalismRootPath, "HabitatData.cache");
+
+		// config
+		[KSPField] public double volume = 0.0;                      // habitable volume in m^3, deduced from bounding box if not specified
         [KSPField] public double surface = 0.0;                     // external surface in m^2, deduced from bounding box if not specified
-        [KSPField] public string inflate = string.Empty;            // inflate animation, if any
-        [KSPField] public bool inflatableUsingRigidWalls = false;   // can shielding be applied to inflatable structure?
+        [KSPField] public string inflate = string.Empty;            // inflate/deploy animation, if any
+		[KSPField] public bool animBackwards;                       // invert animation (case state is deployed but it is showing the part retracted)
+		[KSPField] public bool inflatableUsingRigidWalls = false;   // can shielding be applied to inflatable structure?
         [KSPField] public bool toggle = true;                       // show the enable/disable toggle
-		[KSPField] public double max_pressure = 1.0;                // max. sustainable pressure, in percent of sea level
-																	// for now this won't do anything
+		[KSPField] [Obsolete] public double max_pressure = 1.0;     // depreciated as this was never implemented properly, replaced by the nonPressurizable field
+		[KSPField] public bool nonPressurizable = false;            // if true, the part can't be pressurized
+		[KSPField] public bool inflateRequiresPressure = true;      // if false, inflating/deploying doesn't require pressurizing and can be done freely
+		[KSPField] public bool canRetract = false;                  // if false, the part can't be retracted once inflated/deployed
 
 		// method to use for calculating volume and surface
 		[KSPField] public Lib.VolumeAndSurfaceMethod volumeAndSurfaceMethod = Lib.VolumeAndSurfaceMethod.Best;
@@ -23,7 +55,7 @@ namespace KERBALISM
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
-        [KSPField(isPersistant = true)] private double perctDeployed = 0;
+        [KSPField(isPersistant = true)] private double perctDeployed = 0.0;
 
         // rmb ui status strings
         [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
@@ -32,33 +64,61 @@ namespace KERBALISM
         public string Surface;
 
         // animations
-        Animator inflate_anim;
-
-        [KSPField] public bool animBackwards;  // invert animation (case state is deployed but it is showing the part retracted)
-        public bool needEqualize = false;      // Used to trigger the ResourceBalance
+        Animator deployAnimator;
 
         private bool hasCLS;                   // Has CLS mod?
-        private bool FixIVA = false;           // Used only CrewTransferred event, CrewTrans occur after FixedUpdate, then FixedUpdate needs to know to fix it
         private bool hasGravityRing;
         private GravityRing gravityRing;
+		private int crewCapacity;
 
-        State prev_state;                      // State during previous GPU frame update
+		private PartResource atmosphereRes;
+		private PartResource wasteAtmosphereRes;
+		private PartResource shieldingRes;
+
         private bool configured = false;       // true if configure method has been executed
 		private float shieldingCost;
 
-		// volume / surface cache
-		public static Dictionary<string, Lib.PartVolumeAndSurfaceInfo> habitatDatabase;
-		public const string habitatDataCacheNodeName = "KERBALISM_HABITAT_INFO";
-		public static string HabitatDataCachePath => Path.Combine(Lib.KerbalismRootPath, "HabitatData.cache");
+		private bool AtmoFlowState { get => atmosphereRes.flowState; set => atmosphereRes.flowState = value; }
+		private bool WasteAtmoFlowState { get => wasteAtmosphereRes.flowState; set => wasteAtmosphereRes.flowState = value; }
+		private bool ShieldingFlowState { get => shieldingRes.flowState; set => shieldingRes.flowState = value; }
+
+		private bool IsDeployable => deployAnimator.IsDefined;
+		private bool IsFullyDeployed => perctDeployed == 1.0;
+		private bool IsFullyRetracted => perctDeployed == 0.0;
 
 		// volume / surface evaluation at prefab compilation
 		public override void OnLoad(ConfigNode node)
 		{
+			// backward compat for the depreciated max_pressure field
+			if (max_pressure < Settings.PressureThreshold)
+				nonPressurizable = true;
+
 			// volume/surface calcs are quite slow and memory intensive, so we do them only once on the prefab
 			// then get the prefab values from OnStart. Moreover, we cache the results in the 
 			// Kerbalism\HabitatData.cache file and reuse those cached results on next game launch.
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 			{
+				// Find deploy/retract animations, either here on in the gravityring module
+				// then set the part to the deployed state before doing the volume/surface calcs
+				// if part has Gravity Ring, find it.
+				gravityRing = part.FindModuleImplementing<GravityRing>();
+				hasGravityRing = gravityRing != null;
+
+				// create animators and set the model to the deployed state
+				if (hasGravityRing)
+				{
+					gravityRing.isDeployedByHabitat = true;
+					deployAnimator = gravityRing.GetDeployAnimator();
+				}
+				if (deployAnimator == null || !deployAnimator.IsDefined)
+				{
+					deployAnimator = new Animator(part, inflate);
+					deployAnimator.reversed = animBackwards;
+				}
+
+				if (deployAnimator.IsDefined)
+					deployAnimator.Still(1.0);
+
 				if (volume <= 0.0 || surface <= 0.0)
 				{
 					if (habitatDatabase == null)
@@ -97,30 +157,6 @@ namespace KERBALISM
 					Lib.PartVolumeAndSurfaceInfo partInfo;
 					if (!habitatDatabase.TryGetValue(configPartName, out partInfo))
 					{
-						// Find deploy/retract animations, either here on in the gravityring module
-						// then set the part to the deployed state before doing the volume/surface calcs
-						// if part has Gravity Ring, find it.
-						gravityRing = part.FindModuleImplementing<GravityRing>();
-						hasGravityRing = gravityRing != null;
-
-						// create animators and set the model to the deployed state
-						if (hasGravityRing)
-						{
-							gravityRing.deploy_anim = new Animator(part, gravityRing.deploy);
-							gravityRing.deploy_anim.reversed = gravityRing.animBackwards;
-
-							if (gravityRing.deploy_anim.IsDefined)
-								gravityRing.deploy_anim.Still(1.0);
-						}
-						else
-						{
-							inflate_anim = new Animator(part, inflate);
-							inflate_anim.reversed = animBackwards;
-
-							if (inflate_anim.IsDefined)
-								inflate_anim.Still(1.0);
-						}
-
 						// get surface and volume
 						partInfo = Lib.GetPartVolumeAndSurface(part, Settings.VolumeAndSurfaceLogging);
 
@@ -148,7 +184,22 @@ namespace KERBALISM
 
             // if part has Gravity Ring, find it.
             gravityRing = part.FindModuleImplementing<GravityRing>();
-            hasGravityRing = gravityRing != null;
+			hasGravityRing = gravityRing != null;
+
+			// if gravity ring has a deploy animation, use it
+			// otherwise, use the deploy animation defined in the habitat
+			if (hasGravityRing)
+			{
+				gravityRing.isDeployedByHabitat = true;
+				deployAnimator = gravityRing.GetDeployAnimator();
+			}
+			if (deployAnimator == null || !deployAnimator.IsDefined)
+			{
+				deployAnimator = new Animator(part, inflate);
+				deployAnimator.reversed = animBackwards;
+			}
+
+			crewCapacity = part.partInfo.partPrefab.CrewCapacity;
 
 			if (volume <= 0.0 || surface <= 0.0)
 			{
@@ -170,11 +221,6 @@ namespace KERBALISM
 #else
 			Events["LogVolumeAndSurface"].active = Settings.VolumeAndSurfaceLogging;
 #endif
-			// create animators
-			if (!hasGravityRing)
-            {
-                inflate_anim = new Animator(part, inflate);
-            }
 
 			// add the cost of shielding to the base part cost
 			shieldingCost = (float)surface * PartResourceLibrary.Instance.GetDefinition("Shielding").unitCost;
@@ -182,71 +228,36 @@ namespace KERBALISM
 			// configure on start
 			Configure();
 
-            perctDeployed = Lib.Level(part, "Atmosphere", true);
+			foreach (PartResource res in part.Resources)
+			{
+				switch (res.resourceName)
+				{
+					case "Atmosphere":      atmosphereRes = res; break;
+					case "WasteAtmosphere": wasteAtmosphereRes = res; break;
+					case "Shielding":       shieldingRes = res; break;
+				}
+			}
 
-            switch (this.state)
-            {
-                case State.enabled: Set_flow(true); break;
-                case State.disabled: Set_flow(false); break;
-                case State.pressurizing: Set_flow(true); break;
-                case State.depressurizing: Set_flow(false); break;
-            }
+			if (IsDeployable)
+				deployAnimator.Still(perctDeployed);
 
-            if (Get_inflate_string().Length == 0) // not inflatable
+			switch (this.state)
             {
-                SetPassable(true);
-                UpdateIVA(true);
-            }
-            else
-            {
-                SetPassable(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-                UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-            }
-
-            if (Lib.IsFlight())
-            {
-                // For fix IVA when crewTransfered occur, add event to define flag for FixedUpdate
-                GameEvents.onCrewTransferred.Add(UpdateCrew);
-            }
+                case State.enabled: SetStateEnabled(); break;
+                case State.disabled: SetStateDisabled(); break;
+                case State.inflating: SetStateInflating(); break;
+				case State.deploying: SetStateDeploying(); break;
+				case State.waitingForPressure: SetStateWaitingForPressure(); break;
+				case State.retracting: SetStateRetracting(); break;
+				case State.waitingForGravityRing: SetStateRetracting(); break;
+			}
         }
 
-        public void OnDestroy()
-        {
-            GameEvents.onCrewTransferred.Remove(UpdateCrew);
-        }
-
-        string Get_inflate_string()
+		private void SetGravityRingPressurizedState(bool pressurized)
         {
             if (hasGravityRing)
             {
-                return gravityRing.deploy;
-            }
-            return inflate;
-        }
-
-		bool Get_inflate_anim_backwards()
-        {
-            if (hasGravityRing)
-            {
-                return gravityRing.animBackwards;
-            }
-            return animBackwards;
-        }
-
-        Animator Get_inflate_anim()
-        {
-            if (hasGravityRing)
-            {
-                return gravityRing.deploy_anim;
-            }
-            return inflate_anim;
-        }
-
-        void Set_pressurized(bool pressurized)
-        {
-            if (hasGravityRing)
-            {
-                gravityRing.isHabitat = true;
+                gravityRing.isDeployedByHabitat = true;
                 gravityRing.deployed = pressurized;
             }
         }
@@ -259,90 +270,27 @@ namespace KERBALISM
             // - module is added to an existing savegame
             if (!part.Resources.Contains("Atmosphere"))
             {
-                // add internal atmosphere resources
-                // - disabled habitats start with zero atmosphere
-                Lib.AddResource(part, "Atmosphere", (state == State.enabled && Features.Pressure) ? volume * 1e3 : 0.0, volume * 1e3);
-                Lib.AddResource(part, "WasteAtmosphere", 0.0, volume * 1e3);
+				// add internal atmosphere resources
+				double atmoCapacity = volume * 1e3;
+				double atmoAmount;
+				if (state == State.enabled || (IsDeployable && !inflateRequiresPressure))
+					atmoAmount = atmoCapacity;
+				else
+					atmoAmount = 0.0;
 
-                // add external surface shielding
-                PartResource shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
+				Lib.AddResource(part, "Atmosphere", atmoAmount, atmoCapacity);
+				Lib.AddResource(part, "WasteAtmosphere", 0.0, atmoCapacity);
+
+				// add external surface shielding
+				shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
 
 				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
-				shieldingRes.isTweakable = (Get_inflate_string().Length == 0) || inflatableUsingRigidWalls;
+				shieldingRes.isTweakable = !IsDeployable || inflatableUsingRigidWalls;
 
 				// if shielding feature is disabled, just hide it
 				shieldingRes.isVisible = Features.Shielding && shieldingRes.isTweakable;
 
                 configured = true;
-            }
-        }
-
-        void Set_flow(bool b)
-        {
-            Lib.SetResourceFlow(part, "Atmosphere", b);
-            Lib.SetResourceFlow(part, "WasteAtmosphere", b);
-            Lib.SetResourceFlow(part, "Shielding", b);
-        }
-
-        State Depressurizing()
-        {
-            // in flight
-            if (Lib.IsFlight())
-            {
-                // All module are empty
-                bool cond1 = true;
-
-                // check amounts
-                foreach (string resource in ResourceBalance.resourceName)
-                {
-                    if (part.Resources.Contains(resource))
-                        cond1 &= part.Resources[resource].amount <= double.Epsilon;
-                }
-
-                // are all modules empty?
-                if (cond1) return State.disabled;
-
-                // Depressurize still in progress
-                return State.depressurizing;
-            }
-            // in the editors
-            else
-            {
-                // set amount to zero
-                foreach (string resource in ResourceBalance.resourceName)
-                {
-                    if (part.Resources.Contains(resource))
-                        part.Resources[resource].amount = 0.0;
-                }
-
-				// return new state
-				return State.disabled;
-            }
-        }
-
-        State Pressurizing()
-        {
-            // in flight
-            if (Lib.IsFlight())
-            {
-                // full pressure the level is 99.9999% deployed or more
-                if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision)
-                {
-                    SetPassable(true);
-                    UpdateIVA(true);
-                    return State.enabled;
-                }
-                return State.pressurizing;
-            }
-            // in the editors
-            else
-            {
-                // The other resources in ResourceBalance are waste resources
-                if (part.Resources.Contains("Atmosphere"))
-                    part.Resources["Atmosphere"].amount = part.Resources["Atmosphere"].maxAmount;
-
-				// return new state
-				return State.enabled;
             }
         }
 
@@ -356,28 +304,9 @@ namespace KERBALISM
                 if (state == State.enabled && Features.Pressure)
                     Lib.FillResource(part, "Nitrogen");
                 else
-                {
                     Lib.EmptyResource(part, "Nitrogen");
-                }
-                configured = false;
-            }
 
-            switch (state)
-            {
-                case State.enabled:
-	                Set_pressurized(true);
-	                // GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
-	                Events["Toggle"].guiActive = false;
-					break;
-                case State.disabled:
-	                Set_pressurized(false);
-                    break;
-                case State.pressurizing:
-	                Set_pressurized(false);
-                    break;
-                case State.depressurizing:
-	                Set_pressurized(false);
-                    break;
+                configured = false;
             }
 
 			if (part.IsPAWVisible())
@@ -386,148 +315,275 @@ namespace KERBALISM
 				switch (state)
 				{
 					case State.enabled:
-						// No inflatable can be enabled been pressurizing
-						if (Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 > ResourceBalance.precision)
-							status_str = Local.Habitat_pressurizing;
-						else
-							status_str = Local.Generic_ENABLED;
+						status_str = Local.Generic_ENABLED;
 						break;
 					case State.disabled:
 						status_str = Local.Generic_DISABLED;
 						break;
-					case State.pressurizing:
-						status_str = Get_inflate_string().Length == 0 ? Local.Habitat_pressurizing : Local.Habitat_inflating;
-						status_str += string.Format("{0:p2}", perctDeployed);
+					case State.inflating:
+						status_str = $"{Local.Habitat_inflating} ({perctDeployed:p2})";
 						break;
-					case State.depressurizing:
-						status_str = Get_inflate_string().Length == 0 ? Local.Habitat_depressurizing : Local.Habitat_deflating;
-						status_str += string.Format("{0:p2}", perctDeployed);
+					case State.deploying:
+						status_str = $"Deploying ({perctDeployed:p2})";
 						break;
+					case State.waitingForPressure:
+						double progress = atmosphereRes.amount / atmosphereRes.maxAmount / Settings.PressureThreshold;
+						status_str = $"Pressurizing ({progress:p2})";
+						break;
+					case State.retracting:
+						status_str = $"Retracting ({1.0 - perctDeployed:p2})";
+						break;
+					case State.waitingForGravityRing:
+						status_str = $"Stopping rotation...";
+						break;
+
 				}
 
 				Events["Toggle"].guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
-			}
 
-            // Changing this animation when we expect rotation will not work because
-            // Unity disables other animations when playing the inflation animation.
-            if (prev_state != State.enabled)
-            {
-                Set_inflation();
-            }
-            prev_state = state;
+			}
         }
 
         public void FixedUpdate()
         {
-            // if part is manned (even in the editor), force enabled
-            if (Lib.IsCrewed(part) && state != State.enabled)
-            {
-                Set_flow(true);
-                state = State.pressurizing;
+			// in the editor, force enabled if the part becomes crewed
+			if (Lib.IsEditor() && state != State.enabled && Lib.IsCrewed(part))
+				Toggle();
 
-                // Equalize run only in Flight mode
-                needEqualize = Lib.IsFlight();
-            }
-
-            perctDeployed = Lib.Level(part, "Atmosphere", true);
-
-            // Only handle crewTransferred & Toggle, this way has less calls in FixedUpdate
-            // CrewTransferred Event occur after FixedUpdate, this must be check in crewtransferred
-            if (FixIVA)
-            {
-                if (Get_inflate_string().Length == 0) // it is not inflatable (We always going to show and cross those habitats)
-                {
-                    SetPassable(true);
-                    UpdateIVA(true);
-                }
-                else
-                {
-                    // Inflatable modules shows IVA and are passable only in 99.9999% deployed
-                    SetPassable(Lib.IsCrewed(part) || Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-                    UpdateIVA(Math.Truncate(Math.Abs((perctDeployed + ResourceBalance.precision) - 1.0) * 100000) / 100000 <= ResourceBalance.precision);
-                }
-                FixIVA = false;
-            }
-
-            // state machine
-            switch (state)
-            {
-                case State.enabled:
-                    // In case it is losting pressure
-                    if (perctDeployed < Settings.PressureThreshold)
-                    {
-                        if (Get_inflate_string().Length != 0)         // it is inflatable
-                        {
-                            SetPassable(false || Lib.IsCrewed(part)); // Prevent to not lock a Kerbal into a the part
-                            UpdateIVA(false);
-                        }
-                        needEqualize = true;
-                        state = State.pressurizing;
-                    }
-                    break;
-
-                case State.disabled:
-                    break;
-
-                case State.pressurizing:
-                    state = Pressurizing();
-                    break;
-
-                case State.depressurizing:
-                    // Just do Venting when has no gravityRing or when the gravity ring is not spinning.
-                    if (hasGravityRing && !gravityRing.Is_rotating()) state = Depressurizing();
-                    else if (!hasGravityRing) state = Depressurizing();
-                    break;
-            }
-        }
-
-        private void Set_inflation()
-        {
-            // if there is an inflate animation, set still animation from pressure
-            if (Get_inflate_anim_backwards()) Get_inflate_anim().Still(Math.Abs(Lib.Level(part, "Atmosphere", true) - 1));
-            else Get_inflate_anim().Still(Lib.Level(part, "Atmosphere", true));
-        }
+			switch (state)
+			{
+				case State.inflating:
+					if (Lib.IsEditor())
+					{
+						perctDeployed = deployAnimator.Playing() ? deployAnimator.NormalizedTime : 1.0;
+						atmosphereRes.amount = atmosphereRes.maxAmount * perctDeployed;
+						if (IsFullyDeployed)
+							SetStateEnabled();
+					}
+					else
+					{
+						double atmoLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
+						perctDeployed = Math.Max(perctDeployed, atmoLevel);
+						//double animState = DeployAnimIsBackwards ? 1.0 - perctDeployed : perctDeployed;
+						deployAnimator.Still(perctDeployed);
+						if (IsFullyDeployed)
+							SetStateEnabled();
+					}
+					break;
+				case State.deploying:
+					perctDeployed = deployAnimator.Playing() ? deployAnimator.NormalizedTime : 1.0;
+					if (IsFullyDeployed)
+					{
+						double pressureLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
+						if (pressureLevel > Settings.PressureThreshold)
+							SetStateEnabled();
+						else
+							SetStateWaitingForPressure();
+					}
+					break;
+				case State.waitingForPressure:
+					{
+						double pressureLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
+						if (pressureLevel > Settings.PressureThreshold)
+							SetStateEnabled();
+					}
+					break;
+				case State.retracting:
+					perctDeployed = deployAnimator.Playing() ? deployAnimator.NormalizedTime : 0.0;
+					if (Lib.IsEditor() && inflateRequiresPressure)
+						atmosphereRes.amount = atmosphereRes.maxAmount * perctDeployed;
+					if (IsFullyRetracted)
+						SetStateDisabled();
+					break;
+				case State.waitingForGravityRing:
+					if (!gravityRing.IsRotating())
+						SetStateRetracting();
+					break;
+			}
+		}
 
         [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public void Toggle()
         {
-            // if manned, we can't depressurize
-            if (Lib.IsCrewed(part) && (state == State.enabled || state == State.pressurizing))
-            {
-                Message.Post(Local.Habitat_postmsg.Format(Lib.PartName(part)));//"Can't disable <b><<1>> habitat</b> while crew is inside"//Lib.BuildString("Can't disable <b>", , " habitat</b> while crew is inside"
-				return;
-            }
-
-            // Need be equalized
-            needEqualize = true;
-            FixIVA = true;
-
-            // Every time that toggle bot be clicked, it will change the flow, better then call it every frame
-            // state switching
-            switch (state)
-            {
-                // Make Set_flow be called only once throgh the Toggle
-
-				// GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
-                case State.enabled:
-					if (Lib.IsFlight())
-						break;
-
-					Set_flow(false);
-					state = State.depressurizing;
+			switch (state)
+			{
+				case State.enabled:
+					if (IsDeployable && (canRetract || Lib.IsEditor()))
+						SetStateRetracting();
+					else
+						SetStateDisabled();
 					break;
-				case State.disabled: Set_flow(true); state = State.pressurizing; break;
-                case State.pressurizing: Set_flow(false); state = State.depressurizing; break;
-                case State.depressurizing: Set_flow(true); state = State.pressurizing; break;
-            }
+				case State.disabled:
+					if (IsDeployable && !IsFullyDeployed)
+					{
+						if (inflateRequiresPressure)
+							SetStateInflating();
+						else
+							SetStateDeploying();
+					}
+					else
+					{
+						SetStateEnabled();
+					}
+					break;
+				case State.inflating:
+				case State.deploying:
+				case State.waitingForPressure:
+					if (canRetract || Lib.IsEditor())
+						SetStateRetracting();
+					else
+						SetStateDisabled();
+					break;
+				case State.retracting:
+				case State.waitingForGravityRing:
+					if (inflateRequiresPressure)
+						SetStateInflating();
+					else
+						SetStateDeploying();
+					break;
+			}
 
-            // refresh VAB/SPH ui
-            if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+			// refresh VAB/SPH ui
+			if (Lib.IsEditor())
+				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
+		private void SetStateEnabled()
+		{
+			state = State.enabled;
+			part.CrewCapacity = crewCapacity;
+			part.crewTransferAvailable = true;
+			AtmoFlowState = !nonPressurizable;
+			WasteAtmoFlowState = true;
+			ShieldingFlowState = true;
+			SetCLSPassable(true);
+			UpdateIVA(true);
+
+			if (Lib.IsEditor())
+				atmosphereRes.amount = atmosphereRes.maxAmount;
+
+			if (hasGravityRing)
+				gravityRing.deployed = true;
+		}
+
+		private void SetStateDisabled()
+		{
+			if (Lib.IsCrewed(part))
+			{
+				Message.Post(Local.Habitat_postmsg.Format(part.partInfo.title));//"Can't disable <b><<1>> habitat</b> while crew is inside"
+				SetStateEnabled();
+				return;
+			}
+
+			state = State.disabled;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = false;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVA(false);
+
+			if (hasGravityRing)
+				gravityRing.deployed = false;
+		}
+
+		private void SetStateInflating()
+		{
+			state = State.inflating;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = true;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVA(false);
+
+			if (Lib.IsEditor())
+				deployAnimator.Play(false, false, 5.0, perctDeployed);
+
+			if (hasGravityRing)
+				gravityRing.deployed = false;
+		}
+
+		private void SetStateDeploying()
+		{
+			state = State.deploying;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = false;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVA(false);
+			deployAnimator.Play(false, false, Lib.IsEditor() ? 5.0 : 1.0, perctDeployed);
+
+			if (hasGravityRing)
+				gravityRing.deployed = false;
+		}
+
+		private void SetStateWaitingForPressure()
+		{
+			if (Lib.IsEditor())
+			{
+				SetStateEnabled();
+				return;
+			}
+
+			state = State.waitingForPressure;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = !nonPressurizable;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVA(false);
+
+			if (hasGravityRing)
+				gravityRing.deployed = false;
+		}
+
+		private void SetStateRetracting()
+		{
+			if (Lib.IsCrewed(part))
+			{
+				Message.Post(Local.Habitat_postmsg.Format(part.partInfo.title));//"Can't disable <b><<1>> habitat</b> while crew is inside"
+				SetStateEnabled();
+				return;
+			}
+
+			state = State.retracting;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = false;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVA(false);
+
+			if (inflateRequiresPressure)
+			{
+				atmosphereRes.amount = 0;
+				wasteAtmosphereRes.amount = 0;
+			}
+
+			if (hasGravityRing)
+			{
+				gravityRing.deployed = false;
+				if (gravityRing.IsRotating())
+					state = State.waitingForGravityRing;
+				else
+					deployAnimator.Play(true, false, Lib.IsEditor() ? 5.0 : 1.0, perctDeployed);
+			}
+			else
+			{
+				deployAnimator.Play(true, false, Lib.IsEditor() ? 5.0 : 1.0, perctDeployed);
+			}
+				
+		}
+
 		// action groups
-		// GOT 12-2020 : Disabling ability to disable habs due to pressurization bugs that I'm not willing to investigate
-		//[KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
 
 		// part tooltip
 		public override string GetInfo()
@@ -541,40 +597,82 @@ namespace KERBALISM
             Specifics specs = new Specifics();
             specs.Add(Local.Habitat_info1, Lib.HumanReadableVolume(volume > 0.0 ? volume : Lib.PartBoundsVolume(part)) + (volume > 0.0 ? "" : " (bounds)"));//"Volume"
             specs.Add(Local.Habitat_info2, Lib.HumanReadableSurface(surface > 0.0 ? surface : Lib.PartBoundsSurface(part)) + (surface > 0.0 ? "" : " (bounds)"));//"Surface"
-            specs.Add(Local.Habitat_info3, max_pressure >= Settings.PressureThreshold ? Local.Habitat_yes : Local.Habitat_no);//"Pressurized""yes""no"
-            if (inflate.Length > 0) specs.Add(Local.Habitat_info4, Local.Habitat_yes);//"Inflatable""yes"
-            if (PhysicsGlobals.KerbalCrewMass > 0)
-                specs.Add(Local.Habitat_info5, Lib.HumanReadableMass(PhysicsGlobals.KerbalCrewMass));//"Added mass per crew"
+            specs.Add(Local.Habitat_info3, nonPressurizable ? Local.Habitat_no : Local.Habitat_yes);//"Pressurized""no""yes"
+			if (IsDeployable) specs.Add(Local.Habitat_info4, Local.Habitat_yes);//"Inflatable""yes"
 
             return specs;
         }
 
-        // return habitat volume in a vessel in m^3
-        public static double Tot_volume(Vessel v)
+		public static void EqualizePressure(List<Habitat> habitats, out double nonPressurizableHabsVolume)
+		{
+			nonPressurizableHabsVolume = 0.0;
+
+			double atmoTotalAmount = 0.0, atmoTotalCapacity = 0.0;
+			double wasteTotalAmount = 0.0, wasteTotalCapacity = 0.0;
+
+			for (int i = habitats.Count; i-- > 0;)
+			{
+				Habitat hab = habitats[i];
+				if (hab.state == State.enabled)
+				{
+					if (hab.nonPressurizable)
+					{
+						nonPressurizableHabsVolume += hab.atmosphereRes.maxAmount;
+					}
+					else
+					{
+						atmoTotalAmount += hab.atmosphereRes.amount;
+						atmoTotalCapacity += hab.atmosphereRes.maxAmount;
+						wasteTotalAmount += hab.wasteAtmosphereRes.amount;
+						wasteTotalCapacity += hab.wasteAtmosphereRes.maxAmount;
+					}
+				}
+			}
+
+			if (atmoTotalAmount == 0.0 && wasteTotalAmount == 0.0)
+				return;
+
+			for (int i = habitats.Count; i-- > 0;)
+			{
+				Habitat hab = habitats[i];
+				if (hab.state == State.enabled && !hab.nonPressurizable)
+				{
+					hab.atmosphereRes.amount = atmoTotalAmount * (hab.atmosphereRes.maxAmount / atmoTotalCapacity);
+					hab.wasteAtmosphereRes.amount = wasteTotalAmount * (hab.wasteAtmosphereRes.maxAmount / wasteTotalCapacity);
+				}
+			}
+		}
+
+		// return habitat volume in a vessel in m^3
+		public static double Tot_volume(Vessel v)
         {
-            // we use capacity: this mean that partially pressurized parts will still count,
-            return ResourceCache.GetResource(v, "Atmosphere").Capacity / 1e3;
+			double enabledVolume = ResourceCache.GetResource(v, "Atmosphere").Capacity;
+			enabledVolume += v.KerbalismData().EnvHabitatInfo.nonPressurizableHabsVolume;
+			return enabledVolume / 1e3;
         }
 
         // return habitat surface in a vessel in m^2
         public static double Tot_surface(Vessel v)
         {
-            // we use capacity: this mean that partially pressurized parts will still count,
-            return ResourceCache.GetResource(v, "Shielding").Capacity;
+			return ResourceCache.GetResource(v, "Shielding").Capacity;
         }
 
         // return normalized pressure in a vessel
         public static double Pressure(Vessel v)
         {
-            // the pressure is simply the atmosphere level
-            return ResourceCache.GetResource(v, "Atmosphere").Level;
+			ResourceInfo atmoRes = ResourceCache.GetResource(v, "Atmosphere");
+			double enabledVolume = atmoRes.Capacity;
+			enabledVolume += v.KerbalismData().EnvHabitatInfo.nonPressurizableHabsVolume;
+			return enabledVolume > 0.0 ? atmoRes.Amount / enabledVolume : 0.0;
         }
 
         // return waste level in a vessel atmosphere
         public static double Poisoning(Vessel v)
         {
-            // the proportion of co2 in the atmosphere is simply the level of WasteAtmo
-            return ResourceCache.GetResource(v, "WasteAtmosphere").Level;
+			ResourceInfo wasteAtmoRes = ResourceCache.GetResource(v, "WasteAtmosphere");
+			double enabledVolume = wasteAtmoRes.Capacity;
+			enabledVolume += v.KerbalismData().EnvHabitatInfo.nonPressurizableHabsVolume;
+			return enabledVolume > 0.0 ? wasteAtmoRes.Amount / enabledVolume : 0.0;
         }
 
         /// <summary>
@@ -614,29 +712,11 @@ namespace KERBALISM
             else return Local.Habitat_Summary5;//"cramped"
         }
 
-        // enable/disable dialog "Transfer crew" on UI
-        public void RefreshDialog()
-        {
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
-                if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-            }
-            else if (HighLogic.LoadedSceneIsFlight)
-            {
-                GameEvents.onVesselWasModified.Fire(this.vessel);
-            }
-
-            part.CheckTransferDialog();
-            MonoUtilities.RefreshContextWindows(part);
-        }
-
         // Support Connected Living Space
-        void SetPassable(bool isPassable)
+        void SetCLSPassable(bool isPassable)
         {
             if (hasCLS)
             {
-                // for each module
                 foreach (PartModule m in part.Modules)
                 {
                     if (m.moduleName == "ModuleConnectedLivingSpace")
@@ -649,13 +729,10 @@ namespace KERBALISM
 
             Lib.LogDebug("CrewCapacity: '{0}'", Lib.LogLevel.Message, part.CrewCapacity);
             Lib.LogDebug("CrewTransferAvailable: '{0}'", Lib.LogLevel.Message, isPassable);
-            part.crewTransferAvailable = isPassable;
         }
 
-        public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
-
         // Enable/Disable IVA
-        void UpdateIVA(bool ative)
+        private void UpdateIVA(bool ative)
         {
             if (Lib.IsFlight())
             {
@@ -671,46 +748,38 @@ namespace KERBALISM
                         Lib.LogDebugStack("Part '{0}', Destroying IVA.", Lib.LogLevel.Message, part.partInfo.title);
                         part.DespawnIVA();
                     }
-                    RefreshDialog();
-                }
-            }
-        }
+					
+				}
 
-        // Fix IVA when transfer crew
-        void UpdateCrew(GameEvents.HostedFromToAction<ProtoCrewMember, Part> dat)
-        {
-            if (dat.to == part)
-            {
-                // Need be equalized
-                // Enable flow for be pressurized
-                Set_flow(true);
-                needEqualize = true;
-            }
+				part.CheckTransferDialog();
+				GameEvents.onVesselWasModified.Fire(this.vessel);
+			}
+			else
+			{
+				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
+			}
 
-            // Every time that crew be transfered, need update all IVAs for active Vessel
-            FixIVA = vessel.isActiveVessel;
-        }
-
-        // habitat state
-        public enum State
-        {
-            disabled,        // hab is disabled
-            enabled,         // hab is enabled
-            pressurizing,    // hab is pressurizing (between uninhabited and habitats)
-            depressurizing,  // hab is depressurizing (between enabled and disabled)
-        }
+			if (part.PartActionWindow != null && part.PartActionWindow.isActiveAndEnabled)
+				part.PartActionWindow.displayDirty = true;
+		}
 
         public override string GetModuleDisplayName() { return Local.Habitat; }//"Habitat"
 
 		public string GetModuleTitle() => Local.Habitat;
+
 		public Callback<Rect> GetDrawModulePanelCallback() => null;
+
 		public string GetPrimaryField()
 		{
-			return Lib.BuildString(
-				Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
-				" : ",
-				Lib.HumanReadableVolume(volume > 0.0 ? volume : Lib.PartBoundsVolume(part)),
-				volume > 0.0 ? "" : " (bounds)");
+			string s = string.Empty;
+
+			if (nonPressurizable)
+				s += Lib.BuildString(Lib.Color("Unpressurized", Lib.Kolor.Orange, true), "\n");
+
+			s += Lib.BuildString(Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
+				" : ", Lib.HumanReadableVolume(volume));
+
+			return s;
 		}
 
 		public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => shieldingCost;

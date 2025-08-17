@@ -81,27 +81,6 @@ namespace KERBALISM.Planner
 
 			// determine if the vessel has scrubbing capabilities
 			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
-
-			// scan the parts
-			double max_pressure = 1.0;
-			foreach (Part p in parts)
-			{
-				// for each module
-				foreach (PartModule m in p.Modules)
-				{
-					// skip disabled modules
-					if (!m.isEnabled)
-						continue;
-
-					if (m.moduleName == "Habitat")
-					{
-						Habitat h = m as Habitat;
-						max_pressure = Math.Min(max_pressure, h.max_pressure);
-					}
-				}
-			}
-
-			pressurized &= max_pressure >= Settings.PressureThreshold;
 		}
 
 		void Analyze_comms(List<Part> parts)
