@@ -14,6 +14,7 @@ namespace KERBALISM
 			title = Lib.ConfigValue(node, "title", name);
 			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Converter, title);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
+			isAtmoLeaks = Lib.ConfigValue(node, "isAtmoLeaks", name == "atmo leaks");
 
 			// check that name is specified
 			if (name.Length == 0) throw new Exception("skipping unnamed process");
@@ -135,6 +136,7 @@ namespace KERBALISM
 		public DumpSpecs.ActiveValve defaultDumpValve;
 		public int defaultDumpValveIndex;
 		public ResourceBroker broker;
+		public bool isAtmoLeaks;
 	}
 
 

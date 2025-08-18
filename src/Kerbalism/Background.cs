@@ -70,6 +70,7 @@ namespace KERBALISM
 		public enum Module_type
 		{
 			Reliability = 0,
+			Habitat,
 			Experiment,
 			Greenhouse,
 			GravityRing,
@@ -102,6 +103,7 @@ namespace KERBALISM
 			switch (module_name)
 			{
 				case "Reliability": return Module_type.Reliability;
+				case "Habitat": return Module_type.Habitat;
 				case "Experiment": return Module_type.Experiment;
 				case "Greenhouse": return Module_type.Greenhouse;
 				case "GravityRing": return Module_type.GravityRing;
@@ -184,7 +186,7 @@ namespace KERBALISM
 			}
 		}
 
-		private static List<BackgroundPM> Background_PMs(Vessel v)
+		internal static List<BackgroundPM> Background_PMs(Vessel v)
 		{
 			var result = Cache.VesselObjectsCache<List<BackgroundPM>>(v, "background");
 			if (result != null)

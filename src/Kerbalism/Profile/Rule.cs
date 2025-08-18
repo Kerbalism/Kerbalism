@@ -59,6 +59,10 @@ namespace KERBALISM
 
 		public void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
 		{
+			// don't run rules if no crew
+			// also prevent executing when hab state isn't yet populated in the 2-3 first fixedUpdates
+			if (vd.CrewCount == 0) return;
+
 			// store list of crew to kill
 			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 

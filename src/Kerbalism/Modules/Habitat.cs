@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
-using KSP.Localization;
 using UnityEngine;
 
 namespace KERBALISM
@@ -55,7 +53,7 @@ namespace KERBALISM
 
 		// persistence
 		[KSPField(isPersistant = true)] public State state = State.enabled;
-        [KSPField(isPersistant = true)] private double perctDeployed = 0.0;
+        [KSPField(isPersistant = true)] public double perctDeployed = 0.0;
 
         // rmb ui status strings
         [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#KERBALISM_Habitat_Volume", groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
@@ -75,7 +73,10 @@ namespace KERBALISM
 		private PartResource wasteAtmosphereRes;
 		private PartResource shieldingRes;
 
-        private bool configured = false;       // true if configure method has been executed
+		private BaseEvent toggleEvent;
+		private BaseEvent ventEvent;
+
+		private bool configured = false;       // true if configure method has been executed
 		private float shieldingCost;
 
 		private bool AtmoFlowState { get => atmosphereRes.flowState; set => atmosphereRes.flowState = value; }
@@ -85,6 +86,8 @@ namespace KERBALISM
 		private bool IsDeployable => deployAnimator.IsDefined;
 		private bool IsFullyDeployed => perctDeployed == 1.0;
 		private bool IsFullyRetracted => perctDeployed == 0.0;
+
+		private bool CanVentAtmosphere => atmosphereRes.amount > 0 && (state == State.disabled || state == State.enabled);
 
 		// volume / surface evaluation at prefab compilation
 		public override void OnLoad(ConfigNode node)
@@ -212,9 +215,11 @@ namespace KERBALISM
 			Volume = Lib.HumanReadableVolume(volume);
             Surface = Lib.HumanReadableSurface(surface);
 
-            // hide toggle if specified
-            Events["Toggle"].active = toggle;
-            //Actions["Action"].active = toggle;
+			toggleEvent = Events[nameof(Toggle)];
+			ventEvent = Events[nameof(Vent)];
+
+			// hide toggle if specified
+			toggleEvent.active = toggle;
 
 #if DEBUG
 			Events["LogVolumeAndSurface"].active = true;
@@ -232,9 +237,9 @@ namespace KERBALISM
 			{
 				switch (res.resourceName)
 				{
-					case "Atmosphere":      atmosphereRes = res; break;
+					case "Atmosphere": atmosphereRes = res; break;
 					case "WasteAtmosphere": wasteAtmosphereRes = res; break;
-					case "Shielding":       shieldingRes = res; break;
+					case "Shielding": shieldingRes = res; break;
 				}
 			}
 
@@ -273,7 +278,7 @@ namespace KERBALISM
 				// add internal atmosphere resources
 				double atmoCapacity = volume * 1e3;
 				double atmoAmount;
-				if (state == State.enabled || (IsDeployable && !inflateRequiresPressure))
+				if (!nonPressurizable && (state == State.enabled || (IsDeployable && !inflateRequiresPressure)))
 					atmoAmount = atmoCapacity;
 				else
 					atmoAmount = 0.0;
@@ -312,35 +317,38 @@ namespace KERBALISM
 			if (part.IsPAWVisible())
 			{
 				string status_str = string.Empty;
+				string pressure;
 				switch (state)
 				{
 					case State.enabled:
-						status_str = Local.Generic_ENABLED;
+						pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
+						status_str = Lib.BuildString(Local.Generic_ENABLED, " (", pressure, ")");
 						break;
 					case State.disabled:
-						status_str = Local.Generic_DISABLED;
+						pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
+						status_str = Lib.BuildString(Local.Generic_DISABLED, " (", pressure, ")");
 						break;
 					case State.inflating:
-						status_str = $"{Local.Habitat_inflating} ({perctDeployed:p2})";
+						status_str = Lib.BuildString(Local.Habitat_inflating, " (", perctDeployed.ToString("p2"), ")");
 						break;
 					case State.deploying:
-						status_str = $"Deploying ({perctDeployed:p2})";
+						status_str = Lib.BuildString("Deploying", " (", perctDeployed.ToString("p2"), ")");
 						break;
 					case State.waitingForPressure:
 						double progress = atmosphereRes.amount / atmosphereRes.maxAmount / Settings.PressureThreshold;
-						status_str = $"Pressurizing ({progress:p2})";
+						status_str = Lib.BuildString("Pressurizing", " (", progress.ToString("p2"), ")");
 						break;
 					case State.retracting:
-						status_str = $"Retracting ({1.0 - perctDeployed:p2})";
+						status_str = Lib.BuildString("Retracting", " (", (1.0 - perctDeployed).ToString("p2"), ")");
 						break;
 					case State.waitingForGravityRing:
-						status_str = $"Stopping rotation...";
+						status_str = "Stopping rotation...";
 						break;
 
 				}
 
-				Events["Toggle"].guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
-
+				toggleEvent.guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
+				ventEvent.guiActive = CanVentAtmosphere;
 			}
         }
 
@@ -355,16 +363,16 @@ namespace KERBALISM
 				case State.inflating:
 					if (Lib.IsEditor())
 					{
+						// inflating requires reaching Settings.PressureThreshold
 						perctDeployed = deployAnimator.Playing() ? deployAnimator.NormalizedTime : 1.0;
-						atmosphereRes.amount = atmosphereRes.maxAmount * perctDeployed;
+						atmosphereRes.amount = atmosphereRes.maxAmount * perctDeployed * Settings.PressureThreshold;
 						if (IsFullyDeployed)
 							SetStateEnabled();
 					}
 					else
 					{
-						double atmoLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
-						perctDeployed = Math.Max(perctDeployed, atmoLevel);
-						//double animState = DeployAnimIsBackwards ? 1.0 - perctDeployed : perctDeployed;
+						double deployLevel = atmosphereRes.amount / (atmosphereRes.maxAmount * Settings.PressureThreshold);
+						perctDeployed = Lib.Clamp(deployLevel, perctDeployed, 1.0);
 						deployAnimator.Still(perctDeployed);
 						if (IsFullyDeployed)
 							SetStateEnabled();
@@ -390,8 +398,6 @@ namespace KERBALISM
 					break;
 				case State.retracting:
 					perctDeployed = deployAnimator.Playing() ? deployAnimator.NormalizedTime : 0.0;
-					if (Lib.IsEditor() && inflateRequiresPressure)
-						atmosphereRes.amount = atmosphereRes.maxAmount * perctDeployed;
 					if (IsFullyRetracted)
 						SetStateDisabled();
 					break;
@@ -402,7 +408,12 @@ namespace KERBALISM
 			}
 		}
 
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		[KSPAction("#KERBALISM_Habitat_Action")]
+		public void Action(KSPActionParam param) => Toggle();
+
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = true,
+			guiName = "_", active = true, guiActiveUncommand = true,
+			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
         public void Toggle()
         {
 			switch (state)
@@ -457,9 +468,9 @@ namespace KERBALISM
 			WasteAtmoFlowState = true;
 			ShieldingFlowState = true;
 			SetCLSPassable(true);
-			UpdateIVA(true);
+			UpdateIVAAndUIAndFireEvents(true);
 
-			if (Lib.IsEditor())
+			if (Lib.IsEditor() && !nonPressurizable)
 				atmosphereRes.amount = atmosphereRes.maxAmount;
 
 			if (hasGravityRing)
@@ -482,7 +493,7 @@ namespace KERBALISM
 			WasteAtmoFlowState = false;
 			ShieldingFlowState = false;
 			SetCLSPassable(false);
-			UpdateIVA(false);
+			UpdateIVAAndUIAndFireEvents(false);
 
 			if (hasGravityRing)
 				gravityRing.deployed = false;
@@ -497,7 +508,7 @@ namespace KERBALISM
 			WasteAtmoFlowState = false;
 			ShieldingFlowState = false;
 			SetCLSPassable(false);
-			UpdateIVA(false);
+			UpdateIVAAndUIAndFireEvents(false);
 
 			if (Lib.IsEditor())
 				deployAnimator.Play(false, false, 5.0, perctDeployed);
@@ -515,7 +526,7 @@ namespace KERBALISM
 			WasteAtmoFlowState = false;
 			ShieldingFlowState = false;
 			SetCLSPassable(false);
-			UpdateIVA(false);
+			UpdateIVAAndUIAndFireEvents(false);
 			deployAnimator.Play(false, false, Lib.IsEditor() ? 5.0 : 1.0, perctDeployed);
 
 			if (hasGravityRing)
@@ -537,7 +548,7 @@ namespace KERBALISM
 			WasteAtmoFlowState = false;
 			ShieldingFlowState = false;
 			SetCLSPassable(false);
-			UpdateIVA(false);
+			UpdateIVAAndUIAndFireEvents(false);
 
 			if (hasGravityRing)
 				gravityRing.deployed = false;
@@ -559,7 +570,7 @@ namespace KERBALISM
 			WasteAtmoFlowState = false;
 			ShieldingFlowState = false;
 			SetCLSPassable(false);
-			UpdateIVA(false);
+			UpdateIVAAndUIAndFireEvents(false);
 
 			if (inflateRequiresPressure)
 			{
@@ -582,8 +593,17 @@ namespace KERBALISM
 				
 		}
 
-		// action groups
-		[KSPAction("#KERBALISM_Habitat_Action")] public void Action(KSPActionParam param) { Toggle(); }
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = false,
+			guiName = "Vent atmosphere", active = true, guiActiveUncommand = true,
+			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		public void Vent()
+		{
+			if (CanVentAtmosphere)
+			{
+				atmosphereRes.amount = 0.0;
+				wasteAtmosphereRes.amount = 0.0;
+			}
+		}
 
 		// part tooltip
 		public override string GetInfo()
@@ -601,115 +621,6 @@ namespace KERBALISM
 			if (IsDeployable) specs.Add(Local.Habitat_info4, Local.Habitat_yes);//"Inflatable""yes"
 
             return specs;
-        }
-
-		public static void EqualizePressure(List<Habitat> habitats, out double nonPressurizableHabsVolume)
-		{
-			nonPressurizableHabsVolume = 0.0;
-
-			double atmoTotalAmount = 0.0, atmoTotalCapacity = 0.0;
-			double wasteTotalAmount = 0.0, wasteTotalCapacity = 0.0;
-
-			for (int i = habitats.Count; i-- > 0;)
-			{
-				Habitat hab = habitats[i];
-				if (hab.state == State.enabled)
-				{
-					if (hab.nonPressurizable)
-					{
-						nonPressurizableHabsVolume += hab.atmosphereRes.maxAmount;
-					}
-					else
-					{
-						atmoTotalAmount += hab.atmosphereRes.amount;
-						atmoTotalCapacity += hab.atmosphereRes.maxAmount;
-						wasteTotalAmount += hab.wasteAtmosphereRes.amount;
-						wasteTotalCapacity += hab.wasteAtmosphereRes.maxAmount;
-					}
-				}
-			}
-
-			if (atmoTotalAmount == 0.0 && wasteTotalAmount == 0.0)
-				return;
-
-			for (int i = habitats.Count; i-- > 0;)
-			{
-				Habitat hab = habitats[i];
-				if (hab.state == State.enabled && !hab.nonPressurizable)
-				{
-					hab.atmosphereRes.amount = atmoTotalAmount * (hab.atmosphereRes.maxAmount / atmoTotalCapacity);
-					hab.wasteAtmosphereRes.amount = wasteTotalAmount * (hab.wasteAtmosphereRes.maxAmount / wasteTotalCapacity);
-				}
-			}
-		}
-
-		// return habitat volume in a vessel in m^3
-		public static double Tot_volume(Vessel v)
-        {
-			double enabledVolume = ResourceCache.GetResource(v, "Atmosphere").Capacity;
-			enabledVolume += v.KerbalismData().EnvHabitatInfo.nonPressurizableHabsVolume;
-			return enabledVolume / 1e3;
-        }
-
-        // return habitat surface in a vessel in m^2
-        public static double Tot_surface(Vessel v)
-        {
-			return ResourceCache.GetResource(v, "Shielding").Capacity;
-        }
-
-        // return normalized pressure in a vessel
-        public static double Pressure(Vessel v)
-        {
-			ResourceInfo atmoRes = ResourceCache.GetResource(v, "Atmosphere");
-			double enabledVolume = atmoRes.Capacity;
-			enabledVolume += v.KerbalismData().EnvHabitatInfo.nonPressurizableHabsVolume;
-			return enabledVolume > 0.0 ? atmoRes.Amount / enabledVolume : 0.0;
-        }
-
-        // return waste level in a vessel atmosphere
-        public static double Poisoning(Vessel v)
-        {
-			ResourceInfo wasteAtmoRes = ResourceCache.GetResource(v, "WasteAtmosphere");
-			double enabledVolume = wasteAtmoRes.Capacity;
-			enabledVolume += v.KerbalismData().EnvHabitatInfo.nonPressurizableHabsVolume;
-			return enabledVolume > 0.0 ? wasteAtmoRes.Amount / enabledVolume : 0.0;
-        }
-
-        /// <summary>
-        /// Return vessel shielding factor.
-        /// </summary>
-        public static double Shielding(Vessel v)
-        {
-            return Radiation.ShieldingEfficiency(ResourceCache.GetResource(v, "Shielding").Level);
-        }
-
-        // return living space factor in a vessel
-        public static double Living_space(Vessel v)
-        {
-            // living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-            return Lib.Clamp(Volume_per_crew(v) / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
-        }
-
-        public static double Volume_per_crew(Vessel v)
-        {
-            // living space is the volume per-capita normalized against an 'ideal living space' and clamped in an acceptable range
-            return Tot_volume(v) / Math.Max(1, Lib.CrewCount(v));
-        }
-
-        // return a verbose description of shielding capability
-        public static string Shielding_to_string(double v)
-        {
-            return v <= double.Epsilon ? Local.Habitat_none : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
-        }
-
-        // traduce living space value to string
-        public static string Living_space_to_string(double v)
-        {
-            if (v >= 0.99) return Local.Habitat_Summary1;//"ideal"
-            else if (v >= 0.75) return Local.Habitat_Summary2;//"good"
-            else if (v >= 0.5) return Local.Habitat_Summary3;//"modest"
-            else if (v >= 0.25) return Local.Habitat_Summary4;//"poor"
-            else return Local.Habitat_Summary5;//"cramped"
         }
 
         // Support Connected Living Space
@@ -731,14 +642,13 @@ namespace KERBALISM
             Lib.LogDebug("CrewTransferAvailable: '{0}'", Lib.LogLevel.Message, isPassable);
         }
 
-        // Enable/Disable IVA
-        private void UpdateIVA(bool ative)
+        private void UpdateIVAAndUIAndFireEvents(bool ivaActive)
         {
             if (Lib.IsFlight())
             {
                 if (vessel.isActiveVessel)
                 {
-                    if (ative)
+                    if (ivaActive)
                     {
                         Lib.LogDebugStack("Part '{0}', Spawning IVA.", Lib.LogLevel.Message, part.partInfo.title);
                         part.SpawnIVA();
