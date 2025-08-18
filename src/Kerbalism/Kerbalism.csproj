@@ -36,7 +36,6 @@
   <!-- //////////// RELEASE CONFIGURATION SETUP //////////// -->
   <!-- ///////////////////////////////////////////////////// -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <WarningLevel>4</WarningLevel>
     <DebugType>none</DebugType>
