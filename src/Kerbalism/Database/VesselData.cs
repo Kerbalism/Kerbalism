@@ -475,15 +475,16 @@ namespace KERBALISM
 
 			secSinceLastEval += elapsedSeconds;
 
-			// don't update more than every second of game time
-			if (!forced && secSinceLastEval < 1.0)
+			// update loaded vessels every 0.1s, unloaded vessels every 1s of game time
+			double stepDuration = Vessel.loaded ? 0.1 : 1.0;
+			if (!forced && secSinceLastEval < stepDuration)
 			{
 				UpdateTransmitBufferDrive(elapsedSeconds);
 				return;
 			}
 			
 			EvaluateEnvironment(secSinceLastEval);
-			EvaluateStatus(elapsedSeconds);
+			EvaluateStatus(secSinceLastEval);
 			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
 			Evaluated = true;

@@ -23,16 +23,20 @@ namespace KERBALISM
 			/// <summary> hab is being inflated and going to the enabled state, only applies if deployable and inflateRequiresPressure is true</summary>
 			inflating = 2,
 			/// <summary> hab is being deployed and going to the enabled state, only applies if deployable and inflateRequiresPressure is false</summary>
-			deploying = 3,
+			deploying,
 			/// <summary> hab has been deployed and is waiting for pressure level to be enough for the vessel to be kept pressurized before going to the enabled state</summary>
-			waitingForPressure = 4,
+			waitingForPressure,
 			/// <summary> hab is being retracted and going to the disabled state, only applies if deployable</summary>
-			retracting = 5,
+			retracting,
 			/// <summary> hab is waiting for the gravity ring to stop its rotation to be able to go in the retracting state</summary>
-			waitingForGravityRing = 6,
-			/// <summary> depreciated, kept around for backwark compat</summary>
+			waitingForGravityRing,
+			/// <summary> inflatable is being pressurized by equalizing its pressure with all enabled habitats</summary>
+			inflatingAndEqualizing,
+			/// <summary> deployable is being pressurized by equalizing its pressure with all enabled habitats</summary>
+			waitingForPressureAndEqualizing,
+			/// <summary> depreciated, kept around for backward compat</summary>
 			pressurizing = 2,
-			/// <summary> depreciated, kept around for backwark compat</summary>
+			/// <summary> depreciated, kept around for backward compat</summary>
 			depressurizing = 0
 		}
 
@@ -81,6 +85,7 @@ namespace KERBALISM
 
 		private BaseEvent toggleEvent;
 		private BaseEvent ventEvent;
+		private BaseEvent equalizeEvent;
 
 		private bool configured = false;       // true if configure method has been executed
 		private float shieldingCost;
@@ -92,6 +97,28 @@ namespace KERBALISM
 		private bool IsDeployable => deployAnimator.IsDefined;
 		private bool IsFullyDeployed => perctDeployed == 1.0;
 		private bool IsFullyRetracted => perctDeployed == 0.0;
+
+		private bool CanEqualize
+		{
+			get
+			{
+				if (!(state == State.inflating || state == State.waitingForPressure))
+					return false;
+				ResourceInfo vesselAtmoRes = ResourceCache.GetResource(vessel, AtmoResName);
+				// don't allow unless decent pressurization capacity is active, or we are in a breathable atmo
+				if (vesselAtmoRes.Rate < 1.0 && !vessel.KerbalismData().EnvBreathable)
+					return false;
+				double atmoAmountNeededToPressurize = Math.Max(0.0, (atmosphereRes.maxAmount * Settings.PressureThreshold) - atmosphereRes.amount);
+				// don't allow unless the vessel contains more than twice the atmo needed to pressurize this hab
+				if (vesselAtmoRes.Amount < atmoAmountNeededToPressurize * 2.0)
+					return false;
+				// don't allow unless there is enough nitrogen to pressurize this hab
+				if (ResourceCache.GetResource(vessel, "Nitrogen").Amount < atmoAmountNeededToPressurize)
+					return false;
+
+				return true;
+			}
+		}
 
 		private bool CanVentAtmosphere => atmosphereRes.amount > 0 && (state == State.disabled || state == State.enabled);
 
@@ -223,6 +250,7 @@ namespace KERBALISM
 
 			toggleEvent = Events[nameof(Toggle)];
 			ventEvent = Events[nameof(Vent)];
+			equalizeEvent = Events[nameof(Equalize)];
 			ventEvent.guiName = Local.Habitat_Vent;
 
 			// hide toggle if specified
@@ -262,8 +290,12 @@ namespace KERBALISM
 				case State.waitingForPressure: SetStateWaitingForPressure(); break;
 				case State.retracting: SetStateRetracting(); break;
 				case State.waitingForGravityRing: SetStateRetracting(); break;
+				case State.inflatingAndEqualizing: SetStateEqualizing(); break;
+				case State.waitingForPressureAndEqualizing: SetStateEqualizing(); break;
 			}
-        }
+
+			UpdatePAW();
+		}
 
         public void Configure()
         {
@@ -313,42 +345,64 @@ namespace KERBALISM
             }
 
 			if (part.IsPAWVisible())
+				UpdatePAW();
+		}
+
+		private void UpdatePAW()
+		{
+			string status_str = string.Empty;
+			string pressure;
+			switch (state)
 			{
-				string status_str = string.Empty;
-				string pressure;
-				switch (state)
-				{
-					case State.enabled:
-						pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
-						status_str = Lib.BuildString(Local.Generic_ENABLED, " (", pressure, ")");
-						break;
-					case State.disabled:
-						pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
-						status_str = Lib.BuildString(Local.Generic_DISABLED, " (", pressure, ")");
-						break;
-					case State.inflating:
-						status_str = Lib.BuildString(Local.Habitat_inflating, " (", perctDeployed.ToString("p2"), ")");// "inflating"
-						break;
-					case State.deploying:
-						status_str = Lib.BuildString(Local.Habitat_deploying, " (", perctDeployed.ToString("p2"), ")");// "deploying"
-						break;
-					case State.waitingForPressure:
-						double progress = atmosphereRes.amount / atmosphereRes.maxAmount / Settings.PressureThreshold;
-						status_str = Lib.BuildString(Local.Habitat_pressurizing, " (", progress.ToString("p2"), ")");// "pressurizing"
-						break;
-					case State.retracting:
-						status_str = Lib.BuildString(Local.Habitat_retracting, " (", (1.0 - perctDeployed).ToString("p2"), ")");// "retracting"
-						break;
-					case State.waitingForGravityRing:
-						status_str = Local.Habitat_stopRotation; // "stopping rotation..."
-						break;
-
-				}
-
-				toggleEvent.guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
-				ventEvent.guiActive = CanVentAtmosphere;
+				case State.enabled:
+					pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
+					status_str = Lib.BuildString(Local.Generic_ENABLED, " (", pressure, ")");
+					break;
+				case State.disabled:
+					pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
+					status_str = Lib.BuildString(Local.Generic_DISABLED, " (", pressure, ")");
+					break;
+				case State.inflating:
+					status_str = Lib.BuildString(Local.Habitat_inflating, " (", perctDeployed.ToString("p2"), ")");// "inflating"
+					break;
+				case State.deploying:
+					status_str = Lib.BuildString(Local.Habitat_deploying, " (", perctDeployed.ToString("p2"), ")");// "deploying"
+					break;
+				case State.waitingForPressure:
+					double progress = atmosphereRes.amount / atmosphereRes.maxAmount / Settings.PressureThreshold;
+					status_str = Lib.BuildString(Local.Habitat_pressurizing, " (", progress.ToString("p2"), ")");// "pressurizing"
+					break;
+				case State.retracting:
+					status_str = Lib.BuildString(Local.Habitat_retracting, " (", (1.0 - perctDeployed).ToString("p2"), ")");// "retracting"
+					break;
+				case State.waitingForGravityRing:
+					status_str = Local.Habitat_stopRotation; // "stopping rotation..."
+					break;
+				case State.inflatingAndEqualizing:
+				case State.waitingForPressureAndEqualizing:
+					status_str = Lib.BuildString(Local.Habitat_equalizing, " (", perctDeployed.ToString("p2"), ")");// "equalizing"
+					break;
 			}
-        }
+
+			toggleEvent.guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
+
+			ventEvent.guiActive = CanVentAtmosphere;
+
+			if (state == State.inflatingAndEqualizing || state == State.waitingForPressureAndEqualizing)
+			{
+				equalizeEvent.guiActive = true;
+				equalizeEvent.guiName = Local.Habitat_stopEqualize; // "Stop equalizing pressure"
+			}
+			else if (CanEqualize)
+			{
+				equalizeEvent.guiActive = true;
+				equalizeEvent.guiName = Local.Habitat_equalize; // "Equalize pressure"
+			}
+			else
+			{
+				equalizeEvent.guiActive = false;
+			}
+		}
 
         public void FixedUpdate()
         {
@@ -359,6 +413,7 @@ namespace KERBALISM
 			switch (state)
 			{
 				case State.inflating:
+				case State.inflatingAndEqualizing:
 					if (Lib.IsEditor())
 					{
 						// inflating requires reaching Settings.PressureThreshold
@@ -388,6 +443,7 @@ namespace KERBALISM
 					}
 					break;
 				case State.waitingForPressure:
+				case State.waitingForPressureAndEqualizing:
 					{
 						double pressureLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
 						if (pressureLevel > Settings.PressureThreshold)
@@ -450,6 +506,8 @@ namespace KERBALISM
 				case State.inflating:
 				case State.deploying:
 				case State.waitingForPressure:
+				case State.inflatingAndEqualizing:
+				case State.waitingForPressureAndEqualizing:
 					if (canRetract || Lib.IsEditor())
 						SetStateRetracting();
 					else
@@ -468,6 +526,27 @@ namespace KERBALISM
 			if (Lib.IsEditor())
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
+
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = false,
+			guiName = "_", active = true, guiActiveUncommand = true,
+			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		public void Equalize()
+		{
+			switch (state)
+			{
+				case State.inflating:
+				case State.waitingForPressure:
+					if (CanEqualize)
+						SetStateEqualizing();
+					break;
+				case State.inflatingAndEqualizing:
+					SetStateInflating();
+					break;
+				case State.waitingForPressureAndEqualizing:
+					SetStateWaitingForPressure();
+					break;
+			}
+		}
 
 		private void SetStateEnabled()
 		{
@@ -602,6 +681,23 @@ namespace KERBALISM
 			}
 		}
 
+		private void SetStateEqualizing()
+		{
+			if (state == State.inflating)
+				state = State.inflatingAndEqualizing;
+			else if (state == State.waitingForPressure)
+				state = State.waitingForPressureAndEqualizing;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = true;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVAAndUIAndFireEvents(false);
+			if (hasGravityRing)
+				gravityRing.deployed = false;
+		}
+
 		/// <summary>
 		/// Update hab state on unloaded vessels (replicating FixedUpdate()), called from VesselHabitatInfo.Update() 
 		/// </summary>
@@ -610,6 +706,7 @@ namespace KERBALISM
 			switch (hab.State)
 			{
 				case State.inflating:
+				case State.inflatingAndEqualizing:
 					{
 						double deployLevel = hab.AtmoResource.Amount / (hab.AtmoResource.MaxAmount * Settings.PressureThreshold);
 						hab.PerctDeployed = Lib.Clamp(deployLevel, hab.PerctDeployed, 1.0);
@@ -629,6 +726,7 @@ namespace KERBALISM
 					}
 					break;
 				case State.waitingForPressure:
+				case State.waitingForPressureAndEqualizing:
 					{
 						double pressureLevel = hab.AtmoResource.Amount / hab.AtmoResource.MaxAmount;
 						if (pressureLevel > Settings.PressureThreshold)
@@ -676,7 +774,7 @@ namespace KERBALISM
 				hab.AtmoResource.Amount = 0;
 				hab.WasteAtmoResource.Amount = 0;
 			}
-			// go directly to the disabled state as there is nothing to retract
+			// go directly to the disabled state as there is no animation to handle
 			BackgroundSetStateDisabled(hab);
 		}
 

@@ -171,6 +171,8 @@ namespace KERBALISM
 			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 		}
 
+		private static List<HabitatWrapper> pressurizingHabs = new List<HabitatWrapper>();
+
 		internal void HabitatsUpdate(Vessel vessel, VesselData vd, double elapsedSeconds)
 		{
 			double atmoLeaksPerSurface;
@@ -179,49 +181,108 @@ namespace KERBALISM
 			else
 				atmoLeaksPerSurface = 0.0;
 
-			double equAtmoAmount = 0.0, equAtmoCapacity = 0.0;
-			double equWasteAmount = 0.0, equWasteCapacity = 0.0;
+			double enaAtmoAmount = 0.0, enaAtmoCapacity = 0.0;
+			double enaWasteAmount = 0.0, enaWasteCapacity = 0.0;
+			double preAtmoAmount = 0.0, preAtmoCapacity = 0.0;
 			double npAtmoCapacity = 0.0;
 
+			// first loop : gather amounts / capacities
 			for (int i = habitatWrappers.Count; i-- > 0;)
 			{
 				HabitatWrapper hab = habitatWrappers[i];
-				if (hab.State == State.enabled)
+				switch (hab.State)
 				{
-					if (hab.NonPressurizable)
-					{
-						npAtmoCapacity += hab.AtmoResource.MaxAmount;
-					}
-					else
-					{
-						equAtmoAmount += hab.AtmoResource.Amount;
-						equAtmoCapacity += hab.AtmoResource.MaxAmount;
-						equWasteAmount += hab.WasteAtmoResource.Amount;
-						equWasteCapacity += hab.WasteAtmoResource.MaxAmount;
-					}
-				}
-				// apply atmo leaks on disabled habitats
-				else if (atmoLeaksPerSurface > 0.0 && hab.State == State.disabled)
-				{
-					double atmoAmount = hab.AtmoResource.Amount;
-					if (atmoAmount > 0.0)
-						hab.AtmoResource.Amount = Math.Max(0.0, atmoAmount - (atmoLeaksPerSurface * hab.Surface));
+					case State.enabled:
+						if (hab.NonPressurizable)
+						{
+							npAtmoCapacity += hab.AtmoResource.MaxAmount;
+						}
+						else
+						{
+							enaAtmoAmount += hab.AtmoResource.Amount;
+							enaAtmoCapacity += hab.AtmoResource.MaxAmount;
+							enaWasteAmount += hab.WasteAtmoResource.Amount;
+							enaWasteCapacity += hab.WasteAtmoResource.MaxAmount;
+						}
+						break;
+					case State.disabled:
+						// apply atmo leaks on disabled habitats
+						if (atmoLeaksPerSurface > 0.0)
+						{
+							double atmoAmount = hab.AtmoResource.Amount;
+							if (atmoAmount > 0.0)
+								hab.AtmoResource.Amount = Math.Max(0.0, atmoAmount - (atmoLeaksPerSurface * hab.Surface));
+						}
+						break;
+					case State.inflatingAndEqualizing:
+					case State.waitingForPressureAndEqualizing:
+						pressurizingHabs.Add(hab);
+						break;
 				}
 			}
 
-			// equalize atmo/waste amongst all enabled habs
-			if (equAtmoAmount != 0.0 || equWasteAmount != 0.0)
+			// equalization, doesn't need to run if no atmo
+			if (enaAtmoAmount != 0.0 || enaWasteAmount != 0.0)
 			{
+				// compute how much atmo is transferred from enabled habs toward pressurizing habs
+				double preAtmoNeeded = 0.0;
+				double preAtmoTransferred = 0.0;
+				if (pressurizingHabs.Count > 0)
+				{
+					double enaAtmoLevel = enaAtmoAmount / enaAtmoCapacity;
+					for (int i = pressurizingHabs.Count; i-- > 0;)
+					{
+						HabitatWrapper preHab = pressurizingHabs[i];
+						double amount = preHab.AtmoResource.Amount;
+						double maxAmount = preHab.AtmoResource.MaxAmount;
+						double level = maxAmount > 0.0 ? amount / maxAmount : 0.0;
+						// exclude pressurizing habs whose pressure level is higher than the enabled habs pressure level
+						if (level > enaAtmoLevel)
+						{
+							pressurizingHabs.RemoveAt(i);
+							continue;
+						}
+						preAtmoAmount += amount;
+						preAtmoCapacity += maxAmount;
+					}
+
+					if (pressurizingHabs.Count > 0.0)
+					{
+						double equAtmoLevel = preAtmoAmount / preAtmoCapacity;
+						// rate is EqualizationRateFactor (% / second), scaled down by pressure difference
+						preAtmoTransferred = (enaAtmoLevel - equAtmoLevel) * preAtmoCapacity * Settings.EqualizationRateFactor * elapsedSeconds;
+						// clamp by what is actually needed
+						preAtmoNeeded = Math.Max(0.0, (preAtmoCapacity * Settings.PressureThreshold) - preAtmoAmount);
+						preAtmoTransferred = Lib.Clamp(preAtmoTransferred, 0.0, preAtmoNeeded);
+						// remove it from enabled habs
+						enaAtmoAmount -= preAtmoTransferred;
+					}
+				}
+
+				// equalize atmo/waste amongst all enabled habs
 				for (int i = habitatWrappers.Count; i-- > 0;)
 				{
 					HabitatWrapper hab = habitatWrappers[i];
 					if (hab.State == State.enabled && !hab.NonPressurizable)
 					{
-						hab.AtmoResource.Amount = equAtmoAmount * (hab.AtmoResource.MaxAmount / equAtmoCapacity);
-						hab.WasteAtmoResource.Amount = equWasteAmount * (hab.WasteAtmoResource.MaxAmount / equWasteCapacity);
+						hab.AtmoResource.Amount = enaAtmoAmount * (hab.AtmoResource.MaxAmount / enaAtmoCapacity);
+						hab.WasteAtmoResource.Amount = enaWasteAmount * (hab.WasteAtmoResource.MaxAmount / enaWasteCapacity);
+					}
+				}
+
+				// distribute transferred atmo toward pressurizing habs
+				if (preAtmoTransferred > 0.0 && preAtmoNeeded > 0.0)
+				{
+					for (int i = pressurizingHabs.Count; i-- > 0;)
+					{
+						HabitatWrapper preHab = pressurizingHabs[i];
+						double needed = Math.Max(0.0, (preHab.AtmoResource.MaxAmount * Settings.PressureThreshold) - preHab.AtmoResource.Amount);
+						preHab.AtmoResource.Amount += preAtmoTransferred * (needed / preAtmoNeeded);
 					}
 				}
 			}
+
+			pressurizingHabs.Clear();
 
 			// all resources have been updated, call the state update on unloaded vessels
 			if (state == ObjectState.Unloaded)
@@ -230,11 +291,11 @@ namespace KERBALISM
 
 			// compute vessel-wide habitat stats
 			ResourceInfo vesselShieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
-			double totAtmoCapacity = equAtmoCapacity + npAtmoCapacity;
+			double totAtmoCapacity = enaAtmoCapacity + npAtmoCapacity;
 			HabTotalVolume = totAtmoCapacity / 1e3;
 			HabTotalSurface = vesselShieldingRes.Capacity;
-			HabNormalizedPressure = totAtmoCapacity > 0.0 ? equAtmoAmount / totAtmoCapacity : 0.0;
-			HabPoisoning = HabTotalVolume > 0.0 ? equWasteAmount / totAtmoCapacity : 0.0;
+			HabNormalizedPressure = totAtmoCapacity > 0.0 ? enaAtmoAmount / totAtmoCapacity : 0.0;
+			HabPoisoning = HabTotalVolume > 0.0 ? enaWasteAmount / totAtmoCapacity : 0.0;
 			HabShieldingFactor = Radiation.ShieldingEfficiency(vesselShieldingRes.Level);
 			CrewCount = Lib.CrewCount(vessel);
 			HabVolumePerCrew = HabTotalVolume / Math.Max(1, CrewCount);
