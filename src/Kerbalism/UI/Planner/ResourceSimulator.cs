@@ -403,13 +403,13 @@ namespace KERBALISM.Planner
 			foreach (ModuleResource input in g.resHandler.inputResources)
 			{
 				// WasteAtmosphere is primary combined input
-				if (g.WACO2 && input.name == "WasteAtmosphere")
+				if (g.WACO2 && input.name == Habitat.WasteAtmoResName)
 					recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "CarbonDioxide");
 				// CarbonDioxide is secondary combined input
 				else if (g.WACO2 && input.name == "CarbonDioxide")
 					recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "");
 				// if atmosphere is breathable disable WasteAtmosphere / CO2
-				else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere"))
+				else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName))
 					recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "");
 				else
 					recipe.Input(input.name, input.rate);

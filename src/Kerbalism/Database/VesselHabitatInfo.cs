@@ -182,7 +182,7 @@ namespace KERBALISM
 				}
 			}
 
-			// equalize atmo/waste amonst all enabled habs
+			// equalize atmo/waste amongst all enabled habs
 			if (equAtmoAmount != 0.0 || equWasteAmount != 0.0)
 			{
 				for (int i = habitatWrappers.Count; i-- > 0;)
@@ -196,7 +196,13 @@ namespace KERBALISM
 				}
 			}
 
-			ResourceInfo vesselShieldingRes = ResourceCache.GetResource(vessel, "Shielding");
+			// all resources have been updated, call the state update on unloaded vessels
+			if (state == ObjectState.Unloaded)
+				for (int i = habitatWrappers.Count; i-- > 0;)
+					BackgroundUpdate(habitatWrappers[i]);
+
+			// compute vessel-wide habitat stats
+			ResourceInfo vesselShieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
 			double totAtmoCapacity = equAtmoCapacity + npAtmoCapacity;
 			HabTotalVolume = totAtmoCapacity / 1e3;
 			HabTotalSurface = vesselShieldingRes.Capacity;
@@ -346,11 +352,13 @@ namespace KERBALISM
 
 		public ResourceWrapper AtmoResource { get; protected set; }
 		public ResourceWrapper WasteAtmoResource { get; protected set; }
+		public ResourceWrapper ShieldingResource { get; protected set; }
 		public Part LoadedPart { get; protected set; }
 
 		public abstract State State { get; set; }
 		public abstract double PerctDeployed { get; set; }
 		public abstract bool NonPressurizable { get; }
+		public abstract bool InflateRequiresPressure { get; }
 		public abstract double Surface { get; }
 	}
 
@@ -361,6 +369,7 @@ namespace KERBALISM
 		public override State State { get => hab.state; set => hab.state = value; }
 		public override double PerctDeployed { get => hab.perctDeployed; set => hab.perctDeployed = value; }
 		public override bool NonPressurizable => hab.nonPressurizable;
+		public override bool InflateRequiresPressure => hab.inflateRequiresPressure;
 		public override double Surface => hab.surface;
 
 		public static bool TryCreate(Habitat hab, out LoadedHabitat wrapper)
@@ -372,10 +381,12 @@ namespace KERBALISM
 			{
 				switch (res.resourceName)
 				{
-					case "Atmosphere":
+					case AtmoResName:
 						wrapper.AtmoResource = new LoadedResource(res); break;
-					case "WasteAtmosphere":
+					case WasteAtmoResName:
 						wrapper.WasteAtmoResource = new LoadedResource(res); break;
+					case ShieldingResName:
+						wrapper.ShieldingResource = new LoadedResource(res); break;
 				}
 			}
 
@@ -410,6 +421,7 @@ namespace KERBALISM
 		}
 
 		public override bool NonPressurizable => habPrefab.nonPressurizable;
+		public override bool InflateRequiresPressure => habPrefab.inflateRequiresPressure;
 		public override double Surface => habPrefab.surface;
 
 		public UnloadedHabitat(ProtoPartSnapshot habPart, ProtoPartModuleSnapshot hab, Habitat habPrefab)
@@ -421,10 +433,15 @@ namespace KERBALISM
 			for (int i = habPart.resources.Count; i-- > 0;)
 			{
 				ProtoPartResourceSnapshot res = habPart.resources[i];
-				if (res.resourceName == "Atmosphere")
-					AtmoResource = new UnloadedResource(res);
-				else if (res.resourceName == "WasteAtmosphere")
-					WasteAtmoResource = new UnloadedResource(res);
+				switch (res.resourceName)
+				{
+					case AtmoResName:
+						AtmoResource = new UnloadedResource(res); break;
+					case WasteAtmoResName:
+						WasteAtmoResource = new UnloadedResource(res); break;
+					case ShieldingResName:
+						ShieldingResource = new UnloadedResource(res); break;
+				}
 			}
 		}
 	}

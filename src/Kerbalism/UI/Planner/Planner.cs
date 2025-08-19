@@ -540,8 +540,8 @@ namespace KERBALISM.Planner
 		///<summary> Add habitat sub-panel, including tooltips </summary>
 		private static void AddSubPanelHabitat(Panel p)
 		{
-			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
-			SimulatedResource waste_res = resource_sim.Resource("WasteAtmosphere");
+			SimulatedResource atmo_res = resource_sim.Resource(Habitat.AtmoResName);
+			SimulatedResource waste_res = resource_sim.Resource(Habitat.WasteAtmoResName);
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.Tooltip();

@@ -1,3 +1,5 @@
+#pragma warning disable CS0612
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +9,10 @@ namespace KERBALISM
 {
     public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
 	{
+		public const string AtmoResName = "Atmosphere";
+		public const string WasteAtmoResName = "WasteAtmosphere";
+		public const string ShieldingResName = "Shielding";
+
 		// habitat state
 		public enum State
 		{
@@ -228,7 +234,7 @@ namespace KERBALISM
 #endif
 
 			// add the cost of shielding to the base part cost
-			shieldingCost = (float)surface * PartResourceLibrary.Instance.GetDefinition("Shielding").unitCost;
+			shieldingCost = (float)surface * PartResourceLibrary.Instance.GetDefinition(ShieldingResName).unitCost;
 
 			// configure on start
 			Configure();
@@ -237,9 +243,9 @@ namespace KERBALISM
 			{
 				switch (res.resourceName)
 				{
-					case "Atmosphere": atmosphereRes = res; break;
-					case "WasteAtmosphere": wasteAtmosphereRes = res; break;
-					case "Shielding": shieldingRes = res; break;
+					case AtmoResName: atmosphereRes = res; break;
+					case WasteAtmoResName: wasteAtmosphereRes = res; break;
+					case ShieldingResName: shieldingRes = res; break;
 				}
 			}
 
@@ -258,22 +264,13 @@ namespace KERBALISM
 			}
         }
 
-		private void SetGravityRingPressurizedState(bool pressurized)
-        {
-            if (hasGravityRing)
-            {
-                gravityRing.isDeployedByHabitat = true;
-                gravityRing.deployed = pressurized;
-            }
-        }
-
         public void Configure()
         {
             // if never set, this is the case if:
             // - part is added in the editor
             // - module is configured first time either in editor or in flight
             // - module is added to an existing savegame
-            if (!part.Resources.Contains("Atmosphere"))
+            if (!part.Resources.Contains(AtmoResName))
             {
 				// add internal atmosphere resources
 				double atmoCapacity = volume * 1e3;
@@ -283,11 +280,11 @@ namespace KERBALISM
 				else
 					atmoAmount = 0.0;
 
-				Lib.AddResource(part, "Atmosphere", atmoAmount, atmoCapacity);
-				Lib.AddResource(part, "WasteAtmosphere", 0.0, atmoCapacity);
+				Lib.AddResource(part, AtmoResName, atmoAmount, atmoCapacity);
+				Lib.AddResource(part, WasteAtmoResName, 0.0, atmoCapacity);
 
 				// add external surface shielding
-				shieldingRes = Lib.AddResource(part, "Shielding", 0.0, surface);
+				shieldingRes = Lib.AddResource(part, ShieldingResName, 0.0, surface);
 
 				// inflatable habitats can't be shielded (but still need the capacity) unless they have rigid walls
 				shieldingRes.isTweakable = !IsDeployable || inflatableUsingRigidWalls;
@@ -405,6 +402,18 @@ namespace KERBALISM
 					if (!gravityRing.IsRotating())
 						SetStateRetracting();
 					break;
+			}
+		}
+
+		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = false,
+			guiName = "Vent atmosphere", active = true, guiActiveUncommand = true,
+			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
+		public void Vent()
+		{
+			if (CanVentAtmosphere)
+			{
+				atmosphereRes.amount = 0.0;
+				wasteAtmosphereRes.amount = 0.0;
 			}
 		}
 
@@ -590,19 +599,84 @@ namespace KERBALISM
 			{
 				deployAnimator.Play(true, false, Lib.IsEditor() ? 5.0 : 1.0, perctDeployed);
 			}
-				
 		}
 
-		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = false,
-			guiName = "Vent atmosphere", active = true, guiActiveUncommand = true,
-			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
-		public void Vent()
+		/// <summary>
+		/// Update hab state on unloaded vessels (replicating FixedUpdate()), called from VesselHabitatInfo.Update() 
+		/// </summary>
+		internal static void BackgroundUpdate(HabitatWrapper hab)
 		{
-			if (CanVentAtmosphere)
+			switch (hab.State)
 			{
-				atmosphereRes.amount = 0.0;
-				wasteAtmosphereRes.amount = 0.0;
+				case State.inflating:
+					{
+						double deployLevel = hab.AtmoResource.Amount / (hab.AtmoResource.MaxAmount * Settings.PressureThreshold);
+						hab.PerctDeployed = Lib.Clamp(deployLevel, hab.PerctDeployed, 1.0);
+						if (hab.PerctDeployed == 1.0)
+							BackgroundSetStateEnabled(hab);
+					}
+
+					break;
+				case State.deploying:
+					{
+						hab.PerctDeployed = 1.0; // insta-deploy on unloaded vessels
+						double pressureLevel = hab.AtmoResource.Amount / hab.AtmoResource.MaxAmount;
+						if (pressureLevel > Settings.PressureThreshold)
+							BackgroundSetStateEnabled(hab);
+						else
+							BackgroundSetStateWaitingForPressure(hab);
+					}
+					break;
+				case State.waitingForPressure:
+					{
+						double pressureLevel = hab.AtmoResource.Amount / hab.AtmoResource.MaxAmount;
+						if (pressureLevel > Settings.PressureThreshold)
+							BackgroundSetStateEnabled(hab);
+					}
+					break;
+				case State.retracting:
+					hab.PerctDeployed = 0.0; // insta-retract on unloaded vessels
+					BackgroundSetStateDisabled(hab);
+					break;
+				case State.waitingForGravityRing:
+					BackgroundSetStateRetracting(hab);
+					break;
 			}
+		}
+
+		private static void BackgroundSetStateEnabled(HabitatWrapper hab)
+		{
+			hab.State = State.enabled;
+			hab.AtmoResource.FlowState = !hab.NonPressurizable;
+			hab.WasteAtmoResource.FlowState = true;
+			hab.ShieldingResource.FlowState = true;
+		}
+
+		private static void BackgroundSetStateWaitingForPressure(HabitatWrapper hab)
+		{
+			hab.State = State.waitingForPressure;
+			hab.AtmoResource.FlowState = !hab.NonPressurizable;
+			hab.WasteAtmoResource.FlowState = false;
+			hab.ShieldingResource.FlowState = false;
+		}
+
+		private static void BackgroundSetStateDisabled(HabitatWrapper hab)
+		{
+			hab.State = State.disabled;
+			hab.AtmoResource.FlowState = false;
+			hab.WasteAtmoResource.FlowState = false;
+			hab.ShieldingResource.FlowState = false;
+		}
+
+		private static void BackgroundSetStateRetracting(HabitatWrapper hab)
+		{
+			if (hab.InflateRequiresPressure)
+			{
+				hab.AtmoResource.Amount = 0;
+				hab.WasteAtmoResource.Amount = 0;
+			}
+			// go directly to the disabled state as there is nothing to retract
+			BackgroundSetStateDisabled(hab);
 		}
 
 		// part tooltip

@@ -67,7 +67,7 @@ namespace KERBALISM
 					{
 						// hacky but there is no good solution to this...
 						if (process.isAtmoLeaks && process.modifiers.Contains("surface"))
-							process.inputs.TryGetValue("Atmosphere", out atmoLeaksRate);
+							process.inputs.TryGetValue(Habitat.AtmoResName, out atmoLeaksRate);
 
 						// add the process
 						processes.Add(process);
