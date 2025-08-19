@@ -502,6 +502,17 @@ namespace KERBALISM
 			}
 		}
 
+		private void Venting()
+		{
+			foreach (PartResource res in new List<PartResource> { atmosphereRes, wasteAtmosphereRes })
+			{
+				if (res.amount >= double.Epsilon)
+				{
+					res.amount -= Lib.Clamp(res.amount * 0.01 * TimeWarp.CurrentRate, 0.001, 20.0 * TimeWarp.CurrentRate);
+				}
+			}
+		}
+
 		[KSPAction("#KERBALISM_Habitat_Action")]
 		public void Action(KSPActionParam param) => Toggle();
 
