@@ -135,13 +135,40 @@ namespace KERBALISM
 				state = ObjectState.Unloaded;
 			}
 
-			if (state == ObjectState.Uninitialized || habitatWrappers.Count == 0)
+			if (state == ObjectState.Uninitialized)
 				return;
 
-			HabitatsUpdate(vessel, vd, elapsedSeconds);
+			if (habitatWrappers.Count == 0)
+			{
+				if (vessel.isEVA)
+				{
+					EVAStateUpdate(vessel, vd);
+					if (state == ObjectState.Loaded && Features.Radiation)
+						EVARadiationUpdate(vessel);
+				}
+			}
+			else
+			{
+				HabitatsUpdate(vessel, vd, elapsedSeconds);
+				if (state == ObjectState.Loaded && Features.Radiation)
+					HabitatsRadiationUpdate(vessel);
+			}
+		}
 
-			if (state == ObjectState.Loaded)
-				RadiationUpdate(vessel);
+		private void EVAStateUpdate(Vessel vessel, VesselData vd)
+		{
+			ResourceInfo atmoRes = ResourceCache.GetResource(vessel, AtmoResName);
+			ResourceInfo wasteAtmoRes = ResourceCache.GetResource(vessel, WasteAtmoResName);
+			ResourceInfo shieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
+
+			HabTotalVolume = atmoRes.Capacity / 1e3;
+			HabTotalSurface = shieldingRes.Capacity;
+			HabNormalizedPressure = atmoRes.Level;
+			HabPoisoning = wasteAtmoRes.Level;
+			HabShieldingFactor = Radiation.ShieldingEfficiency(shieldingRes.Level);
+			CrewCount = 1;
+			HabVolumePerCrew = HabTotalVolume;
+			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 		}
 
 		internal void HabitatsUpdate(Vessel vessel, VesselData vd, double elapsedSeconds)
@@ -214,18 +241,13 @@ namespace KERBALISM
 			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 		}
 
-		internal void RadiationUpdate(Vessel v)
+		internal void EVARadiationUpdate(Vessel v)
 		{
-			if (!Features.Radiation)
-				return;
+			RaytraceToSun(v.rootPart);
+		}
 
-			// always do EVAs
-			if (v.isEVA)
-			{
-				RaytraceToSun(v.rootPart);
-				return;
-			}
-
+		internal void HabitatsRadiationUpdate(Vessel v)
+		{
 			if (habitatIndex < 0)
 			{
 				// first run, do them all
