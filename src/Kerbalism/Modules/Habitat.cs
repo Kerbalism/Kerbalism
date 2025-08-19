@@ -35,6 +35,8 @@ namespace KERBALISM
 			/// <summary> deployable is being pressurized by equalizing its pressure with all enabled habitats</summary>
 			waitingForPressureAndEqualizing,
 			/// <summary> depreciated, kept around for backward compat</summary>
+			venting,
+			/// <summary> hab is venting atmosphere and will go into disabled state when complete</summary>
 			pressurizing = 2,
 			/// <summary> depreciated, kept around for backward compat</summary>
 			depressurizing = 0
@@ -288,6 +290,7 @@ namespace KERBALISM
 				case State.waitingForGravityRing: SetStateRetracting(); break;
 				case State.inflatingAndEqualizing: SetStateEqualizing(); break;
 				case State.waitingForPressureAndEqualizing: SetStateEqualizing(); break;
+				case State.venting: SetStateVenting(); break;
 			}
 
 			UpdatePAW();
@@ -379,6 +382,9 @@ namespace KERBALISM
 					pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
 					status_str = Lib.BuildString(Local.Habitat_equalizing, " (", pressure, ") to " + PredictedPressure());// "equalizing"
 					break;
+				case State.venting:
+					status_str = Lib.BuildString(Local.Habitat_venting, " (", (perctDeployed).ToString("p2"), ")");// "venting"
+					break;
 			}
 
 			toggleEvent.guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
@@ -457,6 +463,12 @@ namespace KERBALISM
 					if (!gravityRing.IsRotating())
 						SetStateRetracting();
 					break;
+				case State.venting:
+					perctDeployed = atmosphereRes.amount / atmosphereRes.maxAmount;
+					Venting();
+					if (atmosphereRes.amount + wasteAtmosphereRes.amount <= double.Epsilon)
+						SetStateDisabled();
+					break;
 			}
 		}
 
@@ -470,6 +482,18 @@ namespace KERBALISM
 				perctDeployed = 0.5;
 				atmosphereRes.amount = 0.0;
 				wasteAtmosphereRes.amount = 0.0;
+				SetStateVenting();
+			}
+		}
+
+		private void Venting()
+		{
+			foreach (PartResource res in new List<PartResource> { atmosphereRes, wasteAtmosphereRes })
+			{
+				if (res.amount >= double.Epsilon)
+				{
+					res.amount -= Lib.Clamp(res.amount * 0.01 * TimeWarp.CurrentRate, 0.001, 20.0 * TimeWarp.CurrentRate);
+				}
 			}
 		}
 
@@ -662,8 +686,7 @@ namespace KERBALISM
 
 			if (inflateRequiresPressure)
 			{
-				atmosphereRes.amount = 0;
-				wasteAtmosphereRes.amount = 0;
+				SetStateVenting();
 			}
 
 			if (hasGravityRing)
@@ -695,6 +718,30 @@ namespace KERBALISM
 			UpdateIVAAndUIAndFireEvents(false);
 			if (hasGravityRing)
 				gravityRing.deployed = false;
+		}
+
+		private void SetStateVenting()
+		{
+			if (Lib.IsCrewed(part))
+			{
+				Message.Post(Local.Habitat_postmsg.Format(part.partInfo.title));//"Can't disable <b><<1>> habitat</b> while crew is inside"
+				SetStateEnabled();
+				return;
+			}
+
+			state = State.venting;
+			part.CrewCapacity = 0;
+			part.crewTransferAvailable = false;
+			AtmoFlowState = false;
+			WasteAtmoFlowState = false;
+			ShieldingFlowState = false;
+			SetCLSPassable(false);
+			UpdateIVAAndUIAndFireEvents(false);
+
+			if (hasGravityRing)
+				gravityRing.deployed = false;
+			if (!inflatableUsingRigidWalls)
+				deployAnimator.Play(true, false, Lib.IsEditor() ? 5.0 : 1.0, perctDeployed);
 		}
 
 		/// <summary>
