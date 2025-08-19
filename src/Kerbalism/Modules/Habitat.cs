@@ -223,6 +223,7 @@ namespace KERBALISM
 
 			toggleEvent = Events[nameof(Toggle)];
 			ventEvent = Events[nameof(Vent)];
+			ventEvent.guiName = Local.Habitat_Vent;
 
 			// hide toggle if specified
 			toggleEvent.active = toggle;
@@ -326,20 +327,20 @@ namespace KERBALISM
 						status_str = Lib.BuildString(Local.Generic_DISABLED, " (", pressure, ")");
 						break;
 					case State.inflating:
-						status_str = Lib.BuildString(Local.Habitat_inflating, " (", perctDeployed.ToString("p2"), ")");
+						status_str = Lib.BuildString(Local.Habitat_inflating, " (", perctDeployed.ToString("p2"), ")");// "inflating"
 						break;
 					case State.deploying:
-						status_str = Lib.BuildString("Deploying", " (", perctDeployed.ToString("p2"), ")");
+						status_str = Lib.BuildString(Local.Habitat_deploying, " (", perctDeployed.ToString("p2"), ")");// "deploying"
 						break;
 					case State.waitingForPressure:
 						double progress = atmosphereRes.amount / atmosphereRes.maxAmount / Settings.PressureThreshold;
-						status_str = Lib.BuildString("Pressurizing", " (", progress.ToString("p2"), ")");
+						status_str = Lib.BuildString(Local.Habitat_pressurizing, " (", progress.ToString("p2"), ")");// "pressurizing"
 						break;
 					case State.retracting:
-						status_str = Lib.BuildString("Retracting", " (", (1.0 - perctDeployed).ToString("p2"), ")");
+						status_str = Lib.BuildString(Local.Habitat_retracting, " (", (1.0 - perctDeployed).ToString("p2"), ")");// "retracting"
 						break;
 					case State.waitingForGravityRing:
-						status_str = "Stopping rotation...";
+						status_str = Local.Habitat_stopRotation; // "stopping rotation..."
 						break;
 
 				}
@@ -406,7 +407,7 @@ namespace KERBALISM
 		}
 
 		[KSPEvent(guiActiveUnfocused = true, guiActive = true, guiActiveEditor = false,
-			guiName = "Vent atmosphere", active = true, guiActiveUncommand = true,
+			guiName = "_", active = true, guiActiveUncommand = true,
 			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public void Vent()
 		{
@@ -758,7 +759,7 @@ namespace KERBALISM
 			string s = string.Empty;
 
 			if (nonPressurizable)
-				s += Lib.BuildString(Lib.Color("Unpressurized", Lib.Kolor.Orange, true), "\n");
+				s += Lib.BuildString(Lib.Color(Local.Habitat_Unpressurized, Lib.Kolor.Orange, true), "\n"); // "Unpressurized"
 
 			s += Lib.BuildString(Lib.Bold(Local.Habitat + " " + Local.Habitat_info1), // "Habitat" + "Volume"
 				" : ", Lib.HumanReadableVolume(volume));

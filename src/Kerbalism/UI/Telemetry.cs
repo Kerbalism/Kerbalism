@@ -110,17 +110,7 @@ namespace KERBALISM
 				if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, Lib.HumanReadableLivingSpace(vd.LivingSpace));//"living space"
 				if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, vd.Comforts.Summary(), vd.Comforts.Tooltip());//"comfort"
 				if (Features.Pressure && Settings.LifeSupportAtmoLoss > 0)
-				{
-					if (vd.Evas > 1)
-					{
-						p.AddContent(Local.TELEMETRY_EVAStatus, Local.TELEMETRY_EVAStatus1, null); //safe
-					}
-					else if (vd.Evas <= 1)
-					{
-						p.AddContent(Local.TELEMETRY_EVAStatus, Local.TELEMETRY_EVAStatus1, null); //risky
-					}
-				}
-				//if (Features.Pressure && Settings.LifeSupportAtmoLoss > 0) p.AddContent(Local.TELEMETRY_EVAsavailable, vd.EnvBreathable ? Local.TELEMETRY_EnvBreathable : Lib.HumanReadableInteger(vd.Evas), vd.EnvBreathable ? Local.TELEMETRY_Breathableatm : Local.TELEMETRY_approx);//"EVA's available""infinite""breathable atmosphere""approx (derived from stored N2)"
+					p.AddContent(Local.TELEMETRY_EVAStatus, vd.Evas > 1 ? Local.TELEMETRY_EVAStatus1 : Local.TELEMETRY_EVAStatus2, null); // "EVA Status" / "safe" / "risky"
 			}
 		}
 
