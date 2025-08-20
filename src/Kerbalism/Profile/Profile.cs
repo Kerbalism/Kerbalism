@@ -65,6 +65,10 @@ namespace KERBALISM
 					// ignore duplicates
 					if (processes.Find(k => k.name == process.name) == null)
 					{
+						// hacky but there is no good solution to this...
+						if (process.isAtmoLeaks && process.modifiers.Contains("surface"))
+							process.inputs.TryGetValue(Habitat.AtmoResName, out atmoLeaksRate);
+
 						// add the process
 						processes.Add(process);
 					}
@@ -212,6 +216,8 @@ namespace KERBALISM
 		public static List<Rule> rules;               // rules in the profile
 		public static List<Supply> supplies;          // supplies in the profile
 		public static List<Process> processes;        // processes in the profile
+
+		public static double atmoLeaksRate;
 	}
 
 

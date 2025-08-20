@@ -1206,6 +1206,12 @@ namespace KERBALISM
 			return Lib.BuildString(v.ToString("F1"), " kPa");
 		}
 
+		///<summary> Pretty-print normalized pressure </summary>
+		public static string HumanReadableNormalizedPressure(double v)
+		{
+			return HumanReadablePressure(v * Sim.PressureAtSeaLevel());
+		}
+
 		///<summary> Pretty-print volume (value is in m^3) </summary>
 		public static string HumanReadableVolume(double v)
 		{
@@ -1334,7 +1340,23 @@ namespace KERBALISM
 				return Lib.Color(Lib.BuildString(value.ToString("F1"), " ", Local.SCIENCEARCHIVE_CREDITS), Kolor.Science);//CREDITS
 
 		}
-#endregion
+
+		/// <summary> return a verbose description of shielding level </summary>
+		public static string HumanReadableShieldingLevel(double v)
+		{
+			return v <= double.Epsilon ? Local.Habitat_none : Lib.BuildString((20.0 * v / PreferencesRadiation.Instance.shieldingEfficiency).ToString("F2"), " mm");//"none"
+		}
+
+		/// <summary> traduce living space value to string </summary>
+		public static string HumanReadableLivingSpace(double v)
+		{
+			if (v >= 0.99) return Local.Habitat_Summary1;//"ideal"
+			else if (v >= 0.75) return Local.Habitat_Summary2;//"good"
+			else if (v >= 0.5) return Local.Habitat_Summary3;//"modest"
+			else if (v >= 0.25) return Local.Habitat_Summary4;//"poor"
+			else return Local.Habitat_Summary5;//"cramped"
+		}
+		#endregion
 
 		#region GAME LOGIC
 		///<summary>return true if the current scene is flight</summary>

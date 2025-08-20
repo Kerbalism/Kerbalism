@@ -340,9 +340,6 @@ namespace KERBALISM
 					CommsMessages.Update(v, vd, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
-					// Habitat equalization
-					ResourceBalance.Equalizer(v);
-
 					UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.FixedUpdate.Loaded.Science");
 					// transmit science data
 					Science.Update(v, vd, ec, elapsed_s);
@@ -555,7 +552,7 @@ namespace KERBALISM
 			{
 				// check for CRP
 				var reslib = PartResourceLibrary.Instance.resourceDefinitions;
-				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains("Shielding"))
+				if (!reslib.Contains("Oxygen") || !reslib.Contains("Water") || !reslib.Contains(Habitat.ShieldingResName))
 				{
 					msg += "<color=#FF4500>CommunityResourcePack (CRP) is not installed</color>\nYou REALLY need CRP for Kerbalism!\n\n";
 				}

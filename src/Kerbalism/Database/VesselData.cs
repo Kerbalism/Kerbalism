@@ -355,28 +355,28 @@ namespace KERBALISM
 		public ConnectionInfo Connection => connection; ConnectionInfo connection;
 
 		/// <summary>enabled volume in m^3</summary>
-		public double Volume => volume; double volume;
+		public double Volume => habitatInfo.HabTotalVolume;
 
 		/// <summary>enabled surface in m^2</summary> 
-		public double Surface => surface; double surface;
+		public double Surface => habitatInfo.HabTotalSurface;
 
 		/// <summary>normalized pressure</summary>
-		public double Pressure => pressure; double pressure;
+		public double Pressure => habitatInfo.HabNormalizedPressure;
 
 		/// <summary>number of EVA's using available Nitrogen</summary>
 		public uint Evas => evas; uint evas;
 
 		/// <summary>waste atmosphere amount versus total atmosphere amount</summary>
-		public double Poisoning => poisoning; double poisoning;
+		public double Poisoning => habitatInfo.HabPoisoning;
 
 		/// <summary>shielding level</summary>
-		public double Shielding => shielding; double shielding;
+		public double Shielding => habitatInfo.HabShieldingFactor;
 
 		/// <summary>living space factor</summary>
-		public double LivingSpace => livingSpace; double livingSpace;
+		public double LivingSpace => habitatInfo.HabLivingSpace;
 
 		/// <summary>Available volume per crew</summary>
-		public double VolumePerCrew => volumePerCrew; double volumePerCrew;
+		public double VolumePerCrew => habitatInfo.HabVolumePerCrew;
 
 		/// <summary>comfort info</summary>
 		public Comforts Comforts => comforts; Comforts comforts;
@@ -475,15 +475,16 @@ namespace KERBALISM
 
 			secSinceLastEval += elapsedSeconds;
 
-			// don't update more than every second of game time
-			if (!forced && secSinceLastEval < 1.0)
+			// update loaded vessels every 0.1s, unloaded vessels every 1s of game time
+			double stepDuration = Vessel.loaded ? 0.1 : 1.0;
+			if (!forced && secSinceLastEval < stepDuration)
 			{
 				UpdateTransmitBufferDrive(elapsedSeconds);
 				return;
 			}
 			
 			EvaluateEnvironment(secSinceLastEval);
-			EvaluateStatus();
+			EvaluateStatus(secSinceLastEval);
 			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
 			Evaluated = true;
@@ -550,7 +551,7 @@ namespace KERBALISM
 			resourceUpdateDelegates = null;
 			ResetReliabilityStatus();
 			habitatInfo = new VesselHabitatInfo(null);
-			EvaluateStatus();
+			EvaluateStatus(0.0);
 			CommHandler.ResetPartTransmitters();
 
 			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
@@ -884,7 +885,7 @@ namespace KERBALISM
 		}
 
 		#region vessel state evaluation
-		private void EvaluateStatus()
+		private void EvaluateStatus(double elapsedSeconds)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.EvaluateStatus");
 			// determine if there is enough EC for a powered state
@@ -902,16 +903,8 @@ namespace KERBALISM
 			CommHandler.UpdateConnection(connection);
 
 			// habitat data
-			habitatInfo.Update(Vessel);
-			volume = Habitat.Tot_volume(Vessel);
-			surface = Habitat.Tot_surface(Vessel);
-			pressure = Math.Min(Habitat.Pressure(Vessel), habitatInfo.MaxPressure);
-
+			habitatInfo.Update(Vessel, this, elapsedSeconds);
 			evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
-			poisoning = Habitat.Poisoning(Vessel);
-			shielding = Habitat.Shielding(Vessel);
-			livingSpace = Habitat.Living_space(Vessel);
-			volumePerCrew = Habitat.Volume_per_crew(Vessel);
 			comforts = new Comforts(Vessel, EnvLanded, crewCount > 1, connection.linked && connection.rate > double.Epsilon);
 
 			// data about greenhouses

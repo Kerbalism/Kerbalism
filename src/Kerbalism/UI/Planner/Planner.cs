@@ -370,7 +370,7 @@ namespace KERBALISM.Planner
 				Local.Planner_volumepercapita ,"<b>\t", Lib.HumanReadableVolume(vessel_analyzer.volume / Math.Max(vessel_analyzer.crew_count, 1)), "</b>\n",//"volume per-capita:
 				Local.Planner_ideallivingspace ,"<b>\t", Lib.HumanReadableVolume(PreferencesComfort.Instance.livingSpace), "</b>"//"ideal living space:
 			);
-			p.AddContent(Local.Planner_livingspace, Habitat.Living_space_to_string(vessel_analyzer.living_space), living_space_tooltip);//"living space"
+			p.AddContent(Local.Planner_livingspace, Lib.HumanReadableLivingSpace(vessel_analyzer.living_space), living_space_tooltip);//"living space"
 
 			// render comfort data
 			if (rule.modifiers.Contains("comfort"))
@@ -460,7 +460,7 @@ namespace KERBALISM.Planner
 				p.AddContent(Local.Planner_emission, Lib.HumanReadableRadiation(vessel_analyzer.emitted), tooltip);//"emission"
 			else
 				p.AddContent(Local.Planner_activeshielding, Lib.HumanReadableRadiation(-vessel_analyzer.emitted), tooltip);//"active shielding"
-			p.AddContent(Local.Planner_shielding, rule.modifiers.Contains("shielding") ? Habitat.Shielding_to_string(vessel_analyzer.shielding) : "N/A", tooltip);//"shielding"
+			p.AddContent(Local.Planner_shielding, rule.modifiers.Contains("shielding") ? Lib.HumanReadableShieldingLevel(vessel_analyzer.shielding) : "N/A", tooltip);//"shielding"
 		}
 
 		///<summary> Add reliability sub-panel, including tooltips </summary>
@@ -540,8 +540,8 @@ namespace KERBALISM.Planner
 		///<summary> Add habitat sub-panel, including tooltips </summary>
 		private static void AddSubPanelHabitat(Panel p)
 		{
-			SimulatedResource atmo_res = resource_sim.Resource("Atmosphere");
-			SimulatedResource waste_res = resource_sim.Resource("WasteAtmosphere");
+			SimulatedResource atmo_res = resource_sim.Resource(Habitat.AtmoResName);
+			SimulatedResource waste_res = resource_sim.Resource(Habitat.WasteAtmoResName);
 
 			// generate tooltips
 			string atmo_tooltip = atmo_res.Tooltip();

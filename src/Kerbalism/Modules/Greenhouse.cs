@@ -164,11 +164,11 @@ namespace KERBALISM
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// WasteAtmosphere is primary combined input
-					if (WACO2 && input.name == "WasteAtmosphere") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
+					if (WACO2 && input.name == Habitat.WasteAtmoResName) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
 					// CarbonDioxide is secondary combined input
 					else if (WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
 					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
+					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName)) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
 					else recipe.AddInput(input.name, input.rate * Kerbalism.elapsed_s);
 				}
 				foreach (ModuleResource output in resHandler.outputResources)
@@ -192,12 +192,12 @@ namespace KERBALISM
 				foreach (ModuleResource input in resHandler.inputResources)
 				{
 					// combine WasteAtmosphere and CO2 if both exist
-					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
+					if (input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide")
 					{
 						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (WACO2)
 						{
-							if (resources.GetResource(vessel, "WasteAtmosphere").Amount <= double.Epsilon && resources.GetResource(vessel, "CarbonDioxide").Amount <= double.Epsilon)
+							if (resources.GetResource(vessel, Habitat.WasteAtmoResName).Amount <= double.Epsilon && resources.GetResource(vessel, "CarbonDioxide").Amount <= double.Epsilon)
 							{
 								inputs = false;
 								missing_res = "CarbonDioxide";
@@ -273,11 +273,11 @@ namespace KERBALISM
 				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
 				{
 					// WasteAtmosphere is primary combined input
-					if (g.WACO2 && input.name == "WasteAtmosphere") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
+					if (g.WACO2 && input.name == Habitat.WasteAtmoResName) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
 					// CarbonDioxide is secondary combined input
 					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "");
 					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == "WasteAtmosphere")) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
+					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName)) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
 					else
 						recipe.AddInput(input.name, input.rate * elapsed_s);
 				}
@@ -302,12 +302,12 @@ namespace KERBALISM
 				foreach (ModuleResource input in g.resHandler.inputResources)
 				{
 					// combine WasteAtmosphere and CO2 if both exist
-					if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
+					if (input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide")
 					{
 						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
 						if (g.WACO2)
 						{
-							if (resources.GetResource(v, "WasteAtmosphere").Amount <= double.Epsilon && resources.GetResource(v, "CarbonDioxide").Amount <= double.Epsilon)
+							if (resources.GetResource(v, Habitat.WasteAtmoResName).Amount <= double.Epsilon && resources.GetResource(v, "CarbonDioxide").Amount <= double.Epsilon)
 							{
 								inputs = false;
 								missing_res = "CarbonDioxide";
@@ -453,12 +453,12 @@ namespace KERBALISM
 			foreach (ModuleResource input in resHandler.inputResources)
 			{
 				// combine WasteAtmosphere and CO2 if both exist
-				if (WACO2 && (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide"))
+				if (WACO2 && (input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide"))
 				{
 					if (dis_WACO2) continue;
 					ModuleResource sec;
-					if (input.name == "WasteAtmosphere") sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
-					else sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
+					if (input.name == Habitat.WasteAtmoResName) sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
+					else sec = resHandler.inputResources.Find(x => x.name.Contains(Habitat.WasteAtmoResName));
 					specs.Add(Local.Greenhouse_CarbonDioxide, Lib.BuildString("<color=#ffaa00>", Lib.HumanOrSIRate(input.rate + sec.rate, "CarbonDioxide".GetHashCode()), " </color>"));//"CarbonDioxide"
 					specs.Add(Local.Greenhouse_CarbonDioxide_desc);//"Crops can also use the CO2 in the atmosphere without a scrubber."
 					dis_WACO2 = true;
@@ -484,10 +484,10 @@ namespace KERBALISM
 			foreach (ModuleResource input in resHandler.inputResources)
 			{
 				// we have combined WasteAtmosphere and CO2 if both exist
-				if (input.name == "WasteAtmosphere" || input.name == "CarbonDioxide")
+				if (input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide")
 				{
 					ModuleResource sec;
-					if (input.name == "WasteAtmosphere")
+					if (input.name == Habitat.WasteAtmoResName)
 					{
 						sec = resHandler.inputResources.Find(x => x.name.Contains("CarbonDioxide"));
 						// no CO2, we only have WasteAtmosphere
@@ -495,7 +495,7 @@ namespace KERBALISM
 					}
 					else
 					{
-						sec = resHandler.inputResources.Find(x => x.name.Contains("WasteAtmosphere"));
+						sec = resHandler.inputResources.Find(x => x.name.Contains(Habitat.WasteAtmoResName));
 						// no WasteAtmosphere, we only have CO2
 						if (sec == null) return;
 					}

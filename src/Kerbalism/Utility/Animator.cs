@@ -12,6 +12,8 @@ namespace KERBALISM
 
 		public bool IsDefined => anim != null;
 
+		public float NormalizedTime => reversed ? Math.Abs(anim[name].normalizedTime - 1) : anim[name].normalizedTime;
+
 		public Animator(Part p, string anim_name)
 		{
 			anim = null;
@@ -28,8 +30,27 @@ namespace KERBALISM
 			}
 		}
 
+		public void Play(bool reverse, bool loop, double speed = 1.0, double fromNormalizedTime = -1.0)
+		{
+			if (anim == null)
+				return;
+
+			bool playDirection = reverse;
+			if (reversed) playDirection = !playDirection;
+
+			if (fromNormalizedTime >= 0f)
+				anim[name].normalizedTime = (float)(reversed ? Math.Abs(fromNormalizedTime - 1) : fromNormalizedTime);
+			else
+				anim[name].normalizedTime = !playDirection ? 0.0f : 1.0f;
+
+			anim[name].speed = (float)(!playDirection ? speed : -speed);
+			anim[name].wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
+			anim.Play(name);
+		}
+
+
 		// Note: This function resets animation to the beginning
-		public void Play(bool reverse, bool loop, Action callback = null)
+		public void Play(bool reverse, bool loop, Action callback, double speed = 1.0, double fromNormalizedTime = -1.0)
 		{
 			if(anim == null)
 			{
@@ -37,20 +58,15 @@ namespace KERBALISM
 				return;
 			}
 
-			Kerbalism.Fetch.StartCoroutine(PlayAnimation(reverse, loop, callback));
+			Kerbalism.Fetch.StartCoroutine(PlayAnimationWithCallback(reverse, loop, callback, speed, fromNormalizedTime));
 		}
 
-		IEnumerator PlayAnimation(bool reverse, bool loop, Action callback = null)
+		IEnumerator PlayAnimationWithCallback(bool reverse, bool loop, Action callback, double speed = 1.0, double fromNormalizedTime = -1)
 		{
 			if (reverse && callback != null) callback();
 
-			var playDirection = reverse;
-			if (reversed) playDirection = !playDirection;
+			Play(reverse, loop, speed, fromNormalizedTime);
 
-			anim[name].normalizedTime = !playDirection ? 0.0f : 1.0f;
-			anim[name].speed = !playDirection ? 1.0f : -1.0f;
-			anim[name].wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
-			anim.Play(name);
 			yield return new WaitForSeconds(anim[name].length);
 
 			if (!reverse && callback != null) callback();
@@ -106,7 +122,7 @@ namespace KERBALISM
 		{
 			if (anim != null)
 			{
-				return (anim[name].speed > float.Epsilon) && anim.IsPlaying(name);
+				return (anim[name].speed != 0f) && anim.IsPlaying(name);
 			}
 			return false;
 		}

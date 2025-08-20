@@ -71,37 +71,16 @@ namespace KERBALISM.Planner
 		void Analyze_habitat(List<Part> parts, ResourceSimulator sim, EnvironmentAnalyzer env)
 		{
 			// calculate total volume
-			volume = sim.Resource("Atmosphere").capacity / 1e3;
+			volume = sim.Resource(Habitat.AtmoResName).capacity / 1e3;
 
 			// calculate total surface
-			surface = sim.Resource("Shielding").capacity;
+			surface = sim.Resource(Habitat.ShieldingResName).capacity;
 
 			// determine if the vessel has pressure control capabilities
-			pressurized = sim.Resource("Atmosphere").produced > 0.0 || env.breathable;
+			pressurized = sim.Resource(Habitat.AtmoResName).produced > 0.0 || env.breathable;
 
 			// determine if the vessel has scrubbing capabilities
-			scrubbed = sim.Resource("WasteAtmosphere").consumed > 0.0 || env.breathable;
-
-			// scan the parts
-			double max_pressure = 1.0;
-			foreach (Part p in parts)
-			{
-				// for each module
-				foreach (PartModule m in p.Modules)
-				{
-					// skip disabled modules
-					if (!m.isEnabled)
-						continue;
-
-					if (m.moduleName == "Habitat")
-					{
-						Habitat h = m as Habitat;
-						max_pressure = Math.Min(max_pressure, h.max_pressure);
-					}
-				}
-			}
-
-			pressurized &= max_pressure >= Settings.PressureThreshold;
+			scrubbed = sim.Resource(Habitat.WasteAtmoResName).consumed > 0.0 || env.breathable;
 		}
 
 		void Analyze_comms(List<Part> parts)
@@ -162,8 +141,8 @@ namespace KERBALISM.Planner
 			}
 
 			// calculate shielding factor
-			double amount = sim.Resource("Shielding").amount;
-			double capacity = sim.Resource("Shielding").capacity;
+			double amount = sim.Resource(Habitat.ShieldingResName).amount;
+			double capacity = sim.Resource(Habitat.ShieldingResName).capacity;
 
 			shielding = capacity > 0
 				? Radiation.ShieldingEfficiency(amount / capacity)

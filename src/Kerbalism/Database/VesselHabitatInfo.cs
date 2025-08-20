@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static KERBALISM.Habitat;
 
 namespace KERBALISM
 {
@@ -30,18 +31,35 @@ namespace KERBALISM
 
 	public class VesselHabitatInfo
 	{
+		private enum ObjectState { Uninitialized, Loaded, Unloaded  };
+
 		public Dictionary<uint, List<SunShieldingPartData>> habitatShieldings = new Dictionary<uint, List<SunShieldingPartData>>();
 		private int habitatIndex = -1;
-		private List<Habitat> habitats;
 
-		public double MaxPressure => maxPressure; private double maxPressure;
+		private ObjectState state = ObjectState.Uninitialized;
+		private List<HabitatWrapper> habitatWrappers;
+
+		/// <summary> Enabled habitats volume in m^3</summary>
+		public double HabTotalVolume { get; private set; }
+		/// <summary> Enabled habitats surface in m^2</summary>
+		public double HabTotalSurface { get; private set; }
+		/// <summary> Enabled habitats average normalized pressure </summary>
+		public double HabNormalizedPressure { get; private set; }
+		/// <summary> Enabled habitats average wasteAtmo (CO2) level</summary>
+		public double HabPoisoning { get; private set; }
+		/// <summary> Enabled habitats average radiation shielding level</summary>
+		public double HabShieldingFactor { get; private set; }
+		/// <summary> Amount of kerbals on the vessel</summary>
+		public double CrewCount { get; private set; }
+		/// <summary> Volume per crew normalized against an "ideal" value and clamped in an acceptable range</summary>
+		public double HabLivingSpace { get; private set; }
+		/// <summary> Enabled habitats volume per kerbal in m^3</summary>
+		public double HabVolumePerCrew { get; private set; }
 
 		public VesselHabitatInfo(ConfigNode node)
 		{
 			if (node == null)
 				return;
-
-			maxPressure = Lib.ConfigValue(node, "maxPressure", 1.0);
 
 			if (!node.HasNode("sspi")) return;
 			foreach (var n in node.GetNode("sspi").GetNodes())
@@ -58,8 +76,6 @@ namespace KERBALISM
 
 		internal void Save(ConfigNode node)
 		{
-			node.AddValue("maxPressure", maxPressure);
-
 			var sspiNode = node.AddNode("sspi");
 			foreach (var entry in habitatShieldings)
 			{
@@ -68,6 +84,248 @@ namespace KERBALISM
 				{
 					entry.Value[i].Save(n.AddNode(i.ToString()));
 				}
+			}
+		}
+
+		internal void Update(Vessel vessel, VesselData vd, double elapsedSeconds)
+		{
+			if (vessel == null)
+				return;
+
+			if (vessel.loaded)
+			{
+				if (state != ObjectState.Loaded)
+				{
+					habitatWrappers = new List<HabitatWrapper>();
+					for (int i = vessel.parts.Count; i-- > 0;)
+					{
+						PartModuleList modules = vessel.parts[i].Modules;
+						for (int j = modules.Count; j-- > 0;)
+						{
+							if (modules[j] is Habitat habitat)
+							{
+								// we can hit edge cases where this runs while the hab resources don't exist yet.
+								// Just try again latter, the default values should be safe.
+								if (!LoadedHabitat.TryCreate(habitat, out LoadedHabitat wrapper))
+									return;
+
+								habitatWrappers.Add(wrapper);
+								break;
+							}
+						}
+					}
+
+					state = ObjectState.Loaded;
+				}
+			}
+			else if (state != ObjectState.Unloaded)
+			{
+				habitatWrappers = new List<HabitatWrapper>();
+				List<Background.BackgroundPM> backgroundPMs = Background.Background_PMs(vessel);
+				for (int i = backgroundPMs.Count; i-- > 0;)
+				{
+					if (backgroundPMs[i].type == Background.Module_type.Habitat)
+					{
+						Background.BackgroundPM bgHab = backgroundPMs[i];
+						HabitatWrapper hab = new UnloadedHabitat(bgHab.p, bgHab.m, (Habitat)bgHab.module_prefab);
+						habitatWrappers.Add(hab);
+					}
+				}
+
+				state = ObjectState.Unloaded;
+			}
+
+			if (state == ObjectState.Uninitialized)
+				return;
+
+			if (habitatWrappers.Count == 0)
+			{
+				if (vessel.isEVA)
+				{
+					EVAStateUpdate(vessel, vd);
+					if (state == ObjectState.Loaded && Features.Radiation)
+						EVARadiationUpdate(vessel);
+				}
+			}
+			else
+			{
+				HabitatsUpdate(vessel, vd, elapsedSeconds);
+				if (state == ObjectState.Loaded && Features.Radiation)
+					HabitatsRadiationUpdate(vessel);
+			}
+		}
+
+		private void EVAStateUpdate(Vessel vessel, VesselData vd)
+		{
+			ResourceInfo atmoRes = ResourceCache.GetResource(vessel, AtmoResName);
+			ResourceInfo wasteAtmoRes = ResourceCache.GetResource(vessel, WasteAtmoResName);
+			ResourceInfo shieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
+
+			HabTotalVolume = atmoRes.Capacity / 1e3;
+			HabTotalSurface = shieldingRes.Capacity;
+			HabNormalizedPressure = atmoRes.Level;
+			HabPoisoning = wasteAtmoRes.Level;
+			HabShieldingFactor = Radiation.ShieldingEfficiency(shieldingRes.Level);
+			CrewCount = 1;
+			HabVolumePerCrew = HabTotalVolume;
+			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+		}
+
+		private static List<HabitatWrapper> pressurizingHabs = new List<HabitatWrapper>();
+
+		internal void HabitatsUpdate(Vessel vessel, VesselData vd, double elapsedSeconds)
+		{
+			double atmoLeaksPerSurface;
+			if (Profile.atmoLeaksRate > 0.0 && !vd.EnvBreathable)
+				atmoLeaksPerSurface = Profile.atmoLeaksRate * elapsedSeconds;
+			else
+				atmoLeaksPerSurface = 0.0;
+
+			double enaAtmoAmount = 0.0, enaAtmoCapacity = 0.0;
+			double enaWasteAmount = 0.0, enaWasteCapacity = 0.0;
+			double preAtmoAmount = 0.0, preAtmoCapacity = 0.0;
+			double npAtmoCapacity = 0.0;
+
+			// first loop : gather amounts / capacities
+			for (int i = habitatWrappers.Count; i-- > 0;)
+			{
+				HabitatWrapper hab = habitatWrappers[i];
+				switch (hab.State)
+				{
+					case State.enabled:
+						if (hab.NonPressurizable)
+						{
+							npAtmoCapacity += hab.AtmoResource.MaxAmount;
+						}
+						else
+						{
+							enaAtmoAmount += hab.AtmoResource.Amount;
+							enaAtmoCapacity += hab.AtmoResource.MaxAmount;
+							enaWasteAmount += hab.WasteAtmoResource.Amount;
+							enaWasteCapacity += hab.WasteAtmoResource.MaxAmount;
+						}
+						break;
+					case State.disabled:
+						// apply atmo leaks on disabled habitats
+						if (atmoLeaksPerSurface > 0.0)
+						{
+							double atmoAmount = hab.AtmoResource.Amount;
+							if (atmoAmount > 0.0)
+								hab.AtmoResource.Amount = Math.Max(0.0, atmoAmount - (atmoLeaksPerSurface * hab.Surface));
+						}
+						break;
+					case State.inflatingAndEqualizing:
+					case State.waitingForPressureAndEqualizing:
+						pressurizingHabs.Add(hab);
+						break;
+				}
+			}
+
+			// equalization, doesn't need to run if no atmo
+			if (enaAtmoAmount != 0.0 || enaWasteAmount != 0.0)
+			{
+				// compute how much atmo is transferred from enabled habs toward pressurizing habs
+				double preAtmoNeeded = 0.0;
+				double preAtmoTransferred = 0.0;
+				if (pressurizingHabs.Count > 0)
+				{
+					double enaAtmoLevel = enaAtmoAmount / enaAtmoCapacity;
+					for (int i = pressurizingHabs.Count; i-- > 0;)
+					{
+						HabitatWrapper preHab = pressurizingHabs[i];
+						double amount = preHab.AtmoResource.Amount;
+						double maxAmount = preHab.AtmoResource.MaxAmount;
+						double level = maxAmount > 0.0 ? amount / maxAmount : 0.0;
+						// exclude pressurizing habs whose pressure level is higher than the enabled habs pressure level
+						if (level > enaAtmoLevel)
+						{
+							pressurizingHabs.RemoveAt(i);
+							continue;
+						}
+						preAtmoAmount += amount;
+						preAtmoCapacity += maxAmount;
+					}
+
+					if (pressurizingHabs.Count > 0.0)
+					{
+						double equAtmoLevel = preAtmoAmount / preAtmoCapacity;
+						// rate is EqualizationRateFactor (% / second), scaled down by pressure difference
+						preAtmoTransferred = (enaAtmoLevel - equAtmoLevel) * preAtmoCapacity * Settings.EqualizationRateFactor * elapsedSeconds;
+						// clamp by what is actually needed
+						preAtmoNeeded = Math.Max(0.0, (preAtmoCapacity * Settings.PressureThreshold) - preAtmoAmount);
+						preAtmoTransferred = Lib.Clamp(preAtmoTransferred, 0.0, preAtmoNeeded);
+						// remove it from enabled habs
+						enaAtmoAmount -= preAtmoTransferred;
+					}
+				}
+
+				// equalize atmo/waste amongst all enabled habs
+				for (int i = habitatWrappers.Count; i-- > 0;)
+				{
+					HabitatWrapper hab = habitatWrappers[i];
+					if (hab.State == State.enabled && !hab.NonPressurizable)
+					{
+						hab.AtmoResource.Amount = enaAtmoAmount * (hab.AtmoResource.MaxAmount / enaAtmoCapacity);
+						hab.WasteAtmoResource.Amount = enaWasteAmount * (hab.WasteAtmoResource.MaxAmount / enaWasteCapacity);
+					}
+				}
+
+				// distribute transferred atmo toward pressurizing habs
+				if (preAtmoTransferred > 0.0 && preAtmoNeeded > 0.0)
+				{
+					for (int i = pressurizingHabs.Count; i-- > 0;)
+					{
+						HabitatWrapper preHab = pressurizingHabs[i];
+						double needed = Math.Max(0.0, (preHab.AtmoResource.MaxAmount * Settings.PressureThreshold) - preHab.AtmoResource.Amount);
+						preHab.AtmoResource.Amount += preAtmoTransferred * (needed / preAtmoNeeded);
+					}
+				}
+			}
+
+			pressurizingHabs.Clear();
+
+			// all resources have been updated, call the state update on unloaded vessels
+			if (state == ObjectState.Unloaded)
+				for (int i = habitatWrappers.Count; i-- > 0;)
+					BackgroundUpdate(habitatWrappers[i]);
+
+			// compute vessel-wide habitat stats
+			ResourceInfo vesselShieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
+			double totAtmoCapacity = enaAtmoCapacity + npAtmoCapacity;
+			HabTotalVolume = totAtmoCapacity / 1e3;
+			HabTotalSurface = vesselShieldingRes.Capacity;
+			HabNormalizedPressure = totAtmoCapacity > 0.0 ? enaAtmoAmount / totAtmoCapacity : 0.0;
+			HabPoisoning = HabTotalVolume > 0.0 ? enaWasteAmount / totAtmoCapacity : 0.0;
+			HabShieldingFactor = Radiation.ShieldingEfficiency(vesselShieldingRes.Level);
+			CrewCount = Lib.CrewCount(vessel);
+			HabVolumePerCrew = HabTotalVolume / Math.Max(1, CrewCount);
+			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
+		}
+
+		internal void EVARadiationUpdate(Vessel v)
+		{
+			RaytraceToSun(v.rootPart);
+		}
+
+		internal void HabitatsRadiationUpdate(Vessel v)
+		{
+			if (habitatIndex < 0)
+			{
+				// first run, do them all
+				foreach (var habitat in habitatWrappers)
+					RaytraceToSun(habitat.LoadedPart);
+				habitatIndex = 0;
+			}
+			else
+			{
+				// only do one habitat at a time to preserve some performance
+				// and check that part still exists
+				if (habitatWrappers[habitatIndex].LoadedPart == null)
+					habitatWrappers.RemoveAt(habitatIndex);
+				else
+					RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
+
+				habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
 			}
 		}
 
@@ -128,7 +386,7 @@ namespace KERBALISM
 					// Beer-Lambert law: Remaining radiation = radiation * e^-ux.  Not exact for SEP, but close enough to loosely fit observed curves.
 					// linear attenuation coefficent u.  Asssuming an average CME event energy Al shielding 10 ~= 30 g/cm^2.
 					// Averaged from NASA plots of large CME events vs Al shielding projections.
-					var linearAttenuation = 10; 
+					var linearAttenuation = 10;
 
 					// However, what you lose in particle radiation you gain in gamma radiation (Bremsstrahlung)
 
@@ -136,7 +394,7 @@ namespace KERBALISM
 					remainingRadiation *= Math.Exp(shieldingInfo.thickness * linearAttenuation * -1);
 					var bremsstrahlung = incomingRadiation - remainingRadiation;
 
-					result += Radiation.DistanceRadiation(bremsstrahlung, Math.Max(1,shieldingInfo.distance)) / 10; //Gamma radiation has 1/10 the quality factor of SEP
+					result += Radiation.DistanceRadiation(bremsstrahlung, Math.Max(1, shieldingInfo.distance)) / 10; //Gamma radiation has 1/10 the quality factor of SEP
 				}
 
 				result += remainingRadiation;
@@ -144,46 +402,129 @@ namespace KERBALISM
 
 			return result / habitatShieldings.Count;
 		}
+	}
 
-		internal void Update(Vessel v)
+	public abstract class HabitatWrapper
+	{
+		public abstract class ResourceWrapper
 		{
-			if (v == null || !v.loaded) return;
+			public abstract double Amount { get; set; }
+			public abstract double MaxAmount { get; set; }
+			public abstract bool FlowState { get; set; }
+		}
 
-			if (habitats == null)
+		public sealed class LoadedResource : ResourceWrapper
+		{
+			PartResource res;
+			public override double Amount { get => res.amount; set => res.amount = value; }
+			public override double MaxAmount { get => res.maxAmount; set => res.maxAmount = value; }
+			public override bool FlowState { get => res.flowState; set => res.flowState = value; }
+
+			public LoadedResource(PartResource res) => this.res = res;
+		}
+
+		public sealed class UnloadedResource : ResourceWrapper
+		{
+			ProtoPartResourceSnapshot res;
+			public override double Amount { get => res.amount; set => res.amount = value; }
+			public override double MaxAmount { get => res.maxAmount; set => res.maxAmount = value; }
+			public override bool FlowState { get => res.flowState; set => res.flowState = value; }
+
+			public UnloadedResource(ProtoPartResourceSnapshot res) => this.res = res;
+		}
+
+		public ResourceWrapper AtmoResource { get; protected set; }
+		public ResourceWrapper WasteAtmoResource { get; protected set; }
+		public ResourceWrapper ShieldingResource { get; protected set; }
+		public Part LoadedPart { get; protected set; }
+
+		public abstract State State { get; set; }
+		public abstract double PerctDeployed { get; set; }
+		public abstract bool NonPressurizable { get; }
+		public abstract bool InflateRequiresPressure { get; }
+		public abstract double Surface { get; }
+	}
+
+	public sealed class LoadedHabitat : HabitatWrapper
+	{
+		private Habitat hab;
+
+		public override State State { get => hab.state; set => hab.state = value; }
+		public override double PerctDeployed { get => hab.perctDeployed; set => hab.perctDeployed = value; }
+		public override bool NonPressurizable => hab.nonPressurizable;
+		public override bool InflateRequiresPressure => hab.inflateRequiresPressure;
+		public override double Surface => hab.surface;
+
+		public static bool TryCreate(Habitat hab, out LoadedHabitat wrapper)
+		{
+			wrapper = new LoadedHabitat();
+			wrapper.LoadedPart = hab.part;
+			wrapper.hab = hab;
+			foreach (PartResource res in hab.part.Resources)
 			{
-				habitats = Lib.FindModules<Habitat>(v);
-				maxPressure = 1.0;
-				foreach (var habitat in habitats)
-					maxPressure = Math.Min(maxPressure, habitat.max_pressure);
+				switch (res.resourceName)
+				{
+					case AtmoResName:
+						wrapper.AtmoResource = new LoadedResource(res); break;
+					case WasteAtmoResName:
+						wrapper.WasteAtmoResource = new LoadedResource(res); break;
+					case ShieldingResName:
+						wrapper.ShieldingResource = new LoadedResource(res); break;
+				}
 			}
 
-			if (!Features.Radiation || habitats.Count == 0)
-				return;
+			return wrapper.AtmoResource != null && wrapper.WasteAtmoResource != null;
+		}
+	}
 
-			// always do EVAs
-			if (v.isEVA)
-			{
-				RaytraceToSun(v.rootPart);
-				return;
-			}
-				
-			if (habitatIndex < 0)
-			{
-				// first run, do them all
-				foreach (var habitat in habitats)
-					RaytraceToSun(habitat.part);
-				habitatIndex = 0;
-			}
-			else
-			{
-				// only do one habitat at a time to preserve some performance
-				// and check that part still exists
-				if (habitats[habitatIndex].part == null)
-					habitats.RemoveAt(habitatIndex);
-				else
-					RaytraceToSun(habitats[habitatIndex].part);
+	public sealed class UnloadedHabitat : HabitatWrapper
+	{
+		private ProtoPartModuleSnapshot hab;
+		private Habitat habPrefab;
+		private State _cachedState;
+		private double _cachedPerctDeployed;
 
-				habitatIndex = (habitatIndex + 1) % habitats.Count;
+		public override State State
+		{
+			get => _cachedState;
+			set
+			{
+				_cachedState = value;
+				Lib.Proto.Set(hab, nameof(Habitat.state), value);
+			}
+		}
+		public override double PerctDeployed
+		{
+			get => _cachedPerctDeployed;
+			set
+			{
+				_cachedPerctDeployed = value;
+				Lib.Proto.Set(hab, nameof(Habitat.perctDeployed), value);
+			}
+		}
+
+		public override bool NonPressurizable => habPrefab.nonPressurizable;
+		public override bool InflateRequiresPressure => habPrefab.inflateRequiresPressure;
+		public override double Surface => habPrefab.surface;
+
+		public UnloadedHabitat(ProtoPartSnapshot habPart, ProtoPartModuleSnapshot hab, Habitat habPrefab)
+		{
+			this.hab = hab;
+			this.habPrefab = habPrefab;
+			_cachedState = Lib.Proto.GetEnum<State>(hab, nameof(Habitat.state));
+			_cachedPerctDeployed = Lib.Proto.GetDouble(hab, nameof(Habitat.state));
+			for (int i = habPart.resources.Count; i-- > 0;)
+			{
+				ProtoPartResourceSnapshot res = habPart.resources[i];
+				switch (res.resourceName)
+				{
+					case AtmoResName:
+						AtmoResource = new UnloadedResource(res); break;
+					case WasteAtmoResName:
+						WasteAtmoResource = new UnloadedResource(res); break;
+					case ShieldingResName:
+						ShieldingResource = new UnloadedResource(res); break;
+				}
 			}
 		}
 	}
