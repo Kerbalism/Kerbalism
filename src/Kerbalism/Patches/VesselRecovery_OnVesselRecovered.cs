@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 using KSP.Localization;
+using KSP.UI.Screens.SpaceCenter.MissionSummaryDialog;
+using KSP.UI.Screens;
+using static KERBALISM.Lib;
+using TMPro;
 
 namespace KERBALISM
 {
@@ -41,12 +45,63 @@ namespace KERBALISM
 	 * formula that degrade the value when a subject is partially completed.
 	 * So keep track of by what the data was created in the `bool useStockCrediting` of files/samples
 	 */
+
+	internal struct RecoveryWidgetData
+	{
+		public ScienceSubject subject;
+		public float scienceAdded;
+		public string dataText;
+		public string valueText;
+		public string scienceText;
+
+		public RecoveryWidgetData(ScienceSubject subject, float scienceAdded, string dataText, string valueText, string scienceText)
+		{
+			this.subject = subject;
+			this.scienceAdded = scienceAdded;
+			this.dataText = dataText;
+			this.valueText = valueText;
+			this.scienceText = scienceText;
+		}
+	}
+
+	internal struct KsmScienceData
+	{
+		private bool isFile;
+		private File file;
+		private Sample sample;
+
+		public SubjectData SubjectData => isFile ? file.subjectData : sample.subjectData;
+		public double Size => isFile ? file.size : sample.size;
+		public bool UseStockCrediting => isFile ? file.useStockCrediting : sample.useStockCrediting;
+		public ScienceData ConvertToStockData() => isFile ? file.ConvertToStockData() : sample.ConvertToStockData();
+
+		public KsmScienceData(File file)
+		{
+			this.file = file;
+			isFile = true;
+			sample = null;
+		}
+
+		public KsmScienceData(Sample sample)
+		{
+			this.sample = sample;
+			isFile = false;
+			file = null;
+		}
+	}
+
 	[HarmonyPatch(typeof(VesselRecovery))]
 	[HarmonyPatch("OnVesselRecovered")]
-	class VesselRecovery_OnVesselRecovered {
-		static bool Prefix(ref ProtoVessel pv, ref bool quick) {
+	class VesselRecovery_OnVesselRecovered
+	{
+		private static List<RecoveryWidgetData> recoveryScienceWidgets = new List<RecoveryWidgetData>();
 
-			if (pv == null) return true;
+		static void Prefix(ref ProtoVessel pv, ref bool quick)
+		{
+			recoveryScienceWidgets.Clear();
+
+			if (pv == null)
+				return;
 
 			// get a hard drive. any hard drive will do, no need to find a specific one.
 			ProtoPartModuleSnapshot protoHardDrive = null;
@@ -62,104 +117,121 @@ namespace KERBALISM
 			}
 
 			if (protoHardDrive == null)
-				return true; // no drive on the vessel - nothing to do.
+				return; // no drive on the vessel - nothing to do.
+
+			// trick the stock science crediting system in thinking this is a stock science container partmodule,
+			// even tough this is our ModuleKsmDrive
+			protoHardDrive.moduleName = "ModuleScienceContainer";
 
 			double scienceToCredit = 0.0;
-
-			List<DialogGUIBase> labels = new List<DialogGUIBase>();
 
 			foreach (Drive drive in Drive.GetDrives(pv, true))
 			{
 				foreach (File file in drive.files.Values)
-				{
-					double subjectValue = file.subjectData.ScienceValue(file.size);
-					file.subjectData.RemoveScienceCollectedInFlight(subjectValue);
-
-					if (file.useStockCrediting)
-					{
-						file.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
-
-						if (!file.subjectData.ExistsInRnD)
-							file.subjectData.CreateSubjectInRnD();
-
-						file.subjectData.SetAsPersistent();
-						file.subjectData.UpdateSubjectCompletion(subjectValue);
-					}
-					else
-					{
-						scienceToCredit += file.subjectData.RetrieveScience(subjectValue, false, pv);
-
-						labels.Add(new DialogGUILabel(Lib.BuildString(
-							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
-							" (",
-							Lib.Color(file.subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true),
-							" / ",
-							Lib.Color(file.subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true),
-							") : ",
-							file.subjectData.FullTitle
-							)));
-					}
-				}
+					RecoverScienceData(new KsmScienceData(file), protoHardDrive, pv, quick, ref scienceToCredit);
 
 				foreach (Sample sample in drive.samples.Values)
+					RecoverScienceData(new KsmScienceData(sample), protoHardDrive, pv, quick, ref scienceToCredit);
+			}
+		}
+
+		private static void RecoverScienceData(KsmScienceData data, ProtoPartModuleSnapshot protoHardDrive, ProtoVessel pv, bool quick, ref double scienceToCredit)
+		{
+			SubjectData subject = data.SubjectData;
+			double subjectValue = subject.ScienceValue(data.Size);
+			subject.RemoveScienceCollectedInFlight(subjectValue);
+
+			if (data.UseStockCrediting)
+			{
+				data.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
+
+				if (!data.SubjectData.ExistsInRnD)
+					data.SubjectData.CreateSubjectInRnD();
+
+				data.SubjectData.SetAsPersistent();
+				data.SubjectData.UpdateSubjectCompletion(subjectValue);
+			}
+			else
+			{
+				double scienceCredited = subject.RetrieveScience(subjectValue, false, pv);
+				scienceToCredit += scienceCredited;
+
+				// stock recovery dialog is shown only if quick is false
+				if (!quick)
 				{
-					double subjectValue = sample.subjectData.ScienceValue(sample.size);
-					sample.subjectData.RemoveScienceCollectedInFlight(subjectValue);
+					RecoveryWidgetData entry = new RecoveryWidgetData(
+						subject.RnDSubject,
+						(float)scienceCredited,
+						Lib.BuildString(subject.ScienceMaxValue.ToString("F1"), " ", "subject value"),
+						Lib.BuildString(subject.ScienceRetrievedInKSC.ToString("F1"), " ", "in RnD"),
+						Lib.BuildString(scienceCredited.ToString("+0.0"), " ", "earned"));
 
-					if (sample.useStockCrediting)
-					{
-						sample.ConvertToStockData().Save(protoHardDrive.moduleValues.AddNode("ScienceData"));
-
-						if (!sample.subjectData.ExistsInRnD)
-							sample.subjectData.CreateSubjectInRnD();
-
-						sample.subjectData.SetAsPersistent();
-						sample.subjectData.UpdateSubjectCompletion(subjectValue);
-					}
-					else
-					{
-						scienceToCredit += sample.subjectData.RetrieveScience(subjectValue, false, pv);
-
-						labels.Add(new DialogGUILabel(Lib.BuildString(
-							Lib.Color("+ " + subjectValue.ToString("F1"), Lib.Kolor.Science),
-							" (",
-							Lib.Color(sample.subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true),
-							" / ",
-							Lib.Color(sample.subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true),
-							") : ",
-							sample.subjectData.FullTitle
-							)));
-					}
+					recoveryScienceWidgets.Add(entry);
 				}
 			}
+		}
 
-			protoHardDrive.moduleName = "ModuleScienceContainer";
+		// this is called by GameEvents.onVesselRecoveryProcessingComplete from callbacks,
+		// near the end of VesselRecovery.OnVesselRecovered(). We don't use a postfix because
+		// the MissionRecoveryDialog object is local to VesselRecovery.OnVesselRecovered() and
+		// there is no easy accessible reference other than searching the gameobject hierarchy.
+		public static void OnVesselRecoveryProcessingComplete(MissionRecoveryDialog dialog)
+		{
+			MissionRecoveryDialog_updateScienceWindowContent.widgetData.Clear();
 
-			if (scienceToCredit > 0.0)
+			if (dialog == null)
 			{
-				// ideally we should hack the stock dialog to add the little science widgets to it but I'm lazy
-				// plus it looks like crap anyway
-				PopupDialog.SpawnPopupDialog
-				(
-					new MultiOptionDialog
-					(
-						"scienceResults", "", pv.vesselName + " "+Local.VesselRecovery_title, HighLogic.UISkin, new Rect(0.3f, 0.5f, 350f, 100f),//" recovery"
-						new DialogGUIVerticalLayout
-						(
-							new DialogGUIBox(Local.VesselRecovery_info + " : " + Lib.Color(scienceToCredit.ToString("F1") + " " + Local.VesselRecovery_CREDITS, Lib.Kolor.Science, true), 340f, 30f),//"SCIENCE RECOVERED"" CREDITS"
-							new DialogGUIScrollList
-							(
-								new Vector2(340f, 250f), false, true,
-								new DialogGUIVerticalLayout(labels.ToArray())
-							),
-							new DialogGUIButton(Local.VesselRecovery_OKbutton, null, 340f, 30f, true, HighLogic.UISkin.button)//"OK"
-						)
-					),
-					false, HighLogic.UISkin
-				);
+				recoveryScienceWidgets.Clear();
+				return;
 			}
 
-			return true; // continue to the original code
+			float kerbalismScienceEarned = 0f;
+			foreach (RecoveryWidgetData entry in recoveryScienceWidgets)
+			{
+				ScienceSubjectWidget widget = ScienceSubjectWidget.Create(entry.subject, 1f, entry.scienceAdded, dialog);
+				dialog.AddDataWidget(widget);
+
+				MissionRecoveryDialog_updateScienceWindowContent.widgetData.Add(widget, entry);
+
+				widget.scienceWidgetDataContent.sprite = widget.scienceWidgetScienceContent.sprite;
+				TextMeshProUGUI dataTextComponent = Lib.ReflectionValue<TextMeshProUGUI>(widget.scienceWidgetDataContent, "textComponent");
+				dataTextComponent.color = KolorToColor(Kolor.Science);
+
+				widget.scienceWidgetValueContent.sprite = widget.scienceWidgetScienceContent.sprite;
+				TextMeshProUGUI valueTextComponent = Lib.ReflectionValue<TextMeshProUGUI>(widget.scienceWidgetValueContent, "textComponent");
+				valueTextComponent.color = KolorToColor(Kolor.Science);
+
+
+				dialog.scienceEarned += entry.scienceAdded;
+				kerbalismScienceEarned += entry.scienceAdded;
+			}
+
+			dialog.totalScience += kerbalismScienceEarned;
+
+			recoveryScienceWidgets.Clear();
+		}
+	}
+
+	// we can't set the widget text in the GameEvents.onVesselRecoveryProcessingComplete callback
+	// because it is set later in MissionRecoveryDialog.updateScienceWindowContent().
+	[HarmonyPatch(typeof(MissionRecoveryDialog))]
+	[HarmonyPatch("updateScienceWindowContent")]
+	class MissionRecoveryDialog_updateScienceWindowContent
+	{
+		public static Dictionary<ScienceSubjectWidget, RecoveryWidgetData> widgetData = new Dictionary<ScienceSubjectWidget, RecoveryWidgetData>();
+
+		static void Postfix(List<ScienceSubjectWidget> ___scienceWidgets)
+		{
+			foreach (ScienceSubjectWidget widget in ___scienceWidgets)
+			{
+				if (widgetData.TryGetValue(widget, out RecoveryWidgetData data))
+				{
+					widget.scienceWidgetDataContent.text = data.dataText;
+					widget.scienceWidgetValueContent.text = data.valueText;
+					widget.scienceWidgetScienceContent.text = data.scienceText;
+				}
+			}
+			widgetData.Clear();
 		}
 	}
 }
