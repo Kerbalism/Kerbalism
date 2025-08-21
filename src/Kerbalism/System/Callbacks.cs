@@ -198,6 +198,12 @@ namespace KERBALISM
 					continue;
 				}
 
+				// do not take out waste
+				if (res.resourceName.ToLower().Contains("waste"))
+				{
+					continue;
+				}
+
 				double quantity = Math.Min(resources.GetResource(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
