@@ -192,14 +192,8 @@ namespace KERBALISM
 				// get the resource
 				PartResource res = data.to.Resources[i];
 
-				// eva prop is handled differently
-				if (res.resourceName == evaPropName)
-				{
-					continue;
-				}
-
-				// do not take out waste
-				if (res.resourceName.ToLower().Contains("waste"))
+				// eva prop is handled differently and eva should not bring waste atmosphere
+				if (res.resourceName == evaPropName || res.resourceName == Habitat.WasteAtmoResName)
 				{
 					continue;
 				}
