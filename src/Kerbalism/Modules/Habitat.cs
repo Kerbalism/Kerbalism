@@ -34,7 +34,7 @@ namespace KERBALISM
 			inflatingAndEqualizing,
 			/// <summary> deployable is being pressurized by equalizing its pressure with all enabled habitats</summary>
 			waitingForPressureAndEqualizing,
-			/// <summary> depreciated, kept around for backward compat</summary>
+			/// <summary> venting atmosphere and deflate if an inflatable and not a rigid deployable</summary>
 			venting,
 			/// <summary> hab is venting atmosphere and will go into disabled state when complete</summary>
 			pressurizing = 2,
@@ -118,7 +118,7 @@ namespace KERBALISM
 			return pvp;
 		}
 
-		private bool CanVentAtmosphere => atmosphereRes.amount > 0 && (state == State.disabled || state == State.enabled);
+		private bool CanVentAtmosphere => atmosphereRes.amount > 0;
 
 		// volume / surface evaluation at prefab compilation
 		public override void OnLoad(ConfigNode node)
@@ -464,7 +464,8 @@ namespace KERBALISM
 						SetStateRetracting();
 					break;
 				case State.venting:
-					perctDeployed = atmosphereRes.amount / atmosphereRes.maxAmount;
+					perctDeployed = deployAnimator.Playing() ? deployAnimator.NormalizedTime : 0.0;
+					//perctDeployed = atmosphereRes.amount / atmosphereRes.maxAmount;
 					Venting();
 					if (atmosphereRes.amount + wasteAtmosphereRes.amount <= double.Epsilon)
 						SetStateDisabled();
@@ -477,13 +478,13 @@ namespace KERBALISM
 			groupName = "Habitat", groupDisplayName = "#KERBALISM_Group_Habitat")]//Habitat
 		public void Vent()
 		{
-			if (CanVentAtmosphere)
-			{
-				perctDeployed = 0.5;
-				atmosphereRes.amount = 0.0;
-				wasteAtmosphereRes.amount = 0.0;
+			if (CanVentAtmosphere && state != State.venting)
 				SetStateVenting();
-			}
+			else if (state == State.venting)
+				if (atmosphereRes.amount / atmosphereRes.maxAmount > Settings.PressureThreshold)
+					SetStateEnabled();
+				else
+					SetStateDisabled();
 		}
 
 		private void Venting()
@@ -534,7 +535,10 @@ namespace KERBALISM
 					if (canRetract || Lib.IsEditor())
 						SetStateRetracting();
 					else
-						SetStateDisabled();
+						if (atmosphereRes.amount / atmosphereRes.maxAmount > Settings.PressureThreshold)
+							SetStateEnabled();
+						else
+							SetStateDisabled();
 					break;
 				case State.retracting:
 				case State.waitingForGravityRing:
@@ -784,7 +788,9 @@ namespace KERBALISM
 					BackgroundSetStateDisabled(hab);
 					break;
 				case State.waitingForGravityRing:
-					BackgroundSetStateRetracting(hab);
+				case State.venting:
+					hab.AtmoResource.Amount = 0;
+					hab.WasteAtmoResource.Amount = 0;
 					break;
 			}
 		}
