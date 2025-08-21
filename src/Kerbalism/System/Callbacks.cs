@@ -1,10 +1,11 @@
+using HarmonyLib;
+using KSP.Localization;
+using KSP.UI.Screens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using HarmonyLib;
-using KSP.UI.Screens;
+using System.Runtime.Remoting.Lifetime;
 using UnityEngine;
-using KSP.Localization;
 
 
 namespace KERBALISM
@@ -191,14 +192,18 @@ namespace KERBALISM
 			{
 				// get the resource
 				PartResource res = data.to.Resources[i];
+				double quantity;
 
-				// eva prop is handled differently and eva should not bring waste atmosphere
-				if (res.resourceName == evaPropName || res.resourceName == Habitat.WasteAtmoResName)
-				{
+				// eva prop is handled differently
+				if (res.resourceName == evaPropName)
 					continue;
-				}
+				// waste atmosphere is a concentration of a resource within the habitat, so take proportionally
+				else if (res.resourceName == Habitat.WasteAtmoResName)
+					quantity = resources.GetResource(data.from.vessel, res.resourceName).Level * res.maxAmount;
+				// All other resources are pumped to fill up the outgoing EVA suit
+				else
+					quantity = Math.Min(resources.GetResource(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
 
-				double quantity = Math.Min(resources.GetResource(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
 				// remove resource from vessel
 				quantity = data.from.RequestResource(res.resourceName, quantity);
 
