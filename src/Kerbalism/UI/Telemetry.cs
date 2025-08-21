@@ -105,7 +105,15 @@ namespace KERBALISM
 
 			if (!v.isEVA)
 			{
-				if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadableNormalizedPressure(vd.Pressure));//"pressure"
+				double _pvp = v.GetVesselData().PredictedVesselPressure; string pvp = "";
+				if (_pvp < vd.Pressure)
+				{
+					pvp = Lib.HumanReadableNormalizedPressure(v.GetVesselData().PredictedVesselPressure);
+					pvp = _pvp < Settings.PressureThreshold ? Lib.Color(pvp, Lib.Kolor.Red, true) : pvp;
+					pvp = " > " + pvp;
+				}
+				if (Features.Pressure) p.AddContent(Local.TELEMETRY_pressure, Lib.HumanReadableNormalizedPressure(vd.Pressure) + pvp);//"pressure"
+
 				if (Features.Shielding) p.AddContent(Local.TELEMETRY_shielding, Lib.HumanReadableShieldingLevel(vd.Shielding));//"shielding"
 				if (Features.LivingSpace) p.AddContent(Local.TELEMETRY_livingspace, Lib.HumanReadableLivingSpace(vd.LivingSpace));//"living space"
 				if (Features.Comfort) p.AddContent(Local.TELEMETRY_comfort, vd.Comforts.Summary(), vd.Comforts.Tooltip());//"comfort"
@@ -228,6 +236,12 @@ namespace KERBALISM
 				p.AddContent(label, Lib.HumanReadableDuration(res.DepletionTime()), rate_tooltip);
 				++supplies;
 			}
+			// Add time until Pressurization falls below Settings.PressureThreshold
+			ResourceInfo atmoRes = resources.GetResource(v, "Atmosphere");
+			double atmoThresholdAmt = atmoRes.Capacity * Settings.PressureThreshold;
+			double time2Threshold = atmoRes.Amount <= atmoThresholdAmt ? 0.0 : atmoRes.AverageRate >= -1e-10 ? double.NaN :
+				(atmoRes.Amount - atmoThresholdAmt) / -atmoRes.AverageRate;
+			p.AddContent("Pressurization", Lib.HumanReadableDuration(time2Threshold), "Time until pressure drops below threshold");
 		}
 
 
