@@ -400,7 +400,7 @@ namespace KERBALISM
 			else if (CanEqualize)
 			{
 				equalizeEvent.active = true;
-				equalizeEvent.guiName = Local.Habitat_equalize; // "Equalize pressure"
+				equalizeEvent.guiName = Local.Habitat_equalize + " > " + PredictedPressure(); // "Equalize pressure"
 			}
 			else
 			{
