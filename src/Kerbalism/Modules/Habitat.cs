@@ -110,20 +110,16 @@ namespace KERBALISM
 			{
 				if (!(state == State.inflating || state == State.waitingForPressure))
 					return false;
-				ResourceInfo vesselAtmoRes = ResourceCache.GetResource(vessel, AtmoResName);
-				// don't allow unless decent pressurization capacity is active, or we are in a breathable atmo
-				if (vesselAtmoRes.Rate < 1.0 && !vessel.KerbalismData().EnvBreathable)
-					return false;
-				double atmoAmountNeededToPressurize = Math.Max(0.0, (atmosphereRes.maxAmount * Settings.PressureThreshold) - atmosphereRes.amount);
-				// don't allow unless the vessel contains more than twice the atmo needed to pressurize this hab
-				if (vesselAtmoRes.Amount < atmoAmountNeededToPressurize * 2.0)
-					return false;
-				// don't allow unless there is enough nitrogen to pressurize this hab
-				if (ResourceCache.GetResource(vessel, "Nitrogen").Amount < atmoAmountNeededToPressurize)
-					return false;
-
 				return true;
 			}
+		}
+
+		private string PredictedPressure()
+		{
+			string pvp = Lib.HumanReadableNormalizedPressure(vessel.GetVesselData().PredictedVesselPressure);
+			if (vessel.GetVesselData().PredictedVesselPressure < Settings.PressureThreshold)
+				pvp = Lib.Color(pvp, Lib.Kolor.Red, true);
+			return pvp;
 		}
 
 		private bool CanVentAtmosphere => atmosphereRes.amount > 0 && (state == State.disabled || state == State.enabled);
@@ -369,7 +365,7 @@ namespace KERBALISM
 					status_str = Lib.BuildString(Local.Habitat_deploying, " (", perctDeployed.ToString("p2"), ")");// "deploying"
 					break;
 				case State.waitingForPressure:
-					double progress = atmosphereRes.amount / atmosphereRes.maxAmount / Settings.PressureThreshold;
+					double progress = atmosphereRes.amount / atmosphereRes.maxAmount;
 					status_str = Lib.BuildString(Local.Habitat_pressurizing, " (", progress.ToString("p2"), ")");// "pressurizing"
 					break;
 				case State.retracting:
@@ -380,7 +376,8 @@ namespace KERBALISM
 					break;
 				case State.inflatingAndEqualizing:
 				case State.waitingForPressureAndEqualizing:
-					status_str = Lib.BuildString(Local.Habitat_equalizing, " (", perctDeployed.ToString("p2"), ")");// "equalizing"
+					pressure = Lib.HumanReadableNormalizedPressure(atmosphereRes.amount / atmosphereRes.maxAmount);
+					status_str = Lib.BuildString(Local.Habitat_equalizing, " (", pressure, ") > " + PredictedPressure());// "equalizing"
 					break;
 			}
 
@@ -396,7 +393,7 @@ namespace KERBALISM
 			else if (CanEqualize)
 			{
 				equalizeEvent.active = true;
-				equalizeEvent.guiName = Local.Habitat_equalize; // "Equalize pressure"
+				equalizeEvent.guiName = Local.Habitat_equalize + " > " + PredictedPressure(); // "Equalize pressure"
 			}
 			else
 			{
@@ -425,9 +422,10 @@ namespace KERBALISM
 					else
 					{
 						double deployLevel = atmosphereRes.amount / (atmosphereRes.maxAmount * Settings.PressureThreshold);
+						bool pressureEqualized = atmosphereRes.amount / atmosphereRes.maxAmount >= vessel.GetVesselData().Pressure;
 						perctDeployed = Lib.Clamp(deployLevel, perctDeployed, 1.0);
 						deployAnimator.Still(perctDeployed);
-						if (IsFullyDeployed)
+						if (pressureEqualized)
 							SetStateEnabled();
 					}
 					break;
@@ -436,7 +434,7 @@ namespace KERBALISM
 					if (IsFullyDeployed)
 					{
 						double pressureLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
-						if (pressureLevel > Settings.PressureThreshold)
+						if (pressureLevel >= vessel.GetVesselData().Pressure)
 							SetStateEnabled();
 						else
 							SetStateWaitingForPressure();
@@ -446,7 +444,7 @@ namespace KERBALISM
 				case State.waitingForPressureAndEqualizing:
 					{
 						double pressureLevel = atmosphereRes.amount / atmosphereRes.maxAmount;
-						if (pressureLevel > Settings.PressureThreshold)
+						if (pressureLevel >= vessel.GetVesselData().Pressure)
 							SetStateEnabled();
 					}
 					break;
@@ -472,6 +470,7 @@ namespace KERBALISM
 		{
 			if (CanVentAtmosphere)
 			{
+				perctDeployed = 0.5;
 				atmosphereRes.amount = 0.0;
 				wasteAtmosphereRes.amount = 0.0;
 			}

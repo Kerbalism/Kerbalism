@@ -366,6 +366,9 @@ namespace KERBALISM
 		/// <summary>normalized pressure</summary>
 		public double Pressure => habitatInfo.HabNormalizedPressure;
 
+		/// <summary>normalized pressure</summary>
+		public double PredictedVesselPressure => habitatInfo.PredictedVesselPressure;
+
 		/// <summary>number of EVA's using available Nitrogen</summary>
 		public uint Evas => evas; uint evas;
 
