@@ -85,6 +85,7 @@ namespace KERBALISM
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
+			GameEvents.onVesselRecoveryProcessingComplete.Add(this.VesselRecoveryProcessingComplete);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
@@ -410,6 +411,11 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(pv);
 		}
 
+		// Hack the stock recovery dialog to show our science results
+		private void VesselRecoveryProcessingComplete(ProtoVessel pv, MissionRecoveryDialog dialog, float recoveryFactor)
+		{
+			VesselRecovery_OnVesselRecovered.OnVesselRecoveryProcessingComplete(dialog);
+		}
 
 		void VesselTerminated(ProtoVessel pv)
 		{
