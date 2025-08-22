@@ -80,8 +80,6 @@ namespace KERBALISM
 
 		public Callbacks()
 		{
-			GameEvents.onPartCouple.Add(OnPartCouple);
-
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
@@ -89,7 +87,8 @@ namespace KERBALISM
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
 			GameEvents.onVesselWillDestroy.Add(this.VesselDestroyed);
 			GameEvents.onNewVesselCreated.Add(this.VesselCreated);
-			GameEvents.onPartCouple.Add(this.VesselDock);
+			GameEvents.onPartCouple.Add(this.OnPartCouple);
+			GameEvents.onPartCoupleComplete.Add(this.OnPartCoupleComplete);
 
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
@@ -122,9 +121,18 @@ namespace KERBALISM
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
 
+		// Called when two vessels are about to be merged, while their state is not yet changed.
 		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
 		{
-			VesselData.OnPartCouple(data);
+			VesselData.OnPartAboutToCouple(data);
+			Cache.PurgeVesselCaches(data.from.vessel);
+		}
+
+		// Called when the merging process is done, and only the merged vessel remains
+		private void OnPartCoupleComplete(GameEvents.FromToAction<Part, Part> data)
+		{
+			VesselData.OnPartCoupleComplete(data);
+			OnVesselModified(data.to.vessel);
 		}
 
 		// Called by an harmony patch, happens every time a part is decoupled (decouplers, joint failure...)
@@ -168,7 +176,6 @@ namespace KERBALISM
 				emitter.Recalculate();
 
 			Cache.PurgeVesselCaches(vessel);
-			//vessel.KerbalismData().UpdateOnVesselModified();
 		}
 
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
@@ -468,13 +475,6 @@ namespace KERBALISM
 			// delete data on unloaded vessels only (this is handled trough OnPartWillDie for loaded vessels)
 			if (!v.loaded)
 				Drive.DeleteDrivesData(v);
-		}
-
-		void VesselDock(GameEvents.FromToAction<Part, Part> e)
-		{
-			Cache.PurgeVesselCaches(e.from.vessel);
-			// Update docked to vessel
-			this.OnVesselModified(e.to.vessel);
 		}
 
 		void AddEditorCategory()

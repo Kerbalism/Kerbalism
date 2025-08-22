@@ -587,7 +587,7 @@ namespace KERBALISM
 		}
 
 		// This is for mods (KIS), won't be used in a stock game (the docking is handled in the OnDock method
-		internal static void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
+		internal static void OnPartAboutToCouple(GameEvents.FromToAction<Part, Part> data)
 		{
 			Lib.LogDebug("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", Lib.LogLevel.Message, data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
 
@@ -621,10 +621,14 @@ namespace KERBALISM
 			// reset a few things on the docked to vessel
 			toVD.supplies.Clear();
 			toVD.scansat_id.Clear();
-			toVD.UpdateOnVesselModified();
 
 			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
 			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
+		}
+
+		internal static void OnPartCoupleComplete(GameEvents.FromToAction<Part, Part> data)
+		{
+			data.to.vessel.KerbalismData().UpdateOnVesselModified();
 		}
 
 		internal static void OnPartWillDie(Part part)
