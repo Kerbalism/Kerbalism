@@ -1437,6 +1437,8 @@ namespace KERBALISM
 		public static string ExperimentReq_AltAboveGroundMin = GetLoc("ExperimentReq_AltAboveGroundMin"); // "Min ground altitude"
 		public static string ExperimentReq_AltAboveGroundMax = GetLoc("ExperimentReq_AltAboveGroundMax"); // "Max ground altitude"
 		public static string ExperimentReq_MaxAsteroidDistance = GetLoc("ExperimentReq_MaxAsteroidDistance"); // "Max asteroid distance"
+		public static string ExperimentReq_CommSpeedMin = GetLoc("ExperimentReq_CommspeedMin"); // "Min transmission rate"
+		public static string ExperimentReq_CommSpeedMax = GetLoc("ExperimentReq_CommspeedMax"); // "Max transmission rate"
 		public static string ExperimentReq_AtmosphereAltMin = GetLoc("ExperimentReq_AtmosphereAltMin"); // "Min atmosphere altitude "
 		public static string ExperimentReq_AtmosphereAltMax = GetLoc("ExperimentReq_AtmosphereAltMax"); // "Max atmosphere altitude "
 		public static string ExperimentReq_CrewMin = GetLoc("ExperimentReq_CrewMin"); // "Min. crew "
