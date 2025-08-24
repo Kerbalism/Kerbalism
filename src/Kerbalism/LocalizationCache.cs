@@ -840,6 +840,7 @@ namespace KERBALISM
 		public static string Habitat_inflating = GetLoc("Habitat_inflating"); // "inflating"
 		public static string Habitat_retracting = GetLoc("Habitat_retracting"); // "retracting"
 		public static string Habitat_stopRotation = GetLoc("Habitat_stopRotation"); // "stopping rotation..."
+		public static string Habitat_venting = GetLoc("Habitat_venting"); // "venting atmosphere..."
 		public static string Habitat_equalizing = GetLoc("Habitat_equalizing"); // "equalizing"
 		public static string Habitat_equalize = GetLoc("Habitat_equalize"); // "Equalize pressure"
 		public static string Habitat_stopEqualize = GetLoc("Habitat_stopEqualize"); // "Stop equalizing pressure"
