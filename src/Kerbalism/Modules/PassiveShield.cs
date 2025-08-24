@@ -135,10 +135,9 @@ namespace KERBALISM
 		{
 			if (Lib.IsFlight())
 			{
-
-				// disable for dead eva kerbals
 				Vessel v = FlightGlobals.ActiveVessel;
-				if (v == null || EVA.IsDeadEVA(v)) return;
+				if (v == null) return;
+
 				if (!deploy_cs.Check(v))
 				{
 					Message.Post

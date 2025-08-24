@@ -888,12 +888,10 @@ namespace KERBALISM
 		[KSPEvent(guiActiveUnfocused = true, guiName = "_", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 		public void Prepare()
 		{
-			// disable for dead eva kerbals
-			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v))
-				return;
+            Vessel v = FlightGlobals.ActiveVessel;
+            if (v == null) return;
 
-			if (prepare_cs == null)
+            if (prepare_cs == null)
 				return;
 
 			// check trait
@@ -930,12 +928,10 @@ namespace KERBALISM
 
 		public bool Reset(bool showMessage)
 		{
-			// disable for dead eva kerbals
-			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v))
-				return false;
+            Vessel v = FlightGlobals.ActiveVessel;
+            if (v == null) return false;
 
-			if (reset_cs == null)
+            if (reset_cs == null)
 				return false;
 
 			// check trait

@@ -200,7 +200,7 @@ namespace KERBALISM
 
 				// show StoreData eva action button, if active vessel is an eva kerbal and there is something to store from it
 				Vessel v = FlightGlobals.ActiveVessel;
-				Events["StoreData"].active = !IsPrivate() && v != null && v.isEVA && !EVA.IsDeadEVA(v);
+				Events["StoreData"].active = !IsPrivate() && v != null && v.isEVA;
 
 				// hide TransferLocation button
 				var transferVisible = !IsPrivate();
@@ -285,7 +285,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v)) return;
+			if (v == null) return;
 
 			// transfer data
 			if(!Drive.Transfer(drive, v, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
@@ -303,7 +303,7 @@ namespace KERBALISM
 		{
 			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v)) return;
+			if (v == null) return;
 
 			// transfer data
 			if(!Drive.Transfer(v, drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(v) > 0))
