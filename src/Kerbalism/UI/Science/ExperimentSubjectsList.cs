@@ -156,7 +156,7 @@ namespace KERBALISM
 
 			public BodyContainer(KsmGuiBase parent, CelestialBody body, SituationsBiomesSubject situationsAndSubjects) : base(parent)
 			{
-				KsmGuiHeader header = new KsmGuiHeader(this, body.name, KsmGuiStyle.boxColor);
+				KsmGuiHeader header = new KsmGuiHeader(this, Lib.BodyDisplayName(body), KsmGuiStyle.boxColor);
 				header.TextObject.TextComponent.fontStyle = FontStyles.Bold;
 				header.TextObject.TextComponent.color = Lib.KolorToColor(Lib.Kolor.Orange);
 				header.TextObject.TextComponent.alignment = TextAlignmentOptions.Left;

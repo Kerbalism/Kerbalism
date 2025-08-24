@@ -1506,6 +1506,12 @@ namespace KERBALISM
 			return (pos - body.position).magnitude - pqs.GetSurfaceHeight(radial);
 		}
 		*/
+
+		/// <summary>Get a body display name, without the gender tag</summary>
+		public static string BodyDisplayName(CelestialBody body)
+		{
+			return body.displayName.LocalizeRemoveGender();
+		}
 		#endregion
 
 		#region VESSEL
