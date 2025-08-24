@@ -51,10 +51,10 @@ namespace KERBALISM
 		public static bool GenerateLocs = false;
 
 		// change these two to the adequate local paths :
-		private const string RepoPath = @"C:\Users\Got\source\repos\Kerbalism\";
-		private const string OutputPath = @"C:\Users\Got\Desktop\loctest\";
+		private const string RepoPath = @"E:\KSP Versions\Mod dev\Kerbalism";
+		private const string OutputPath = @"E:\KSP Versions\Mod dev\Kerbalism\GameData\Kerbalism\Localization\new\";
 
-		private const string PathToLocalizationCache = RepoPath + @"Kerbalism\src\Kerbalism\LocalizationCache.cs";
+		private const string PathToLocalizationCache = RepoPath + @"\src\Kerbalism\LocalizationCache.cs";
 		private static string[] locCodes = new string[] { "de", "es-es", "fr-fr", "it-it", "pt-br", "ru", "zh-cn" };
 
 		public static void RegenerateAllLocs()
@@ -63,7 +63,7 @@ namespace KERBALISM
 
 			foreach (string locCode in locCodes)
 			{
-				string originalLocFile = RepoPath + @"Kerbalism\GameData\Kerbalism\Localization\" + locCode + ".cfg";
+				string originalLocFile = RepoPath + @"\GameData\Kerbalism\Localization\" + locCode + ".cfg";
 				RegenerateNonEnglishLoc(locCode, originalLocFile);
 			}
 		}
@@ -1420,25 +1420,27 @@ namespace KERBALISM
 		public static string ExperimentReq_RadiationMax = GetLoc("ExperimentReq_RadiationMax"); // "Max. radiation "
 		public static string ExperimentReq_VolumePerCrewMin = GetLoc("ExperimentReq_VolumePerCrewMin"); // "Min. vol./crew "
 		public static string ExperimentReq_VolumePerCrewMax = GetLoc("ExperimentReq_VolumePerCrewMax"); // "Max. vol./crew "
-		public static string ExperimentReq_SunAngleMin = GetLoc("ExperimentReq_SunAngleMin"); // "Min sun-surface angle"
-		public static string ExperimentReq_SunAngleMax = GetLoc("ExperimentReq_SunAngleMax"); // "Max sun-surface angle"
+		public static string ExperimentReq_SunAngleMin = GetLoc("ExperimentReq_SunAngleMin"); // "Min. sun-surface angle"
+		public static string ExperimentReq_SunAngleMax = GetLoc("ExperimentReq_SunAngleMax"); // "Max. sun-surface angle"
 		public static string ExperimentReq_SurfaceSpeedMin = GetLoc("ExperimentReq_SurfaceSpeedMin"); // "Min. surface speed "
 		public static string ExperimentReq_SurfaceSpeedMax = GetLoc("ExperimentReq_SurfaceSpeedMax"); // "Max. surface speed "
 		public static string ExperimentReq_VerticalSpeedMin = GetLoc("ExperimentReq_VerticalSpeedMin"); // "Min. vertical speed "
 		public static string ExperimentReq_VerticalSpeedMax = GetLoc("ExperimentReq_VerticalSpeedMax"); // "Max. vertical speed "
 		public static string ExperimentReq_SpeedMin = GetLoc("ExperimentReq_SpeedMin"); // "Min. speed "
 		public static string ExperimentReq_SpeedMax = GetLoc("ExperimentReq_SpeedMax"); // "Max. speed "
-		public static string ExperimentReq_DynamicPressureMin = GetLoc("ExperimentReq_DynamicPressureMin"); // "Min dynamic pressure"
-		public static string ExperimentReq_DynamicPressureMax = GetLoc("ExperimentReq_DynamicPressureMax"); // "Max dynamic pressure"
+		public static string ExperimentReq_DynamicPressureMin = GetLoc("ExperimentReq_DynamicPressureMin"); // "Min. dynamic pressure"
+		public static string ExperimentReq_DynamicPressureMax = GetLoc("ExperimentReq_DynamicPressureMax"); // "Max. dynamic pressure"
 		public static string ExperimentReq_StaticPressureMin = GetLoc("ExperimentReq_StaticPressureMin"); // "Min. pressure "
 		public static string ExperimentReq_StaticPressureMax = GetLoc("ExperimentReq_StaticPressureMax"); // "Max. pressure "
 		public static string ExperimentReq_AtmDensityMin = GetLoc("ExperimentReq_AtmDensityMin"); // "Min. atm. density "
 		public static string ExperimentReq_AtmDensityMax = GetLoc("ExperimentReq_AtmDensityMax"); // "Max. atm. density "
-		public static string ExperimentReq_AltAboveGroundMin = GetLoc("ExperimentReq_AltAboveGroundMin"); // "Min ground altitude"
-		public static string ExperimentReq_AltAboveGroundMax = GetLoc("ExperimentReq_AltAboveGroundMax"); // "Max ground altitude"
-		public static string ExperimentReq_MaxAsteroidDistance = GetLoc("ExperimentReq_MaxAsteroidDistance"); // "Max asteroid distance"
-		public static string ExperimentReq_AtmosphereAltMin = GetLoc("ExperimentReq_AtmosphereAltMin"); // "Min atmosphere altitude "
-		public static string ExperimentReq_AtmosphereAltMax = GetLoc("ExperimentReq_AtmosphereAltMax"); // "Max atmosphere altitude "
+		public static string ExperimentReq_AltAboveGroundMin = GetLoc("ExperimentReq_AltAboveGroundMin"); // "Min. ground altitude"
+		public static string ExperimentReq_AltAboveGroundMax = GetLoc("ExperimentReq_AltAboveGroundMax"); // "Max. ground altitude"
+		public static string ExperimentReq_MaxAsteroidDistance = GetLoc("ExperimentReq_MaxAsteroidDistance"); // "Max. asteroid distance"
+		public static string ExperimentReq_CommSpeedMin = GetLoc("ExperimentReq_CommSpeedMin"); // "Min. transmission rate"
+		public static string ExperimentReq_CommSpeedMax = GetLoc("ExperimentReq_CommSpeedMax"); // "Max. transmission rate"
+		public static string ExperimentReq_AtmosphereAltMin = GetLoc("ExperimentReq_AtmosphereAltMin"); // "Min. atmosphere altitude "
+		public static string ExperimentReq_AtmosphereAltMax = GetLoc("ExperimentReq_AtmosphereAltMax"); // "Max. atmosphere altitude "
 		public static string ExperimentReq_CrewMin = GetLoc("ExperimentReq_CrewMin"); // "Min. crew "
 		public static string ExperimentReq_CrewMax = GetLoc("ExperimentReq_CrewMax"); // "Max. crew "
 		public static string ExperimentReq_CrewCapacityMin = GetLoc("ExperimentReq_CrewCapacityMin"); // "Min. crew capacity "

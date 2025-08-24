@@ -75,6 +75,9 @@ namespace KERBALISM
 			MissionControlLevelMax,
 			AdministrationLevelMin,
 			AdministrationLevelMax,
+
+			CommSpeedMin,
+			CommSpeedMax,
 		}
 
 		public class RequireDef
@@ -156,6 +159,8 @@ namespace KERBALISM
 					case Require.AltAboveGroundMin     : TestReq((c, r) => c >= r, v.heightFromTerrain,     (double)Requires[i].value, results[i]); break;
 					case Require.AltAboveGroundMax     : TestReq((c, r) => c <= r, v.heightFromTerrain,     (double)Requires[i].value, results[i]); break;
 					case Require.MaxAsteroidDistance   : TestReq((c, r) => c <= r, TestAsteroidDistance(v), (double)Requires[i].value, results[i]); break;
+					case Require.CommSpeedMin		   : TestReq((c, r) => c >= r, vd.Connection.rate,		(double)Requires[i].value, results[i]); break;
+					case Require.CommSpeedMax		   : TestReq((c, r) => c <= r, vd.Connection.rate,		(double)Requires[i].value, results[i]); break;
 
 					case Require.AtmosphereAltMin      : TestReq((c, r) => c >= r, v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN, (double)Requires[i].value, results[i]); break;
 					case Require.AtmosphereAltMax      : TestReq((c, r) => c <= r, v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN, (double)Requires[i].value, results[i]); break;
@@ -172,7 +177,7 @@ namespace KERBALISM
 					case Require.MissionControlLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.MissionControl),   (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMin  : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
 					case Require.AdministrationLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
-
+					
 					case Require.Shadow         : TestReq(1.0 - vd.EnvSunlightFactor, results[i]); break;
 					case Require.Sunlight       : TestReq(vd.EnvSunlightFactor,       results[i]); break;
 
@@ -327,6 +332,8 @@ namespace KERBALISM
 				case Require.AltAboveGroundMin:
 				case Require.AltAboveGroundMax:
 				case Require.MaxAsteroidDistance:
+				case Require.CommSpeedMin:
+				case Require.CommSpeedMax:
 					return new RequireDef(req, double.Parse(value));
 				case Require.CrewMin:
 				case Require.CrewMax:
@@ -440,6 +447,9 @@ namespace KERBALISM
 				case Require.AtmDensityMin:
 				case Require.AtmDensityMax:
 					return Lib.HumanReadablePressure((double)reqValue);
+				case Require.CommSpeedMin:
+				case Require.CommSpeedMax:
+					return Lib.HumanReadableDataRate((double)reqValue);
 				case Require.CrewMin:
 				case Require.CrewMax:
 				case Require.CrewCapacityMin:
@@ -493,13 +503,15 @@ namespace KERBALISM
 				case Require.SpeedMax:                 return Local.ExperimentReq_SpeedMax;//"Max. speed "
 				case Require.DynamicPressureMin:       return Local.ExperimentReq_DynamicPressureMin;//"Min dynamic pressure"
 				case Require.DynamicPressureMax:       return Local.ExperimentReq_DynamicPressureMax;//"Max dynamic pressure"
-				case Require.StaticPressureMin:        return  Local.ExperimentReq_StaticPressureMin;//"Min. pressure "
+				case Require.StaticPressureMin:        return Local.ExperimentReq_StaticPressureMin;//"Min. pressure "
 				case Require.StaticPressureMax:        return Local.ExperimentReq_StaticPressureMax;//"Max. pressure "
 				case Require.AtmDensityMin:            return Local.ExperimentReq_AtmDensityMin;//"Min. atm. density "
 				case Require.AtmDensityMax:            return Local.ExperimentReq_AtmDensityMax;//"Max. atm. density "
 				case Require.AltAboveGroundMin:        return Local.ExperimentReq_AltAboveGroundMin;//"Min ground altitude"
 				case Require.AltAboveGroundMax:        return Local.ExperimentReq_AltAboveGroundMax;//"Max ground altitude"
 				case Require.MaxAsteroidDistance:      return Local.ExperimentReq_MaxAsteroidDistance;//"Max asteroid distance"
+				case Require.CommSpeedMin:			   return Local.ExperimentReq_CommSpeedMin;//"Min transmission rate"
+				case Require.CommSpeedMax:			   return Local.ExperimentReq_CommSpeedMax;//"Max transmission rate"
 				case Require.AtmosphereAltMin:         return Local.ExperimentReq_AtmosphereAltMin;//"Min atmosphere altitude "
 				case Require.AtmosphereAltMax:         return Local.ExperimentReq_AtmosphereAltMax;//"Max atmosphere altitude "
 				case Require.CrewMin:                  return Local.ExperimentReq_CrewMin;//"Min. crew "
