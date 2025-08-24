@@ -226,7 +226,7 @@ namespace KERBALISM.Planner
 				GUILayout.BeginHorizontal(Styles.title_container);
 
 				// body selector
-				GUILayout.Label(new GUIContent(FlightGlobals.Bodies[body_index].name, Local.Planner_Targetbody), leftmenu_style);//"Target body"
+				GUILayout.Label(new GUIContent(Lib.BodyDisplayName(FlightGlobals.Bodies[body_index]), Local.Planner_Targetbody), leftmenu_style);//"Target body"
 				if (Lib.IsClicked())
 				{
 					var sorted_index = sorted_body_indices.IndexOf(body_index);

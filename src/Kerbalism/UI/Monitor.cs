@@ -206,7 +206,7 @@ namespace KERBALISM
 			string vessel_name = v.isEVA ? crew[0].name : v.vesselName;
 
 			// get body name
-			string body_name = v.mainBody.name.ToUpper();
+			string body_name = Lib.BodyDisplayName(v.mainBody).ToUpper();
 
 			// skip filtered vessels
 			if (!selected && !Filter_match(v, body_name + " " + vessel_name)) return false;

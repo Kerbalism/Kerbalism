@@ -403,7 +403,7 @@ namespace KERBALISM
 						foreach (RocCBDefinition body in rocDef.myCelestialBodies)
 						{
 							CelestialBody Body = FlightGlobals.GetBodyByName(body.name);
-							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(Body.displayName.LocalizeRemoveGender()), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
+							ModuleInfo += Lib.Color("\n\n" + Local.Experimentinfo_smallRoc3.Format(Lib.BodyDisplayName(Body)), Lib.Kolor.Cyan, true);//"Found on <<1>>'s :"
 							foreach (string biome in body.biomes)
 							{
 								ModuleInfo += "\n- ";
@@ -483,7 +483,7 @@ namespace KERBALISM
 				{
 					foreach (CelestialBody body in FlightGlobals.Bodies)
 						if (body.name.Equals(condition, StringComparison.OrdinalIgnoreCase))
-							return new SpecificBody(body.name);
+							return new SpecificBody(body);
 				}
 				Lib.Log("Invalid BodyCondition : '" + condition + "' defined in KERBALISM_EXPERIMENT node.");
 				return null;
@@ -608,10 +608,10 @@ namespace KERBALISM
 
 			private class SpecificBody : BodyCondition
 			{
-				private string bodyName;
-				public override bool TestCondition(CelestialBody body) => body.name == bodyName;
-				public override string Title => string.Empty;
-				public SpecificBody(string bodyName) { this.bodyName = bodyName; }
+				private CelestialBody body;
+				public override bool TestCondition(CelestialBody body) => body.name == this.body.name;
+				public override string Title => Lib.BodyDisplayName(body);
+				public SpecificBody(CelestialBody body) { this.body = body; }
 			}
 		}
 	}
