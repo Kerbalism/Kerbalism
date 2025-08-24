@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 
 namespace KERBALISM
 {
@@ -34,6 +36,8 @@ namespace KERBALISM
 			inflatingAndEqualizing,
 			/// <summary> deployable is being pressurized by equalizing its pressure with all enabled habitats</summary>
 			waitingForPressureAndEqualizing,
+			/// <summary> special unescapable state for EVA kerbals</summary>
+			evaKerbal,
 			/// <summary> depreciated, kept around for backward compat</summary>
 			pressurizing = 2,
 			/// <summary> depreciated, kept around for backward compat</summary>
@@ -78,6 +82,7 @@ namespace KERBALISM
         private bool hasGravityRing;
         private GravityRing gravityRing;
 		private int crewCapacity;
+		private KerbalEVA kerbalEVA;
 
 		private PartResource atmosphereRes;
 		private PartResource wasteAtmosphereRes;
@@ -87,7 +92,6 @@ namespace KERBALISM
 		private BaseEvent ventEvent;
 		private BaseEvent equalizeEvent;
 
-		private bool configured = false;       // true if configure method has been executed
 		private float shieldingCost;
 
 		private bool AtmoFlowState { get => atmosphereRes.flowState; set => atmosphereRes.flowState = value; }
@@ -97,6 +101,8 @@ namespace KERBALISM
 		private bool IsDeployable => deployAnimator.IsDefined;
 		private bool IsFullyDeployed => perctDeployed == 1.0;
 		private bool IsFullyRetracted => perctDeployed == 0.0;
+
+		private bool IsDeadEVA => state == State.evaKerbal && (part.protoModuleCrew.Count == 0 || DB.Kerbal(part.protoModuleCrew[0].name).eva_dead);
 
 		private bool CanEqualize
 		{
@@ -292,6 +298,7 @@ namespace KERBALISM
 				case State.waitingForGravityRing: SetStateRetracting(); break;
 				case State.inflatingAndEqualizing: SetStateEqualizing(); break;
 				case State.waitingForPressureAndEqualizing: SetStateEqualizing(); break;
+				case State.evaKerbal: SetStateEVAKerbal(); break;
 			}
 
 			UpdatePAW();
@@ -303,7 +310,7 @@ namespace KERBALISM
             // - part is added in the editor
             // - module is configured first time either in editor or in flight
             // - module is added to an existing savegame
-            if (!part.Resources.Contains(AtmoResName))
+            if (!part.Resources.Contains(AtmoResName) || !part.Resources.Contains(WasteAtmoResName) || !part.Resources.Contains(ShieldingResName))
             {
 				// add internal atmosphere resources
 				double atmoCapacity = volume * 1e3;
@@ -325,25 +332,18 @@ namespace KERBALISM
 				// if shielding feature is disabled, just hide it
 				shieldingRes.isVisible = Features.Shielding && shieldingRes.isTweakable;
 
-                configured = true;
+				// add the EVA kerbal supply resources defined in the profile
+				if (state == State.evaKerbal)
+					Profile.SetupEva(part, false);
+
+				// fill nitrogen on saves or ships that weren't created whith Kerbalism installed
+				if (part.Resources.Contains("Nitrogen"))
+					Lib.FillResource(part, "Nitrogen");
             }
         }
 
         public void Update()
         {
-            // The first time an existing save game is loaded with Kerbalism installed,
-            // MM will to any existing vessels add Nitrogen with the correct capacities as set in default.cfg but they will have zero amounts,
-            // this is not the case for any newly created vessels in the editor.
-            if (configured)
-            {
-                if (state == State.enabled && Features.Pressure)
-                    Lib.FillResource(part, "Nitrogen");
-                else
-                    Lib.EmptyResource(part, "Nitrogen");
-
-                configured = false;
-            }
-
 			if (part.IsPAWVisible())
 				UpdatePAW();
 		}
@@ -386,21 +386,21 @@ namespace KERBALISM
 
 			toggleEvent.guiName = Lib.StatusToggle(Local.StatuToggle_Habitat, status_str);//"Habitat"
 
-			ventEvent.guiActive = CanVentAtmosphere;
+			ventEvent.active = CanVentAtmosphere;
 
 			if (state == State.inflatingAndEqualizing || state == State.waitingForPressureAndEqualizing)
 			{
-				equalizeEvent.guiActive = true;
+				equalizeEvent.active = true;
 				equalizeEvent.guiName = Local.Habitat_stopEqualize; // "Stop equalizing pressure"
 			}
 			else if (CanEqualize)
 			{
-				equalizeEvent.guiActive = true;
+				equalizeEvent.active = true;
 				equalizeEvent.guiName = Local.Habitat_equalize; // "Equalize pressure"
 			}
 			else
 			{
-				equalizeEvent.guiActive = false;
+				equalizeEvent.active = false;
 			}
 		}
 
@@ -458,6 +458,9 @@ namespace KERBALISM
 				case State.waitingForGravityRing:
 					if (!gravityRing.IsRotating())
 						SetStateRetracting();
+					break;
+				case State.evaKerbal:
+					EVAUpdate();
 					break;
 			}
 		}
@@ -698,6 +701,17 @@ namespace KERBALISM
 				gravityRing.deployed = false;
 		}
 
+		private void SetStateEVAKerbal()
+		{
+			kerbalEVA = part.FindModuleImplementing<KerbalEVA>();
+			AtmoFlowState = true;
+			WasteAtmoFlowState = true;
+			ShieldingFlowState = true;
+			toggleEvent.active = false;
+			ventEvent.active = false;
+			equalizeEvent.active = false;
+		}
+
 		/// <summary>
 		/// Update hab state on unloaded vessels (replicating FixedUpdate()), called from VesselHabitatInfo.Update() 
 		/// </summary>
@@ -776,6 +790,88 @@ namespace KERBALISM
 			}
 			// go directly to the disabled state as there is no animation to handle
 			BackgroundSetStateDisabled(hab);
+		}
+
+		private void EVAUpdate()
+		{
+			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
+
+			// determine if headlamps need ec
+			// - not required if there is no EC capacity in eva kerbal (no ec supply in profile)
+			// - not required if no EC cost for headlamps is specified (set by the user)
+			if (ec.Capacity > 0.0 && Settings.HeadLampsCost > 0.0)
+			{
+				// consume EC for the headlamps
+				if (kerbalEVA.lampOn)
+					ec.Consume(Settings.HeadLampsCost * TimeWarp.fixedDeltaTime, ResourceBroker.Light);
+
+				if (ec.Amount > 0.0)
+				{
+					if (kerbalEVA.lampOn && !kerbalEVA.headLamp.activeSelf)
+						kerbalEVA.headLamp.SetActive(true);
+				}
+				else
+				{
+					if (kerbalEVA.headLamp.activeSelf)
+						kerbalEVA.headLamp.SetActive(false);
+				}
+			}
+
+			if (IsDeadEVA)
+				EVADeadUpdate();
+		}
+
+		private void EVADeadUpdate()
+		{
+			// set kerbal to the 'freezed' unescapable state, if it isn't already in it
+			// how it works:
+			// - kerbal animations and ragdoll state are driven by a finite-state-machine (FSM)
+			// - this function is called every frame for all active eva kerbals flagged as dead
+			// - if the FSM current state is already 'freezed', we do nothing and this function is a no-op
+			// - we create an 'inescapable' state called 'freezed'
+			// - we switch the FSM to that state using an ad-hoc event from current state
+			// - once the 'freezed' state is set, the FSM cannot switch to any other states
+			// - the animator of the object is stopped to stop any left-over animations from previous state
+			if (!string.IsNullOrEmpty(kerbalEVA.fsm.currentStateName) && kerbalEVA.fsm.currentStateName != "freezed")
+			{
+				// create freezed state
+				KFSMState freezed = new KFSMState("freezed");
+
+				// create freeze event
+				KFSMEvent eva_freeze = new KFSMEvent("EVAfreeze")
+				{
+					GoToStateOnEvent = freezed,
+					updateMode = KFSMUpdateMode.MANUAL_TRIGGER
+				};
+				kerbalEVA.fsm.AddEvent(eva_freeze, kerbalEVA.fsm.CurrentState);
+
+				// trigger freeze event
+				kerbalEVA.fsm.RunEvent(eva_freeze);
+
+				// stop animations
+				kerbalEVA.GetComponent<Animation>().Stop();
+				kerbalExpressionSystem expressionSystem = kerbalEVA.GetComponent<kerbalExpressionSystem>();
+				if (expressionSystem != null)
+				{
+					expressionSystem.enabled = false;
+					expressionSystem.animator.speed = 0f;
+				}
+			}
+
+			// disable all modules beside the Habitat, KerbalEVA and FlagDecal
+			for (int i = part.Modules.Count; i-- > 0;)
+			{
+				PartModule m = part.Modules[i];
+				// 
+				if (m == this || m is KerbalEVA || m is FlagDecal)
+					continue;
+
+				m.isEnabled = false;
+				m.enabled = false;
+			}
+
+			// remove plant flag action
+			kerbalEVA.flagItems = 0;
 		}
 
 		// part tooltip
@@ -872,6 +968,53 @@ namespace KERBALISM
 		public void LogVolumeAndSurface()
 		{
 			Lib.GetPartVolumeAndSurface(part, true);
+		}
+
+		private static string[] EVAKerbalPartNames => new string[]
+		{
+			"kerbalEVA",
+			"kerbalEVASlimSuitFemale",
+			"kerbalEVAfemaleFuture",
+			"kerbalEVAFuture",
+			"kerbalEVAfemale",
+			"kerbalEVASlimSuit",
+			"kerbalEVAfemaleVintage",
+			"kerbalEVAVintage"
+		};
+
+		internal static void AddHabitatToEVAKerbalPrefabs()
+		{
+			foreach (string evaKerbalPartName in EVAKerbalPartNames)
+			{
+				AvailablePart ap = PartLoader.getPartInfoByName(evaKerbalPartName);
+				if (ap == null)
+					continue;
+
+				Part prefab = ap.partPrefab;
+				Habitat habitat = prefab.FindModuleImplementing<Habitat>();
+
+				// backward compatibility (and failsafe) : EVA Kerbals didn't have
+				// the module on previous versions, ensure it is added
+				if (habitat == null)
+				{
+					habitat = (Habitat)prefab.AddModule(nameof(Habitat), forceAwake: true);
+					// deduce the hab volume from the atmo resource, if present
+					// previous versions used to have a MM patch directly adding
+					// atmo / wasteAtmo to the EVAKerbal parts
+					PartResource atmoRes = prefab.Resources[AtmoResName];
+					if (atmoRes != null && atmoRes.maxAmount > 0.0)
+						habitat.volume = atmoRes.maxAmount / 1e3;
+					else
+						habitat.volume = 0.33;
+
+					prefab.Resources.dict.Remove(Lib.GetDefinition(AtmoResName).id);
+					prefab.Resources.dict.Remove(Lib.GetDefinition(WasteAtmoResName).id);
+
+					habitat.surface = 1.5; // human spacesuit surface ~ 4 m²
+				}
+
+				habitat.state = State.evaKerbal;
+			}
 		}
 	}
 }

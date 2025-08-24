@@ -510,9 +510,8 @@ namespace KERBALISM
 		// show a message with some hint on time to next failure
 		public void Inspect()
 		{
-			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v)) return;
+			if (v == null) return;
 
 			// get normalized time to failure
 			double time_k = (Planetarium.GetUniversalTime() - last) / (next - last);
@@ -551,9 +550,8 @@ namespace KERBALISM
 		// repair malfunctioned component
 		public void Repair()
 		{
-			// disable for dead eva kerbals
 			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v)) return;
+			if (v == null) return;
 
 			// check trait
 			if (!repair_cs.Check(v))

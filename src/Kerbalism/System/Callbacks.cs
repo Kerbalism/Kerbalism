@@ -4,9 +4,7 @@ using KSP.UI.Screens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.Remoting.Lifetime;
 using UnityEngine;
-
 
 namespace KERBALISM
 {
@@ -83,6 +81,7 @@ namespace KERBALISM
 		{
 			GameEvents.onCrewOnEva.Add(this.ToEVA);
 			GameEvents.onCrewBoardVessel.Add(this.FromEVA);
+			GameEvents.onCommandSeatInteraction.Add(this.OnCommandSeatInteraction);
 			GameEvents.onVesselRecovered.Add(this.VesselRecovered);
 			GameEvents.onVesselRecoveryProcessingComplete.Add(this.VesselRecoveryProcessingComplete);
 			GameEvents.onVesselTerminated.Add(this.VesselTerminated);
@@ -91,6 +90,11 @@ namespace KERBALISM
 			GameEvents.onPartCouple.Add(this.OnPartCouple);
 			GameEvents.onPartCoupleComplete.Add(this.OnPartCoupleComplete);
 
+#if (KSP111 || KSP112)
+            // EVA construction events are going trough dedicated stock code paths that don't trigger the other events
+            GameEvents.OnEVAConstructionModePartAttached.Add(this.OnEVAConstructionModePartAttached);
+            GameEvents.OnEVAConstructionModePartDetached.Add(this.OnEVAConstructionModePartDetached);
+#endif
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
@@ -122,17 +126,34 @@ namespace KERBALISM
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
 		}
 
+#if (KSP111 || KSP112)
+        // this require special handling as EVA construction doesn't trigger the other events
+        private void OnEVAConstructionModePartAttached(Vessel partVessel, Part part)
+        {
+            VesselData.OnPartAboutToCouple(part, part);
+            OnVesselModified(partVessel);
+        }
+
+        // an EVA construction detached part has no vessel and doesn't really exist anymore.
+		// as far as we are concerned, it doesn't exist anymore.
+        private void OnEVAConstructionModePartDetached(Vessel partVessel, Part part)
+        {
+			VesselData.OnPartWillDie(partVessel, part.flightID);
+            OnVesselModified(partVessel);
+        }
+#endif
+
 		// Called when two vessels are about to be merged, while their state is not yet changed.
 		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
 		{
-			VesselData.OnPartAboutToCouple(data);
+			VesselData.OnPartAboutToCouple(data.from, data.to);
 			Cache.PurgeVesselCaches(data.from.vessel);
 		}
 
 		// Called when the merging process is done, and only the merged vessel remains
 		private void OnPartCoupleComplete(GameEvents.FromToAction<Part, Part> data)
 		{
-			VesselData.OnPartCoupleComplete(data);
+			VesselData.OnPartCoupleComplete(data.from, data.to);
 			OnVesselModified(data.to.vessel);
 		}
 
@@ -179,72 +200,135 @@ namespace KERBALISM
 			Cache.PurgeVesselCaches(vessel);
 		}
 
+		private void OnCommandSeatInteraction(KerbalEVA kerbalEVA, bool isInteractionEnter)
+		{
+			if (isInteractionEnter)
+            {
+                // grant free pressure and supplies for EVA kerbals launching in an external command seat
+				// This works because technically, when launching in an external seat, the kerbal is
+				// spawned as a separate vessel, which then auto-board the launched vessel / external seat.
+                if (kerbalEVA.vessel.situation == Vessel.Situations.PRELAUNCH)
+				{
+                    PartResource atmoRes = kerbalEVA.part.Resources[Habitat.AtmoResName];
+                    if (atmoRes != null)
+                        atmoRes.amount = atmoRes.maxAmount;
+
+                    Profile.SetupEva(kerbalEVA.part, true);
+                }
+            }
+			else
+			{
+				// When leaving a command chair, fill supplies (EC / oxygen in the default profile)
+				// and EVA propellant. We don't need to handle the rest (Atmo/WasteAtmo) like for EVAing
+				// because the EVA kerbal already existed and was "connected" to the vessel before leaving.
+				// For this same reason, we also don't need to handle anything when boarding an external
+				// command seat, as the EVA kerbal doesn't disappear, but is actually "docked" to the vessel,
+				// and becoming part of it.
+                KerbalSeat leavedSeat = Lib.ReflectionValue<KerbalSeat>(kerbalEVA, "kerbalSeat");
+                if (leavedSeat != null)
+				{
+                    // compute the share of supplies that this eva kerbal will receive from the vessel
+                    double resourceMaxShare = 1.0 / (Lib.CrewCount(leavedSeat.vessel) + 1.0);
+
+                    VesselResources vesselresources = ResourceCache.Get(leavedSeat.vessel);
+                    foreach (Supply supply in Profile.supplies)
+                    {
+                        if (supply.on_eva == 0.0)
+                            continue;
+
+						PartResource res = kerbalEVA.part.Resources[supply.resource];
+						if (res == null || !res.flowState)
+							continue;
+
+                        // compute the share of resources that this eva kerbal will receive from the vessel
+                        double transferred = Math.Min(vesselresources.GetResource(leavedSeat.vessel, supply.resource).Amount * resourceMaxShare, res.maxAmount - res.amount);
+
+                        // remove resource from vessel
+                        transferred = leavedSeat.part.RequestResource(res.resourceName, transferred);
+
+                        // add resource to eva kerbal
+                        kerbalEVA.part.RequestResource(res.resourceName, -transferred);
+                    }
+
+					// refill self-consuming scrubber process resource(s)
+					// this can be exploited if the vessel has no scrubbing capability, but not doing it would make external seats pretty much useless
+					foreach (Process process in Profile.processes)
+					{
+						if (process.inputs.ContainsKey(Habitat.WasteAtmoResName))
+						{
+							foreach (string modifier in process.modifiers)
+							{
+								if (process.inputs.ContainsKey(modifier))
+								{
+									PartResource nonregenScrubberRes = kerbalEVA.part.Resources[modifier];
+									if (nonregenScrubberRes != null)
+										nonregenScrubberRes.amount = nonregenScrubberRes.maxAmount;
+
+                                }
+                            }
+						}
+					}
+
+                    FillEVAPropellant(leavedSeat.part, kerbalEVA.part);
+                }
+            }
+        }
+
 		void ToEVA(GameEvents.FromToAction<Part, Part> data)
 		{
-			OnVesselModified(data.from.vessel);
-			OnVesselModified(data.to.vessel);
+			// Start a coroutine for doing resource transfers once the kerbal EVA is started (this is too early here)
+			data.to.StartCoroutine(DelayedOnEVA(data.from, data.to));
+		}
 
-			// get total crew in the origin vessel
-			double tot_crew = Lib.CrewCount(data.from.vessel) + 1.0;
+		IEnumerator DelayedOnEVA(Part hatchPart, Part evaKerbalPart)
+		{
+            // wait until the Habitat module on the Kerbal has gone through it OnStart()/Configure() so the resources exists.
+            while (!evaKerbalPart.started)
+				yield return new WaitForFixedUpdate();
 
-			// get vessel resources handler
-			VesselResources resources = ResourceCache.Get(data.from.vessel);
+			// compute the share of resources that this eva kerbal will receive from the vessel
+			double resourceMaxShare = 1.0 / (Lib.CrewCount(hatchPart.vessel) + 1.0);
 
-			// setup supply resources capacity in the eva kerbal
-			Profile.SetupEva(data.to);
-
-			string evaPropName = Lib.EvaPropellantName();
-
-			// for each resource in the kerbal
-			for (int i = 0; i < data.to.Resources.Count; ++i)
+			VesselResources vesselresources = ResourceCache.Get(hatchPart.vessel);
+			for (int i = 0; i < evaKerbalPart.Resources.Count; ++i)
 			{
-				// get the resource
-				PartResource res = data.to.Resources[i];
-				double quantity;
-
-				// eva prop is handled differently
-				if (res.resourceName == evaPropName)
+				PartResource res = evaKerbalPart.Resources[i];
+				if (!res.flowState) // ignore if no flow state as the RequestResource call won't work
 					continue;
+
+				double transferred;
+
 				// waste atmosphere is a concentration of a resource within the habitat, so take proportionally
-				else if (res.resourceName == Habitat.WasteAtmoResName)
-					quantity = resources.GetResource(data.from.vessel, res.resourceName).Level * res.maxAmount;
-				// All other resources are pumped to fill up the outgoing EVA suit
+				if (res.resourceName == Habitat.WasteAtmoResName)
+					transferred = vesselresources.GetResource(hatchPart.vessel, res.resourceName).Level * res.maxAmount;
+				// all other resources are pumped to fill up the outgoing EVA suit
 				else
-					quantity = Math.Min(resources.GetResource(data.from.vessel, res.resourceName).Amount / tot_crew, res.maxAmount);
+					transferred = Math.Min(vesselresources.GetResource(hatchPart.vessel, res.resourceName).Amount * resourceMaxShare, res.maxAmount);
 
 				// remove resource from vessel
-				quantity = data.from.RequestResource(res.resourceName, quantity);
+				transferred = hatchPart.RequestResource(res.resourceName, transferred);
 
 				// add resource to eva kerbal
-				data.to.RequestResource(res.resourceName, -quantity);
+				evaKerbalPart.RequestResource(res.resourceName, -transferred);
 			}
 
 			// Airlock loss
-			resources.Consume(data.from.vessel, Habitat.AtmoResName, Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
+			vesselresources.Consume(hatchPart.vessel, Habitat.AtmoResName, Settings.LifeSupportAtmoLoss, ResourceBroker.Generic);
 
-			KerbalEVA kerbal = data.to.FindModuleImplementing<KerbalEVA>();
+			FillEVAPropellant(hatchPart, evaKerbalPart);
 
-
-			// turn off headlamp light, to avoid stock bug that show them for a split second when going on eva
-			EVA.HeadLamps(kerbal, false);
+            OnVesselModified(hatchPart.vessel);
+			OnVesselModified(evaKerbalPart.vessel);
 
 			// execute script
-			data.from.vessel.KerbalismData().computer.Execute(data.from.vessel, ScriptType.eva_out);
-
-			// Start a coroutine for doing eva propellant resource transfers once the kerbal EVA is started (this is too early here)
-			data.to.StartCoroutine(PostEVATweaks(data.from, data.to, evaPropName));
+			hatchPart.vessel.KerbalismData().computer.Execute(hatchPart.vessel, ScriptType.eva_out);
 		}
 
-		/// <summary>
-		/// We need to delay the EVA propellant modifications because ToEVA is called too early, before the EVA kerbal
-		/// Start() code has run.
-		/// </summary>
-		IEnumerator PostEVATweaks(Part vesselHatch, Part kerbalPart, string evaPropName)
+		void FillEVAPropellant(Part hatchPart, Part evaKerbalPart)
 		{
-			yield return null;
-
-			double evaPropQuantity = 0.0;
-			bool hasJetPack = false;
+            string evaPropName = Lib.EvaPropellantName();
+            double evaPropQuantity = 0.0;
+            bool hasJetPack = false;
 
 #if KSP18 || KSP110
 
@@ -255,66 +339,65 @@ namespace KERBALISM
 			// in the ship. you want to send out an engineer to fix the chemical plant that produces monoprop,
 			// and have to get from one end of the station to the other with just 0.1 units in the tank...
 			// nope.
-			evaPropQuantity = vesselHatch.RequestResource(evaPropName, evaPropCapacity);
+			evaPropQuantity = hatchPart.RequestResource(evaPropName, evaPropCapacity);
 
 			// Stock KSP adds 5 units of monoprop to EVAs. We want to limit that amount
 			// to whatever was available in the ship, so we don't magically create EVA prop out of nowhere
-			Lib.SetResource(kerbalPart, evaPropName, evaPropQuantity, evaPropCapacity);
+			Lib.SetResource(evaKerbalPart, evaPropName, evaPropQuantity, evaPropCapacity);
 #else
-			// Since KSP 1.11, EVA prop is stored on "EVA jetpack" inventory part, and filled in the editor, removing
-			// the need for handling where the EVA propellant comes from (there is no more magic refill in stock).
-			// However, stock doesn't provide any way to refill the jetpack, so we still handle that.
+            // Since KSP 1.11, EVA prop is stored on "EVA jetpack" inventory part, and filled in the editor, removing
+            // the need for handling where the EVA propellant comes from (there is no more magic refill in stock).
+            // However, stock doesn't provide any way to refill the jetpack, so we still handle that.
 
-			KerbalEVA kerbalEVA = kerbalPart.FindModuleImplementing<KerbalEVA>();
-			List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
-			if (kerbalEVA.ModuleInventoryPartReference != null)
-			{
-				foreach (StoredPart storedPart in kerbalEVA.ModuleInventoryPartReference.storedParts.Values)
-				{
-					// Note : the "evaJetpack" string is hardcoded in the KSP source
-					if (storedPart.partName == "evaJetpack")
-					{
-						hasJetPack = true;
-					}
+            KerbalEVA kerbalEVA = evaKerbalPart.FindModuleImplementing<KerbalEVA>();
+            List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
+            if (kerbalEVA.ModuleInventoryPartReference != null)
+            {
+                foreach (StoredPart storedPart in kerbalEVA.ModuleInventoryPartReference.storedParts.Values)
+                {
+                    // Note : the "evaJetpack" string is hardcoded in the KSP source
+                    if (storedPart.partName == "evaJetpack")
+                    {
+                        hasJetPack = true;
+                    }
 
-					ProtoPartResourceSnapshot prop = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
-					if (prop != null)
-					{
-						propContainers.Add(prop);
-					}
-				}
-			}
+                    ProtoPartResourceSnapshot prop = storedPart.snapshot.resources.Find(p => p.resourceName == evaPropName);
+                    if (prop != null)
+                    {
+                        propContainers.Add(prop);
+                    }
+                }
+            }
 
-			if (propContainers.Count > 0)
-			{
-				bool transferred = false;
-				foreach (ProtoPartResourceSnapshot propContainer in propContainers)
-				{
-					if (propContainer.amount < propContainer.maxAmount)
-					{
-						double vesselPropTransferred = vesselHatch.RequestResource(evaPropName, propContainer.maxAmount - propContainer.amount);
-						if (vesselPropTransferred > 0.0)
-						{
-							transferred = true;
-							propContainer.amount = Math.Min(propContainer.amount + vesselPropTransferred, propContainer.maxAmount);
-						}
-					}
-					evaPropQuantity += propContainer.amount;
-				}
+            if (propContainers.Count > 0)
+            {
+                bool transferred = false;
+                foreach (ProtoPartResourceSnapshot propContainer in propContainers)
+                {
+                    if (propContainer.amount < propContainer.maxAmount)
+                    {
+                        double vesselPropTransferred = hatchPart.RequestResource(evaPropName, propContainer.maxAmount - propContainer.amount);
+                        if (vesselPropTransferred > 0.0)
+                        {
+                            transferred = true;
+                            propContainer.amount = Math.Min(propContainer.amount + vesselPropTransferred, propContainer.maxAmount);
+                        }
+                    }
+                    evaPropQuantity += propContainer.amount;
+                }
 
-				if (hasJetPack && transferred && kerbalEVA.ModuleInventoryPartReference != null)
-					GameEvents.onModuleInventoryChanged.Fire(kerbalEVA.ModuleInventoryPartReference);
-			}
+                if (hasJetPack && transferred && kerbalEVA.ModuleInventoryPartReference != null)
+                    GameEvents.onModuleInventoryChanged.Fire(kerbalEVA.ModuleInventoryPartReference);
+            }
 #endif
 
-			// show warning if there is little or no EVA propellant in the suit
-			if (hasJetPack && evaPropQuantity <= 0.05 && !Lib.Landed(vesselHatch.vessel))
-			{
-				Message.Post(Severity.danger,
-					Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropName + "</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA JetPack")"Don't let the ladder go!"
-			}
-
-		}
+            // show warning if there is little or no EVA propellant in the suit
+            if (hasJetPack && evaPropQuantity <= 0.05 && !Lib.Landed(hatchPart.vessel))
+            {
+                Message.Post(Severity.danger,
+                    Local.CallBackMsg_EvaNoMP.Format("<b>" + evaPropName + "</b>"), Local.CallBackMsg_EvaNoMP2);//Lib.BuildString("There isn't any <<1>> in the EVA JetPack")"Don't let the ladder go!"
+            }
+        }
 
 
 		void FromEVA(GameEvents.FromToAction<Part, Part> data)

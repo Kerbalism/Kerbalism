@@ -39,6 +39,8 @@ namespace KERBALISM
 		private ObjectState state = ObjectState.Uninitialized;
 		private List<HabitatWrapper> habitatWrappers;
 
+		public bool Ready => state != ObjectState.Uninitialized;
+
 		/// <summary> Enabled habitats volume in m^3</summary>
 		public double HabTotalVolume { get; private set; }
 		/// <summary> Enabled habitats surface in m^2</summary>
@@ -73,6 +75,12 @@ namespace KERBALISM
 				habitatShieldings[partId] = sspiList;
 			}
 		}
+
+		internal void Reset()
+		{
+            state = ObjectState.Uninitialized;
+			habitatIndex = -1;
+        }
 
 		internal void Save(ConfigNode node)
 		{
@@ -135,40 +143,15 @@ namespace KERBALISM
 				state = ObjectState.Unloaded;
 			}
 
-			if (state == ObjectState.Uninitialized)
+			if (state == ObjectState.Uninitialized || !vd.IsSimulated)
 				return;
 
-			if (habitatWrappers.Count == 0)
-			{
-				if (vessel.isEVA)
-				{
-					EVAStateUpdate(vessel, vd);
-					if (state == ObjectState.Loaded && Features.Radiation)
-						EVARadiationUpdate(vessel);
-				}
-			}
-			else
+			if (habitatWrappers.Count > 0)
 			{
 				HabitatsUpdate(vessel, vd, elapsedSeconds);
 				if (state == ObjectState.Loaded && Features.Radiation)
 					HabitatsRadiationUpdate(vessel);
 			}
-		}
-
-		private void EVAStateUpdate(Vessel vessel, VesselData vd)
-		{
-			ResourceInfo atmoRes = ResourceCache.GetResource(vessel, AtmoResName);
-			ResourceInfo wasteAtmoRes = ResourceCache.GetResource(vessel, WasteAtmoResName);
-			ResourceInfo shieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
-
-			HabTotalVolume = atmoRes.Capacity / 1e3;
-			HabTotalSurface = shieldingRes.Capacity;
-			HabNormalizedPressure = atmoRes.Level;
-			HabPoisoning = wasteAtmoRes.Level;
-			HabShieldingFactor = Radiation.ShieldingEfficiency(shieldingRes.Level);
-			CrewCount = 1;
-			HabVolumePerCrew = HabTotalVolume;
-			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 		}
 
 		private static List<HabitatWrapper> pressurizingHabs = new List<HabitatWrapper>();
@@ -193,6 +176,7 @@ namespace KERBALISM
 				switch (hab.State)
 				{
 					case State.enabled:
+					case State.evaKerbal:
 						if (hab.NonPressurizable)
 						{
 							npAtmoCapacity += hab.AtmoResource.MaxAmount;
@@ -246,7 +230,7 @@ namespace KERBALISM
 						preAtmoCapacity += maxAmount;
 					}
 
-					if (pressurizingHabs.Count > 0.0)
+					if (pressurizingHabs.Count > 0)
 					{
 						double equAtmoLevel = preAtmoAmount / preAtmoCapacity;
 						// rate is EqualizationRateFactor (% / second), scaled down by pressure difference
@@ -259,14 +243,17 @@ namespace KERBALISM
 					}
 				}
 
-				// equalize atmo/waste amongst all enabled habs
-				for (int i = habitatWrappers.Count; i-- > 0;)
+				// if more than one enabled hab, equalize atmo/waste amongst them
+				if (habitatWrappers.Count > 1)
 				{
-					HabitatWrapper hab = habitatWrappers[i];
-					if (hab.State == State.enabled && !hab.NonPressurizable)
+					for (int i = habitatWrappers.Count; i-- > 0;)
 					{
-						hab.AtmoResource.Amount = enaAtmoAmount * (hab.AtmoResource.MaxAmount / enaAtmoCapacity);
-						hab.WasteAtmoResource.Amount = enaWasteAmount * (hab.WasteAtmoResource.MaxAmount / enaWasteCapacity);
+						HabitatWrapper hab = habitatWrappers[i];
+						if ((hab.State == State.enabled || hab.State == State.evaKerbal) && !hab.NonPressurizable)
+						{
+							hab.AtmoResource.Amount = enaAtmoAmount * (hab.AtmoResource.MaxAmount / enaAtmoCapacity);
+							hab.WasteAtmoResource.Amount = enaWasteAmount * (hab.WasteAtmoResource.MaxAmount / enaWasteCapacity);
+						}
 					}
 				}
 
@@ -325,7 +312,10 @@ namespace KERBALISM
 				else
 					RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
 
-				habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
+				if (habitatWrappers.Count == 0)
+					habitatIndex = -1;
+				else
+					habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
 			}
 		}
 
@@ -402,7 +392,7 @@ namespace KERBALISM
 
 			return result / habitatShieldings.Count;
 		}
-	}
+    }
 
 	public abstract class HabitatWrapper
 	{

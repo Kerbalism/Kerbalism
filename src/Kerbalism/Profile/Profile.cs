@@ -161,6 +161,10 @@ namespace KERBALISM
 
 		public static void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
 		{
+			// don't execute the profile until everything has been evaluated at least once
+			if (!vd.Evaluated)
+				return;
+
 			// execute all supplies
 			foreach (Supply supply in supplies)
 			{
@@ -195,11 +199,11 @@ namespace KERBALISM
 		}
 
 
-		public static void SetupEva(Part p)
+		public static void SetupEva(Part p, bool fillSupplies)
 		{
 			foreach (Supply supply in supplies)
 			{
-				supply.SetupEva(p);
+				supply.SetupEva(p, fillSupplies);
 			}
 		}
 
