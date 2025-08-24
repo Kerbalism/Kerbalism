@@ -52,7 +52,7 @@ namespace KERBALISM
 
 		// change these two to the adequate local paths :
 		private const string RepoPath = @"E:\KSP Versions\Mod dev\Kerbalism";
-		private const string OutputPath = @"E:\KSP Versions\Mod dev\Kerbalism\GameData\Kerbalism\Localization";
+		private const string OutputPath = @"E:\KSP Versions\Mod dev\Kerbalism\GameData\Kerbalism\Localization\new\";
 
 		private const string PathToLocalizationCache = RepoPath + @"\src\Kerbalism\LocalizationCache.cs";
 		private static string[] locCodes = new string[] { "de", "es-es", "fr-fr", "it-it", "pt-br", "ru", "zh-cn" };
@@ -63,7 +63,7 @@ namespace KERBALISM
 
 			foreach (string locCode in locCodes)
 			{
-				string originalLocFile = RepoPath + @"Kerbalism\GameData\Kerbalism\Localization\" + locCode + ".cfg";
+				string originalLocFile = RepoPath + @"\GameData\Kerbalism\Localization\" + locCode + ".cfg";
 				RegenerateNonEnglishLoc(locCode, originalLocFile);
 			}
 		}
