@@ -379,10 +379,6 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public void Harvest()
 		{
-			// disable for dead eva kerbals
-			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v)) return;
-
 			// produce reduced quantity of food, proportional to current growth
 			ResourceCache.Produce(vessel, crop_resource, crop_size, ResourceBroker.Greenhouse);
 
@@ -399,10 +395,6 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public void EmergencyHarvest()
 		{
-			// disable for dead eva kerbals
-			Vessel v = FlightGlobals.ActiveVessel;
-			if (v == null || EVA.IsDeadEVA(v)) return;
-
 			// calculate reduced harvest size
 			double reduced_harvest = crop_size * growth * 0.5;
 

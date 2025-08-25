@@ -1,3 +1,4 @@
+using LibNoise;
 using System;
 using System.Collections.Generic;
 
@@ -104,15 +105,26 @@ namespace KERBALISM
 		}
 
 
-		public void SetupEva(Part p)
+		public void SetupEva(Part p, bool fillSupply)
 		{
 			// do nothing if no resource on eva
 			if (on_eva <= double.Epsilon) return;
 
-			// create new resource capacity in the eva kerbal
-			Lib.AddResource(p, resource, 0.0, on_eva);
+			// create resource or update resource capacity in the eva kerbal
+			PartResource pr = p.Resources[resource];
+			if (pr == null)
+			{
+				Lib.AddResource(p, resource, fillSupply ? on_eva : 0.0, on_eva);
+			}
+			else
+			{
+				pr.maxAmount = on_eva;
+				if (fillSupply)
+					pr.amount = on_eva;
+				else if (pr.amount > pr.maxAmount)
+					pr.amount = pr.maxAmount;
+			}
 		}
-
 
 		public void SetupRescue(Vessel v)
 		{

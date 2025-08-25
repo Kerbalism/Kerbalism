@@ -39,12 +39,16 @@ namespace KERBALISM
 		private ObjectState state = ObjectState.Uninitialized;
 		private List<HabitatWrapper> habitatWrappers;
 
+		public bool Ready => state != ObjectState.Uninitialized;
+
 		/// <summary> Enabled habitats volume in m^3</summary>
 		public double HabTotalVolume { get; private set; }
 		/// <summary> Enabled habitats surface in m^2</summary>
 		public double HabTotalSurface { get; private set; }
 		/// <summary> Enabled habitats average normalized pressure </summary>
 		public double HabNormalizedPressure { get; private set; }
+		/// <summary> Enabled and equalizing habitats average normalized pressure </summary>
+		public double PredictedVesselPressure { get; private set; }
 		/// <summary> Enabled habitats average wasteAtmo (CO2) level</summary>
 		public double HabPoisoning { get; private set; }
 		/// <summary> Enabled habitats average radiation shielding level</summary>
@@ -73,6 +77,12 @@ namespace KERBALISM
 				habitatShieldings[partId] = sspiList;
 			}
 		}
+
+		internal void Reset()
+		{
+            state = ObjectState.Uninitialized;
+			habitatIndex = -1;
+        }
 
 		internal void Save(ConfigNode node)
 		{
@@ -135,40 +145,15 @@ namespace KERBALISM
 				state = ObjectState.Unloaded;
 			}
 
-			if (state == ObjectState.Uninitialized)
+			if (state == ObjectState.Uninitialized || !vd.IsSimulated)
 				return;
 
-			if (habitatWrappers.Count == 0)
-			{
-				if (vessel.isEVA)
-				{
-					EVAStateUpdate(vessel, vd);
-					if (state == ObjectState.Loaded && Features.Radiation)
-						EVARadiationUpdate(vessel);
-				}
-			}
-			else
+			if (habitatWrappers.Count > 0)
 			{
 				HabitatsUpdate(vessel, vd, elapsedSeconds);
 				if (state == ObjectState.Loaded && Features.Radiation)
 					HabitatsRadiationUpdate(vessel);
 			}
-		}
-
-		private void EVAStateUpdate(Vessel vessel, VesselData vd)
-		{
-			ResourceInfo atmoRes = ResourceCache.GetResource(vessel, AtmoResName);
-			ResourceInfo wasteAtmoRes = ResourceCache.GetResource(vessel, WasteAtmoResName);
-			ResourceInfo shieldingRes = ResourceCache.GetResource(vessel, ShieldingResName);
-
-			HabTotalVolume = atmoRes.Capacity / 1e3;
-			HabTotalSurface = shieldingRes.Capacity;
-			HabNormalizedPressure = atmoRes.Level;
-			HabPoisoning = wasteAtmoRes.Level;
-			HabShieldingFactor = Radiation.ShieldingEfficiency(shieldingRes.Level);
-			CrewCount = 1;
-			HabVolumePerCrew = HabTotalVolume;
-			HabLivingSpace = Lib.Clamp(HabVolumePerCrew / PreferencesComfort.Instance.livingSpace, 0.1, 1.0);
 		}
 
 		private static List<HabitatWrapper> pressurizingHabs = new List<HabitatWrapper>();
@@ -182,6 +167,7 @@ namespace KERBALISM
 				atmoLeaksPerSurface = 0.0;
 
 			double enaAtmoAmount = 0.0, enaAtmoCapacity = 0.0;
+			double newAtmoAmount = 0.0, newAtmoCapacity = 0.0;
 			double enaWasteAmount = 0.0, enaWasteCapacity = 0.0;
 			double preAtmoAmount = 0.0, preAtmoCapacity = 0.0;
 			double npAtmoCapacity = 0.0;
@@ -193,6 +179,7 @@ namespace KERBALISM
 				switch (hab.State)
 				{
 					case State.enabled:
+					case State.evaKerbal:
 						if (hab.NonPressurizable)
 						{
 							npAtmoCapacity += hab.AtmoResource.MaxAmount;
@@ -214,8 +201,15 @@ namespace KERBALISM
 								hab.AtmoResource.Amount = Math.Max(0.0, atmoAmount - (atmoLeaksPerSurface * hab.Surface));
 						}
 						break;
+					case State.inflating:
+					case State.waitingForPressure:
+						newAtmoAmount += hab.AtmoResource.Amount;
+						newAtmoCapacity += hab.AtmoResource.MaxAmount;
+						break;
 					case State.inflatingAndEqualizing:
 					case State.waitingForPressureAndEqualizing:
+						newAtmoAmount += hab.AtmoResource.Amount;
+						newAtmoCapacity += hab.AtmoResource.MaxAmount;
 						pressurizingHabs.Add(hab);
 						break;
 				}
@@ -225,7 +219,6 @@ namespace KERBALISM
 			if (enaAtmoAmount != 0.0 || enaWasteAmount != 0.0)
 			{
 				// compute how much atmo is transferred from enabled habs toward pressurizing habs
-				double preAtmoNeeded = 0.0;
 				double preAtmoTransferred = 0.0;
 				if (pressurizingHabs.Count > 0)
 				{
@@ -246,38 +239,36 @@ namespace KERBALISM
 						preAtmoCapacity += maxAmount;
 					}
 
-					if (pressurizingHabs.Count > 0.0)
+					if (pressurizingHabs.Count > 0)
 					{
-						double equAtmoLevel = preAtmoAmount / preAtmoCapacity;
 						// rate is EqualizationRateFactor (% / second), scaled down by pressure difference
-						preAtmoTransferred = (enaAtmoLevel - equAtmoLevel) * preAtmoCapacity * Settings.EqualizationRateFactor * elapsedSeconds;
-						// clamp by what is actually needed
-						preAtmoNeeded = Math.Max(0.0, (preAtmoCapacity * Settings.PressureThreshold) - preAtmoAmount);
-						preAtmoTransferred = Lib.Clamp(preAtmoTransferred, 0.0, preAtmoNeeded);
-						// remove it from enabled habs
-						enaAtmoAmount -= preAtmoTransferred;
+						double preAtmoSpaceLevel = 1 - (preAtmoAmount / preAtmoCapacity);
+						preAtmoTransferred = enaAtmoLevel * preAtmoSpaceLevel * 100 * Settings.EqualizationRateFactor * elapsedSeconds;
+						// clamp by what is actually available to equalize level across all enabled habitats
+						preAtmoTransferred = Lib.Clamp(preAtmoTransferred, 0.0, enaAtmoAmount);
 					}
 				}
 
-				// equalize atmo/waste amongst all enabled habs
-				for (int i = habitatWrappers.Count; i-- > 0;)
+				// Equalize atmo between habitats
+				if (preAtmoTransferred > 0.0 && habitatWrappers.Count > 0 && pressurizingHabs.Count > 0)
 				{
-					HabitatWrapper hab = habitatWrappers[i];
-					if (hab.State == State.enabled && !hab.NonPressurizable)
+					// remove transferred atmo equally from enabled habitats
+					for (int i = habitatWrappers.Count; i-- > 0;)
 					{
-						hab.AtmoResource.Amount = enaAtmoAmount * (hab.AtmoResource.MaxAmount / enaAtmoCapacity);
-						hab.WasteAtmoResource.Amount = enaWasteAmount * (hab.WasteAtmoResource.MaxAmount / enaWasteCapacity);
+						HabitatWrapper hab = habitatWrappers[i];
+						if (hab.State == State.enabled && !hab.NonPressurizable)
+						{
+							double removing = preAtmoTransferred * (hab.AtmoResource.Amount / enaAtmoAmount);
+							hab.AtmoResource.Amount -= removing;
+						}
 					}
-				}
 
-				// distribute transferred atmo toward pressurizing habs
-				if (preAtmoTransferred > 0.0 && preAtmoNeeded > 0.0)
-				{
+					// add transferred atmo to pressurizing habs
 					for (int i = pressurizingHabs.Count; i-- > 0;)
 					{
 						HabitatWrapper preHab = pressurizingHabs[i];
-						double needed = Math.Max(0.0, (preHab.AtmoResource.MaxAmount * Settings.PressureThreshold) - preHab.AtmoResource.Amount);
-						preHab.AtmoResource.Amount += preAtmoTransferred * (needed / preAtmoNeeded);
+						double adding = preAtmoTransferred / pressurizingHabs.Count;
+						preHab.AtmoResource.Amount += adding;
 					}
 				}
 			}
@@ -295,6 +286,7 @@ namespace KERBALISM
 			HabTotalVolume = totAtmoCapacity / 1e3;
 			HabTotalSurface = vesselShieldingRes.Capacity;
 			HabNormalizedPressure = totAtmoCapacity > 0.0 ? enaAtmoAmount / totAtmoCapacity : 0.0;
+			PredictedVesselPressure = totAtmoCapacity > 0.0 ? (newAtmoAmount + enaAtmoAmount) / (totAtmoCapacity + newAtmoCapacity) : 0.0;
 			HabPoisoning = HabTotalVolume > 0.0 ? enaWasteAmount / totAtmoCapacity : 0.0;
 			HabShieldingFactor = Radiation.ShieldingEfficiency(vesselShieldingRes.Level);
 			CrewCount = Lib.CrewCount(vessel);
@@ -325,7 +317,10 @@ namespace KERBALISM
 				else
 					RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
 
-				habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
+				if (habitatWrappers.Count == 0)
+					habitatIndex = -1;
+				else
+					habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
 			}
 		}
 
@@ -402,7 +397,7 @@ namespace KERBALISM
 
 			return result / habitatShieldings.Count;
 		}
-	}
+    }
 
 	public abstract class HabitatWrapper
 	{

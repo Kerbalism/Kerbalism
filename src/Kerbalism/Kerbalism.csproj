@@ -253,7 +253,6 @@
     <Compile Include="Modules\GravityRing.cs" />
     <Compile Include="Modules\Habitat.cs" />
     <Compile Include="Modules\PlannerController.cs" />
-    <Compile Include="EVA.cs" />
     <Compile Include="Resource.cs" />
     <Compile Include="Profile\Profile.cs" />
     <Compile Include="Profile\Supply.cs" />

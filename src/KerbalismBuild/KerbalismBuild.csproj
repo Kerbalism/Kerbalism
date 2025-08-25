@@ -43,6 +43,11 @@
     <StartProgram>KSP_x64.exe</StartProgram>
     <StartWorkingDirectory>..\</StartWorkingDirectory>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
+  </ItemGroup>
   <Import Condition="Exists('..\..\BuildSystem\UserConfigDevEnv.xml')" Project="..\..\BuildSystem\UserConfigDevEnv.xml" />
   <!-- /////////////////////////////////////////////////// -->
   <!-- //// USER-DEFINED OVERRIDES (UserConfigDevEnv.xml) //// -->

@@ -40,7 +40,7 @@ namespace KERBALISM
 			// pressure
 			PressureFactor = Lib.ConfigValue(cfg, "PressureFactor", 10.0);
 			PressureThreshold = Lib.ConfigValue(cfg, "PressureThreshold", 0.9);
-			EqualizationRateFactor = Lib.ConfigValue(cfg, "EqualizationRateFactor", 0.01);
+			EqualizationRateFactor = Lib.ConfigValue(cfg, "EqualizationRateFactor", 0.5);
 
 			// poisoning
 			PoisoningFactor = Lib.ConfigValue(cfg, "PoisoningFactor", 0.0);
