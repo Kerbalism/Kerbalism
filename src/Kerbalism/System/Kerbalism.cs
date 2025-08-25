@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens;
+using System.Collections;
+using KSPAchievements;
 
 namespace KERBALISM
 {
@@ -21,6 +23,7 @@ namespace KERBALISM
 			// nearly everything is available at this point, including the Kopernicus patched bodies.
 			if (!Kerbalism.IsCoreMainMenuInitDone)
 			{
+				Habitat.AddHabitatToEVAKerbalPrefabs();
 				Kerbalism.IsCoreMainMenuInitDone = true;
 			}
 
@@ -250,6 +253,7 @@ namespace KERBALISM
 		{
 			// remove control locks in any case
 			Misc.ClearLocks();
+			Misc.LockControlsForDeadEVAKerbals();
 
 			// do nothing if paused
 			if (Lib.IsPaused())
@@ -290,18 +294,6 @@ namespace KERBALISM
 
 				// update the vessel data validity
 				vd.Update(v);
-
-				// set locks for active vessel
-				if (v.isActiveVessel)
-				{
-					Misc.SetLocks(v);
-				}
-
-				// maintain eva dead animation and helmet state
-				if (v.loaded && v.isEVA)
-				{
-					EVA.Update(v);
-				}
 
 				// keep track of rescue mission kerbals, and gift resources to their vessels on discovery
 				if (v.loaded && vd.is_vessel)
@@ -618,12 +610,14 @@ namespace KERBALISM
 			InputLockManager.RemoveControlLock("no_signal_lock");
 		}
 
-		public static void SetLocks(Vessel v)
+		public static void LockControlsForDeadEVAKerbals()
 		{
-			// lock controls for EVA death
-			if (EVA.IsDeadEVA(v))
+			Vessel activeVessel = FlightGlobals.ActiveVessel;
+			if (activeVessel != null && activeVessel.isEVA)
 			{
-				InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, "eva_dead_lock");
+				List<ProtoCrewMember> crew = activeVessel.rootPart.protoModuleCrew;
+				if (crew.Count == 0 || DB.Kerbal(crew[0].name).eva_dead)
+					InputLockManager.SetControlLock(ControlTypes.EVA_INPUT | ControlTypes.ACTIONS_ALL, "eva_dead_lock");
 			}
 		}
 
@@ -937,14 +931,22 @@ namespace KERBALISM
 						{ part = p; break; }
 					}
 
-					// remove kerbal from part
-					part.RemoveCrewmember(c);
+					KerbalEVA kerbalEVA = part.FindModuleImplementing<KerbalEVA>();
+					if (kerbalEVA != null && kerbalEVA.IsSeated())
+					{
+						Kerbalism.Fetch.StartCoroutine(KillEVAKerbalOnSeat(kerbalEVA, c.name));
+					}
+					else
+					{
+						// remove kerbal from part
+						part.RemoveCrewmember(c);
 
-					// and from vessel
-					v.RemoveCrew(c);
+						// and from vessel
+						v.RemoveCrew(c);
 
-					// then kill it
-					c.Die();
+						// then kill it
+						c.Die();
+					}
 				}
 				// if vessel is not loaded
 				else
@@ -957,11 +959,19 @@ namespace KERBALISM
 						{ part = p; break; }
 					}
 
-					// remove from part
-					part.RemoveCrew(c.name);
-
-					// and from vessel
-					v.protoVessel.RemoveCrew(c);
+					if (part.partName == c.GetKerbalEVAPartName())
+					{
+						v.protoVessel.protoPartSnapshots.Remove(part);
+                        v.protoVessel.RemoveCrew(c);
+                        Cache.PurgeVesselCaches(v);
+						VesselData.OnPartWillDie(v, part.flightID);
+                    }
+					else
+					{
+                        // remove from part and vessel
+                        part.RemoveCrew(c.name);
+                        v.protoVessel.RemoveCrew(c);
+                    }
 
 					// flag as dead
 					c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
@@ -985,6 +995,23 @@ namespace KERBALISM
 			{
 				Reputation.Instance.AddReputation(-Settings.KerbalDeathReputationPenalty, TransactionReasons.Any);
 			}
+		}
+
+		public static IEnumerator KillEVAKerbalOnSeat(KerbalEVA kerbalEVA, string kerbalName)
+		{
+			yield return new WaitForFixedUpdate();
+			Lib.StopWarp();
+			
+			while (kerbalEVA.vessel.packed)
+				yield return new WaitForFixedUpdate();
+
+			kerbalEVA.fsm.RunEvent(kerbalEVA.On_seatDeboard);
+
+			// flag as eva death
+			DB.Kerbal(kerbalName).eva_dead = true;
+
+			// rename vessel
+			kerbalEVA.vessel.vesselName = kerbalName + "'s body";
 		}
 
 		// trigger a random breakdown event

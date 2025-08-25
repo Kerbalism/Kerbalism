@@ -20,8 +20,11 @@ namespace KERBALISM
 		/// <summary>False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
 		public bool IsSimulated { get; private set; }
 
+		/// <summary>False if the vessel partmodules OnStart()/OnStartFinished() haven't been called yet. Always true on unloaded vessels.</summary>
+		public bool PartsStarted => Vessel.loaded ? Vessel.rootPart.started : true;
+
 		/// <summary>Set to true after evaluation has finished. Used to avoid triggering of events from an uninitialized status</summary>
-		private bool Evaluated = false;
+		public bool Evaluated { get; private set; }
 
 		// time since last update
 		private double secSinceLastEval;
@@ -459,7 +462,7 @@ namespace KERBALISM
 			is_rescue = Misc.IsRescueMission(Vessel);
 
 			// dead EVA are not valid vessels
-			is_eva_dead = EVA.IsDeadEVA(Vessel);
+			is_eva_dead = Lib.IsDeadEVA(Vessel);
 
 			return is_vessel && !is_rescue && !is_eva_dead;
 		}
@@ -487,7 +490,9 @@ namespace KERBALISM
 			EvaluateStatus(secSinceLastEval);
 			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
-			Evaluated = true;
+
+			if (!Evaluated && PartsStarted && habitatInfo.Ready)
+				Evaluated = true;
 		}
 
 		private void UpdateTransmitBufferDrive(double elapsedSec)
@@ -545,16 +550,18 @@ namespace KERBALISM
 
 		public void UpdateOnVesselModified()
 		{
-			if (!IsSimulated)
+			// Only update stuff on simulated vessels
+			// IsSimulated might not have been set yet, so check the underlying conditions instead
+			if (!ExistsInFlight || !CheckIfSimulated())
 				return;
 
 			resourceUpdateDelegates = null;
 			ResetReliabilityStatus();
-			habitatInfo = new VesselHabitatInfo(null);
+			habitatInfo.Reset();
 			EvaluateStatus(0.0);
 			CommHandler.ResetPartTransmitters();
 
-			Lib.LogDebug("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
+			Lib.LogDebugStack("VesselData updated on vessel modified event ({0})", Lib.LogLevel.Message, Vessel.vesselName);
 		}
 
 		/// <summary> Called by GameEvents.onVesselsUndocking, just after 2 vessels have undocked </summary>
@@ -587,25 +594,26 @@ namespace KERBALISM
 		}
 
 		// This is for mods (KIS), won't be used in a stock game (the docking is handled in the OnDock method
-		internal static void OnPartAboutToCouple(GameEvents.FromToAction<Part, Part> data)
+		internal static void OnPartAboutToCouple(Part fromPart, Part toPart)
 		{
-			Lib.LogDebug("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", Lib.LogLevel.Message, data.from.partInfo.title, data.from.vessel.vesselName, data.to.vessel.vesselName);
+			Lib.LogDebug("Coupling part '{0}' from vessel '{1}' to vessel '{2}'", Lib.LogLevel.Message, fromPart.partInfo.title, fromPart.vessel.vesselName, toPart.vessel.vesselName);
 
-			Vessel fromVessel = data.from.vessel;
-			Vessel toVessel = data.to.vessel;
+			Vessel fromVessel = fromPart.vessel;
+			Vessel toVessel = toPart.vessel;
 
 			VesselData fromVD = fromVessel.KerbalismData();
 			VesselData toVD = toVessel.KerbalismData();
 
-			// GameEvents.onPartCouple may be fired by mods (KIS) that add new parts to an existing vessel
+			// GameEvents.onPartCouple may be fired by stock EVA construction or mods (KIS) that add new parts to an existing vessel
 			// In the case of KIS, the part vessel is already set to the destination vessel when the event is fired
 			// so we just add the part.
 			if (fromVD == toVD)
 			{
-				if (!toVD.parts.ContainsKey(data.from.flightID))
+				if (!toVD.parts.ContainsKey(fromPart.flightID))
 				{
-					toVD.parts.Add(data.from.flightID, new PartData(data.from));
-					Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", Lib.LogLevel.Message, data.from.partInfo.title, data.to.vessel.vesselName);
+					toVD.parts.Add(fromPart.flightID, new PartData(fromPart));
+                    OnPartCoupleComplete(fromPart, toPart);
+                    Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", Lib.LogLevel.Message, fromPart.partInfo.title, toPart.vessel.vesselName);
 				}
 				return;
 			}
@@ -626,19 +634,24 @@ namespace KERBALISM
 			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
 		}
 
-		internal static void OnPartCoupleComplete(GameEvents.FromToAction<Part, Part> data)
+		internal static void OnPartCoupleComplete(Part fromPart, Part toPart)
 		{
-			data.to.vessel.KerbalismData().UpdateOnVesselModified();
+            toPart.vessel.KerbalismData().UpdateOnVesselModified();
 		}
+
+		internal static void OnPartWillDie(Vessel v, uint partFlightId)
+		{
+            VesselData vd = v.KerbalismData();
+            vd.parts[partFlightId].OnPartWillDie();
+            vd.parts.Remove(partFlightId);
+            vd.UpdateOnVesselModified();
+            Lib.LogDebug($"Removing dying part id={partFlightId} on vessel={v.vesselName}, vd.partcount={vd.parts.Count}, v.partcount={(v.loaded ? v.parts.Count : v.protoVessel.protoPartSnapshots.Count)}", Lib.LogLevel.Message);
+        }
 
 		internal static void OnPartWillDie(Part part)
 		{
-			VesselData vd = part.vessel.KerbalismData();
-			vd.parts[part.flightID].OnPartWillDie();
-			vd.parts.Remove(part.flightID);
-			vd.UpdateOnVesselModified();
-			Lib.LogDebug("Removing dead part, vd.partcount={0}, v.partcount={1} (part '{2}' in vessel '{3}')", Lib.LogLevel.Message, vd.parts.Count, part.vessel.parts.Count, part.partInfo.title, part.vessel.vesselName);
-		}
+			OnPartWillDie(part.vessel, part.flightID);
+        }
 
 		#endregion
 

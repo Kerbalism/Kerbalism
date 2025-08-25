@@ -1,4 +1,4 @@
-[*]
+﻿[*]
 end_of_line = crlf
 
 # Code files
@@ -9,3 +9,5 @@ indent_size = 4
 tab_width = 4
 trim_trailing_whitespace = true
 
+# IDE0051: Remove unused private members
+dotnet_diagnostic.IDE0051.severity = none
