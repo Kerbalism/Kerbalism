@@ -51,7 +51,7 @@ namespace KERBALISM
 				process.defaultDumpValve.ValveIndex = valve_i;
 				process.defaultDumpValveIndex = process.defaultDumpValve.ValveIndex;
 			}
-
+			
 			ModuleInfo = GetInfo();
 			node.TryGetValue(nameof(persistentValveIndex), ref persistentValveIndex);
 		}
@@ -118,7 +118,7 @@ namespace KERBALISM
 		}
 
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
-		public void Configure(bool enable, int multiplier)
+		public virtual void Configure(bool enable, int multiplier)
 		{
 			pseudoResource = part.Resources[resource];
 			if (enable)
