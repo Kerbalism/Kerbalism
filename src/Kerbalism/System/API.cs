@@ -455,6 +455,19 @@ namespace KERBALISM
 			return result;
 		}
 
+		public static double ResourceAverageRate(Vessel v, string resource_name)
+		{
+			return ResourceCache.GetResource(v, resource_name).AverageRate;
+		}
+
+		public static List<double> ResourceAverageRates(Vessel v, List<string> resource_names)
+		{
+			List<double> result = new List<double>(resource_names.Count);
+			foreach (var name in resource_names)
+				result.Add(ResourceAverageRate(v, name));
+			return result;
+		}
+
 		public static double ResourceCapacity(Vessel v, string resource_name)
 		{
 			return ResourceCache.GetResource(v, resource_name).Capacity;
