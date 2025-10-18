@@ -23,6 +23,8 @@ namespace KERBALISM
 		// caching of GetInfo() for automation tooltip
 		public string ModuleInfo { get; private set; }
 
+		protected int lastMultiplier = 0;
+
 		private PartResource pseudoResource;
 		private bool PseudoResourceFlowState
 		{
@@ -120,6 +122,7 @@ namespace KERBALISM
 		///<summary> Called by Configure.cs. Configures the controller to settings passed from the configure module</summary>
 		public virtual void Configure(bool enable, int multiplier)
 		{
+			lastMultiplier = multiplier;
 			pseudoResource = part.Resources[resource];
 			if (enable)
 			{
@@ -164,7 +167,7 @@ namespace KERBALISM
 				return;
 
 			// update rmb ui
-			Events["Toggle"].guiName = Lib.StatusToggle(title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
+			Events["Toggle"].guiName = Lib.StatusToggle(lastMultiplier + " " + title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
 			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dumpValve.ValveTitle);//"Dump"
 		}
 
