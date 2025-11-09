@@ -80,6 +80,8 @@ namespace KERBALISM
 		{
             state = ObjectState.Uninitialized;
 			habitatIndex = -1;
+			habitatWrappers?.Clear();
+			habitatShieldings?.Clear();
         }
 
 		internal void Save(ConfigNode node)
@@ -300,7 +302,14 @@ namespace KERBALISM
 			{
 				// first run, do them all
 				foreach (var habitat in habitatWrappers)
-					RaytraceToSun(habitat.LoadedPart);
+				{
+					// only calculate radiation for enabled habitats
+					if (habitat.State == State.enabled || habitat.State == State.evaKerbal)
+						RaytraceToSun(habitat.LoadedPart);
+					else
+						// remove disabled habitat from shielding calculations
+						habitatShieldings.Remove(habitat.LoadedPart.flightID);
+				}
 				habitatIndex = 0;
 			}
 			else
@@ -310,7 +319,14 @@ namespace KERBALISM
 				if (habitatWrappers[habitatIndex].LoadedPart == null)
 					habitatWrappers.RemoveAt(habitatIndex);
 				else
-					RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
+				{
+					// only calculate radiation for enabled habitats
+					if (habitatWrappers[habitatIndex].State == State.enabled || habitatWrappers[habitatIndex].State == State.evaKerbal)
+						RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
+					else
+						// remove disabled habitat from shielding calculations
+						habitatShieldings.Remove(habitatWrappers[habitatIndex].LoadedPart.flightID);
+				}
 
 				if (habitatWrappers.Count == 0)
 					habitatIndex = -1;
