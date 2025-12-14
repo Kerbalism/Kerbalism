@@ -77,7 +77,7 @@ namespace KERBALISM
 			if(filesCount > 0 || totalDataCapacity > 0)
 			{
 				var title = Local.FILEMANAGER_DataCapacity + " " + Lib.HumanReadableDataSize(usedDataCapacity);//"DATA " 
-				if (!unlimitedData) title += Local.FILEMANAGER_DataAvailable.Format(Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//Lib.BuildString(" (", Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity), " available)");
+				if (!unlimitedData && totalDataCapacity > 0) title += Local.FILEMANAGER_DataAvailable.Format(Lib.HumanReadablePerc((totalDataCapacity - usedDataCapacity) / totalDataCapacity));//" available"
 				p.AddSection(title);
 
 				foreach (var drive in drives)
