@@ -1,4 +1,6 @@
+using System;
 using KSP.Localization;
+using UnityEngine;
 namespace KERBALISM
 {
 	public static class ConnManager
@@ -25,25 +27,56 @@ namespace KERBALISM
 			p.paneltype = Panel.PanelType.connection;
 
 			// time-out simulation
-			if (!Lib.IsControlUnit(v) &&  p.Timeout(vd)) return;
+			if (!Lib.IsControlUnit(v) && p.Timeout(vd)) return;
 
 			// draw ControlPath section
 			p.AddSection(Local.ConnManager_CONTROLPATH);//"CONTROL PATH"
 			if (vd.Connection.linked)
 			{
-				if(vd.Connection.control_path != null)
+				var currentName = Lib.Ellipsis(Localizer.Format(v.GetDisplayName()), 35);
+				var current = vd.Connection;
+				// The code producing the connections is not tick accurate,
+				// there can be transient states that create cycles, so limit to 16 hops max to avoid infinite loops.
+				for (int i = 0; current != null && i < 16; i++)
 				{
-					foreach(string[] hop in vd.Connection.control_path)
+					var nextHopName = "DSN";
+					ConnectionInfo nextConnection = null;
+					if (current.next_hop != Guid.Empty)
 					{
-						if (hop == null || hop.Length < 1) continue;
-						string name = hop[0];
-						string value = hop.Length >= 2 ? hop[1] : "";
-						string tooltip = hop.Length >= 3 ? ("\n" + hop[2]) : "";
-						p.AddContent(name, value, tooltip);
+						Vessel nextVessel = FlightGlobals.FindVessel(current.next_hop);
+						if (nextVessel != null)
+						{
+							nextHopName = Lib.Ellipsis(Localizer.Format(nextVessel.GetDisplayName()), 35);
+							if (nextVessel.TryGetVesselDataTemp(out var nextVesselData))
+							{
+								nextConnection = nextVesselData.Connection;
+							}
+						}
 					}
+
+					// HSV lerp since RGB lerps are not gamma correct (HSV keep constant perceived brightness).
+					float hue = Mathf.Lerp(0.0f, 0.33f, Mathf.Clamp01((float)current.strength)); // red to green
+
+					// Slightly muted saturation/value
+					float saturation = 0.85f;
+					float value = 0.9f;
+
+					var code = ColorUtility.ToHtmlStringRGB(Color.HSVToRGB(hue, saturation, value));
+
+					var hop = Lib.BuildString(currentName, " ➡ ", nextHopName);
+					var speed = Lib.BuildString("<color=#", code, ">", Lib.HumanReadableDataRate(current.hop_datarate), "</color>");
+					var hover = Lib.BuildString(
+						"Strength: <color=#", code, ">", Lib.HumanReadablePerc(Math.Ceiling(current.strength * 10000) / 10000, "F2"), "</color>\n",
+						"Distance: ", Lib.HumanReadableDistance(current.hop_distance),
+						" (Max: ", Lib.HumanReadableDistance(current.hop_max_distance), ")"
+					);
+					p.AddContent(hop, speed, hover);
+
+					currentName = nextHopName;
+					current = nextConnection;
 				}
 			}
-			else p.AddContent("<i>"+Local.ConnManager_noconnection +"</i>", string.Empty);//no connection
+			else p.AddContent("<i>" + Local.ConnManager_noconnection + "</i>", string.Empty);//no connection
 		}
 	}
 }

@@ -41,8 +41,11 @@ namespace KERBALISM
 
 				connection.strength = 0.0;
 				connection.rate = 0.0;
+				connection.hop_datarate = 0.0;
 				connection.target_name = string.Empty;
-				connection.control_path.Clear();
+				connection.next_hop = Guid.Empty;
+				connection.hop_distance = 0.0;
+				connection.hop_max_distance = 0.0;
 				return;
 			}
 
@@ -59,7 +62,10 @@ namespace KERBALISM
 			{
 				connection.strength = 0.0;
 				connection.rate = 0.0;
-				connection.control_path.Clear();
+				connection.hop_datarate = 0.0;
+				connection.next_hop = Guid.Empty;
+				connection.hop_distance = 0.0;
+				connection.hop_max_distance = 0.0;
 			}
 			else
 			{
@@ -70,7 +76,13 @@ namespace KERBALISM
 					connection.strength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
 					connection.strength = Math.Pow(connection.strength, Sim.DataRateDampingExponentRT);
 
-					connection.rate = baseRate * connection.strength;
+					connection.hop_datarate = baseRate * connection.strength;
+					connection.rate = connection.hop_datarate;
+
+					var nextHop = controlPath[0];
+
+					connection.hop_distance = RemoteTech.GetCommsDistance(vd.VesselId, nextHop);
+					connection.hop_max_distance = RemoteTech.GetCommsMaxDistance(vd.VesselId, nextHop);
 
 					// If using relay, get the lowest rate
 					if (connection.Status != LinkStatus.direct_link)
@@ -78,40 +90,24 @@ namespace KERBALISM
 						// Check the connection link on the next vessel in the connection chain
 						// to find the lowest data rate, this value can be one tick inaccurate depending on order of
 						// processing of vessel connections, but is negligible
-						Vessel target = FlightGlobals.FindVessel(controlPath[0]);
+						Vessel target = FlightGlobals.FindVessel(nextHop);
 						target.TryGetVesselDataTemp(out VesselData vd);
 						ConnectionInfo ci = vd.Connection;
 						connection.rate = Math.Min(ci.rate, connection.rate);
+
+						// Also tell the ConnManager about it.
+						connection.next_hop = nextHop;
 					}
 				}
 
-				connection.control_path.Clear();
-				Guid i = vd.VesselId;
-				foreach (Guid id in controlPath)
-				{
-					double linkDistance = RemoteTech.GetCommsDistance(i, id);
-					double linkMaxDistance = RemoteTech.GetCommsMaxDistance(i, id);
-					double signalStrength = 1 - (linkDistance / linkMaxDistance);
-					signalStrength = Math.Pow(signalStrength, Sim.DataRateDampingExponentRT);
-
-					string[] controlPoint = new string[3];
-
-					// satellite name
-					controlPoint[0] = Lib.Ellipsis(RemoteTech.GetSatelliteName(i) + " \\ " + RemoteTech.GetSatelliteName(id), 50);
-					// signal strength
-					controlPoint[1] = Lib.HumanReadablePerc(Math.Ceiling(signalStrength * 10000) / 10000, "F2");
-					// tooltip info
-					controlPoint[2] = Lib.BuildString("Distance: ", Lib.HumanReadableDistance(linkDistance),
-						" (Max: ", Lib.HumanReadableDistance(linkMaxDistance), ")");
-					
-					connection.control_path.Add(controlPoint);
-					i = id;
-				}
 			}
 
 			// set minimal data rate to what is defined in Settings (1 bit/s by default) 
 			if (connection.rate > 0.0 && connection.rate * bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
 				connection.rate = Settings.DataRateMinimumBitsPerSecond / bitsPerMB;
+
+			if (connection.hop_datarate > 0.0 && connection.hop_datarate * Lib.bitsPerMB < Settings.DataRateMinimumBitsPerSecond)
+				connection.hop_datarate = Settings.DataRateMinimumBitsPerSecond / Lib.bitsPerMB;
 		}
 
 		protected override void UpdateTransmitters(ConnectionInfo connection, bool searchTransmitters)
@@ -213,10 +209,10 @@ namespace KERBALISM
 						{
 							double dataRate = (float)packet_size / (float)packet_Interval;
 							connection.ec_idle += RemoteTech.GetModuleRTAntennaConsumption(mdt.prefab);
-							if(dataRate > highestDataRate)
+							if (dataRate > highestDataRate)
 							{
 								float? packetResourceCost = Lib.SafeReflectionValue<float>(mdt.prefab, "RTPacketResourceCost");
-								if(packetResourceCost != null)
+								if (packetResourceCost != null)
 								{
 									highestDataRate = dataRate;
 									baseRate = dataRate;
