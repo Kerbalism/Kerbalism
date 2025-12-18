@@ -71,15 +71,15 @@ namespace KERBALISM
 			{
 				if (controlPath.Length > 0)
 				{
-					double dist = RemoteTech.GetCommsDistance(vd.VesselId, controlPath[0]);
-					double maxDist = RemoteTech.GetCommsMaxDistance(vd.VesselId, controlPath[0]);
+					var nextHop = controlPath[0];
+
+					double dist = RemoteTech.GetCommsDistance(vd.VesselId, nextHop);
+					double maxDist = RemoteTech.GetCommsMaxDistance(vd.VesselId, nextHop);
 					connection.strength = maxDist > 0.0 ? 1.0 - (dist / Math.Max(maxDist, 1.0)) : 0.0;
 					connection.strength = Math.Pow(connection.strength, Sim.DataRateDampingExponentRT);
 
 					connection.hop_datarate = baseRate * connection.strength;
 					connection.rate = connection.hop_datarate;
-
-					var nextHop = controlPath[0];
 
 					connection.hop_distance = RemoteTech.GetCommsDistance(vd.VesselId, nextHop);
 					connection.hop_max_distance = RemoteTech.GetCommsMaxDistance(vd.VesselId, nextHop);
@@ -98,6 +98,8 @@ namespace KERBALISM
 						// Also tell the ConnManager about it.
 						connection.next_hop = nextHop;
 					}
+					else
+						connection.next_hop = Guid.Empty; // Tell the ConnManager we are directly connected to the KSC.
 				}
 
 			}
