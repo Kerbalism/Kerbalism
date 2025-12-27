@@ -15,7 +15,7 @@ namespace KERBALISM
 
 	public sealed class ConnectionInfo : IConnectionInfo
 	{
-		// Note : Do not change this class, it is used for the API handlers (as of 02-2020, RealAntenna is using it)
+		// Note : Do not change this class, it is used for the API handlers (as of 02-2020, RealAntennas is using it)
 		// That's also why it doesn't use the above enum directly
 
 		public LinkStatus Status
@@ -70,7 +70,7 @@ namespace KERBALISM
 
 		/// <summary>
 		/// ec cost while transmitting at the above rate
-		/// <para/> Note: ec_idle is substracted from ec in Science.Update(), it's silly but don't change it as this is what is expected from the RealAntenna API handler
+		/// <para/> Note: ec_idle is substracted from ec in Science.Update(), it's silly but don't change it as this is what is expected from the RealAntennas API handler
 		/// </summary>
 		public double ec = 0.0;
 
@@ -118,5 +118,12 @@ namespace KERBALISM
 		/// hop_datarate is only the data rate of this specific hop.
 		/// </summary>
 		public double hop_datarate;
+
+		/// <summary>
+		/// We used to use this to store the control path for internal use.
+		/// We now use next_hop but older versions of RealAntennas will still try to access this.
+		/// Leave this just to avoid throwing exceptions in RealAntennas.
+		/// </summary>
+		public List<string[]> control_path = new List<string[]>();
 	}
 }
