@@ -157,7 +157,7 @@
     <Compile Include="External\BackgroundResources.cs" />
     <Compile Include="LocalizationCache.cs" />
     <Compile Include="Modules\AntennaDataTransmitterRemoteTech.cs" />
-	<Compile Include="Modules\ECDrainViaPM.cs" />
+    <Compile Include="Modules\ECDrainViaPM.cs" />
     <Compile Include="Modules\KebalismSentinel.cs" />
     <Compile Include="Patches\RefillEVAPropellant.cs" />
     <Compile Include="Science\SubjectData.cs" />

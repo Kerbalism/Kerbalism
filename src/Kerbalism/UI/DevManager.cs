@@ -1,7 +1,11 @@
-using KSP.Localization;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using System.Security.Cryptography;
+using KSP.Localization;
+using KSP.UI.Screens.Settings;
+using UniLinq;
+using UnityEngine;
+using static KERBALISM.Panel;
 
 
 namespace KERBALISM
@@ -56,7 +60,7 @@ namespace KERBALISM
 				for (int i = devices.Count - 1; i >= 0; i--)
 				{
 					Device dev = devices[i];
-					
+
 					dev.OnUpdate();
 					if (!dev.IsVisible) continue;
 
@@ -107,6 +111,31 @@ namespace KERBALISM
 				  () => p.Next(ref script_index, (int)ScriptType.last)
 				);
 
+				if (script_type == ScriptType.signal_strength_high || script_type == ScriptType.signal_strength_low)
+				{
+
+					// render slider to set signal strength threshold
+					p.AddContent
+					(
+						Local.DevManager_SignalStrengthLabel,
+						string.Empty,
+						null,
+						null,
+						null,
+						new Slider()
+						{
+							step = 5,
+							min = 0,
+							max = 100,
+							value = script.values.ContainsKey((uint)script_type) ? script.values[(uint)script_type] : 50,
+							valueChange = (double value) =>
+							{
+								script.SetValue((uint)script_type, value);
+							}
+						}
+					);
+				}
+
 				bool hasVesselDeviceSection = false;
 				bool hasModuleDeviceSection = false;
 
@@ -154,9 +183,9 @@ namespace KERBALISM
 					  {
 						  switch (state)
 						  {
-							  case -1: script.Set(dev, true); break;
-							  case 0: script.Set(dev, null); break;
-							  case 1: script.Set(dev, false); break;
+							  case -1: script.SetState(dev, true); break;
+							  case 0: script.SetState(dev, null); break;
+							  case 1: script.SetState(dev, false); break;
 						  }
 					  },
 					  () => Highlighter.Set(dev.PartId, Color.cyan)
@@ -168,7 +197,7 @@ namespace KERBALISM
 			// no devices case
 			if (deviceCount == 0)
 			{
-				p.AddContent("<i>"+Local.DevManager_nodevices +"</i>");//no devices
+				p.AddContent("<i>" + Local.DevManager_nodevices + "</i>");//no devices
 			}
 		}
 
@@ -179,7 +208,8 @@ namespace KERBALISM
 			{
 				case ScriptType.landed: return Local.DevManager_NameTabLanded;
 				case ScriptType.atmo: return Local.DevManager_NameTabAtmo;
-				case ScriptType.space: return Local.DevManager_NameTabSpace;
+				case ScriptType.space_low: return Local.DevManager_NameTabSpaceLow;
+				case ScriptType.space_high: return Local.DevManager_NameTabSpaceHigh;
 				case ScriptType.sunlight: return Local.DevManager_NameTabSunlight;
 				case ScriptType.shadow: return Local.DevManager_NameTabShadow;
 				case ScriptType.power_high: return Local.DevManager_NameTabPowerHigh;
@@ -188,6 +218,8 @@ namespace KERBALISM
 				case ScriptType.rad_low: return Local.DevManager_NameTabRadLow;
 				case ScriptType.linked: return Local.DevManager_NameTabLinked;
 				case ScriptType.unlinked: return Local.DevManager_NameTabUnlinked;
+				case ScriptType.signal_strength_low: return Local.DevManager_NameTabSignalLow;
+				case ScriptType.signal_strength_high: return Local.DevManager_NameTabSignalHigh;
 				case ScriptType.eva_out: return Local.DevManager_NameTabEVAOut;
 				case ScriptType.eva_in: return Local.DevManager_NameTabEVAIn;
 				case ScriptType.action1: return Local.DevManager_NameTabAct1;
@@ -209,12 +241,15 @@ namespace KERBALISM
 			{
 				case ScriptType.landed: return Local.DevManager_TabLanded;        // <i>Called on landing</i>
 				case ScriptType.atmo: return Local.DevManager_TabAtmo;          // <i>Called on entering atmosphere</i>
-				case ScriptType.space: return Local.DevManager_TabSpace;         // <i>Called on reaching space</i>
+				case ScriptType.space_low: return Local.DevManager_TabSpaceLow;         // <i>Called on reaching low space</i>
+				case ScriptType.space_high: return Local.DevManager_TabSpaceHigh;         // <i>Called on reaching space</i>
 				case ScriptType.sunlight: return Local.DevManager_TabSunlight;      // <i>Called when sun became visible</i>
 				case ScriptType.shadow: return Local.DevManager_TabShadow;        // <i>Called when sun became occluded</i>
 				case ScriptType.power_high: return Local.DevManager_TabPowerHigh;    // <i>Called when EC level goes above 80%</i>
 				case ScriptType.power_low: return Local.DevManager_TabPowerLow;     // <i>Called when EC level goes below 20%</i>
 				case ScriptType.rad_high: return Local.DevManager_TabRadHigh;      // <i>Called when radiation exceed 0.05 rad/h</i>
+				case ScriptType.signal_strength_low: return Local.DevManager_TabSignalLow; // "<i>Called when signal strength is below threshold</i>"
+				case ScriptType.signal_strength_high: return Local.DevManager_TabSignalHigh; // "<i>Called when signal strength is below above</i>"
 				case ScriptType.rad_low: return Local.DevManager_TabRadLow;       // <i>Called when radiation goes below 0.02 rad/h</i>
 				case ScriptType.linked: return Local.DevManager_TabLinked;        // <i>Called when signal is regained</i>
 				case ScriptType.unlinked: return Local.DevManager_TabUnlinked;      // <i>Called when signal is lost</i>

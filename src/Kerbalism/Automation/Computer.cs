@@ -6,27 +6,30 @@ namespace KERBALISM
 {
 	public enum ScriptType
 	{
-		power_low = 1,    // called when ec level goes below 15%
-		power_high = 2,   // called when ec level goes above 15%
-		sunlight = 3,     // called when sun rise
-		shadow = 4,       // called when sun set
-		unlinked = 5,     // called when signal is lost
-		linked = 6,       // called when signal is regained
-		drive_full = 7,  // called when storage capacity goes below 15%
-		drive_empty = 8, // called when storage capacity goes above 30%
-		landed = 9,       // called on landing
-		atmo = 10,         // called on entering atmosphere
-		space = 11,        // called on reaching space
-		rad_low = 12,     // called when radiation goes below 0.05 rad/h
-		rad_high = 13,    // called when radiation goes above 0.05 rad/h
-		eva_out = 14,     // called when going out on eva
-		eva_in = 15,      // called when coming back from eva
-		action1 = 16,     // called when pressing 1
-		action2 = 17,     // called when pressing 2
-		action3 = 18,     // called when pressing 3
-		action4 = 19,     // called when pressing 4
-		action5 = 20,     // called when pressing 5
-		last = 21
+		power_low,    // called when ec level goes below 15%
+		power_high,   // called when ec level goes above 15%
+		sunlight,     // called when sun rise
+		shadow,       // called when sun set
+		unlinked,     // called when signal is lost
+		linked,       // called when signal is regained
+		signal_strength_low,  // called when signal strength is low
+		signal_strength_high,  // called when signal strength is high
+		drive_full,  // called when storage capacity goes below 15%
+		drive_empty, // called when storage capacity goes above 30%
+		landed,       // called on landing
+		atmo,        // called on entering atmosphere
+		space_low,    // called on reaching space_low
+		space_high,   // called on reaching space_high
+		rad_low,     // called when radiation goes below 0.05 rad/h
+		rad_high,    // called when radiation goes above 0.05 rad/h
+		eva_out,     // called when going out on eva
+		eva_in,      // called when coming back from eva
+		action1,     // called when pressing 1
+		action2,     // called when pressing 2
+		action3,     // called when pressing 3
+		action4,     // called when pressing 4
+		action5,     // called when pressing 5
+		last
 	}
 
 	public sealed class Computer
@@ -101,13 +104,14 @@ namespace KERBALISM
 			bool radiation_low = vd.EnvRadiation < 0.000005552; //< 0.02 rad/h
 			bool radiation_high = vd.EnvRadiation > 0.00001388; //< 0.05 rad/h
 			bool signal = vd.Connection.linked;
+			double signalStrengthPercent = vd.Connection.Strength * 100;
 			bool drive_full = vd.DrivesFreeSpace < double.MaxValue && (vd.DrivesFreeSpace / vd.DrivesCapacity < 0.15);
 			bool drive_empty = vd.DrivesFreeSpace >= double.MaxValue || (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9);
-
 			// get current situation
 			bool landed = false;
 			bool atmo = false;
-			bool space = false;
+			bool space_low = ScienceSituation.InSpaceLow.Equals(vd.VesselSituations.FirstSituation.ScienceSituation);
+			bool space_high = ScienceSituation.InSpaceHigh.Equals(vd.VesselSituations.FirstSituation.ScienceSituation);
 			switch (v.situation)
 			{
 				case Vessel.Situations.LANDED:
@@ -117,12 +121,6 @@ namespace KERBALISM
 
 				case Vessel.Situations.FLYING:
 					atmo = true;
-					break;
-
-				case Vessel.Situations.SUB_ORBITAL:
-				case Vessel.Situations.ORBITING:
-				case Vessel.Situations.ESCAPING:
-					space = true;
 					break;
 			}
 
@@ -147,9 +145,14 @@ namespace KERBALISM
 						script.prev = atmo ? "1" : "0";
 						break;
 
-					case ScriptType.space:
-						if (space && script.prev == "0") to_exec.Add(script);
-						script.prev = space ? "1" : "0";
+					case ScriptType.space_low:
+						if (space_low && script.prev == "0") to_exec.Add(script);
+						script.prev = space_low ? "1" : "0";
+						break;
+
+					case ScriptType.space_high:
+						if (space_high && script.prev == "0") to_exec.Add(script);
+						script.prev = space_high ? "1" : "0";
 						break;
 
 					case ScriptType.sunlight:
@@ -190,6 +193,18 @@ namespace KERBALISM
 					case ScriptType.unlinked:
 						if (!signal && script.prev == "0") to_exec.Add(script);
 						script.prev = !signal ? "1" : "0";
+						break;
+
+					case ScriptType.signal_strength_low:
+						double singal_low = (script.values.ContainsKey((uint)type) ? script.values[(uint)type] : 50);
+						if (signalStrengthPercent < singal_low && script.prev == "0") to_exec.Add(script);
+						script.prev = signalStrengthPercent < singal_low ? "1" : "0";
+						break;
+
+					case ScriptType.signal_strength_high:
+						double signal_high = (script.values.ContainsKey((uint)type) ? script.values[(uint)type] : 50);
+						if (signalStrengthPercent > signal_high && script.prev == "0") to_exec.Add(script);
+						script.prev = signalStrengthPercent > signal_high ? "1" : "0";
 						break;
 
 					case ScriptType.drive_full:
@@ -245,30 +260,30 @@ namespace KERBALISM
 				{
 					switch (m.moduleName)
 					{
-						case "ProcessController":            device = new ProcessDevice(m as ProcessController);                 break;
-						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
-						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
-						case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
-						case "Emitter":                      device = new EmitterDevice(m as Emitter);                           break;
-						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                         break;
-						case "Laboratory":                   device = new LaboratoryDevice(m as Laboratory);                     break;
-						case "Experiment":                   device = new ExperimentDevice(m as Experiment);                     break;
-						case "SolarPanelFixer":				 device = new PanelDevice(m as SolarPanelFixer);					  break;
-						case "ModuleGenerator":              device = new GeneratorDevice(m as ModuleGenerator);                 break;
-						case "ModuleResourceConverter":      device = new ConverterDevice(m as ModuleResourceConverter);         break;
-						case "ModuleKPBSConverter":          device = new ConverterDevice(m as ModuleResourceConverter);         break;
-						case "FissionReactor":               device = new ConverterDevice(m as ModuleResourceConverter);         break;
-						case "ModuleResourceHarvester":      device = new DrillDevice(m as ModuleResourceHarvester);             break;
-						case "ModuleLight":                  device = new LightDevice(m as ModuleLight);                         break;
-						case "ModuleColoredLensLight":       device = new LightDevice(m as ModuleLight);                         break;
-						case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight);                         break;
-						case "SCANsat":                      device = new ScannerDevice(m);                                      break;
-						case "ModuleSCANresourceScanner":    device = new ScannerDevice(m);                                      break;
+						case "ProcessController": device = new ProcessDevice(m as ProcessController); break;
+						case "Sickbay": device = new SickbayDevice(m as Sickbay); break;
+						case "Greenhouse": device = new GreenhouseDevice(m as Greenhouse); break;
+						case "GravityRing": device = new RingDevice(m as GravityRing); break;
+						case "Emitter": device = new EmitterDevice(m as Emitter); break;
+						case "Harvester": device = new HarvesterDevice(m as Harvester); break;
+						case "Laboratory": device = new LaboratoryDevice(m as Laboratory); break;
+						case "Experiment": device = new ExperimentDevice(m as Experiment); break;
+						case "SolarPanelFixer": device = new PanelDevice(m as SolarPanelFixer); break;
+						case "ModuleGenerator": device = new GeneratorDevice(m as ModuleGenerator); break;
+						case "ModuleResourceConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
+						case "ModuleKPBSConverter": device = new ConverterDevice(m as ModuleResourceConverter); break;
+						case "FissionReactor": device = new ConverterDevice(m as ModuleResourceConverter); break;
+						case "ModuleResourceHarvester": device = new DrillDevice(m as ModuleResourceHarvester); break;
+						case "ModuleLight": device = new LightDevice(m as ModuleLight); break;
+						case "ModuleColoredLensLight": device = new LightDevice(m as ModuleLight); break;
+						case "ModuleMultiPointSurfaceLight": device = new LightDevice(m as ModuleLight); break;
+						case "SCANsat": device = new ScannerDevice(m); break;
+						case "ModuleSCANresourceScanner": device = new ScannerDevice(m); break;
 						case "ModuleDataTransmitter":
-						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter);           break;
+						case "ModuleDataTransmitterFeedeable": device = new AntennaDevice(m as ModuleDataTransmitter); break;
 						case "ModuleRTAntenna":
-						case "ModuleRTAntennaPassive":       device = new AntennaRTDevice(m);                                    break;
-						case "KerbalismSentinel":            device = new SentinelDevice(m as KerbalismSentinel);                break;
+						case "ModuleRTAntennaPassive": device = new AntennaRTDevice(m); break;
+						case "KerbalismSentinel": device = new SentinelDevice(m as KerbalismSentinel); break;
 						default: continue;
 					}
 

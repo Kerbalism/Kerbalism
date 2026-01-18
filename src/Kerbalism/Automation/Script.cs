@@ -13,11 +13,13 @@ namespace KERBALISM
 		public Script()
 		{
 			states = new Dictionary<uint, bool>();
+			values = new Dictionary<uint, double>();
 			prev = string.Empty;
 		}
 
 		public Script(ConfigNode node)
 		{
+			values = new Dictionary<uint, double>();
 			states = new Dictionary<uint, bool>();
 			foreach (string s in node.GetValues("state"))
 			{
@@ -37,13 +39,19 @@ namespace KERBALISM
 			node.AddValue("prev", prev);
 		}
 
-		public void Set(Device dev, bool? state)
+		public void SetState(Device dev, bool? state)
 		{
 			states.Remove(dev.Id);
 			if (state != null)
 			{
 				states.Add(dev.Id, state == true);
 			}
+		}
+
+		public void SetValue(uint id, double value)
+		{
+			values.Remove(id);
+			values?.Add(id, value);
 		}
 
 		public void Execute(List<Device> devices)
@@ -62,6 +70,7 @@ namespace KERBALISM
 
 
 		public Dictionary<uint, bool> states;
+		public Dictionary<uint, double> values;
 		public string prev;
 	}
 

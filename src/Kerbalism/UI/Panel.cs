@@ -23,7 +23,8 @@ namespace KERBALISM
 		{
 			headers = new List<Header>();
 			sections = new List<Section>();
-			callbacks = new List<Action>();
+			stateCallbacks = new List<Action>();
+			valueCallbacks = new List<(Action<double>, double)>();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
 			paneltype = PanelType.unknown;
@@ -88,7 +89,7 @@ namespace KERBALISM
 			sections.Add(p);
 		}
 
-		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null)
+		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null, Slider slider = null)
 		{
 			Entry e = new Entry
 			{
@@ -97,9 +98,11 @@ namespace KERBALISM
 				tooltip = tooltip,
 				click = click,
 				hover = hover,
-				icons = new List<Icon>()
+				icons = new List<Icon>(),
+				tresholdSlider = slider
 			};
-			if (sections.Count > 0) {
+			if (sections.Count > 0)
+			{
 				Section section = sections[sections.Count - 1];
 				section.entries.Add(e);
 				section.needsSort = section.sort;
@@ -127,6 +130,25 @@ namespace KERBALISM
 			}
 		}
 
+
+		// - Renders a horizontal slider, snaps the raw value to the nearest step, and updates the stored value.
+		// - Displays current value as a percentage and shows min/max labels.
+		private void AddSlider(Entry e)
+		{
+			GUILayout.Label(new GUIContent(e.tresholdSlider.value.ToString("F0") + "%"), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+			GUILayout.Space(Styles.ScaleFloat(20.0f));
+			GUILayout.Label(new GUIContent(e.tresholdSlider.min.ToString("F0")), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+			double rawValue = GUILayout.HorizontalSlider((float)e.tresholdSlider.value, (float)e.tresholdSlider.min,
+				(float)e.tresholdSlider.max, GUILayout.Width(Styles.ScaleFloat(120)));
+			GUILayout.Label(new GUIContent(e.tresholdSlider.max.ToString("F0")), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+			double snappedValue = Math.Round(rawValue / e.tresholdSlider.step) * e.tresholdSlider.step;
+			if (!Mathf.Approximately((float)snappedValue, (float)e.tresholdSlider.value))
+			{
+				e.tresholdSlider.value = snappedValue;
+				valueCallbacks.Add((e.tresholdSlider.valueChange, e.tresholdSlider.value));
+			}
+		}
+
 		public void Render()
 		{
 			// headers
@@ -137,14 +159,14 @@ namespace KERBALISM
 				{
 					GUILayout.Label(new GUIContent(h.leftIcon.texture, h.leftIcon.tooltip), Styles.left_icon);
 					if (h.leftIcon.click != null && Lib.IsClicked())
-						callbacks.Add(h.leftIcon.click);
+						stateCallbacks.Add(h.leftIcon.click);
 				}
 				GUILayout.Label(new GUIContent(h.label, h.tooltip), Styles.entry_label_nowrap);
-				if (h.click != null && Lib.IsClicked()) callbacks.Add(h.click);
+				if (h.click != null && Lib.IsClicked()) stateCallbacks.Add(h.click);
 				foreach (Icon i in h.icons)
 				{
 					GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
-					if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
+					if (i.click != null && Lib.IsClicked()) stateCallbacks.Add(i.click);
 				}
 				GUILayout.EndHorizontal();
 				GUILayout.Space(Styles.ScaleFloat(10.0f));
@@ -158,13 +180,13 @@ namespace KERBALISM
 				if (p.left != null)
 				{
 					GUILayout.Label(Textures.left_arrow, Styles.left_icon);
-					if (Lib.IsClicked()) callbacks.Add(p.left);
+					if (Lib.IsClicked()) stateCallbacks.Add(p.left);
 				}
 				GUILayout.Label(p.title, Styles.section_text);
 				if (p.right != null)
 				{
 					GUILayout.Label(Textures.right_arrow, Styles.right_icon);
-					if (Lib.IsClicked()) callbacks.Add(p.right);
+					if (Lib.IsClicked()) stateCallbacks.Add(p.right);
 				}
 				GUILayout.EndHorizontal();
 
@@ -177,7 +199,8 @@ namespace KERBALISM
 				}
 
 				// entries
-				if(p.needsSort) {
+				if (p.needsSort)
+				{
 					p.needsSort = false;
 					p.entries.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.Ordinal));
 				}
@@ -188,17 +211,18 @@ namespace KERBALISM
 					{
 						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
 						if (e.leftIcon.click != null && Lib.IsClicked())
-							callbacks.Add(e.leftIcon.click);
+							stateCallbacks.Add(e.leftIcon.click);
 					}
 					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
-					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
+					if (e.hover != null && Lib.IsHover()) stateCallbacks.Add(e.hover);
 					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
-					if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
-					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
+					if (e.click != null && Lib.IsClicked()) stateCallbacks.Add(e.click);
+					if (e.hover != null && Lib.IsHover()) stateCallbacks.Add(e.hover);
+					if (e.tresholdSlider != null) AddSlider(e);
 					foreach (Icon i in e.icons)
 					{
 						GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
-						if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
+						if (i.click != null && Lib.IsClicked()) stateCallbacks.Add(i.click);
 					}
 					GUILayout.EndHorizontal();
 				}
@@ -210,8 +234,11 @@ namespace KERBALISM
 			// call callbacks
 			if (Event.current.type == EventType.Repaint)
 			{
-				foreach (Action func in callbacks) func();
-				callbacks.Clear();
+				foreach (Action func in stateCallbacks) func();
+				foreach (var (action, arg) in valueCallbacks)
+					action(arg);
+				stateCallbacks.Clear();
+				valueCallbacks.Clear();
 			}
 		}
 
@@ -321,6 +348,7 @@ namespace KERBALISM
 			public Action hover;
 			public List<Icon> icons;
 			public Icon leftIcon;
+			public Slider tresholdSlider;
 		}
 
 		sealed class Icon
@@ -330,9 +358,20 @@ namespace KERBALISM
 			public Action click;
 		}
 
+
+		public sealed class Slider
+		{
+			public double value;
+			public double min;
+			public double max;
+			public double step;
+			public Action<double> valueChange; //Callback invoked with the new value when the slider changes.
+		}
+
 		List<Header> headers;    // fat entries to show before the first section
 		List<Section> sections;  // set of sections
-		List<Action> callbacks;  // functions to call on input events
+		List<Action> stateCallbacks;  // functions to call on input events
+		List<(Action<double> action, double value)> valueCallbacks; // // queued value-change callbacks (action,value) to invoke after repaint
 		string win_title;        // metadata stored in panel
 		float min_width;         // metadata stored in panel
 		public PanelType paneltype;

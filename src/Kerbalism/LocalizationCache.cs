@@ -471,11 +471,15 @@ namespace KERBALISM
 		public static string DevManager_TabLanded = GetLoc("DevManager_TabLanded"); // "<i>Called on landing</i>"
 		public static string DevManager_TabAtmo = GetLoc("DevManager_TabAtmo"); // "<i>Called on entering atmosphere</i>"
 		public static string DevManager_TabSpace = GetLoc("DevManager_TabSpace"); // "<i>Called on reaching space</i>"
+		public static string DevManager_TabSpaceLow = GetLoc("DevManager_TabSpaceLow"); // "<i>Called on reaching high space</i>"
+		public static string DevManager_TabSpaceHigh = GetLoc("DevManager_TabSpaceHigh"); // "<i>Called on reaching low space</i>"
 		public static string DevManager_TabSunlight = GetLoc("DevManager_TabSunlight"); // "<i>Called when sun became visible</i>"
 		public static string DevManager_TabShadow = GetLoc("DevManager_TabShadow"); // "<i>Called when sun became occluded</i>"
 		public static string DevManager_TabPowerHigh = GetLoc("DevManager_TabPowerHigh"); // "<i>Called when EC level goes above 80%</i>"
 		public static string DevManager_TabPowerLow = GetLoc("DevManager_TabPowerLow"); // "<i>Called when EC level goes below 20%</i>"
 		public static string DevManager_TabRadHigh = GetLoc("DevManager_TabRadHigh"); // "<i>Called when radiation exceed 0.05 rad/h</i>"
+		public static string DevManager_TabSignalLow = GetLoc("DevManager_TabSignalLow"); // "<i>Called when signal strength is below threshold</i>"
+		public static string DevManager_TabSignalHigh = GetLoc("DevManager_TabSignalHigh"); // "<i>Called when signal strength is above threshold</i>"
 		public static string DevManager_TabRadLow = GetLoc("DevManager_TabRadLow"); // "<i>Called when radiation goes below 0.02 rad/h</i>"
 		public static string DevManager_TabLinked = GetLoc("DevManager_TabLinked"); // "<i>Called when signal is regained</i>"
 		public static string DevManager_TabUnlinked = GetLoc("DevManager_TabUnlinked"); // "<i>Called when signal is lost</i>"
@@ -492,6 +496,10 @@ namespace KERBALISM
 		public static string DevManager_NameTabLanded = GetLoc("DevManager_NameTabLanded"); // "landed"
 		public static string DevManager_NameTabAtmo = GetLoc("DevManager_NameTabAtmo"); // "atmo"
 		public static string DevManager_NameTabSpace = GetLoc("DevManager_NameTabSpace"); // "space"
+		public static string DevManager_NameTabSpaceLow = GetLoc("DevManager_NameTabSpaceLow"); // "space low"
+		public static string DevManager_NameTabSpaceHigh = GetLoc("DevManager_NameTabSpaceHigh"); // "space high"
+		public static string DevManager_NameTabSignalLow = GetLoc("DevManager_NameTabSignalLow"); // "signal power low"
+		public static string DevManager_NameTabSignalHigh = GetLoc("DevManager_NameTabSignalHigh"); // "signal power high"
 		public static string DevManager_NameTabSunlight = GetLoc("DevManager_NameTabSunlight"); // "sunlight"
 		public static string DevManager_NameTabShadow = GetLoc("DevManager_NameTabShadow"); // "shadow"
 		public static string DevManager_NameTabPowerHigh = GetLoc("DevManager_NameTabPowerHigh"); // "power high"
@@ -509,6 +517,8 @@ namespace KERBALISM
 		public static string DevManager_NameTabAct5 = GetLoc("DevManager_NameTabAct5"); // "action 5"
 		public static string DevManager_NameTabDriveFull = GetLoc("DevManager_NameTabDriveFull"); // "drive full"
 		public static string DevManager_NameTabDriveEmpty = GetLoc("DevManager_NameTabDriveEmpty"); // "drive empty"
+
+		public static string DevManager_SignalStrengthLabel = GetLoc("DevManager_SignalStrengthLabel"); // "Signal strength threshold"
 
 		////////////////////////////////////////////////////////////////////
 		// Telemetry/Planner UI : Comfort
