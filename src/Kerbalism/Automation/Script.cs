@@ -27,6 +27,12 @@ namespace KERBALISM
 				if (tokens.Count != 2) continue;
 				states.Add(Lib.Parse.ToUInt(tokens[0]), Lib.Parse.ToBool(tokens[1]));
 			}
+			foreach (string s in node.GetValues("value"))
+			{
+				var tokens = Lib.Tokenize(s, '@');
+				if (tokens.Count != 2) continue;
+				values.Add(Lib.Parse.ToUInt(tokens[0]), Lib.Parse.ToDouble(tokens[1]));
+			}
 			prev = Lib.ConfigValue(node, "prev", string.Empty);
 		}
 
@@ -35,6 +41,10 @@ namespace KERBALISM
 			foreach (var p in states)
 			{
 				node.AddValue("state", Lib.BuildString(p.Key.ToString(), "@", p.Value.ToString()));
+			}
+			foreach (var p in values)
+			{
+				node.AddValue("value", Lib.BuildString(p.Key.ToString(), "@", p.Value.ToString()));
 			}
 			node.AddValue("prev", prev);
 		}

@@ -55,8 +55,10 @@ namespace KERBALISM
 			var scripts_node = node.AddNode("scripts");
 			foreach (var p in scripts)
 			{
-				if (p.Value.states.Count == 0) continue; //< empty-script optimization
-				p.Value.Save(scripts_node.AddNode(((uint)p.Key).ToString()));
+				if (p.Value.states.Count != 0 || p.Value.values.Count != 0)
+				{
+					p.Value.Save(scripts_node.AddNode(((uint)p.Key).ToString()));
+				}
 			}
 		}
 
