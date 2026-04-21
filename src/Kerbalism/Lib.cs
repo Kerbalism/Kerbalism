@@ -960,10 +960,16 @@ namespace KERBALISM
 			return SIAmount(rate * rui.MultiplierToUnit, rui.AmountUnit, sigFigs, longPrefix);
 		}
 
-		///<summary> Pretty-print flux (value is in W/m^2)</summary>
+		///<summary> Pretty-print flux per unit area (value is in W/m^2)</summary>
 		public static string SIFlux(double flux)
 		{
 			return KSPUtil.PrintSI(flux, "W/m²");
+		}
+
+		///<summary> Pretty-print power or radiant flux (value is in W)</summary>
+		public static string SIPower(double flux)
+		{
+			return KSPUtil.PrintSI(flux, "W");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>
@@ -1137,13 +1143,22 @@ namespace KERBALISM
 			return BuildString(angle >= 0.0001 ? angle.ToString("F1") : "0", " °");
 		}
 
-		///<summary> Pretty-print flux </summary>
+		///<summary> Pretty-print flux per unit area </summary>
 		public static string HumanReadableFlux(double flux)
 		{
 			if (Settings.UseSIUnits)
 				return SIFlux(flux);
 
 			return BuildString(flux >= 0.0001 ? flux.ToString("F1") : flux.ToString(), " W/m²");
+		}
+
+		///<summary> Pretty-print power or radiant flux </summary>
+		public static string HumanReadablePower(double power)
+		{
+			if (Settings.UseSIUnits)
+				return SIPower(power);
+
+			return BuildString(power >= 0.0001 ? power.ToString("F1") : power.ToString(), " W");
 		}
 
 		///<summary> Pretty-print magnetic strength </summary>

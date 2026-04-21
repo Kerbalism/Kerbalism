@@ -960,6 +960,138 @@ namespace KERBALISM
 			return temp;
 		}
 
+		// Update cached thermal geometry data from loaded part data.
+		// sunWorldDirection: normalized world-space vessel→sun unit vector.
+		// bodyWorldDirection: normalized world-space vessel→body (nadir) unit vector.
+		// Returns false and leaves out-params at their defaults if data can't be computed.
+		//
+		// Cross-sections mirror FlightIntegrator.GetSunArea() / GetBodyArea():
+		//   DragCubes.GetCubeAreaDir(dirLocal) — directional projected area from drag cube
+		//   × ptd.sunAreaMultiplier / bodyAreaMultiplier — inter-part occlusion factor (0–1)
+		//   × part.absorptiveConstant — fraction of incident radiation absorbed
+		//
+		// Surface area uses part.radiativeArea = DragCubes.PostOcclusionArea (sum of all 6
+		// occluded face areas), matching KSP's radiation exchange calculations.
+		public static bool UpdateVesselThermalCache(Vessel v, Vector3d sunWorldDirection, Vector3d bodyWorldDirection,
+			out double surfaceArea, out double solarCrossSection, out double bodyCrossSection, out double emissivity)
+		{
+			surfaceArea = 0.0;
+			solarCrossSection = 0.0;
+			bodyCrossSection = 0.0;
+			emissivity = 0.9;
+
+			if (!v.loaded)
+				return false;
+
+			double emissivityWeighted = 0.0;
+
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Sim.UpdateVesselThermalCache");
+			foreach (Part p in v.Parts)
+			{
+				double area = p.radiativeArea;
+				if (area <= 0.0)
+					continue;
+
+				surfaceArea += area;
+				emissivityWeighted += p.emissiveConstant * area;
+
+				if (!p.DragCubes.None && p.ptd != null)
+				{
+					Vector3 sunDirLocal  = p.partTransform.InverseTransformDirection((Vector3)sunWorldDirection);
+					Vector3 bodyDirLocal = p.partTransform.InverseTransformDirection((Vector3)bodyWorldDirection);
+					solarCrossSection += p.DragCubes.GetCubeAreaDir(sunDirLocal)  * p.ptd.sunAreaMultiplier  * p.absorptiveConstant;
+					bodyCrossSection  += p.DragCubes.GetCubeAreaDir(bodyDirLocal) * p.ptd.bodyAreaMultiplier * p.absorptiveConstant;
+				}
+			}
+			UnityEngine.Profiling.Profiler.EndSample();
+
+			if (surfaceArea <= 0.0)
+				return false;
+
+			emissivity = emissivityWeighted / surfaceArea;
+			return true;
+		}
+
+		// Calculate vessel equilibrium temperature using cached geometry data.
+		// solar_cross_section: absorptivity-weighted cross-section toward the sun (m²).
+		// body_cross_section:  absorptivity-weighted cross-section toward the body/nadir (m²).
+		// surface_area:        total radiative surface area (m²).
+		// emissivity:          flux-weighted average part emissivity.
+		// All four come from UpdateVesselThermalCache.
+		//
+		// Solar flux uses the sun-facing cross-section.
+		// Albedo and body IR use the nadir-facing cross-section (both arrive from below).
+		// Background thermal radiation drives the equilibrium temperature toward ambient.
+		// In atmosphere we use the actual atmospheric temperature: dense air acts as a near-field
+		// blackbody enclosure at atmospheric temperature, consistent with convective equilibration.
+		// In vacuum we fall back to SpaceTemperature (~4K, CMB equivalent).
+		public static double TemperatureWithGeometry(Vessel v, double solar_flux, double albedo_flux,
+			double body_flux, double solar_cross_section, double body_cross_section, double surface_area, double emissivity,
+			out double solar_absorbed_W, out double albedo_absorbed_W, out double body_absorbed_W,
+			out double total_absorbed_W)
+		{
+			solar_absorbed_W  = solar_flux  * solar_cross_section;
+			albedo_absorbed_W = albedo_flux * body_cross_section;
+			body_absorbed_W   = body_flux   * body_cross_section;
+			total_absorbed_W  = solar_absorbed_W + albedo_absorbed_W + body_absorbed_W;
+
+			CelestialBody body = v.mainBody;
+			double backgroundTemp = (body.atmosphere && v.altitude < body.atmosphereDepth)
+				? body.GetTemperature(v.altitude)
+				: PhysicsGlobals.SpaceTemperature;
+			double backgroundAbsorbed = emissivity * PhysicsGlobals.StefanBoltzmanConstant
+				* Math.Pow(backgroundTemp, 4) * surface_area;
+
+			return Math.Pow(
+				(total_absorbed_W + backgroundAbsorbed) / (emissivity * PhysicsGlobals.StefanBoltzmanConstant * surface_area),
+				0.25);
+		}
+
+		// Return instantaneous body-emissive and albedo irradiance in W/m² at the vessel's position.
+		// Delegates to CelestialBody.GetAtmoThermalStats so values are position-correct for eccentric
+		// orbits and consistent with KSP's thermal model, without requiring a loaded vessel.
+		// Returns pre-absorptivity irradiance; the caller's cross-section handles absorptivity.
+		public static void InstantBodyAlbedoFlux(CelestialBody body, CelestialBody sunBody,
+			Vector3d position, Vector3d sunDirection, double altitude,
+			out double bodyEmissive, out double bodyAlbedo)
+		{
+			if (Lib.IsSun(body))
+			{
+				bodyEmissive = 0.0;
+				bodyAlbedo = 0.0;
+				return;
+			}
+			Vector3d upAxis = (position - body.position).normalized;
+			double sunDot = Vector3d.Dot(sunDirection, upAxis);
+			body.GetAtmoThermalStats(
+				true,
+				sunBody,
+				sunDirection,
+				sunDot,
+				upAxis,
+				altitude,
+				out _,
+				out bodyEmissive,
+				out bodyAlbedo);
+
+			// body/albedo radiation is progressively suppressed by atmospheric density (dense air = convection dominates)
+			if (body.atmosphere && altitude < body.atmosphereDepth)
+			{
+				double density = body.GetDensity(body.GetPressure(altitude), body.GetTemperature(altitude));
+				double lerp = CalculateDensityThermalLerp(density);
+				bodyEmissive *= lerp;
+				bodyAlbedo *= lerp;
+			}
+		}
+
+		// mirrors FlightIntegrator.CalculateDensityThermalLerp but omits Mach effects
+		private static double CalculateDensityThermalLerp(double density)
+		{
+			if (density < 0.0625) return 1.0 - Math.Sqrt(Math.Sqrt(density));
+			if (density < 0.25)   return 0.75 - Math.Sqrt(density);
+			return 0.0625 / density;
+		}
+
 		// return difference from survival temperature
 		// - as a special case, there is no temp difference when landed on the home body
 		public static double TempDiff(double k, CelestialBody body, bool landed)

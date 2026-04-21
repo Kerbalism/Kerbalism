@@ -80,6 +80,7 @@ namespace KERBALISM
 			switch (type)
 			{
 				case "temperature": return Math.Min(vd.EnvTemperature / 11000.0, 1.0);
+				case "vessel_temperature": return Math.Min(vd.VesselTemperature / 11000.0, 1.0);
 				case "radiation": return Math.Min(vd.EnvRadiation * 3600.0 / 11.0, 1.0);
 				case "habitat_radiation": return Math.Min(HabitatRadiation(vd) * 3600.0 / 11.0, 1.0);
 				case "pressure": return Math.Min(v.mainBody.GetPressure(v.altitude) / Sim.PressureAtSeaLevel() / 11.0, 1.0);
@@ -94,6 +95,11 @@ namespace KERBALISM
 			switch (type)
 			{
 				case "temperature": return vd.EnvTemperature;
+				case "vessel_temperature": return vd.VesselTemperature;
+				case "absorbed_total_flux": return vd.AbsorbedTotalFlux;
+				case "absorbed_solar_flux": return vd.AbsorbedSolarFlux;
+				case "absorbed_body_flux": return vd.AbsorbedBodyFlux;
+				case "absorbed_albedo_flux": return vd.AbsorbedAlbedoFlux;
 				case "radiation": return vd.EnvRadiation;
 				case "habitat_radiation": return HabitatRadiation(vd);
 				case "pressure": return v.mainBody.GetPressure(v.altitude);
@@ -108,6 +114,11 @@ namespace KERBALISM
 			switch (type)
 			{
 				case "temperature": return Lib.HumanReadableTemp(vd.EnvTemperature);
+				case "vessel_temperature": return Lib.HumanReadableTemp(vd.VesselTemperature);
+				case "absorbed_total_flux": return Lib.HumanReadablePower(vd.AbsorbedTotalFlux);
+				case "absorbed_solar_flux": return Lib.HumanReadablePower(vd.AbsorbedSolarFlux);
+				case "absorbed_body_flux": return Lib.HumanReadablePower(vd.AbsorbedBodyFlux);
+				case "absorbed_albedo_flux": return Lib.HumanReadablePower(vd.AbsorbedAlbedoFlux);
 				case "radiation": return Lib.HumanReadableRadiation(vd.EnvRadiation);
 				case "habitat_radiation": return Lib.HumanReadableRadiation(HabitatRadiation(vd));
 				case "pressure": return Lib.HumanReadablePressure(v.mainBody.GetPressure(v.altitude));
