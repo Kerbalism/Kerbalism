@@ -113,86 +113,38 @@ namespace KERBALISM
 			Requires = ParseRequirements(requires);
 		}
 
+		public double TestRequirements(Vessel v)
+		{
+			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
+			VesselData vd = v.KerbalismData();
+			double result = 1.0;
+
+			for (int i = 0; i < Requires.Length; i++)
+			{
+				double reqResult = EvaluateRequirement(v, vd, Requires[i]);
+				if (reqResult == 0.0)
+				{
+					UnityEngine.Profiling.Profiler.EndSample();
+					return 0.0;
+				}
+				result *= reqResult;
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
+			return result;
+		}
+
 		public double TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
-
 			results = new RequireResult[Requires.Length];
-
 			double result = 1.0;
 
 			for (int i = 0; i < Requires.Length; i++)
 			{
 				results[i] = new RequireResult(Requires[i]);
-				switch (Requires[i].require)
-				{
-					case Require.OrbitMinInclination   : TestReq((c, r) => c >= r, Lib.PrincipiaCorrectInclination(v.orbit),  (double)Requires[i].value, results[i]); break;
-					case Require.OrbitMaxInclination   : TestReq((c, r) => c <= r, Lib.PrincipiaCorrectInclination(v.orbit),  (double)Requires[i].value, results[i]); break;
-					case Require.OrbitMinEccentricity  : TestReq((c, r) => c >= r, v.orbit.eccentricity,        (double)Requires[i].value, results[i]); break;
-					case Require.OrbitMaxEccentricity  : TestReq((c, r) => c <= r, v.orbit.eccentricity,        (double)Requires[i].value, results[i]); break;
-					case Require.OrbitMinArgOfPeriapsis: TestReq((c, r) => c >= r, v.orbit.argumentOfPeriapsis, (double)Requires[i].value, results[i]); break;
-					case Require.OrbitMaxArgOfPeriapsis: TestReq((c, r) => c <= r, v.orbit.argumentOfPeriapsis, (double)Requires[i].value, results[i]); break;
-					case Require.TemperatureMin        : TestReq((c, r) => c >= r, vd.EnvTemperature,           (double)Requires[i].value, results[i]); break;
-					case Require.TemperatureMax        : TestReq((c, r) => c <= r, vd.EnvTemperature,           (double)Requires[i].value, results[i]); break;
-					case Require.AltitudeMin           : TestReq((c, r) => c >= r, v.altitude,                  (double)Requires[i].value, results[i]); break;
-					case Require.AltitudeMax           : TestReq((c, r) => c <= r, v.altitude,                  (double)Requires[i].value, results[i]); break;
-					case Require.RadiationMin          : TestReq((c, r) => c >= r, vd.EnvRadiation,             (double)Requires[i].value, results[i]); break;
-					case Require.RadiationMax          : TestReq((c, r) => c <= r, vd.EnvRadiation,             (double)Requires[i].value, results[i]); break;
-
-					case Require.VolumePerCrewMin      : TestReq((c, r) => c >= r, vd.VolumePerCrew,        (double)Requires[i].value, results[i]); break;
-					case Require.VolumePerCrewMax      : TestReq((c, r) => c <= r, vd.VolumePerCrew,        (double)Requires[i].value, results[i]); break;
-					case Require.SunAngleMin           : TestReq((c, r) => c >= r, vd.EnvSunBodyAngle,      (double)Requires[i].value, results[i]); break;
-					case Require.SunAngleMax           : TestReq((c, r) => c <= r, vd.EnvSunBodyAngle,      (double)Requires[i].value, results[i]); break;
-					case Require.SurfaceSpeedMin       : TestReq((c, r) => c >= r, v.srfSpeed,              (double)Requires[i].value, results[i]); break;
-					case Require.SurfaceSpeedMax       : TestReq((c, r) => c <= r, v.srfSpeed,              (double)Requires[i].value, results[i]); break;
-					case Require.VerticalSpeedMin      : TestReq((c, r) => c >= r, v.verticalSpeed,         (double)Requires[i].value, results[i]); break;
-					case Require.VerticalSpeedMax      : TestReq((c, r) => c <= r, v.verticalSpeed,         (double)Requires[i].value, results[i]); break;
-					case Require.SpeedMin              : TestReq((c, r) => c >= r, v.speed,                 (double)Requires[i].value, results[i]); break;
-					case Require.SpeedMax              : TestReq((c, r) => c <= r, v.speed,                 (double)Requires[i].value, results[i]); break;
-					case Require.DynamicPressureMin    : TestReq((c, r) => c >= r, v.dynamicPressurekPa,    (double)Requires[i].value, results[i]); break;
-					case Require.DynamicPressureMax    : TestReq((c, r) => c <= r, v.dynamicPressurekPa,    (double)Requires[i].value, results[i]); break;
-					case Require.StaticPressureMin     : TestReq((c, r) => c >= r, v.staticPressurekPa,     (double)Requires[i].value, results[i]); break;
-					case Require.StaticPressureMax     : TestReq((c, r) => c <= r, v.staticPressurekPa,     (double)Requires[i].value, results[i]); break;
-					case Require.AtmDensityMin         : TestReq((c, r) => c >= r, v.atmDensity,            (double)Requires[i].value, results[i]); break;
-					case Require.AtmDensityMax         : TestReq((c, r) => c <= r, v.atmDensity,            (double)Requires[i].value, results[i]); break;
-					case Require.AltAboveGroundMin     : TestReq((c, r) => c >= r, v.heightFromTerrain,     (double)Requires[i].value, results[i]); break;
-					case Require.AltAboveGroundMax     : TestReq((c, r) => c <= r, v.heightFromTerrain,     (double)Requires[i].value, results[i]); break;
-					case Require.MaxAsteroidDistance   : TestReq((c, r) => c <= r, TestAsteroidDistance(v), (double)Requires[i].value, results[i]); break;
-					case Require.CommSpeedMin		   : TestReq((c, r) => c >= r, vd.Connection.rate,		(double)Requires[i].value, results[i]); break;
-					case Require.CommSpeedMax		   : TestReq((c, r) => c <= r, vd.Connection.rate,		(double)Requires[i].value, results[i]); break;
-
-					case Require.AtmosphereAltMin      : TestReq((c, r) => c >= r, v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN, (double)Requires[i].value, results[i]); break;
-					case Require.AtmosphereAltMax      : TestReq((c, r) => c <= r, v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN, (double)Requires[i].value, results[i]); break;
-
-					case Require.CrewMin                 : TestReq((c, r) => c >= r, vd.CrewCount,                                           (int)Requires[i].value, results[i]); break;
-					case Require.CrewMax                 : TestReq((c, r) => c <= r, vd.CrewCount,                                           (int)Requires[i].value, results[i]); break;
-					case Require.CrewCapacityMin         : TestReq((c, r) => c >= r, vd.CrewCapacity,                                        (int)Requires[i].value, results[i]); break;
-					case Require.CrewCapacityMax         : TestReq((c, r) => c <= r, vd.CrewCapacity,                                        (int)Requires[i].value, results[i]); break;
-					case Require.AstronautComplexLevelMin: TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.AstronautComplex), (int)Requires[i].value, results[i]); break;
-					case Require.AstronautComplexLevelMax: TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.AstronautComplex), (int)Requires[i].value, results[i]); break;
-					case Require.TrackingStationLevelMin : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.TrackingStation),  (int)Requires[i].value, results[i]); break;
-					case Require.TrackingStationLevelMax : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.TrackingStation),  (int)Requires[i].value, results[i]); break;
-					case Require.MissionControlLevelMin  : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.MissionControl),   (int)Requires[i].value, results[i]); break;
-					case Require.MissionControlLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.MissionControl),   (int)Requires[i].value, results[i]); break;
-					case Require.AdministrationLevelMin  : TestReq((c, r) => c >= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
-					case Require.AdministrationLevelMax  : TestReq((c, r) => c <= r, GetFacilityLevel(SpaceCenterFacility.Administration),   (int)Requires[i].value, results[i]); break;
-					
-					case Require.Shadow         : TestReq(1.0 - vd.EnvSunlightFactor, results[i]); break;
-					case Require.Sunlight       : TestReq(vd.EnvSunlightFactor,       results[i]); break;
-
-					case Require.Greenhouse     : TestReq(() => vd.Greenhouses.Count > 0,                                                                            results[i]); break;
-					case Require.AbsoluteZero   : TestReq(() => vd.EnvTemperature < 30.0,                                                                            results[i]); break;
-					case Require.InnerBelt      : TestReq(() => vd.EnvInnerBelt,                                                                                     results[i]); break;
-					case Require.OuterBelt      : TestReq(() => vd.EnvOuterBelt,                                                                                     results[i]); break;
-					case Require.MagneticBelt   : TestReq(() => vd.EnvInnerBelt || vd.EnvOuterBelt,                                                                  results[i]); break;
-					case Require.Magnetosphere  : TestReq(() => vd.EnvMagnetosphere,                                                                                 results[i]); break;
-					case Require.InterStellar   : TestReq(() => Lib.IsSun(v.mainBody) && vd.EnvInterstellar,                                                         results[i]); break;
-					case Require.Part           : TestReq(() => Lib.HasPart(v, (string)Requires[i].value),															 results[i]); break;
-					case Require.Module         : TestReq(() => Lib.FindModules(v.protoVessel, (string)Requires[i].value).Count > 0,								 results[i]); break;
-
-					default: results[i].result = 1.0; break;
-				}
+				results[i].result = EvaluateRequirement(v, vd, Requires[i], results[i]);
 
 				if (!testAll && results[i].result == 0.0)
 				{
@@ -234,20 +186,89 @@ namespace KERBALISM
 			return true;
 		}
 
-		private void TestReq(Func<bool> Condition, RequireResult result)
+		private double EvaluateRequirement(Vessel v, VesselData vd, RequireDef req, RequireResult result = null)
 		{
-			result.result = Condition() ? 1.0 : 0.0;
+			object mv = null;
+			object rv = req.value;
+			double reqResult;
+
+			switch (req.require)
+			{
+				case Require.OrbitMinInclination   : { double val = Lib.PrincipiaCorrectInclination(v.orbit);  mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.OrbitMaxInclination   : { double val = Lib.PrincipiaCorrectInclination(v.orbit);  mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.OrbitMinEccentricity  : { double val = v.orbit.eccentricity;        mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.OrbitMaxEccentricity  : { double val = v.orbit.eccentricity;        mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.OrbitMinArgOfPeriapsis: { double val = v.orbit.argumentOfPeriapsis; mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.OrbitMaxArgOfPeriapsis: { double val = v.orbit.argumentOfPeriapsis; mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.TemperatureMin        : { double val = vd.EnvTemperature;           mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.TemperatureMax        : { double val = vd.EnvTemperature;           mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AltitudeMin           : { double val = v.altitude;                  mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AltitudeMax           : { double val = v.altitude;                  mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.RadiationMin          : { double val = vd.EnvRadiation;             mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.RadiationMax          : { double val = vd.EnvRadiation;             mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+
+				case Require.VolumePerCrewMin      : { double val = vd.VolumePerCrew;            mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.VolumePerCrewMax      : { double val = vd.VolumePerCrew;            mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SunAngleMin           : { double val = vd.EnvSunBodyAngle;          mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SunAngleMax           : { double val = vd.EnvSunBodyAngle;          mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SurfaceSpeedMin       : { double val = v.srfSpeed;                  mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SurfaceSpeedMax       : { double val = v.srfSpeed;                  mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.VerticalSpeedMin      : { double val = v.verticalSpeed;             mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.VerticalSpeedMax      : { double val = v.verticalSpeed;             mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SpeedMin              : { double val = v.speed;                     mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SpeedMax              : { double val = v.speed;                     mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.DynamicPressureMin    : { double val = v.dynamicPressurekPa;        mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.DynamicPressureMax    : { double val = v.dynamicPressurekPa;        mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.StaticPressureMin     : { double val = v.staticPressurekPa;         mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.StaticPressureMax     : { double val = v.staticPressurekPa;         mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AtmDensityMin         : { double val = v.atmDensity;                mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AtmDensityMax         : { double val = v.atmDensity;                mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AltAboveGroundMin     : { double val = v.heightFromTerrain;         mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AltAboveGroundMax     : { double val = v.heightFromTerrain;         mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.MaxAsteroidDistance   : { double val = TestAsteroidDistance(v);     mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.CommSpeedMin          : { double val = vd.Connection.rate;          mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.CommSpeedMax          : { double val = vd.Connection.rate;          mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+
+				case Require.AtmosphereAltMin      : { double val = v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN; mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AtmosphereAltMax      : { double val = v.mainBody.atmosphere ? v.altitude / v.mainBody.atmosphereDepth : double.NaN; mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+
+				case Require.CrewMin               : { int val = vd.CrewCount;    mv = val; reqResult = val >= (int)rv ? 1.0 : 0.0; break; }
+				case Require.CrewMax               : { int val = vd.CrewCount;    mv = val; reqResult = val <= (int)rv ? 1.0 : 0.0; break; }
+				case Require.CrewCapacityMin       : { int val = vd.CrewCapacity; mv = val; reqResult = val >= (int)rv ? 1.0 : 0.0; break; }
+				case Require.CrewCapacityMax       : { int val = vd.CrewCapacity; mv = val; reqResult = val <= (int)rv ? 1.0 : 0.0; break; }
+
+				case Require.AstronautComplexLevelMin: { int val = GetFacilityLevel(SpaceCenterFacility.AstronautComplex); mv = val; reqResult = val >= (int)rv ? 1.0 : 0.0; break; }
+				case Require.AstronautComplexLevelMax: { int val = GetFacilityLevel(SpaceCenterFacility.AstronautComplex); mv = val; reqResult = val <= (int)rv ? 1.0 : 0.0; break; }
+				case Require.TrackingStationLevelMin : { int val = GetFacilityLevel(SpaceCenterFacility.TrackingStation);  mv = val; reqResult = val >= (int)rv ? 1.0 : 0.0; break; }
+				case Require.TrackingStationLevelMax : { int val = GetFacilityLevel(SpaceCenterFacility.TrackingStation);  mv = val; reqResult = val <= (int)rv ? 1.0 : 0.0; break; }
+				case Require.MissionControlLevelMin  : { int val = GetFacilityLevel(SpaceCenterFacility.MissionControl);   mv = val; reqResult = val >= (int)rv ? 1.0 : 0.0; break; }
+				case Require.MissionControlLevelMax  : { int val = GetFacilityLevel(SpaceCenterFacility.MissionControl);   mv = val; reqResult = val <= (int)rv ? 1.0 : 0.0; break; }
+				case Require.AdministrationLevelMin  : { int val = GetFacilityLevel(SpaceCenterFacility.Administration);   mv = val; reqResult = val >= (int)rv ? 1.0 : 0.0; break; }
+				case Require.AdministrationLevelMax  : { int val = GetFacilityLevel(SpaceCenterFacility.Administration);   mv = val; reqResult = val <= (int)rv ? 1.0 : 0.0; break; }
+
+				case Require.Shadow  : { double val = 1.0 - vd.EnvSunlightFactor; mv = val; reqResult = val; break; }
+				case Require.Sunlight: { double val = vd.EnvSunlightFactor;       mv = val; reqResult = val; break; }
+
+				case Require.Greenhouse   : reqResult = vd.Greenhouses.Count > 0                             ? 1.0 : 0.0; break;
+				case Require.AbsoluteZero : reqResult = vd.EnvTemperature < 30.0                             ? 1.0 : 0.0; break;
+				case Require.InnerBelt    : reqResult = vd.EnvInnerBelt                                      ? 1.0 : 0.0; break;
+				case Require.OuterBelt    : reqResult = vd.EnvOuterBelt                                      ? 1.0 : 0.0; break;
+				case Require.MagneticBelt : reqResult = vd.EnvInnerBelt || vd.EnvOuterBelt                   ? 1.0 : 0.0; break;
+				case Require.Magnetosphere: reqResult = vd.EnvMagnetosphere                                  ? 1.0 : 0.0; break;
+				case Require.InterStellar : reqResult = Lib.IsSun(v.mainBody) && vd.EnvInterstellar          ? 1.0 : 0.0; break;
+				case Require.Part         : reqResult = Lib.HasPart(v, (string)rv)                           ? 1.0 : 0.0; break;
+				case Require.Module       : reqResult = Lib.FindModules(v.protoVessel, (string)rv).Count > 0 ? 1.0 : 0.0; break;
+
+				default: reqResult = 1.0; break;
+			}
+
+			if (result != null) result.value = mv;
+			return reqResult;
 		}
 
 		private void TestReq<T, U>(Func<T, U, bool> Condition, T val, U reqVal, RequireResult result)
 		{
 			result.result = Condition(val, reqVal) ? 1.0 : 0.0;
-			result.value = val;
-		}
-
-		private void TestReq(double val, RequireResult result)
-		{
-			result.result = val;
 			result.value = val;
 		}
 

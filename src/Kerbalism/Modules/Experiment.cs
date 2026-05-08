@@ -481,17 +481,16 @@ namespace KERBALISM
 				return 0.0;
 			}
 
-			if (!string.IsNullOrEmpty(prefab.crew_operate))
+			if (prefab.operator_cs != null)
 			{
-				var cs = new CrewSpecs(prefab.crew_operate);
-				if (!cs && Lib.CrewCount(v) > 0)
+				if (!prefab.operator_cs && Lib.CrewCount(v) > 0)
 				{
 					mainIssue = Local.Module_Experiment_issue5;//"crew on board"
 					return 0.0;
 				}
-				else if (cs && !cs.Check(v))
+				else if (prefab.operator_cs && !prefab.operator_cs.Check(v))
 				{
-					mainIssue = cs.Warning();
+					mainIssue = prefab.operator_cs.Warning();
 					return 0.0;
 				}
 			}
@@ -514,7 +513,7 @@ namespace KERBALISM
 				return 0.0;
 			}
 
-			double reqScalar = prefab.Requirements.TestRequirements(v, out _);
+			double reqScalar = prefab.Requirements.TestRequirements(v);
 			if (reqScalar == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
