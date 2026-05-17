@@ -436,6 +436,13 @@ namespace KERBALISM
 		public double VesselBodyCrossSection => vesselBodyCrossSection; double vesselBodyCrossSection = -1.0;
 
 		/// <summary>
+		/// Orbit-averaged body cross-section: analytical average of <see cref="VesselBodyCrossSection"/>
+		/// over a full circular orbit, computed from the orbital plane normal when the vessel is loaded.
+		/// Used in place of the instantaneous value for unloaded vessels. -1 if not yet measured.
+		/// </summary>
+		public double VesselBodyCrossSectionOrbitAvg => vesselBodyCrossSectionOrbitAvg; double vesselBodyCrossSectionOrbitAvg = -1.0;
+
+		/// <summary>
 		/// Flux-weighted average emissivity of the vessel skin, cached from last time loaded.
 		/// </summary>
 		public double VesselEmissivity => vesselEmissivity; double vesselEmissivity = 0.9;
@@ -822,6 +829,7 @@ namespace KERBALISM
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
 			vesselSolarCrossSection = Lib.ConfigValue(node, "vesselSolarCrossSection", -1.0);
 			vesselBodyCrossSection = Lib.ConfigValue(node, "vesselBodyCrossSection", -1.0);
+			vesselBodyCrossSectionOrbitAvg = Lib.ConfigValue(node, "vesselBodyCrossSectionOrbitAvg", -1.0);
 			vesselEmissivity = Lib.ConfigValue(node, "vesselEmissivity", 0.9);
 
 			stormData = new StormData(node.GetNode("StormData"));
@@ -902,6 +910,8 @@ namespace KERBALISM
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
 			node.AddValue("vesselSolarCrossSection", vesselSolarCrossSection);
 			node.AddValue("vesselBodyCrossSection", vesselBodyCrossSection);
+			TryRefreshVesselBodyCrossSectionAvg();
+			node.AddValue("vesselBodyCrossSectionOrbitAvg", vesselBodyCrossSectionOrbitAvg);
 			node.AddValue("vesselEmissivity", vesselEmissivity);
 
 			stormData.Save(node.AddNode("StormData"));
@@ -1060,7 +1070,10 @@ namespace KERBALISM
 			// compute geometry-corrected temperature if we have cached data, otherwise fall back.
 			// Use KSP's GetAtmoThermalStats for body/albedo irradiance: instantaneous, position-correct
 			// for eccentric orbits, and consistent with what KSP's thermal panel reports.
-			if (vesselSurfaceArea > 0.0 && vesselSolarCrossSection >= 0.0 && vesselBodyCrossSection >= 0.0)
+			double effectiveBodyCS = (Vessel.loaded || vesselBodyCrossSectionOrbitAvg < 0.0 || landed)
+				? vesselBodyCrossSection
+				: vesselBodyCrossSectionOrbitAvg;
+			if (vesselSurfaceArea > 0.0 && vesselSolarCrossSection >= 0.0 && effectiveBodyCS >= 0.0)
 			{
 				double instBodyFlux, instAlbedoFlux;
 				Sim.InstantBodyAlbedoFlux(Vessel.mainBody, mainSun.SunData.body,
@@ -1068,7 +1081,7 @@ namespace KERBALISM
 					out instBodyFlux, out instAlbedoFlux);
 				vesselTemperature = Sim.TemperatureWithGeometry(
 					Vessel, solarFluxTotal, instAlbedoFlux, instBodyFlux,
-					vesselSolarCrossSection, vesselBodyCrossSection, vesselSurfaceArea, vesselEmissivity,
+					vesselSolarCrossSection, effectiveBodyCS, vesselSurfaceArea, vesselEmissivity,
 					out absorbedSolarFlux, out absorbedAlbedoFlux, out absorbedBodyFlux, out absorbedTotalFlux);
 			}
 			else
@@ -1112,6 +1125,17 @@ namespace KERBALISM
 			// other stuff
 			gravioli = Sim.Graviolis(Vessel);
 			UnityEngine.Profiling.Profiler.EndSample();
+		}
+
+		private void TryRefreshVesselBodyCrossSectionAvg()
+		{
+			if (Vessel != null && Vessel.loaded && !Vessel.Landed && !Vessel.Splashed)
+			{
+				Vector3d pos = Vessel.CoMD;
+				Vector3d orbitNormal = Vector3d.Cross(pos - (Vector3d)Vessel.mainBody.position, Vessel.obt_velocity).normalized;
+				double orbitAvg = Sim.ComputeOrbitAvgBodyCrossSection(Vessel, orbitNormal);
+				if (orbitAvg >= 0.0) vesselBodyCrossSectionOrbitAvg = orbitAvg;
+			}
 		}
 
 		#endregion

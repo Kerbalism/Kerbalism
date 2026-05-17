@@ -960,6 +960,190 @@ namespace KERBALISM
 			return temp;
 		}
 
+		// Estimates the orbit-averaged effective body cross-section (m²) for a loaded vessel.
+		// Method: uniform angular quadrature over the orbit plane.
+		//   The nadir direction traces a full circle in the plane perpendicular to the orbit
+		//   normal as the vessel completes one orbit.  N=16 equally-spaced azimuths are sampled
+		//   and averaged (rectangle / midpoint rule).  Because the cross-section is a smooth
+		//   periodic function of azimuth, the rectangle rule converges spectrally — 16 samples
+		//   is more than sufficient for the part counts found in practice.
+		//
+		// Returns -1.0 if the vessel is not loaded (drag-cube data unavailable).
+		public static double ComputeOrbitAvgBodyCrossSection(Vessel v, Vector3d orbitNormal)
+		{
+			if (!v.loaded) return -1.0;
+
+			List<Part> parts = v.Parts;
+			int n = parts.Count;
+			if (n == 0) return 0.0;
+
+			UnityEngine.Profiling.Profiler.BeginSample("ComputeOrbitAvgBodyCrossSection");
+
+			Vector3 on = (Vector3)orbitNormal;
+			// Smallest-component trick: cross with the axis least parallel to 'on'
+			// to guarantee a non-degenerate perpendicular for any orbit inclination.
+			Vector3 perp1 = Perpendicular(on).normalized;
+			Vector3 perp2 = Vector3.Cross(on, perp1);  // completes right-hand basis in the orbital plane
+
+			// Scratch buffers allocated once and reused across all N direction samples.
+			int[]     sortIdx   = new int[n];
+			Vector3[] positions = new Vector3[n];
+			float[]   depths    = new float[n];
+			float[]   areas     = new float[n];
+			float[]   radii     = new float[n];
+			float[]   absorbs   = new float[n];
+			Vector3[] occPos    = new Vector3[n];
+			float[]   occRad    = new float[n];
+
+			const int N = 16;
+			float acc = 0f;
+			for (int k = 0; k < N; k++)
+			{
+				float angle = k * (2f * Mathf.PI / N);
+				acc += SampleOccludedBodyCS(Mathf.Cos(angle) * perp1 + Mathf.Sin(angle) * perp2);
+			}
+
+			UnityEngine.Profiling.Profiler.EndSample();
+			return acc / N;
+
+			// Returns a vector perpendicular to u by crossing u with the coordinate axis
+			// most orthogonal to it (the one with the smallest absolute component).
+			// This avoids the near-zero result that would occur if u were nearly parallel
+			// to the chosen axis.
+			Vector3 Perpendicular(Vector3 u)
+			{
+				float ax = Mathf.Abs(u.x), ay = Mathf.Abs(u.y), az = Mathf.Abs(u.z);
+				if (ax <= ay && ax <= az) return new Vector3(0f, -u.z, u.y);
+				if (ay <= az) return new Vector3(-u.z, 0f, u.x);
+				return new Vector3(-u.y, u.x, 0f);
+			}
+
+			// Computes the effective absorbing cross-section for a single nadir direction.
+			// Parts are processed from body-side outward. Each unoccluded part is added to
+			// a sparse occluder list; later (shallower) parts only check against that list
+			// instead of all n parts, giving sub-O(n²) behaviour for typical vessel shapes.
+			// Fully-occluded parts (bMult ≤ 0.001) are excluded from the occluder list,
+			// which also prevents double-counting their shadow through an upstream occluder.
+			float SampleOccludedBodyCS(Vector3 worldDir)
+			{
+				// Pass 1: collect valid parts into compact arrays.
+				int m = 0;
+				for (int i = 0; i < n; i++)
+				{
+					Part pi = parts[i];
+					if (pi.DragCubes.None || pi.ptd == null) continue;
+					float absorb = (float)pi.absorptiveConstant;
+					if (absorb <= 0f) continue;
+					Vector3 localDir = Quaternion.Inverse(pi.partTransform.rotation) * worldDir;
+					float area = GetAreaInDir(localDir, pi.DragCubes.AreaOccluded);
+					if (area <= 0f) continue;
+
+					positions[m] = pi.partTransform.position;
+					depths[m]    = Vector3.Dot(positions[m], worldDir);
+					areas[m]     = area;
+					radii[m]     = Mathf.Sqrt(area / Mathf.PI);
+					absorbs[m]   = absorb;
+					sortIdx[m]   = m;
+					m++;
+				}
+
+				// Pass 2: insertion sort by depth descending (body-side parts first).
+				// Allocation-free; efficient for the typical n < 100.
+				for (int s = 1; s < m; s++)
+				{
+					int key = sortIdx[s];
+					float kd = depths[key];
+					int t = s - 1;
+					while (t >= 0 && depths[sortIdx[t]] < kd)
+					{
+						sortIdx[t + 1] = sortIdx[t];
+						t--;
+					}
+					sortIdx[t + 1] = key;
+				}
+
+				// Pass 3: sweep body-side outward; maintain a sparse list of unoccluded
+				// parts that can shadow the parts above them.
+				int occCount = 0;
+				float total = 0f;
+
+				for (int si = 0; si < m; si++)
+				{
+					int i = sortIdx[si];
+					float bMult = 1f;
+
+					for (int oj = 0; oj < occCount; oj++)
+					{
+						// relPos points from part i toward occluder oj.
+						// depth > 0 iff the occluder is body-side of i (guard against
+						// same-depth radially-attached parts).
+						Vector3 relPos = occPos[oj] - positions[i];
+						float depth = Vector3.Dot(relPos, worldDir);
+						if (depth <= 0f) continue;
+
+						Vector3 perpOffset = relPos - depth * worldDir;
+						bMult -= CircleOverlapFraction(radii[i], occRad[oj], perpOffset.sqrMagnitude);
+						if (bMult <= 0f)
+						{
+							bMult = 0f;
+							break;
+						}
+					}
+
+					total += areas[i] * bMult * absorbs[i];
+
+					if (bMult > 0.001f)
+					{
+						occPos[occCount] = positions[i];
+						occRad[occCount] = radii[i];
+						occCount++;
+					}
+				}
+
+				return total;
+			}
+
+			// Drag-cube projected-area lookup: mirrors KSP's FlightIntegrator.GetBodyArea().
+			// oc[0..5] = AreaOccluded for the +X, -X, +Y, -Y, +Z, -Z drag-cube faces.
+			// Only faces whose outward normal has a positive dot product with localDir contribute,
+			// weighted by that dot product — a piecewise-linear hemisphere integral.
+			float GetAreaInDir(Vector3 localDir, float[] oc)
+			{
+				return Mathf.Max(0f, localDir.x) * oc[0] + Mathf.Max(0f, -localDir.x) * oc[1]
+					 + Mathf.Max(0f, localDir.y) * oc[2] + Mathf.Max(0f, -localDir.y) * oc[3]
+					 + Mathf.Max(0f, localDir.z) * oc[4] + Mathf.Max(0f, -localDir.z) * oc[5];
+			}
+
+			// Returns the fraction of circle I's area covered by circle J (value in [0, 1]).
+			//
+			// Uses the standard two-circle lens-area formula:
+			//   alpha = half-angle subtended at centre I by the common chord  (law of cosines)
+			//   beta  = half-angle subtended at centre J
+			//   lens area = rI²·alpha + rJ²·beta − ½·sqrt(Q)
+			//
+			// Q = (−d+rI+rJ)(d+rI−rJ)(d−rI+rJ)(d+rI+rJ) is Heron's formula in expanded form
+			// for the triangle with sides d, rI, rJ (the two circle centres + one intersection
+			// point): Q = 16·T², so sqrt(Q)/2 = 2T = area of the kite formed by both centres
+			// and both intersection points. This factored form is numerically stable near the
+			// boundary cases (circles barely touching or nearly contained).
+			// Reference: Weisstein, "Circle-Circle Intersection," MathWorld.
+			float CircleOverlapFraction(float rI, float rJ, float sqrDist)
+			{
+				float sumR = rI + rJ;
+				if (sqrDist >= sumR * sumR) return 0f;            // circles are disjoint
+				float dist = Mathf.Sqrt(sqrDist);
+				if (rJ >= rI + dist) return 1f;                   // J fully contains I
+				if (rI >= rJ + dist) return rJ * rJ / (rI * rI);  // I fully contains J; visible fraction = (rJ/rI)²
+				if (dist < 1e-5f) return rJ >= rI ? 1f : rJ * rJ / (rI * rI);
+				float rI2 = rI * rI, rJ2 = rJ * rJ, d2 = sqrDist;
+				float alpha = Mathf.Acos(Mathf.Clamp((d2 + rI2 - rJ2) / (2f * dist * rI), -1f, 1f));
+				float beta  = Mathf.Acos(Mathf.Clamp((d2 + rJ2 - rI2) / (2f * dist * rJ), -1f, 1f));
+				float lensArea = rI2 * alpha + rJ2 * beta
+					- 0.5f * Mathf.Sqrt(Mathf.Max(0f, (-dist + sumR) * (dist + rI - rJ) * (dist - rI + rJ) * (dist + sumR)));
+				return Mathf.Clamp(lensArea / (Mathf.PI * rI2), 0f, 1f);
+			}
+		}
+
 		// Update cached thermal geometry data from loaded part data.
 		// sunWorldDirection: normalized world-space vessel→sun unit vector.
 		// bodyWorldDirection: normalized world-space vessel→body (nadir) unit vector.
