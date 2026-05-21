@@ -26,6 +26,10 @@ namespace KERBALISM
 
 	public class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
 	{
+		// dropdown colour markers for setups already present on the craft
+		const string COLOR_SAME_MODULE = "#ff5555";  // already selected by another slot of this Configure module
+		const string COLOR_SAME_VESSEL = "#ffcc55";  // experiment_id already running on a different part of the vessel
+
 		// config
 		[KSPField] public string title = string.Empty;           // short description (may be a #loc key; display via Localizer.Format)
 		[KSPField] public string configureId = string.Empty;     // stable MM-safe id (no #); use HAS[#configureId[...]] instead of HAS[#title[#loc]]
@@ -50,6 +54,8 @@ namespace KERBALISM
 		bool initialized;                                         // keep track of first configuration
 		CrewSpecs reconfigure_cs;                                 // in-flight reconfiguration crew specs
 		Dictionary<int, int> changes;                             // store 'deferred' changes to avoid problems with unity gui
+		HashSet<int> expanded_slots;                              // per-slot dropdown expansion state
+		HashSet<string> vesselExperimentIds_cache;                // populated each Window_body() refresh; consulted for yellow overlap highlight
 
 		// used to avoid infinite recursion when dealing with symmetry group
 		static bool avoid_inf_recursion;
@@ -101,6 +107,7 @@ namespace KERBALISM
 
 			// store configuration changes
 			changes = new Dictionary<int, int>();
+			expanded_slots = new HashSet<int>();
 		}
 
 
@@ -564,6 +571,11 @@ namespace KERBALISM
 				if (GetInstanceID() == 0) return;
 			}
 
+			// compute the vessel-wide set of running experiment_ids once per refresh; both
+			// the section titles and the expanded dropdown rows consult it for the yellow
+			// "already running elsewhere" highlight.
+			vesselExperimentIds_cache = CollectVesselExperimentIds();
+
 			// for each selected setup
 			for (int selected_i = 0; selected_i < selected.Count; ++selected_i)
 			{
@@ -590,37 +602,173 @@ namespace KERBALISM
 			//       see comment inside generate_details() to understand why this was necessary instead
 			setup.Generate_details(this);
 
-			// render panel title
-			// only allow reconfiguration if there are more setups than slots
-			string setupTitle = Localizer.Format(setup.title);
-			string setupDesc = Localizer.Format(setup.desc);
-			if (unlocked.Count <= selected.Count)
+			// reconfiguration is only available when more setups are unlocked than slots
+			bool canReconfigure = unlocked.Count > selected.Count;
+			bool isExpanded = canReconfigure && expanded_slots.Contains(selected_i);
+			string indicator = canReconfigure ? (isExpanded ? "  ▲" : "  ▼") : string.Empty;
+
+			// colour the section title (the user's current pick) the same way the dropdown
+			// rows are coloured so the warning is visible even when the dropdown is closed.
+			// setup.title/desc may be #loc keys, display via Localizer.Format.
+			string titleColor = SetupHighlightColor(setup, selected_i);
+			string titleText = Lib.Ellipsis(Localizer.Format(setup.title), Styles.ScaleStringLength(70));
+			if (titleColor != null) titleText = "<color=" + titleColor + ">" + titleText + "</color>";
+			titleText += indicator;
+
+			// section title doubles as the dropdown toggle when reconfiguration is allowed.
+			// hide the currently-selected setup's description while expanded — the option
+			// is right there in the list with its own row and the description is just noise.
+			int capturedSlot = selected_i;
+			string sectionDesc = isExpanded ? string.Empty : Localizer.Format(setup.desc);
+			if (canReconfigure)
 			{
-				p.AddSection(Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70)), setupDesc);
+				p.AddSection(titleText, sectionDesc, click: () => Toggle_expansion(capturedSlot));
 			}
 			else
 			{
-				p.AddSection(Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70)), setupDesc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
+				p.AddSection(titleText, sectionDesc);
 			}
 
-			// render details
-			foreach (var det in setup.details)
+			if (isExpanded)
 			{
-				p.AddContent(det.label, det.value);
+				// list every unlocked setup as a selectable row instead of the existing details.
+				// keeps the panel from doubling in height and avoids the prev/next click-cycle
+				// where you can't tell how many options remain or end up looping past one you wanted.
+				for (int i = 0; i < unlocked.Count; ++i)
+				{
+					ConfigureSetup option = unlocked[i];
+					// hide the "None 2", "None 3", … padding entries that KerbalismConfig
+					// generates so multi-slot Configure modules can have every slot empty —
+					// they're noise to the user. Always show the currently-selected one even
+					// if it happens to be a padded variant.
+					if (i != setup_i && IsNonePaddingName(option.name)) continue;
+					int capturedIndex = i;
+					bool isCurrent = i == setup_i;
+					string optionTitle = Lib.Ellipsis(Localizer.Format(option.title), Styles.ScaleStringLength(60));
+
+					// don't colour the currently-selected row — that's the user's own
+					// choice and would just be noise. The section title carries the
+					// duplicate-warning colour separately when needed.
+					string optionColor = isCurrent ? null : SetupHighlightColor(option, capturedSlot);
+					if (optionColor != null) optionTitle = "<color=" + optionColor + ">" + optionTitle + "</color>";
+					if (isCurrent) optionTitle = "<b>" + optionTitle + "</b>";
+
+					string marker = isCurrent ? "✓" : string.Empty;
+					p.AddContent(optionTitle, marker, Localizer.Format(option.desc), () => Select_setup(capturedSlot, capturedIndex));
+				}
+			}
+			else
+			{
+				// render details for the selected setup (collapsed view)
+				foreach (var det in setup.details)
+				{
+					p.AddContent(det.label, det.value);
+				}
 			}
 		}
 
-		// utility, used as callback in panel select
-		void Change_setup(int change, int selected_i, ref int setup_i)
+		void Toggle_expansion(int slot)
 		{
+			if (!expanded_slots.Remove(slot)) expanded_slots.Add(slot);
+		}
 
+		// "None", "None 2", "None 3", … are functionally identical empty-slot placeholders
+		// generated by config to satisfy the unique-name-per-slot constraint. Treat the
+		// numbered ones as padding and hide them from the dropdown so users only see one
+		// "None" option.
+		static bool IsNonePaddingName(string name)
+		{
+			if (string.IsNullOrEmpty(name) || !name.StartsWith("None ", StringComparison.Ordinal)) return false;
+			string rest = name.Substring(5).Trim();
+			return int.TryParse(rest, out _);
+		}
 
+		static bool IsNoneName(string name)
+		{
+			return name == "None" || IsNonePaddingName(name);
+		}
 
+		// Returns the highlight colour (red/yellow) that should be applied to a setup
+		// from this Configure module — used for both the section title (the current
+		// selection) and the rows in the expanded dropdown. Empty/"None" setups never
+		// get a colour; same-module duplication beats same-vessel duplication.
+		string SetupHighlightColor(ConfigureSetup setup, int slot)
+		{
+			if (setup == null || IsNoneName(setup.name)) return null;
+			if (IsSetupInOtherSlot(setup.name, slot)) return COLOR_SAME_MODULE;
+			if (vesselExperimentIds_cache != null && SetupOverlapsExperimentIds(setup, vesselExperimentIds_cache)) return COLOR_SAME_VESSEL;
+			return null;
+		}
 
-			if (setup_i + change == unlocked.Count) setup_i = 0;
-			else if (setup_i + change < 0) setup_i = unlocked.Count - 1;
-			else setup_i += change;
-			changes.Add(selected_i, setup_i);
+		// True if `setupName` is already selected by some other slot of THIS Configure
+		// module (i.e., picking it would have the same experiment running twice on the
+		// same part).
+		bool IsSetupInOtherSlot(string setupName, int currentSlot)
+		{
+			for (int i = 0; i < selected.Count; ++i)
+			{
+				if (i == currentSlot) continue;
+				if (selected[i] == setupName) return true;
+			}
+			return false;
+		}
+
+		// Pull the experiment_ids of every Experiment module attached to a SETUP.
+		static IEnumerable<string> SetupExperimentIds(ConfigureSetup setup)
+		{
+			if (setup == null || setup.modules == null) yield break;
+			foreach (ConfigureModule m in setup.modules)
+			{
+				if (m.type == nameof(Experiment) && m.id_field == "experiment_id" && !string.IsNullOrEmpty(m.id_value))
+					yield return m.id_value;
+			}
+		}
+
+		static bool SetupOverlapsExperimentIds(ConfigureSetup setup, HashSet<string> ids)
+		{
+			if (ids.Count == 0) return false;
+			foreach (string id in SetupExperimentIds(setup))
+				if (ids.Contains(id)) return true;
+			return false;
+		}
+
+		// Walk the rest of the vessel (editor or flight) and collect every experiment_id
+		// already selected via some other Configure module. Used to colour dropdown
+		// options yellow when another part on the same craft is already carrying that
+		// experiment.
+		HashSet<string> CollectVesselExperimentIds()
+		{
+			var ids = new HashSet<string>();
+			List<Part> parts = null;
+			if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null && EditorLogic.fetch.ship != null)
+				parts = EditorLogic.fetch.ship.parts;
+			else if (part.vessel != null)
+				parts = part.vessel.parts;
+			if (parts == null) return ids;
+
+			foreach (Part p in parts)
+			{
+				if (p == part) continue;
+				foreach (PartModule pm in p.Modules)
+				{
+					if (!(pm is Configure other) || other.selected == null) continue;
+					foreach (string selectedName in other.selected)
+					{
+						ConfigureSetup s = other.setups?.Find(k => k.name == selectedName);
+						if (s == null) continue;
+						foreach (string id in SetupExperimentIds(s)) ids.Add(id);
+					}
+				}
+			}
+			return ids;
+		}
+
+		// callback for "click a row in the dropdown to select that setup"
+		void Select_setup(int slot, int setup_i)
+		{
+			// use indexer (not Add) so a second click in the same frame doesn't throw
+			changes[slot] = setup_i;
+			expanded_slots.Remove(slot);
 		}
 
 		// access setups

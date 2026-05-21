@@ -71,6 +71,15 @@ namespace KERBALISM
 				fixedHeight = ScaleFloat(16.0f)
 			};
 
+			// like entry_container but with no fixedHeight, so rows containing labels that
+			// wrap to multiple lines grow vertically instead of squeezing the wrap into the
+			// gap between adjacent rows. Used by clickable rows (dropdown items) where
+			// long titles are expected.
+			entry_container_wrap = new GUIStyle
+			{
+				stretchWidth = true
+			};
+
 			// entry label text
 			entry_label = new GUIStyle(HighLogic.Skin.label)
 			{
@@ -253,6 +262,7 @@ namespace KERBALISM
 		public static GUIStyle section_container;         // container for a section subtitle
 		public static GUIStyle section_text;              // text for a section subtitle
 		public static GUIStyle entry_container;           // container for a row
+		public static GUIStyle entry_container_wrap;      // row container that allows the row to grow vertically when labels wrap
 		public static GUIStyle entry_label;               // left content for a row
 		public static GUIStyle entry_label_nowrap;        // left content for a row that doesn't wrap
 		public static GUIStyle entry_value;               // right content for a row

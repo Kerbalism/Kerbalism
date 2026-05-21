@@ -58,10 +58,21 @@ namespace KERBALISM
 			// correct for non-origin screen rect
 			mouse_pos -= new Vector2(screen_rect.xMin, screen_rect.yMin);
 
-			// calculate tooltip size
+			// calculate tooltip size. CalcSize gives the natural width; cap to popup width
+			// so long text wraps inside the window. If wrapping actually kicks in, widen to
+			// the full popup width so the wrapped text uses available horizontal space
+			// instead of stacking up vertically.
 			GUIContent tooltip_content = new GUIContent(tooltip);
 			Vector2 tooltip_size = Styles.tooltip.CalcSize(tooltip_content);
+			float max_width = Math.Max(50f, screen_rect.width - 20f);
+			if (tooltip_size.x > max_width) tooltip_size.x = max_width;
 			tooltip_size.y = Styles.tooltip.CalcHeight(tooltip_content, tooltip_size.x);
+			float single_line_h = Styles.tooltip.CalcHeight(new GUIContent("X"), max_width);
+			if (tooltip_size.y > single_line_h * 1.25f && tooltip_size.x < max_width)
+			{
+				tooltip_size.x = max_width;
+				tooltip_size.y = Styles.tooltip.CalcHeight(tooltip_content, tooltip_size.x);
+			}
 
 			// calculate tooltip position, default vertical position is above the cursor
 			Rect tooltip_rect = new Rect(mouse_pos.x - Mathf.Floor(tooltip_size.x / 2.0f), mouse_pos.y - tooltip_size.y - 10.0f, tooltip_size.x, tooltip_size.y);

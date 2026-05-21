@@ -73,7 +73,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void AddSection(string title, string desc = "", Action left = null, Action right = null, Boolean sort = false)
+		public void AddSection(string title, string desc = "", Action left = null, Action right = null, Boolean sort = false, Action click = null)
 		{
 			Section p = new Section
 			{
@@ -81,6 +81,7 @@ namespace KERBALISM
 				desc = desc,
 				left = left,
 				right = right,
+				click = click,
 				sort = sort,
 				needsSort = false,
 				entries = new List<Entry>()
@@ -161,6 +162,7 @@ namespace KERBALISM
 					if (Lib.IsClicked()) callbacks.Add(p.left);
 				}
 				GUILayout.Label(p.title, Styles.section_text);
+				if (p.click != null && Lib.IsClicked()) callbacks.Add(p.click);
 				if (p.right != null)
 				{
 					GUILayout.Label(Textures.right_arrow, Styles.right_icon);
@@ -183,16 +185,32 @@ namespace KERBALISM
 				}
 				foreach (Entry e in p.entries)
 				{
-					GUILayout.BeginHorizontal(Styles.entry_container);
+					// Clickable rows (dropdown items) can hold long titles that need to wrap.
+					// They use the no-fixed-height container with a MinHeight floor matching
+					// the original 16-px row, so single-line rows look identical to the rest
+					// of the panel and only wrapped rows grow taller.
+					bool wrapRow = e.click != null;
+					if (wrapRow)
+						GUILayout.BeginHorizontal(Styles.entry_container_wrap, GUILayout.MinHeight(Styles.entry_container.fixedHeight));
+					else
+						GUILayout.BeginHorizontal(Styles.entry_container);
 					if (e.leftIcon != null)
 					{
 						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
 						if (e.leftIcon.click != null && Lib.IsClicked())
 							callbacks.Add(e.leftIcon.click);
 					}
-					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+					if (wrapRow)
+						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label);
+					else
+						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+					// detect click on the label too so the whole row is clickable, not just the value column
+					if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
+					if (wrapRow)
+						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value);
+					else
+						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
 					if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
 					foreach (Icon i in e.icons)
@@ -201,6 +219,20 @@ namespace KERBALISM
 						if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
 					}
 					GUILayout.EndHorizontal();
+
+					// hover highlight: when the cursor is over the row, draw a subtle
+					// translucent box over it so the user can see what they're about to click.
+					if (e.click != null && Event.current.type == EventType.Repaint)
+					{
+						Rect rowRect = GUILayoutUtility.GetLastRect();
+						if (rowRect.Contains(Event.current.mousePosition))
+						{
+							Color prev = GUI.color;
+							GUI.color = new Color(1f, 1f, 1f, 0.12f);
+							GUI.DrawTexture(rowRect, Texture2D.whiteTexture);
+							GUI.color = prev;
+						}
+					}
 				}
 
 				// spacing
@@ -307,6 +339,7 @@ namespace KERBALISM
 			public string desc;
 			public Action left;
 			public Action right;
+			public Action click;
 			public Boolean sort;
 			public Boolean needsSort;
 			public List<Entry> entries;
