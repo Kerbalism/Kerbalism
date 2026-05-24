@@ -117,7 +117,7 @@ namespace KERBALISM
 				if (!vd.Connection.linked || vd.Connection.rate < __instance.comms_rate)
 				{
 					__instance.isTracking = false;
-					__instance.status = "Comms connection too weak";
+					__instance.status = Local.Sentinel_CommsTooWeak;
 					return false;
 				}
 

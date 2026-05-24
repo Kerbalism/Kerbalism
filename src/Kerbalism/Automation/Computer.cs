@@ -82,7 +82,7 @@ namespace KERBALISM
 				// - unless the script is empty (can happen when being edited)
 				if (script.states.Count > 0 && v.KerbalismData().cfg_script)
 				{
-					Message.Post(Lib.BuildString(Local.UI_scriptvessel, " <b>", v.vesselName, "</b>"));
+					Message.Post(Local.UI_scriptvessel.Format("<b>" + v.vesselName + "</b>"));
 				}
 			}
 		}
@@ -220,7 +220,7 @@ namespace KERBALISM
 				// show message to the user
 				if (v.KerbalismData().cfg_script)
 				{
-					Message.Post(Lib.BuildString("Script called on vessel <b>", v.vesselName, "</b>"));
+					Message.Post(Local.UI_scriptvessel.Format("<b>" + v.vesselName + "</b>"));
 				}
 			}
 		}

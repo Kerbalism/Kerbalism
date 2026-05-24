@@ -379,7 +379,7 @@ namespace KERBALISM.Planner
 			}
 			else
 			{
-				p.AddContent(Local.Planner_comfort, "n/a");//"comfort"
+				p.AddContent(Local.Planner_comfort, Local.Generic_notapplicable);//"comfort"
 			}
 
 			// render pressure data
@@ -392,7 +392,7 @@ namespace KERBALISM.Planner
 			}
 			else
 			{
-				p.AddContent(Local.Planner_pressurized, "n/a");//"pressurized"
+				p.AddContent(Local.Planner_pressurized, Local.Generic_notapplicable);//"pressurized"
 			}
 
 			// render life estimate
@@ -549,7 +549,7 @@ namespace KERBALISM.Planner
 
 			// generate status string for scrubbing
 			string waste_status = !Features.Poisoning                   //< feature disabled
-			  ? "n/a"
+			  ? Local.Generic_notapplicable
 			  : waste_res.produced <= double.Epsilon                    //< unnecessary
 			  ? Local.Planner_scrubbingunnecessary//"not required"
 			  : waste_res.consumed <= double.Epsilon                    //< no scrubbing
@@ -560,7 +560,7 @@ namespace KERBALISM.Planner
 
 			// generate status string for pressurization
 			string atmo_status = !Features.Pressure                     //< feature disabled
-			  ? "n/a"
+			  ? Local.Generic_notapplicable
 			  : atmo_res.consumed <= double.Epsilon                     //< unnecessary
 			  ? Local.Planner_pressurizationunnecessary//"not required"
 			  : atmo_res.produced <= double.Epsilon                     //< no pressure control

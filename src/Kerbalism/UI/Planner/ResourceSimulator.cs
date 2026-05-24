@@ -35,7 +35,7 @@ namespace KERBALISM.Planner
 
 				var result = methodInfo.Invoke(m, new object[] { resourcesList, body, environment });
 				if (result != null) return result.ToString();
-				return "unknown";
+				return Local.Statu_unknown;
 			}
 		}
 
@@ -395,11 +395,11 @@ namespace KERBALISM.Planner
 			if (artificial > 0.0)
 			{
 				// consume ec for the lamps
-				ec.Consume(g.ec_rate * (artificial / g.light_tolerance), "greenhouse");
+				ec.Consume(g.ec_rate * (artificial / g.light_tolerance), Local.Planner_source_greenhouse);
 			}
 
 			// execute recipe
-			SimulatedRecipe recipe = new SimulatedRecipe(g.part, "greenhouse");
+			SimulatedRecipe recipe = new SimulatedRecipe(g.part, Local.Planner_source_greenhouse);
 			foreach (ModuleResource input in g.resHandler.inputResources)
 			{
 				// WasteAtmosphere is primary combined input
@@ -434,7 +434,7 @@ namespace KERBALISM.Planner
 			if (lighting && pressure && radiation)
 			{
 				// produce food
-				res.Produce(g.crop_size * g.crop_rate, "greenhouse");
+				res.Produce(g.crop_size * g.crop_rate, Local.Planner_source_greenhouse);
 
 				// add harvest info
 				res.harvests.Add(Lib.BuildString(g.crop_size.ToString("F0"), " in ", Lib.HumanReadableDuration(1.0 / g.crop_rate)));
@@ -445,14 +445,14 @@ namespace KERBALISM.Planner
 		void Process_ring(GravityRing ring)
 		{
 			if (ring.deployed)
-				Resource("ElectricCharge").Consume(ring.ec_rate, "gravity ring");
+				Resource("ElectricCharge").Consume(ring.ec_rate, Local.Planner_source_gravityring);
 		}
 
 		void Process_harvester(Harvester harvester, VesselAnalyzer va)
 		{
 			if (harvester.running && harvester.simulated_abundance > harvester.min_abundance)
 			{
-				SimulatedRecipe recipe = new SimulatedRecipe(harvester.part, "harvester");
+				SimulatedRecipe recipe = new SimulatedRecipe(harvester.part, Local.Planner_source_harvester);
 				if (harvester.ec_rate > double.Epsilon) recipe.Input("ElectricCharge", harvester.ec_rate);
 				recipe.Output(
 					harvester.resource,
@@ -467,7 +467,7 @@ namespace KERBALISM.Planner
 			// note: we are not checking if there is a scientist in the part
 			if (lab.running)
 			{
-				Resource("ElectricCharge").Consume(lab.ec_rate, "laboratory");
+				Resource("ElectricCharge").Consume(lab.ec_rate, Local.Planner_source_laboratory);
 			}
 		}
 
@@ -478,7 +478,7 @@ namespace KERBALISM.Planner
 			{
 				if (exp.Running)
 				{
-					Resource("ElectricCharge").Consume(exp.ec_rate, exp.ExpInfo.SampleMass == 0.0 ? "sensor" : "experiment");
+					Resource("ElectricCharge").Consume(exp.ec_rate, exp.ExpInfo.SampleMass == 0.0 ? Local.Planner_source_sensor : Local.Planner_source_experiment);
 				}
 			}
 			catch
@@ -492,7 +492,7 @@ namespace KERBALISM.Planner
 		{
 			foreach (ModuleResource res in command.resHandler.inputResources)
 			{
-				Resource(res.name).Consume(res.rate, "command");
+				Resource(res.name).Consume(res.rate, Local.Planner_source_command);
 			}
 		}
 
@@ -503,7 +503,7 @@ namespace KERBALISM.Planner
 			if (Lib.PartName(p) == "launchClamp1")
 				return;
 
-			SimulatedRecipe recipe = new SimulatedRecipe(p, "generator");
+			SimulatedRecipe recipe = new SimulatedRecipe(p, Local.Planner_source_generator);
 			foreach (ModuleResource res in generator.resHandler.inputResources)
 			{
 				recipe.Input(res.name, res.rate);
@@ -565,7 +565,7 @@ namespace KERBALISM.Planner
 
 		void Process_stocklab(ModuleScienceConverter lab)
 		{
-			Resource("ElectricCharge").Consume(lab.powerRequirement, "lab");
+			Resource("ElectricCharge").Consume(lab.powerRequirement, Local.Planner_source_lab);
 		}
 
 
@@ -576,7 +576,7 @@ namespace KERBALISM.Planner
 			// we use PlannerController instead
 			foreach (ModuleResource res in radiator.resHandler.inputResources)
 			{
-				Resource(res.name).Consume(res.rate, "radiator");
+				Resource(res.name).Consume(res.rate, Local.Planner_source_radiator);
 			}
 		}
 
@@ -585,7 +585,7 @@ namespace KERBALISM.Planner
 		{
 			foreach (ModuleResource res in motor.resHandler.inputResources)
 			{
-				Resource(res.name).Consume(res.rate, "wheel");
+				Resource(res.name).Consume(res.rate, Local.Planner_source_wheel);
 			}
 		}
 
@@ -594,7 +594,7 @@ namespace KERBALISM.Planner
 		{
 			foreach (ModuleResource res in steering.resHandler.inputResources)
 			{
-				Resource(res.name).Consume(res.rate, "wheel");
+				Resource(res.name).Consume(res.rate, Local.Planner_source_wheel);
 			}
 		}
 
@@ -603,14 +603,14 @@ namespace KERBALISM.Planner
 		{
 			if (light.useResources && light.isOn)
 			{
-				Resource("ElectricCharge").Consume(light.resourceAmount, "light");
+				Resource("ElectricCharge").Consume(light.resourceAmount, Local.Planner_source_light);
 			}
 		}
 
 
 		void Process_scanner(KerbalismScansat m)
 		{
-			Resource("ElectricCharge").Consume(m.ec_rate, "scanner");
+			Resource("ElectricCharge").Consume(m.ec_rate, Local.Planner_source_scanner);
 		}
 
 
@@ -622,7 +622,7 @@ namespace KERBALISM.Planner
 			ModuleResourceConverter reactor = p.FindModuleImplementing<ModuleResourceConverter>();
 			double tweakable = reactor == null ? 1.0 : Lib.ReflectionValue<float>(reactor, "CurrentPowerPercent") * 0.01f;
 
-			Resource("ElectricCharge").Produce(max_rate * tweakable, "fission generator");
+			Resource("ElectricCharge").Produce(max_rate * tweakable, Local.Planner_source_fissiongenerator);
 		}
 
 
@@ -630,7 +630,7 @@ namespace KERBALISM.Planner
 		{
 			double max_rate = Lib.ReflectionValue<float>(m, "BasePower");
 
-			Resource("ElectricCharge").Produce(max_rate, "radioisotope generator");
+			Resource("ElectricCharge").Produce(max_rate, Local.Planner_source_radioisotopegenerator);
 		}
 
 
@@ -679,25 +679,25 @@ namespace KERBALISM.Planner
 						boiloff_rate = Lib.ReflectionValue<float>(fuel, "boiloffRate") / 360000.0f;
 
 						// let it boil off
-						Resource(fuel_name).Consume(amount * boiloff_rate, "cryotank");
+						Resource(fuel_name).Consume(amount * boiloff_rate, Local.Planner_source_cryotank);
 					}
 				}
 			}
 
 			// apply EC consumption
-			Resource("ElectricCharge").Consume(total_cost, "cryotank");
+			Resource("ElectricCharge").Consume(total_cost, Local.Planner_source_cryotank);
 		}
 
 		void Process_rtantenna(PartModule m)
 		{
-			Resource("ElectricCharge").Consume(0.0005, "communications (control)");   // 3km range needs approx 0.5 Watt
+			Resource("ElectricCharge").Consume(0.0005, Local.Planner_source_comms_control);   // 3km range needs approx 0.5 Watt
 		}
 
 		// following the naming conventions that I see here.
 		void Process_rtantenna_transmitter(AntennaDataTransmitterRemoteTech adt)
 		{
-			Resource("ElectricCharge").Consume(adt.energyCost, "communications (idle)");
-			Resource("ElectricCharge").Consume(adt.packetResourceCost * adt.packetSize / adt.packetInterval, "communications (transmitting)");
+			Resource("ElectricCharge").Consume(adt.energyCost, Local.Planner_source_comms_idle);
+			Resource("ElectricCharge").Consume(adt.packetResourceCost * adt.packetSize / adt.packetInterval, Local.Planner_source_comms_transmitting);
 		}
 
 		void Process_datatransmitter(ModuleDataTransmitter mdt)
@@ -705,10 +705,10 @@ namespace KERBALISM.Planner
 			switch (mdt.antennaType)
 			{
 				case AntennaType.INTERNAL:
-					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterPassiveEcFactor, "communications (idle)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterPassiveEcFactor, Local.Planner_source_comms_idle);
 					break;
 				default:
-					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterActiveEcFactor, "communications (transmitting)");
+					Resource("ElectricCharge").Consume(mdt.DataResourceCost * mdt.DataRate * Settings.TransmitterActiveEcFactor, Local.Planner_source_comms_transmitting);
 					break;
 			}
 		}
@@ -724,10 +724,10 @@ namespace KERBALISM.Planner
 				switch (fuel.name)
 				{
 					case "ElectricCharge":  // mainly used for Ion Engines
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, Local.Planner_source_engines);
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, Local.Planner_source_engines);
 						break;
 				}
 			}
@@ -744,10 +744,10 @@ namespace KERBALISM.Planner
 				switch (fuel.name)
 				{
 					case "ElectricCharge":  // mainly used for Ion Engines
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, Local.Planner_source_engines);
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, Local.Planner_source_engines);
 						break;
 				}
 			}
@@ -764,10 +764,10 @@ namespace KERBALISM.Planner
 				switch (fuel.name)
 				{
 					case "ElectricCharge":  // mainly used for Ion RCS
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, Local.Planner_source_rcs);
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, Local.Planner_source_rcs);
 						break;
 				}
 			}
@@ -784,10 +784,10 @@ namespace KERBALISM.Planner
 				switch (fuel.name)
 				{
 					case "ElectricCharge":  // mainly used for Ion RCS
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
+						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, Local.Planner_source_rcs);
 						break;
 					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
+						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, Local.Planner_source_rcs);
 						break;
 				}
 			}
@@ -802,7 +802,7 @@ namespace KERBALISM.Planner
 				{
 					case Planner.SunlightState.SunlightNominal:
 						editorOutput = spf.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome);
-						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (nominal)");
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, Local.Planner_source_solarpanel_nominal);
 						break;
 					case Planner.SunlightState.SunlightSimulated:
 						// create a sun direction according to the shadows direction in the VAB / SPH
@@ -811,7 +811,7 @@ namespace KERBALISM.Planner
 						double effiencyFactor = spf.SolarPanel.GetCosineFactor(sunDir, true) * spf.SolarPanel.GetOccludedFactor(sunDir, out occludingPart, true);
 						double distanceFactor = env.solar_flux / Sim.SolarFluxAtHome;
 						editorOutput = spf.nominalRate * effiencyFactor * distanceFactor;
-						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, "solar panel (estimated)");
+						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, Local.Planner_source_solarpanel_estimated);
 						break;
 				}
 			}

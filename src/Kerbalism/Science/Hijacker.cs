@@ -75,7 +75,7 @@ namespace KERBALISM
 
 						// inform the user
 						Message.Post(
-							Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
+							Local.Science_DataRecorded.Format("<b>" + meta.subjectData.FullTitle + "</b>"),
 							!meta.is_rerunnable ? Local.Science_inoperable : string.Empty
 						);
 					}
@@ -86,8 +86,8 @@ namespace KERBALISM
 				else
 				{
 					Message.Post(
-						Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " can not be stored"), Lib.Kolor.Red),
-						"Not enough space on hard drive"
+						Lib.Color(Local.Science_CannotBeStored.Format(meta.subjectData.FullTitle), Lib.Kolor.Red),
+						Local.Laboratory_Notspace
 					);
 				}
 			}
@@ -113,8 +113,8 @@ namespace KERBALISM
 			if (remaining > 0)
 			{
 				Message.Post(
-					Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " stored partially"), Lib.Kolor.Orange),
-					"Not enough space on hard drive"
+					Lib.Color(Local.Science_StoredPartially.Format(meta.subjectData.FullTitle), Lib.Kolor.Orange),
+					Local.Laboratory_Notspace
 				);
 			}
 			return remaining;
@@ -163,10 +163,10 @@ namespace KERBALISM
 			{
 				popup = Lib.Popup
 				(
-				  "Warning!",
-				  "Recording the data will render this module inoperable.\n\nRestoring functionality will require a scientist.",
-				  new DialogGUIButton("Record data", () => Record(meta, data, send)),
-				  new DialogGUIButton("Discard data", () => Dismiss(data))
+				  Local.FILEMANAGER_Warning_title,
+				  Local.Science_RecordWarning_body,
+				  new DialogGUIButton(Local.Science_RecordData, () => Record(meta, data, send)),
+				  new DialogGUIButton(Local.Science_DiscardData, () => Dismiss(data))
 				);
 			}
 			else
@@ -181,7 +181,7 @@ namespace KERBALISM
 			// if amount is zero, warn the user and do nothing else
 			if (data.dataAmount <= double.Epsilon)
 			{
-				Message.Post("There is no more useful data here");
+				Message.Post(Local.Science_NoUsefulData);
 				return;
 			}
 
@@ -191,7 +191,7 @@ namespace KERBALISM
 			// if this is a sample and we are trying to send it, warn the user and do nothing else
 			if (meta.is_sample && send)
 			{
-				Message.Post("We can't transmit a sample", "It needs to be recovered, or analyzed in a lab");
+				Message.Post(Local.Science_CantTransmitSample, Local.Science_CantTransmitSample_sub);
 				return;
 			}
 
@@ -231,7 +231,7 @@ namespace KERBALISM
 				{
 					// inform the user
 					Message.Post(
-						Lib.BuildString("<b>", meta.subjectData.FullTitle, "</b> recorded"),
+						Local.Science_DataRecorded.Format("<b>" + meta.subjectData.FullTitle + "</b>"),
 						!meta.is_rerunnable ? Local.Science_inoperable : string.Empty
 					);
 				}
@@ -239,8 +239,8 @@ namespace KERBALISM
 			else
 			{
 				Message.Post(
-					Lib.Color(Lib.BuildString(meta.subjectData.FullTitle, " can not be stored"), Lib.Kolor.Red),
-					"Not enough space on hard drive"
+					Lib.Color(Local.Science_CannotBeStored.Format(meta.subjectData.FullTitle), Lib.Kolor.Red),
+					Local.Laboratory_Notspace
 				);
 			}
 		}

@@ -606,7 +606,7 @@ namespace KERBALISM
 					Message.Post
 					(
 					  "<color=#00ffff><b>" + Local.CallBackMsg_PROGRESS + "</b></color>\n" + Local.CallBackMsg_PROGRESS2,//PROGRESS""Our scientists just made a breakthrough
-					  Lib.BuildString("We now have access to \n<b>", label, "</b>")
+					  Local.CallBackMsg_configureUnlock.Format("<b>" + label + "</b>")
 					);
 				}
 			}
