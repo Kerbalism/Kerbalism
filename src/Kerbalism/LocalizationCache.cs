@@ -558,6 +558,11 @@ namespace KERBALISM
 		public static string QualityManagement_good = GetLoc("QualityManagement_good"); // "good"
 
 		////////////////////////////////////////////////////////////////////
+		// Automation
+		////////////////////////////////////////////////////////////////////
+		public static string Automation_datatransmission = GetLoc("Automation_datatransmission"); // "data transmission"
+
+		////////////////////////////////////////////////////////////////////
 		// Monitor UI : file manager
 		////////////////////////////////////////////////////////////////////
 		public static ParamString FILEMANAGER_DataAvailable = new ParamString("FILEMANAGER_DataAvailable"); // "(<<1>> available)"
@@ -603,6 +608,7 @@ namespace KERBALISM
 		public static string TELEMETRY_HABITAT = GetLoc("TELEMETRY_HABITAT"); // "HABITAT"
 		public static string TELEMETRY_co2level = GetLoc("TELEMETRY_co2level"); // "co2 level"
 		public static string TELEMETRY_radiation = GetLoc("TELEMETRY_radiation"); // "radiation"
+		public static string TELEMETRY_habitatradiation = GetLoc("TELEMETRY_habitatradiation"); // "habitat radiation"
 		public static string TELEMETRY_pressure = GetLoc("TELEMETRY_pressure"); // "pressure"
 		public static string TELEMETRY_shielding = GetLoc("TELEMETRY_shielding"); // "shielding"
 		public static string TELEMETRY_livingspace = GetLoc("TELEMETRY_livingspace"); // "living space"
@@ -1041,6 +1047,27 @@ namespace KERBALISM
 		public static string Reliability_info9 = GetLoc("Reliability_info9"); // "High quality"
 		public static string Reliability_info10 = GetLoc("Reliability_info10"); // "Extra cost"
 		public static string Reliability_info11 = GetLoc("Reliability_info11"); // "Extra mass"
+		public static string Reliability_group_LifeSupport = GetLoc("Reliability_group_LifeSupport"); // "Life Support"
+		public static string Reliability_group_PowerGeneration = GetLoc("Reliability_group_PowerGeneration"); // "Power Generation"
+		public static string Reliability_group_AttitudeControl = GetLoc("Reliability_group_AttitudeControl"); // "Attitude Control"
+		public static string Reliability_group_Landing = GetLoc("Reliability_group_Landing"); // "Landing"
+		public static string Reliability_group_Propulsion = GetLoc("Reliability_group_Propulsion"); // "Propulsion"
+		public static string Reliability_group_Communication = GetLoc("Reliability_group_Communication"); // "Communication"
+		public static string Reliability_title_ECLSS = GetLoc("Reliability_title_ECLSS"); // "ECLSS"
+		public static string Reliability_title_Shield = GetLoc("Reliability_title_Shield"); // "Shield"
+		public static string Reliability_title_SolarPanel = GetLoc("Reliability_title_SolarPanel"); // "Solar Panel"
+		public static string Reliability_title_ReactionWheel = GetLoc("Reliability_title_ReactionWheel"); // "Reaction Wheel"
+		public static string Reliability_title_RCS = GetLoc("Reliability_title_RCS"); // "RCS"
+		public static string Reliability_title_Light = GetLoc("Reliability_title_Light"); // "Light"
+		public static string Reliability_title_Parachute = GetLoc("Reliability_title_Parachute"); // "Parachute"
+		public static string Reliability_title_Engine = GetLoc("Reliability_title_Engine"); // "Engine"
+		public static string Reliability_title_Radiator = GetLoc("Reliability_title_Radiator"); // "Radiator"
+		public static string Reliability_title_Radiatormotor = GetLoc("Reliability_title_Radiatormotor"); // "Radiator motor"
+		public static string Reliability_title_Radiatorpanel = GetLoc("Reliability_title_Radiatorpanel"); // "Radiator panel"
+		public static string Reliability_title_Converter = GetLoc("Reliability_title_Converter"); // "Converter"
+		public static string Reliability_title_Harvester = GetLoc("Reliability_title_Harvester"); // "Harvester"
+		public static string Reliability_title_ScienceInstrument = GetLoc("Reliability_title_ScienceInstrument"); // "ScienceInstrument"
+		public static string Reliability_title_DataTransmitter = GetLoc("Reliability_title_DataTransmitter"); // "Data Transmitter"
 
 		////////////////////////////////////////////////////////////////////
 		// Module : Sensor

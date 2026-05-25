@@ -508,7 +508,7 @@ namespace KERBALISM.Planner
 						sb.Append("\n");
 					sb.Append(Lib.Color(pair.Value.ToString(), pair.Value == 1 ? Lib.Kolor.Red : pair.Value == 2 ? Lib.Kolor.Yellow : Lib.Kolor.Green, true));
 					sb.Append("\t");
-					sb.Append(pair.Key);
+					sb.Append(Reliability.LocalizeRedundancyGroup(pair.Key));
 				}
 				redundancy_tooltip = Lib.BuildString("<align=left />", sb.ToString());
 			}

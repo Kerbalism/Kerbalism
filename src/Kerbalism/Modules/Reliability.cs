@@ -823,7 +823,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			if (redundancy.Length > 0) specs.Add(Local.Reliability_info1, redundancy);//"Redundancy"
+			if (redundancy.Length > 0) specs.Add(Local.Reliability_info1, LocalizeRedundancyGroup(redundancy));//"Redundancy"
 			specs.Add(Local.Reliability_info2, new CrewSpecs(repair).Info());//"Repair"
 
 			
@@ -1177,6 +1177,43 @@ namespace KERBALISM
 				}
 			}
 			return false;
+		}
+
+		public static string LocalizeRedundancyGroup(string group)
+		{
+			switch (group)
+			{
+				case "Life Support": return Local.Reliability_group_LifeSupport;
+				case "Power Generation": return Local.Reliability_group_PowerGeneration;
+				case "Attitude Control": return Local.Reliability_group_AttitudeControl;
+				case "Landing": return Local.Reliability_group_Landing;
+				case "Propulsion": return Local.Reliability_group_Propulsion;
+				case "Communication": return Local.Reliability_group_Communication;
+			}
+			return group;
+		}
+
+		public static string LocalizeTitle(string title)
+		{
+			switch (title)
+			{
+				case "ECLSS": return Local.Reliability_title_ECLSS;
+				case "Shield": return Local.Reliability_title_Shield;
+				case "Solar Panel": return Local.Reliability_title_SolarPanel;
+				case "Reaction Wheel": return Local.Reliability_title_ReactionWheel;
+				case "RCS": return Local.Reliability_title_RCS;
+				case "Light": return Local.Reliability_title_Light;
+				case "Parachute": return Local.Reliability_title_Parachute;
+				case "Engine": return Local.Reliability_title_Engine;
+				case "Radiator": return Local.Reliability_title_Radiator;
+				case "Radiator motor": return Local.Reliability_title_Radiatormotor;
+				case "Radiator panel": return Local.Reliability_title_Radiatorpanel;
+				case "Converter": return Local.Reliability_title_Converter;
+				case "Harvester": return Local.Reliability_title_Harvester;
+				case "ScienceInstrument": return Local.Reliability_title_ScienceInstrument;
+				case "Data Transmitter": return Local.Reliability_title_DataTransmitter;
+			}
+			return title;
 		}
 	}
 

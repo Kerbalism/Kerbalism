@@ -10,7 +10,7 @@ namespace KERBALISM
 	{
 		public VesselDeviceTransmit(Vessel v, VesselData vd) : base(v, vd) { }
 
-		public override string Name => "data transmission";
+		public override string Name => Local.Automation_datatransmission;
 
 		public override string Status => Lib.Color(vesselData.deviceTransmit, Local.Generic_ENABLED, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
 
