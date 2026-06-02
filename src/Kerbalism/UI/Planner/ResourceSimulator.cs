@@ -3,6 +3,7 @@ using System.Collections;
 using System.Reflection;
 using System.Collections.Generic;
 using ModuleWheels;
+using UnityEngine;
 
 namespace KERBALISM.Planner
 {
@@ -713,84 +714,167 @@ namespace KERBALISM.Planner
 			}
 		}
 
-		void Process_engines(ModuleEngines me)
-		{
-			// calculate thrust fuel flow
-			double thrust_flow = me.maxFuelFlow * 1e3 * me.thrustPercentage;
+		const double PlannerPropellantGrav = 9.81;
 
-			// search fuel types
-			foreach (Propellant fuel in me.propellants)
+		/// <summary>ModuleEngines editor throttle is 0–100.</summary>
+		static float PlannerEngineThrottlePercent(float thrustPercentage)
+		{
+			return thrustPercentage / 100f;
+		}
+
+		/// <summary>ModuleRCS editor throttle is usually 0–1 (default 1); some parts use 0–100.</summary>
+		static float PlannerRcsThrottle(ModuleRCS rcs)
+		{
+			float t = rcs.thrustPercentage;
+			if (t > 1.0f)
+				t /= 100f;
+			return Mathf.Clamp01(t);
+		}
+
+		/// <summary>
+		/// Mixture-weighted propellant rates (DynamicBatteryStorage ModuleEnginesPowerHandler).
+		/// Engines use getMaxFuelFlow for EC so planner matches the part action window.
+		/// </summary>
+		static void ConsumeElectricPropellants(
+			List<Propellant> propellants,
+			float throttle,
+			double massFlowTotal,
+			ModuleEngines engForStockEc,
+			string category,
+			ResourceSimulator sim)
+		{
+			if (propellants == null || propellants.Count == 0 || throttle <= 0f || massFlowTotal <= 0.0)
+				return;
+
+			double ecRatio = 0.0;
+			bool usesCharge = false;
+			double massFlowSum = 0.0;
+			double ratioSum = 0.0;
+			Propellant ecPropellant = null;
+
+			for (int i = 0; i < propellants.Count; i++)
 			{
-				switch (fuel.name)
+				Propellant prop = propellants[i];
+				if (prop.id == PartResourceLibrary.ElectricityHashcode)
 				{
-					case "ElectricCharge":  // mainly used for Ion Engines
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
-						break;
-					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
-						break;
+					usesCharge = true;
+					ecRatio = prop.ratio;
+					ecPropellant = prop;
+				}
+				else
+				{
+					ratioSum += prop.ratio;
+					PartResourceDefinition def = PartResourceLibrary.Instance.GetDefinition(prop.name);
+					if (def != null)
+						massFlowSum += prop.ratio * def.density;
 				}
 			}
+
+			if (ratioSum <= double.Epsilon)
+				return;
+
+			double mixtureRatio = massFlowSum / ratioSum;
+			double totalRate = 0.0;
+
+			for (int i = 0; i < propellants.Count; i++)
+			{
+				Propellant prop = propellants[i];
+				if (prop.id == PartResourceLibrary.ElectricityHashcode)
+					continue;
+
+				double rate = (massFlowTotal / mixtureRatio) * prop.ratio / ratioSum;
+				totalRate += rate;
+
+				double scaled = rate * throttle;
+				ConsumeTrackedPropellant(prop.name, scaled, category, sim);
+			}
+
+			if (!usesCharge)
+				return;
+
+			// Stock API matches PAW "input power"; DBS formula can differ by ~0.01% (g, float Isp, rounding).
+			if (engForStockEc != null && ecPropellant != null)
+			{
+				float ecFlow = engForStockEc.getMaxFuelFlow(ecPropellant);
+				if (ecFlow > 0f)
+				{
+					sim.Resource("ElectricCharge").Consume(ecFlow * throttle, category);
+					return;
+				}
+			}
+
+			sim.Resource("ElectricCharge").Consume(ecRatio / ratioSum * totalRate * throttle, category);
+		}
+
+		static void ConsumeTrackedPropellant(string resourceName, double rate, string category, ResourceSimulator sim)
+		{
+			switch (resourceName)
+			{
+				case "ElectricCharge":
+					sim.Resource("ElectricCharge").Consume(rate, category);
+					break;
+				case "LqdHydrogen":
+					sim.Resource("LqdHydrogen").Consume(rate, category);
+					break;
+				case "Lithium":
+					sim.Resource("Lithium").Consume(rate, category);
+					break;
+				case "XenonGas":
+					sim.Resource("XenonGas").Consume(rate, category);
+					break;
+				case "ArgonGas":
+					sim.Resource("ArgonGas").Consume(rate, category);
+					break;
+			}
+		}
+
+		static void ConsumeEnginePropellants(ModuleEngines eng, string category, ResourceSimulator sim)
+		{
+			if (eng.propellants == null || eng.propellants.Count == 0 || eng.thrustPercentage <= 0.0f)
+				return;
+
+			float throttle = PlannerEngineThrottlePercent(eng.thrustPercentage);
+			float isp = eng.atmosphereCurve != null ? eng.atmosphereCurve.Evaluate(0f) : 0f;
+			if (isp <= float.Epsilon)
+				return;
+
+			double massFlowTotal = eng.maxThrust / (PlannerPropellantGrav * isp);
+			ConsumeElectricPropellants(eng.propellants, throttle, massFlowTotal, eng, category, sim);
+		}
+
+		static void ConsumeRcsPropellants(ModuleRCS rcs, string category, ResourceSimulator sim)
+		{
+			if (rcs.propellants == null || rcs.propellants.Count == 0 || rcs.thrustPercentage <= 0.0f)
+				return;
+
+			// thrusterPower is FX-only on many mod RCS (e.g. 250), not flow scale.
+			float throttle = PlannerRcsThrottle(rcs);
+			if (throttle <= 0f || rcs.maxFuelFlow <= 0.0)
+				return;
+
+			// maxFuelFlow is in t/s and resource densities are t/unit, so use the same
+			// mixture-density conversion as engines without an extra kg conversion.
+			ConsumeElectricPropellants(rcs.propellants, throttle, rcs.maxFuelFlow, null, category, sim);
+		}
+
+		void Process_engines(ModuleEngines me)
+		{
+			ConsumeEnginePropellants(me, "engines", this);
 		}
 
 		void Process_enginesfx(ModuleEnginesFX mefx)
 		{
-			// calculate thrust fuel flow
-			double thrust_flow = mefx.maxFuelFlow * 1e3 * mefx.thrustPercentage;
-
-			// search fuel types
-			foreach (Propellant fuel in mefx.propellants)
-			{
-				switch (fuel.name)
-				{
-					case "ElectricCharge":  // mainly used for Ion Engines
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "engines");
-						break;
-					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "engines");
-						break;
-				}
-			}
+			ConsumeEnginePropellants(mefx, "engines", this);
 		}
 
 		void Process_rcs(ModuleRCS mr)
 		{
-			// calculate thrust fuel flow
-			double thrust_flow = mr.maxFuelFlow * 1e3 * mr.thrustPercentage * mr.thrusterPower;
-
-			// search fuel types
-			foreach (Propellant fuel in mr.propellants)
-			{
-				switch (fuel.name)
-				{
-					case "ElectricCharge":  // mainly used for Ion RCS
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
-						break;
-					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
-						break;
-				}
-			}
+			ConsumeRcsPropellants(mr, "rcs", this);
 		}
 
 		void Process_rcsfx(ModuleRCSFX mrfx)
 		{
-			// calculate thrust fuel flow
-			double thrust_flow = mrfx.maxFuelFlow * 1e3 * mrfx.thrustPercentage * mrfx.thrusterPower;
-
-			// search fuel types
-			foreach (Propellant fuel in mrfx.propellants)
-			{
-				switch (fuel.name)
-				{
-					case "ElectricCharge":  // mainly used for Ion RCS
-						Resource("ElectricCharge").Consume(thrust_flow * fuel.ratio, "rcs");
-						break;
-					case "LqdHydrogen":     // added for cryotanks and any other supported mod that uses Liquid Hydrogen
-						Resource("LqdHydrogen").Consume(thrust_flow * fuel.ratio, "rcs");
-						break;
-				}
-			}
+			ConsumeRcsPropellants(mrfx, "rcs", this);
 		}
 
 		void Process_solarPanel(SolarPanelFixer spf, EnvironmentAnalyzer env)
