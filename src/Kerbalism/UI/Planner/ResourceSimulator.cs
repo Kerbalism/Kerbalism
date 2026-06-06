@@ -77,6 +77,12 @@ namespace KERBALISM.Planner
 			// get amount and capacity from parts
 			foreach (Part p in parts)
 			{
+				// PlannerController also gates Kerbalism pseudo-resources (e.g. _FuelCell)
+				// that drive profile process modifiers, not only stock PartModules below.
+				PlannerController ctrl = p.FindModuleImplementing<PlannerController>();
+				if (ctrl != null && !ctrl.considered)
+					continue;
+
 				for (int i = 0; i < p.Resources.Count; ++i)
 				{
 					Process_part(p, p.Resources[i].resourceName);
