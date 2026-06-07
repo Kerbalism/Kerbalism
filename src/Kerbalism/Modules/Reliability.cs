@@ -1136,47 +1136,31 @@ namespace KERBALISM
 		}
 
 
-		// return true if at least a component has malfunctioned or had a critical failure
-		public static bool HasMalfunction(Vessel v)
+		///<summary>evaluate the malfunction and critical failure state of a vessel in a single pass</summary>
+		public static void GetVesselState(Vessel v, out bool malfunction, out bool critical)
 		{
+			malfunction = false;
+			critical = false;
+
 			if (v.loaded)
 			{
 				foreach (Reliability m in Lib.FindModules<Reliability>(v))
 				{
-					if (m.broken) return true;
+					malfunction |= m.broken;
+					critical |= m.critical;
 				}
 			}
 			else
 			{
 				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Reliability"))
 				{
-					if (Lib.Proto.GetBool(m, "broken")) return true;
+					malfunction |= Lib.Proto.GetBool(m, "broken");
+					critical |= Lib.Proto.GetBool(m, "critical");
 				}
 			}
-
-			return false;
 		}
 
 
-		// return true if at least a component has a critical failure
-		public static bool HasCriticalFailure(Vessel v)
-		{
-			if (v.loaded)
-			{
-				foreach (Reliability m in Lib.FindModules<Reliability>(v))
-				{
-					if (m.critical) return true;
-				}
-			}
-			else
-			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Reliability"))
-				{
-					if (Lib.Proto.GetBool(m, "critical")) return true;
-				}
-			}
-			return false;
-		}
 	}
 
 
