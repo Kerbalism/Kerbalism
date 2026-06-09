@@ -126,6 +126,8 @@
     <Compile Include="Automation\VesselDevices\VesselTransmit.cs" />
     <Compile Include="Background.cs" />
     <Compile Include="Cache.cs" />
+    <Compile Include="PartModuleCache.cs" />
+    <Compile Include="ProtoPartModuleCache.cs" />
     <Compile Include="Automation\Devices\Converter.cs" />
     <Compile Include="Automation\Devices\Drill.cs" />
     <Compile Include="Automation\Devices\Emitter.cs" />

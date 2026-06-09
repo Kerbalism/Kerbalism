@@ -241,8 +241,9 @@ namespace KERBALISM
 			// loaded vessel
 			if (v.loaded)
 			{
-				foreach (PartModule m in Lib.FindModules<PartModule>(v))
+				foreach (PartModule m in PartModuleCache.GetModules<PartModule>(v))
 				{
+					if (!m.isEnabled) continue;
 					switch (m.moduleName)
 					{
 						case "ProcessController":            device = new ProcessDevice(m as ProcessController);                 break;

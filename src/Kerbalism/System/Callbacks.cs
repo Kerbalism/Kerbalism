@@ -98,6 +98,13 @@ namespace KERBALISM
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
+			// the cached loaded PartModule lists and protoVessel module snapshot lists must not
+			// survive load/unload transitions : Vessel.Unload() replaces the protoVessel instance
+			// (so cached snapshot references would write to dead objects), and loading a vessel
+			// recreates all PartModules. None of the vessel-modified events fire on these transitions.
+			GameEvents.onVesselLoaded.Add((v) => Cache.PurgeVesselCaches(v));
+			GameEvents.onVesselUnloaded.Add((v) => Cache.PurgeVesselCaches(v));
+
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 

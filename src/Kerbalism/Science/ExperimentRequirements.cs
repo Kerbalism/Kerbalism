@@ -257,7 +257,7 @@ namespace KERBALISM
 				case Require.Magnetosphere: reqResult = vd.EnvMagnetosphere                                  ? 1.0 : 0.0; break;
 				case Require.InterStellar : reqResult = Lib.IsSun(v.mainBody) && vd.EnvInterstellar          ? 1.0 : 0.0; break;
 				case Require.Part         : reqResult = Lib.HasPart(v, (string)rv)                           ? 1.0 : 0.0; break;
-				case Require.Module       : reqResult = Lib.FindModules(v.protoVessel, (string)rv).Count > 0 ? 1.0 : 0.0; break;
+				case Require.Module       : reqResult = ProtoPartModuleCache.GetModules(v.protoVessel, (string)rv).Count > 0 ? 1.0 : 0.0; break;
 
 				default: reqResult = 1.0; break;
 			}

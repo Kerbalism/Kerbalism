@@ -753,6 +753,8 @@ namespace KERBALISM
 						Lib.Proto.Set(proto_module, nameof(ProcessController.broken), true);
 				}
 
+				ProtoPartModuleCache.Purge(Lib.VesselID(v));
+
 				// type-specific hacks
 				switch (reliability.type)
 				{
@@ -997,9 +999,9 @@ namespace KERBALISM
 		{
 			if (v.loaded)
 			{
-				foreach (Reliability m in Lib.FindModules<Reliability>(v))
+				foreach (Reliability m in PartModuleCache.GetModules<Reliability>(v))
 				{
-					if (m.redundancy == redundancy)
+					if (m.isEnabled && m.redundancy == redundancy)
 					{
 						m.next += m.next - m.last;
 					}
@@ -1099,7 +1101,7 @@ namespace KERBALISM
 			if (v.loaded)
 			{
 				// choose a module at random
-				var modules = Lib.FindModules<Reliability>(v).FindAll(k => !k.broken);
+				var modules = PartModuleCache.GetModules<Reliability>(v).FindAll(k => k.isEnabled && !k.broken);
 				if (modules.Count == 0) return;
 				var m = modules[Lib.RandomInt(modules.Count)];
 
@@ -1110,7 +1112,7 @@ namespace KERBALISM
 			else
 			{
 				// choose a module at random
-				var modules = Lib.FindModules(v.protoVessel, "Reliability").FindAll(k => !Lib.Proto.GetBool(k, "broken"));
+				var modules = ProtoPartModuleCache.GetModules(v.protoVessel, "Reliability").FindAll(k => !Lib.Proto.GetBool(k, "broken"));
 				if (modules.Count == 0) return;
 				var m = modules[Lib.RandomInt(modules.Count)];
 
@@ -1145,7 +1147,7 @@ namespace KERBALISM
 
 			if (v.loaded)
 			{
-				foreach (Reliability m in Lib.FindModules<Reliability>(v))
+				foreach (Reliability m in PartModuleCache.GetModules<Reliability>(v))
 				{
 					malfunction |= m.broken;
 					critical |= m.critical;
@@ -1153,7 +1155,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Reliability"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Reliability"))
 				{
 					malfunction |= Lib.Proto.GetBool(m, "broken");
 					critical |= Lib.Proto.GetBool(m, "critical");

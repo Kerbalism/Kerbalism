@@ -91,8 +91,9 @@ namespace KERBALISM
 
 			if (vessel.loaded)
 			{
-				foreach (var r in Lib.FindModules<Reliability>(vessel))
+				foreach (var r in PartModuleCache.GetModules<Reliability>(vessel))
 				{
+					if (!r.isEnabled) continue;
 					result.Add(new ReliabilityInfo(r));
 				}
 			}
