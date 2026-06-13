@@ -248,6 +248,7 @@ namespace KERBALISM
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Greenhouse g,
 											VesselData vd, VesselResources resources, double elapsed_s)
 		{
+			Profiler.BeginSample("Greenhouse.BackgroundUpdate");
 			// get protomodule data
 			bool active = Lib.Proto.GetBool(m, "active");
 			double growth = Lib.Proto.GetDouble(m, "growth");
@@ -359,6 +360,7 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "issue", issue);
 				Lib.Proto.Set(m, "growth", growth);
 			}
+			Profiler.EndSample();
 		}
 
 

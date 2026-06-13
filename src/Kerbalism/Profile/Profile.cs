@@ -165,24 +165,31 @@ namespace KERBALISM
 			if (!vd.Evaluated)
 				return;
 
+
+			Profiler.BeginSample("supplies");
 			// execute all supplies
 			foreach (Supply supply in supplies)
 			{
 				// this will just show warning messages if resources get low
 				supply.Execute(v, vd, resources);
 			}
+			Profiler.EndSample();
 
+			Profiler.BeginSample("rules");
 			// execute all rules
 			foreach (Rule rule in rules)
 			{
 				rule.Execute(v, vd, resources, elapsed_s);
 			}
+			Profiler.EndSample();
 
+			Profiler.BeginSample("processes");
 			// execute all processes
 			foreach (Process process in processes)
 			{
 				process.Execute(v, vd, resources, elapsed_s);
 			}
+			Profiler.EndSample();
 		}
 
 

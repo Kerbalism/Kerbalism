@@ -379,7 +379,7 @@ To save startup time, seconds of our life and the environment, it is recommended
 
 You can use the Unity Editor profiler by starting the Unity Editor, opening a blank project (or any project for that matter) and then use the **Window Menu->Profiler** option to open the Profiler Window. Now you can start your KSP dev install debug executable either standalone or with Visual Studio.
 
-By default you will only see the MonoBehavior methods (Update, FixedUpdate, etc...) but you can add calls in your code to profile anything you like. To do this, add to your code pairs of `Profiler.BeginSample("MyLabel");` and `Profiler.EndSample();`. Be aware that if a frame takes too long to execute the profiler will skip it.
+By default you will only see the MonoBehavior methods (Update, FixedUpdate, etc...) but you can add calls in your code to profile anything you like. To do this, add to your code pairs of `Profiler.BeginSample("MyLabel");` and `Profiler.EndSample();`. These calls resolve to Kerbalism's own `KERBALISM.Profiler` wrapper (see below), which forwards to the Unity profiler when the `ENABLE_PROFILER` compile constant is set. Be aware that if a frame takes too long to execute the profiler will skip it.
 
 For more information see the KSP Forum thread [KSP Plugin debugging and profiling for Visual Studio and Monodevelop on all OS](http://forum.kerbalspaceprogram.com/index.php?/topic/102909-ksp-plugin-debugging-and-profiling-for-visual-studio-and-monodevelop-on-all-os/&page=1).
 
@@ -387,7 +387,9 @@ For more information see the KSP Forum thread [KSP Plugin debugging and profilin
 
 In addition, there is a simple "frame-based" profiler included in the KSP Kerbalism code base, that is appropriate for quick performance measurements.
 
-In the code, wrap the code you want in pairs of `Kerbalism.Profiler.Start("MyLabel")` and `Kerbalism.Profiler.Stop("MyLabel")`.
+In the code, wrap the code you want in pairs of `Profiler.BeginSample("MyLabel")` and `Profiler.EndSample()` (the `KERBALISM.Profiler` class). This is the same call used for the Unity profiler above: a single pair feeds *both* profilers. The in-game profiler is gated by the `DEBUG_PROFILER` compile constant and the Unity profiler by `ENABLE_PROFILER` — a pair feeds whichever is enabled, and both are compiled out entirely (zero overhead) when neither constant is defined, as in release builds.
+
+`EndSample()` closes the most recently opened sample — the pairs nest like Unity's, so every `BeginSample` must have a matching `EndSample` on all code paths. The `Profiler.ProfileScope` `IDisposable` can wrap a `using` block to guarantee a balanced pair.
 
 In-game, start it by pressing Ctrl-P. It shows each code entry belonging to one label as one line. The columns show:
 

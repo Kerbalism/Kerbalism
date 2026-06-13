@@ -663,8 +663,9 @@ namespace KERBALISM
             double D;
             double r;
 
-            // accumulate radiation
-            double radiation = 0.0;
+			Profiler.BeginSample("BodyLoop");
+			// accumulate radiation
+			double radiation = 0.0;
             CelestialBody body = v.mainBody;
             while (body != null)
             {
@@ -740,10 +741,11 @@ namespace KERBALISM
 
                 // avoid loops in the chain
                 body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
-            }
+			}
+			Profiler.EndSample();
 
-            // add extern radiation
-            radiation += Settings.ExternRadiation / 3600.0;
+			// add extern radiation
+			radiation += Settings.ExternRadiation / 3600.0;
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(Settings.ExternRadiation));
@@ -787,9 +789,11 @@ namespace KERBALISM
                 }
             }
 
-            // add emitter radiation after atmosphere transparency
-            var emitterRadiation = Emitter.Total(v);
-            radiation += emitterRadiation;
+			// add emitter radiation after atmosphere transparency
+			Profiler.BeginSample("Emitter");
+			var emitterRadiation = Emitter.Total(v);
+			Profiler.EndSample();
+			radiation += emitterRadiation;
             shieldedRadiation += emitterRadiation;
 
 #if DEBUG_RADIATION
@@ -807,8 +811,10 @@ namespace KERBALISM
 #endif
 			}
 
+			Profiler.BeginSample("PassiveShield");
 			var passiveShielding = PassiveShield.Total(v);
 			shieldedRadiation -= passiveShielding;
+			Profiler.EndSample();
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " passiveShielding " + Lib.HumanReadableRadiation(passiveShielding));

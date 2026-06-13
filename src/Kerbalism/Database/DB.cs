@@ -34,7 +34,7 @@ namespace KERBALISM
 			// load the science database, has to be before vessels are loaded
 			ScienceDB.Load(node);
 
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Load.Vessels");
+			Profiler.BeginSample("DB.Load.Vessels");
 			vessels.Clear();
 			// flightstate will be null when first creating the game
 			if (HighLogic.CurrentGame.flightState != null)
@@ -58,7 +58,7 @@ namespace KERBALISM
 					Lib.LogDebug("VesselData loaded for vessel " + pv.vesselName);
 				}
 			}
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			// for compatibility with old saves, convert drives data (it's now saved in PartData)
 			if (node.HasNode("drives"))
@@ -141,7 +141,7 @@ namespace KERBALISM
 
 			// only persist vessels that exists in KSP own vessel persistence
 			// this prevent creating junk data without going into the mess of using gameevents
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.DB.Save.Vessels");
+			Profiler.BeginSample("DB.Save.Vessels");
 			ConfigNode vesselsNode = node.AddNode("vessels2");
 			foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
 			{
@@ -156,7 +156,7 @@ namespace KERBALISM
 				ConfigNode vesselNode = vesselsNode.AddNode(pv.vesselID.ToString());
 				vd.Save(vesselNode);
 			}
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			// save the science database
 			ScienceDB.Save(node);
