@@ -101,6 +101,10 @@ namespace KERBALISM
 		private void OnDestroy()
 		{
 			Fetch = null;
+
+			// better to clear the caches during scene switch so that GC can clean up early, instead of waiting for the next OnLoad() call
+			Cache.Clear();
+			ResourceCache.Clear();
 		}
 
 		public override void OnLoad(ConfigNode node)
