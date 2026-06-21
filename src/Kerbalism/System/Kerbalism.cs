@@ -352,6 +352,8 @@ namespace KERBALISM
 					resources.Sync(v, vd, elapsed_s);
 					UnityEngine.Profiling.Profiler.EndSample();
 
+					SystemHeatBackgroundThermal.CaptureLoadedTemperatures(v);
+
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
 

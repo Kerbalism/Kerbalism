@@ -246,6 +246,27 @@ namespace KERBALISM
 					switch (m.moduleName)
 					{
 						case "ProcessController":            device = new ProcessDevice(m as ProcessController);                 break;
+						case "ProcessControllerSystemHeat":
+						{
+							ProcessControllerSystemHeat heatProcess = m as ProcessControllerSystemHeat;
+							if (heatProcess == null || !m.isEnabled)
+								continue;
+							if (heatProcess.resource == "_Nukereactor" && heatProcess.toggle)
+								device = new FissionReactorProcessDevice(heatProcess);
+							else if (heatProcess.toggle)
+								device = new SystemHeatProcessDevice(heatProcess);
+							else
+								continue;
+							break;
+						}
+						case "HarvesterSystemHeat":
+						{
+							HarvesterSystemHeat heatHarvester = m as HarvesterSystemHeat;
+							if (heatHarvester == null || !m.isEnabled)
+								continue;
+							device = new SystemHeatHarvesterDevice(heatHarvester);
+							break;
+						}
 						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
 						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
 						case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
@@ -307,6 +328,20 @@ namespace KERBALISM
 						switch (m.moduleName)
 						{
 							case "ProcessController":            device = new ProtoProcessDevice(module_prefab as ProcessController, p, m);        break;
+							case "ProcessControllerSystemHeat":
+							{
+								ProcessControllerSystemHeat heatProcess = module_prefab as ProcessControllerSystemHeat;
+								if (heatProcess == null || !heatProcess.toggle)
+									continue;
+								if (heatProcess.resource == "_Nukereactor")
+									device = new ProtoFissionReactorProcessDevice(heatProcess, p, m);
+								else
+									device = new ProtoSystemHeatProcessDevice(heatProcess, p, m);
+								break;
+							}
+							case "HarvesterSystemHeat":
+								device = new ProtoSystemHeatHarvesterDevice(module_prefab as HarvesterSystemHeat, p, m);
+								break;
 							case "Sickbay":                      device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m);                  break;
 							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
 							case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
