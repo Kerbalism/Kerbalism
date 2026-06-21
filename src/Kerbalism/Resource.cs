@@ -1031,6 +1031,8 @@ namespace KERBALISM
 		public double left;     // what proportion of the recipe is left to execute
 
 		private ResourceBroker broker;
+		private Func<double, double> executionLimiter;
+		private Action<double> executionCallback;
 
 		public ResourceRecipe(ResourceBroker broker)
 		{
@@ -1075,6 +1077,18 @@ namespace KERBALISM
 			{
 				cures.Add(new Entry(cure, quantity, true, resource_name));
 			}
+		}
+
+		/// <summary>add a callback invoked with the fraction of the recipe actually executed</summary>
+		public void AddExecutionCallback(Action<double> callback)
+		{
+			executionCallback += callback;
+		}
+
+		/// <summary>add a limiter invoked with the current executable fraction before resources are changed</summary>
+		public void AddExecutionLimiter(Func<double, double> limiter)
+		{
+			executionLimiter += limiter;
 		}
 
 		/// <summary>Execute all recipes and record deferred consumption/production for inputs/ouputs</summary>
@@ -1156,6 +1170,10 @@ namespace KERBALISM
 
 			// determine worst-io
 			double worst_io = Math.Min(worst_input, worst_output);
+			if (executionLimiter != null && worst_io > double.Epsilon)
+			{
+				worst_io = Lib.Clamp(executionLimiter(worst_io), 0.0, worst_io);
+			}
 
 			// consume inputs
 			for (int i = 0; i < inputs.Count; ++i)
@@ -1213,6 +1231,11 @@ namespace KERBALISM
 					rd.problem -= entry.quantity * worst_io / curingRules.Count;
 					rd.problem = Math.Max(rd.problem, 0);
 				}
+			}
+
+			if (executionCallback != null && worst_io > double.Epsilon)
+			{
+				executionCallback(worst_io);
 			}
 
 			// update amount left to execute

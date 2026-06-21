@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using KSP.Localization;
 
@@ -37,6 +38,70 @@ namespace KERBALISM
 		// the drill head transform
 		Transform drill_head;
 
+		private sealed class HarvestSource
+		{
+			public double abundance;
+			public double mass;
+			public double mass_threshold;
+			public double resource_density;
+
+			private readonly PartModule loaded_info;
+			private readonly ProtoPartModuleSnapshot proto_info;
+
+			public HarvestSource(PartModule loaded_info, double abundance, double mass, double mass_threshold, double resource_density)
+			{
+				this.loaded_info = loaded_info;
+				this.abundance = abundance;
+				this.mass = mass;
+				this.mass_threshold = mass_threshold;
+				this.resource_density = resource_density;
+			}
+
+			public HarvestSource(ProtoPartModuleSnapshot proto_info, double abundance, double mass, double mass_threshold, double resource_density)
+			{
+				this.proto_info = proto_info;
+				this.abundance = abundance;
+				this.mass = mass;
+				this.mass_threshold = mass_threshold;
+				this.resource_density = resource_density;
+			}
+
+			public bool HasResource => abundance > double.Epsilon && mass > mass_threshold && resource_density > double.Epsilon;
+			public double AvailableAmount => HasResource ? (mass - mass_threshold) / resource_density : 0.0;
+
+			public double Limit(double amount, double requestedExecution)
+			{
+				if (amount <= double.Epsilon || requestedExecution <= double.Epsilon) return 0.0;
+
+				UpdateMass();
+				double available = AvailableAmount;
+				if (available <= double.Epsilon) return 0.0;
+
+				return Math.Min(requestedExecution, available / amount);
+			}
+
+			public void Consume(double amount)
+			{
+				if (amount <= double.Epsilon || resource_density <= double.Epsilon) return;
+
+				UpdateMass();
+				mass = Math.Max(mass_threshold, mass - resource_density * amount);
+
+				if (loaded_info != null)
+					SetModuleDouble(loaded_info, "currentMassVal", mass);
+				else if (proto_info != null)
+					Lib.Proto.Set(proto_info, "currentMassVal", mass);
+			}
+
+			private void UpdateMass()
+			{
+				if (loaded_info != null)
+					mass = GetModuleDouble(loaded_info, "currentMassVal");
+				else if (proto_info != null)
+					mass = Lib.Proto.GetDouble(proto_info, "currentMassVal");
+			}
+		}
+
 
 		public override void OnStart(StartState state)
 		{
@@ -62,14 +127,16 @@ namespace KERBALISM
 				Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format(title), running ? Local.Harvester_running : Local.Harvester_stopped);//"running""stopped"
 			}
 
-			// if in flight, and the stock planet resource system is online
-			if (Lib.IsFlight() && ResourceMap.Instance != null)
+			// if in flight
+			if (Lib.IsFlight())
 			{
+				HarvestSource source = FindSpaceObjectSource(vessel, this);
+
 				// sample abundance
-				double abundance = SampleAbundance(vessel, this);
+				double abundance = SampleAbundance(vessel, this, source);
 
 				// determine if resource can be extracted
-				issue = DetectIssue(abundance);
+				issue = DetectIssue(abundance, source);
 
 				// update ui
 				if (part.IsPAWVisible())
@@ -102,17 +169,34 @@ namespace KERBALISM
 			return harvester.rate * crew_gain * (abundance / harvester.abundance_rate);
 		}
 
-		private static void ResourceUpdate(Vessel v, Harvester harvester, double min_abundance, double elapsed_s)
+		private static void ResourceUpdate(Vessel v, Harvester harvester, double min_abundance, double elapsed_s, HarvestSource source = null)
 		{
-			double abundance = SampleAbundance(v, harvester);
-			if (abundance > min_abundance)
+			source = source ?? FindSpaceObjectSource(v, harvester);
+
+			double abundance = SampleAbundance(v, harvester, source);
+			if (abundance > min_abundance && (source == null || source.HasResource))
 			{
+				double amount = Harvester.AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s;
+				if (source != null)
+				{
+					amount = Math.Min(amount, source.AvailableAmount);
+				}
+
+				if (amount <= double.Epsilon) return;
+
 				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
 				recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
 				recipe.AddOutput(
 					harvester.resource,
-					Harvester.AdjustedRate(harvester, engineer_cs, Lib.CrewList(v), abundance) * elapsed_s,
+					amount,
 					dump: false);
+
+				if (source != null)
+				{
+					recipe.AddExecutionLimiter(k => source.Limit(amount, k));
+					recipe.AddExecutionCallback(k => source.Consume(amount * k));
+				}
+
 				ResourceCache.AddRecipe(v, recipe);
 			}
 		}
@@ -130,9 +214,13 @@ namespace KERBALISM
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartModuleSnapshot m, Harvester harvester, double elapsed_s)
 		{
-			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running") && Lib.Proto.GetString(m, "issue").Length == 0)
+			if (Lib.Proto.GetBool(m, "deployed") && Lib.Proto.GetBool(m, "running"))
 			{
-				ResourceUpdate(v, harvester, Lib.Proto.GetDouble(m, "min_abundance"), elapsed_s);
+				HarvestSource source = FindSpaceObjectSource(v, harvester);
+				if (source != null || Lib.Proto.GetString(m, "issue").Length == 0)
+				{
+					ResourceUpdate(v, harvester, Lib.Proto.GetDouble(m, "min_abundance"), elapsed_s, source);
+				}
 			}
 		}
 
@@ -146,9 +234,12 @@ namespace KERBALISM
 			if (Lib.IsEditor()) GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 		}
 
-		// return resource abundance at vessel position
-		private static double SampleAbundance(Vessel v, Harvester harvester)
+		// return resource abundance at vessel position, or from an attached space object
+		private static double SampleAbundance(Vessel v, Harvester harvester, HarvestSource source = null)
 		{
+			if (source != null) return source.abundance;
+			if (ResourceMap.Instance == null) return 0.0;
+
 			// get abundance
 			AbundanceRequest request = new AbundanceRequest
 			{
@@ -163,10 +254,158 @@ namespace KERBALISM
 			return ResourceMap.Instance.GetAbundance(request);
 		}
 
+		private static HarvestSource FindSpaceObjectSource(Vessel v, Harvester harvester)
+		{
+			if (v == null || string.IsNullOrEmpty(harvester.resource)) return null;
+
+			return v.loaded
+				? FindLoadedSpaceObjectSource(v, harvester.resource)
+				: FindProtoSpaceObjectSource(v, harvester.resource);
+		}
+
+		private static HarvestSource FindLoadedSpaceObjectSource(Vessel v, string resource_name)
+		{
+			foreach (Part part in v.parts)
+			{
+				PartModule info = null;
+				for (int i = 0; i < part.Modules.Count; ++i)
+				{
+					PartModule module = part.Modules[i];
+					if (IsSpaceObjectInfo(module.moduleName))
+					{
+						info = module;
+						break;
+					}
+				}
+
+				if (info == null) continue;
+
+				for (int i = 0; i < part.Modules.Count; ++i)
+				{
+					PartModule module = part.Modules[i];
+					if (!IsSpaceObjectResource(module.moduleName)) continue;
+					if (!string.Equals(GetModuleString(module, "resourceName"), resource_name, StringComparison.Ordinal)) continue;
+
+					PartResourceDefinition definition = PartResourceLibrary.Instance.GetDefinition(resource_name);
+					if (definition == null) continue;
+
+					return new HarvestSource(
+						info,
+						GetModuleDouble(module, "abundance"),
+						GetModuleDouble(info, "currentMassVal"),
+						GetModuleDouble(info, "massThresholdVal"),
+						definition.density);
+				}
+			}
+
+			return null;
+		}
+
+		private static HarvestSource FindProtoSpaceObjectSource(Vessel v, string resource_name)
+		{
+			if (v.protoVessel == null) return null;
+
+			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
+			{
+				ProtoPartModuleSnapshot info = null;
+				foreach (ProtoPartModuleSnapshot module in part.modules)
+				{
+					if (IsSpaceObjectInfo(module.moduleName))
+					{
+						info = module;
+						break;
+					}
+				}
+
+				if (info == null) continue;
+
+				foreach (ProtoPartModuleSnapshot module in part.modules)
+				{
+					if (!IsSpaceObjectResource(module.moduleName)) continue;
+					if (!string.Equals(Lib.Proto.GetString(module, "resourceName"), resource_name, StringComparison.Ordinal)) continue;
+
+					PartResourceDefinition definition = PartResourceLibrary.Instance.GetDefinition(resource_name);
+					if (definition == null) continue;
+
+					return new HarvestSource(
+						info,
+						Lib.Proto.GetDouble(module, "abundance"),
+						Lib.Proto.GetDouble(info, "currentMassVal"),
+						Lib.Proto.GetDouble(info, "massThresholdVal"),
+						definition.density);
+				}
+			}
+
+			return null;
+		}
+
+		private static bool IsSpaceObjectInfo(string module_name)
+		{
+			return module_name == "ModuleAsteroidInfo" || module_name == "ModuleCometInfo";
+		}
+
+		private static bool IsSpaceObjectResource(string module_name)
+		{
+			return module_name == "ModuleAsteroidResource" || module_name == "ModuleCometResource";
+		}
+
+		private static string GetModuleString(PartModule module, string name)
+		{
+			object value = GetModuleMemberValue(module, name);
+			return value as string ?? string.Empty;
+		}
+
+		private static double GetModuleDouble(PartModule module, string name)
+		{
+			object value = GetModuleMemberValue(module, name);
+			if (value == null) return 0.0;
+			try
+			{
+				return Convert.ToDouble(value);
+			}
+			catch
+			{
+				return 0.0;
+			}
+		}
+
+		private static void SetModuleDouble(PartModule module, string name, double value)
+		{
+			PropertyInfo property = module.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (property != null && property.CanWrite)
+			{
+				property.SetValue(module, value, null);
+				return;
+			}
+
+			FieldInfo field = module.GetType().GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (field != null)
+			{
+				field.SetValue(module, value);
+			}
+		}
+
+		private static object GetModuleMemberValue(PartModule module, string name)
+		{
+			PropertyInfo property = module.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (property != null && property.CanRead)
+			{
+				return property.GetValue(module, null);
+			}
+
+			FieldInfo field = module.GetType().GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			return field != null ? field.GetValue(module) : null;
+		}
+
 
 		// return the reason why resource can't be harvested, or an empty string otherwise
-		string DetectIssue(double abundance)
+		string DetectIssue(double abundance, HarvestSource source)
 		{
+			if (source != null)
+			{
+				return source.HasResource && abundance >= min_abundance ? string.Empty : Local.Harvester_abundancebelow;
+			}
+
 			// shortcut
 			CelestialBody body = vessel.mainBody;
 
