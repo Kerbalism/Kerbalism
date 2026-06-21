@@ -23,8 +23,7 @@ namespace KERBALISM
 			if (type == null)
 				return;
 
-			// Use AccessTools so inherited methods (e.g. fission engine -> fission reactor) are patched.
-			MethodInfo target = AccessTools.Method(type, methodName);
+			MethodInfo target = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 			MethodInfo prefix = AccessTools.Method(typeof(SystemHeatHarmony), prefixName);
 			if (target != null && prefix != null)
 				harmony.Patch(target, new HarmonyMethod(prefix));
