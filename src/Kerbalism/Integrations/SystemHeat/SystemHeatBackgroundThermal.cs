@@ -12,7 +12,6 @@ namespace KERBALISM
 	public static class SystemHeatBackgroundThermal
 	{
 		private static readonly Dictionary<Guid, double> lastRunTime = new Dictionary<Guid, double>();
-		private static readonly HashSet<string> loggedRadiatorFallbacks = new HashSet<string>();
 
 		private static readonly string[] FusionReactorModuleNames = { "FusionReactor", "ModuleFusionEngine" };
 
@@ -31,11 +30,6 @@ namespace KERBALISM
 
 		public static void CaptureLoadedTemperatures(Vessel v)
 		{
-			CaptureLoadedTemperatures(v, false);
-		}
-
-		public static void CaptureLoadedTemperatures(Vessel v, bool logFissionCapture)
-		{
 			if (!Enabled || v == null || !v.loaded)
 				return;
 
@@ -44,7 +38,7 @@ namespace KERBALISM
 				if (part == null || part.protoPartSnapshot == null)
 					continue;
 
-				CaptureLoadedFissionReactorState(part, logFissionCapture);
+				CaptureLoadedFissionReactorState(part);
 
 				foreach (PartModule module in part.Modules)
 				{
@@ -70,7 +64,7 @@ namespace KERBALISM
 		/// Sync NFE fission ProcessController state into proto before the vessel packs so background
 		/// automation and Profile modifiers see the same running flag as the loaded part.
 		/// </summary>
-		private static void CaptureLoadedFissionReactorState(Part part, bool logCapture = false)
+		private static void CaptureLoadedFissionReactorState(Part part)
 		{
 			foreach (ProcessControllerSystemHeat process in part.FindModulesImplementing<ProcessControllerSystemHeat>())
 			{
@@ -80,11 +74,6 @@ namespace KERBALISM
 				ProtoPartModuleSnapshot protoModule = FindMatchingProcessModuleSnapshot(part.protoPartSnapshot, process.resource);
 				if (protoModule == null)
 					continue;
-
-				if (logCapture)
-					FissionReactorStateDebug.Log(part, "CaptureLoaded:process", Lib.BuildString(
-						"running=", process.running.ToString(),
-						" CoreDamage=", process.CoreDamage.ToString("F1")));
 
 				Lib.Proto.Set(protoModule, nameof(ProcessController.running), process.running);
 				Lib.Proto.Set(protoModule, nameof(ProcessController.broken), process.broken);
@@ -102,15 +91,6 @@ namespace KERBALISM
 				protoResource.flowState = pseudo.flowState;
 				protoResource.amount = pseudo.amount;
 				protoResource.maxAmount = pseudo.maxAmount;
-
-				if (logCapture)
-				{
-					FissionReactorStateDebug.Log(part, "CaptureLoaded", Lib.BuildString(
-						"writing proto running=", process.running.ToString(),
-						" power%=", process.CurrentPowerPercent.ToString("F1"),
-						" CoreDamage=", process.CoreDamage.ToString("F1"),
-						" pseudo=", pseudo.amount.ToString("F3")));
-				}
 			}
 		}
 
@@ -120,9 +100,6 @@ namespace KERBALISM
 			if (!Enabled || !HighLogic.LoadedSceneIsFlight)
 				return;
 
-			FissionReactorStateDebug.LogVessel(FlightGlobals.ActiveVessel, "CaptureOnSceneSwitch:begin", Lib.BuildString(
-				"vessels=", FlightGlobals.Vessels != null ? FlightGlobals.Vessels.Count.ToString() : "0"));
-
 			if (FlightGlobals.Vessels == null)
 				return;
 
@@ -131,7 +108,7 @@ namespace KERBALISM
 				if (v == null || !v.loaded)
 					continue;
 
-				CaptureLoadedTemperatures(v, true);
+				CaptureLoadedTemperatures(v);
 			}
 		}
 
@@ -260,8 +237,6 @@ namespace KERBALISM
 			if (Lib.Proto.GetString(module, "resource") != "_Nukereactor")
 				return;
 
-			FissionReactorStateDebug.LogProtoModule(v, part, module, "SyncFrozen:begin", Lib.BuildString("elapsed_s=", elapsed_s.ToString("F1")));
-
 			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == "_Nukereactor");
 			if (pseudoResource == null)
 				return;
@@ -286,17 +261,14 @@ namespace KERBALISM
 			}
 
 			bool running = Lib.Proto.GetBool(module, "running");
-			float powerBefore = Lib.Proto.GetFloat(module, "CurrentPowerPercent", 0f);
 
 			if (!running)
 			{
 				ClearFrozenFissionPseudoResource(pseudoResource);
-				FissionReactorStateDebug.LogProtoModule(v, part, module, "SyncFrozen:notRunning");
 				return;
 			}
 
 			SyncFrozenFissionPowerPercent(module, processPrefab);
-			float powerAfter = Lib.Proto.GetFloat(module, "CurrentPowerPercent", 0f);
 
 			float capacity = IntegrationReflection.GetFloat(processPrefab, "capacity", Lib.Proto.GetFloat(module, "capacity"));
 			float heatPower = GetProcessHeatPower(part, partPrefab, module, processPrefab);
@@ -312,12 +284,6 @@ namespace KERBALISM
 				pseudoResource.maxAmount = desiredCapacity;
 			}
 			pseudoResource.flowState = desiredCapacity > 0.0;
-
-			FissionReactorStateDebug.LogProtoModule(v, part, module, "SyncFrozen:end", Lib.BuildString(
-				"running ", running.ToString(), "->", Lib.Proto.GetBool(module, "running").ToString(),
-				" power ", powerBefore.ToString("F1"), "->", powerAfter.ToString("F1"),
-				" desiredCap=", desiredCapacity.ToString("F3"),
-				" loopK=", loopTemperature.ToString("F1")));
 		}
 
 		private static void SyncFrozenFissionPowerPercent(ProtoPartModuleSnapshot module, PartModule processPrefab)
@@ -702,7 +668,6 @@ namespace KERBALISM
 				{
 					loop.temperature = loop.anchorTemperature;
 					SyncLoopNetFlux(loop);
-					LogLoopBalance(v, entry.Key, loop);
 
 					foreach (ProtoPartModuleSnapshot heatModule in loop.heatModules)
 					{
@@ -715,7 +680,6 @@ namespace KERBALISM
 				}
 
 				AdvanceLoopTemperatureOverDuration(loop, thermalMass, elapsed_s);
-				LogLoopBalance(v, entry.Key, loop);
 
 				foreach (ProtoPartModuleSnapshot heatModule in loop.heatModules)
 				{
@@ -776,10 +740,7 @@ namespace KERBALISM
 
 			if (Lib.Proto.GetString(producer.module, "resource") == "_Nukereactor")
 			{
-				SetProtoFissionRunning(v, producer.part, producer.module, false, Lib.BuildString(
-					"thermalShutdown loopK=", GetLinkedLoopTemperature(
-						producer.part, prefab, Lib.Proto.GetString(producer.module, "systemHeatModuleID"), v).ToString("F1"),
-					" limit=", producer.shutdownTemperature.ToString("F0")));
+				SetProtoFissionRunning(v, producer.part, producer.module, false);
 				ProtoPartResourceSnapshot pseudo = producer.part.resources.Find(k => k.resourceName == "_Nukereactor");
 				if (pseudo != null)
 					ClearFrozenFissionPseudoResource(pseudo);
@@ -788,22 +749,6 @@ namespace KERBALISM
 
 			Lib.Proto.Set(producer.module, "running", false);
 			SetPseudoResourceFlow(producer.part, producer.module, processPrefab, false);
-		}
-
-		private static void LogLoopBalance(Vessel v, int loopId, LoopState loop)
-		{
-			if (!FissionReactorStateDebug.Enabled || !loop.hasActiveProducer)
-				return;
-
-			FissionReactorStateDebug.LogVessel(v, "ThermalLoop", Lib.BuildString(
-				"loop=", loopId.ToString(),
-				" temp ", loop.previousTemperature.ToString("F1"), "->", loop.temperature.ToString("F1"),
-				" producerKw=", loop.producerFluxKw.ToString("F2"),
-				" radiatorKw=", GetRadiatorRejectTotal(loop, loop.temperature).ToString("F2"),
-				" sinkKw=", loop.heatSinkFluxOffsetKw.ToString("F2"),
-				" netKw=", loop.netFluxKw.ToString("F2"),
-				" radiators=", loop.radiators.Count.ToString(),
-				" sinks=", loop.heatSinks.Count.ToString()));
 		}
 
 		private static void EnsureLoop(Dictionary<int, LoopState> loops, int loopId, Vessel v)
@@ -1247,13 +1192,11 @@ namespace KERBALISM
 			TryRun(v, elapsed_s);
 		}
 
-		private static void SetProtoFissionRunning(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, bool value, string reason)
+		private static void SetProtoFissionRunning(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, bool value)
 		{
 			if (Lib.Proto.GetBool(module, nameof(ProcessController.running)) == value)
 				return;
 
-			FissionReactorStateDebug.LogProtoModule(v, part, module, "SetProtoRunning", Lib.BuildString(
-				"value=", value.ToString(), " reason=", reason));
 			Lib.Proto.Set(module, nameof(ProcessController.running), value);
 		}
 
@@ -1443,7 +1386,7 @@ namespace KERBALISM
 		private static void BreakProcessReactor(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module)
 		{
 			v.KerbalismData().ResetReliabilityStatus();
-			SetProtoFissionRunning(v, part, module, false, "meltdown");
+			SetProtoFissionRunning(v, part, module, false);
 			Lib.Proto.Set(module, "broken", true);
 			Lib.Proto.Set(module, "isEnabled", false);
 			Lib.Proto.Set(module, "enabled", false);
@@ -1536,21 +1479,7 @@ namespace KERBALISM
 					return maxTransfer * scaleFactor;
 			}
 
-			LogRadiatorFallback(prefab, module);
 			return 100f * RadiatorCoefficient * scaleFactor;
-		}
-
-		private static void LogRadiatorFallback(Part prefab, ProtoPartModuleSnapshot module)
-		{
-			string key = Lib.BuildString(prefab != null ? prefab.name : "?", ":", module != null ? module.moduleName : "?");
-			if (loggedRadiatorFallbacks.Contains(key))
-				return;
-
-			loggedRadiatorFallbacks.Add(key);
-			Lib.Log(Lib.BuildString(
-				"[Kerbalism.SystemHeatBackground] Radiator has no temperatureCurve/input rates/maxEnergyTransfer; using BackgroundRadiatorCoefficient fallback",
-				" | part=", prefab != null && prefab.partInfo != null ? prefab.partInfo.title : key,
-				" | module=", module != null ? module.moduleName : "?"));
 		}
 
 		private static float EvaluateRadiatorCurvePower(Part prefab, ProtoPartModuleSnapshot module, float loopTemperature, float scaleFactor)

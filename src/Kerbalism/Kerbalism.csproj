@@ -208,7 +208,6 @@
     <Compile Include="Integrations\SystemHeat\Process\ProcessControllerB9ResourceSync.cs" />
     <Compile Include="Integrations\SystemHeat\Process\ProcessControllerDeployable.cs" />
     <Compile Include="Integrations\SystemHeat\Process\ProcessControllerUiHelper.cs" />
-    <Compile Include="Integrations\SystemHeat\Process\FissionReactorStateDebug.cs" />
     <Compile Include="Integrations\SystemHeat\Process\ProcessControllerSystemHeat.cs" />
     <Compile Include="Integrations\SystemHeat\Process\SystemHeatProcessDevices.cs" />
     <Compile Include="Integrations\SystemHeat\Process\SystemHeatProcessHarmony.cs" />

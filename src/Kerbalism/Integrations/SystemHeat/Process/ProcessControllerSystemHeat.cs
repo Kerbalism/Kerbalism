@@ -43,11 +43,8 @@ namespace KERBALISM
 		private double configuredCapacity = -1;
 		private float lastUiPowerPercent = -1f;
 		private int flightThermalGraceFrames = 0;
-		private int flightPowerTraceFrames = 0;
 		private int fissionLoopRestoreFrames = 0;
 		private const int DeployAnimationSettleFrames = 2;
-
-		internal int DebugFlightPowerTraceFrames => flightPowerTraceFrames;
 
 		public string ReactorPowerStatus => IsRunning() ? CurrentPowerPercent.ToString("0.#") + "%" : Local.Generic_STOPPED;
 
@@ -75,9 +72,6 @@ namespace KERBALISM
 			lastUiPowerPercent = CurrentPowerPercent;
 			if (IsFissionReactor() && HighLogic.LoadedSceneIsFlight)
 				SyncFissionPowerUiField();
-
-			if (IsFissionReactor())
-				FissionReactorStateDebug.Log(part, "OnRunningChanged", Lib.BuildString("value=", running.ToString()));
 
 			if (!IsRunning())
 				SetEfficiencyPlaceholder();
@@ -114,15 +108,11 @@ namespace KERBALISM
 			base.OnLoad(node);
 			if (IsFissionReactor())
 			{
-				FissionReactorStateDebug.Log(this.part, "OnLoad:beforeNormalize");
-				FissionReactorStateDebug.LogProto(this.part, "OnLoad:proto");
 				NormalizePersistedFissionPower();
 
 				heatModule = SystemHeat.FindHeatModule(part, systemHeatModuleID);
 				if (heatModule != null)
 					SystemHeatBackgroundThermal.RestoreLoadedFissionLoopTemperature(part, heatModule);
-
-				FissionReactorStateDebug.Log(this.part, "OnLoad:afterNormalize");
 			}
 		}
 
@@ -179,26 +169,14 @@ namespace KERBALISM
 				ApplyMeltdownState();
 			else if (IsFissionReactor() && HighLogic.LoadedSceneIsFlight)
 				RestoreLoadedFissionState();
-
-			if (IsFissionReactor())
-			{
-				FissionReactorStateDebug.Log(part, "Start:end");
-				FissionReactorStateDebug.LogProto(part, "Start:proto");
-			}
 		}
 
 		private void RestoreLoadedFissionState()
 		{
-			FissionReactorStateDebug.Log(part, "RestoreLoaded:begin");
-			FissionReactorStateDebug.LogProto(part, "RestoreLoaded:protoBefore");
-
 			if (heatModule == null)
 				heatModule = SystemHeat.FindHeatModule(part, systemHeatModuleID);
 			if (heatModule == null)
-			{
-				FissionReactorStateDebug.Log(part, "RestoreLoaded:noHeatModule");
 				return;
-			}
 
 			RestorePersistedFissionPowerFromProto();
 			NormalizePersistedFissionPower();
@@ -207,25 +185,16 @@ namespace KERBALISM
 			SystemHeatBackgroundThermal.RestoreLoadedFissionLoopTemperature(part, heatModule);
 
 			if (!IsRunning())
-			{
-				FissionReactorStateDebug.Log(part, "RestoreLoaded:notRunning");
 				return;
-			}
 
 			flightThermalGraceFrames = 5;
-			flightPowerTraceFrames = 90;
 			fissionLoopRestoreFrames = 5;
 			lastAppliedCapacity = -1;
-			FissionReactorStateDebug.Log(part, "RestoreLoaded:beforeThermalScale", Lib.BuildString(
-				"loopK=", SystemHeat.CurrentLoopTemperature(heatModule).ToString("F1"),
-				" traceFrames=", flightPowerTraceFrames.ToString()));
 			bool restoredPseudo = TryRestorePersistedFissionPseudoFromProto();
 			if (restoredPseudo)
 				RefreshThermalEfficiencyDisplay();
 			else
 				ApplyThermalCapacityScale(force: true);
-			FissionReactorStateDebug.Log(part, "RestoreLoaded:afterThermalScale", Lib.BuildString(
-				"lastAppliedCapacity=", lastAppliedCapacity.ToString("F3")));
 		}
 
 		private bool TryRestorePersistedFissionPseudoFromProto()
@@ -260,9 +229,6 @@ namespace KERBALISM
 					continue;
 
 				float savedPower = Lib.Proto.GetFloat(protoModule, nameof(CurrentPowerPercent), CurrentPowerPercent);
-				FissionReactorStateDebug.Log(part, "RestorePersistedPowerFromProto", Lib.BuildString(
-					"savedPower=", savedPower.ToString("F1"),
-					" before=", CurrentPowerPercent.ToString("F1")));
 				if (savedPower >= MinimumThrottle)
 					CurrentPowerPercent = savedPower;
 				return;
@@ -480,11 +446,8 @@ namespace KERBALISM
 			if (!IsFissionReactor() || broken || Mathf.Approximately(CurrentPowerPercent, lastUiPowerPercent))
 				return;
 
-			float before = lastUiPowerPercent;
 			lastUiPowerPercent = CurrentPowerPercent;
 			CurrentPowerPercent = Mathf.Clamp(CurrentPowerPercent, MinimumThrottle, 100f);
-			FissionReactorStateDebug.Log(part, "SyncReactorPowerFromUi", Lib.BuildString(
-				"ui ", before.ToString("F1"), " -> ", CurrentPowerPercent.ToString("F1")));
 
 			if (!IsRunning())
 				return;
@@ -599,7 +562,6 @@ namespace KERBALISM
 
 		public void SetReactorPowerPercent(float percent)
 		{
-			FissionReactorStateDebug.Log(part, "SetReactorPowerPercent", Lib.BuildString("requested=", percent.ToString("F1")));
 			if (percent <= 0f)
 			{
 				CurrentPowerPercent = 0f;
@@ -621,8 +583,6 @@ namespace KERBALISM
 
 		public new void SetRunning(bool value)
 		{
-			if (IsFissionReactor())
-				FissionReactorStateDebug.Log(part, "SetRunning", Lib.BuildString("requested=", value.ToString()));
 			base.SetRunning(value);
 			if (IsFissionReactor())
 			{
@@ -647,43 +607,31 @@ namespace KERBALISM
 			if (heatModule == null)
 				heatModule = SystemHeat.FindHeatModule(part, systemHeatModuleID);
 
-				if (heatModule != null)
+			if (heatModule != null)
+			{
+				if (HighLogic.LoadedSceneIsFlight)
 				{
-					if (HighLogic.LoadedSceneIsFlight)
+					if (IsFissionReactor() && fissionLoopRestoreFrames > 0)
 					{
-						if (IsFissionReactor() && fissionLoopRestoreFrames > 0)
+						fissionLoopRestoreFrames--;
+						SystemHeatBackgroundThermal.RestoreLoadedFissionLoopTemperature(part, heatModule);
+						if (IsRunning())
 						{
-							fissionLoopRestoreFrames--;
-							SystemHeatBackgroundThermal.RestoreLoadedFissionLoopTemperature(part, heatModule);
-							if (IsRunning())
-							{
-								lastAppliedCapacity = -1;
-								ApplyThermalCapacityScale(force: true);
-							}
+							lastAppliedCapacity = -1;
+							ApplyThermalCapacityScale(force: true);
 						}
-
-						if (IsFissionReactor() && flightThermalGraceFrames > 0)
-						flightThermalGraceFrames--;
-
-					if (IsFissionReactor() && flightPowerTraceFrames > 0)
-					{
-						flightPowerTraceFrames--;
-						float loopK = SystemHeat.CurrentLoopTemperature(heatModule);
-						PartResource pseudo = part.Resources.Contains(resource) ? part.Resources[resource] : null;
-						FissionReactorStateDebug.Log(part, "FixedUpdate:trace", Lib.BuildString(
-							"frameLeft=", flightPowerTraceFrames.ToString(),
-							" loopK=", loopK.ToString("F1"),
-							" lastCap=", lastAppliedCapacity.ToString("F3"),
-							pseudo != null ? Lib.BuildString(" pseudo=", pseudo.amount.ToString("F3")) : ""));
 					}
 
-					GenerateHeatFlight();
-					UpdateSystemHeatFlight();
-					if (IsRunning())
-						ApplyThermalCapacityScale();
-					else
-						SetEfficiencyPlaceholder();
+					if (IsFissionReactor() && flightThermalGraceFrames > 0)
+						flightThermalGraceFrames--;
 				}
+
+				GenerateHeatFlight();
+				UpdateSystemHeatFlight();
+				if (IsRunning())
+					ApplyThermalCapacityScale();
+				else
+					SetEfficiencyPlaceholder();
 			}
 		}
 
@@ -788,13 +736,6 @@ namespace KERBALISM
 
 			if (!force && Math.Abs(desiredCapacity - lastAppliedCapacity) <= (configuredCapacity * SystemHeatEditorSimulation.HystFrac))
 				return;
-
-			if (IsFissionReactor() && flightPowerTraceFrames > 0)
-				FissionReactorStateDebug.Log(part, "ApplyThermalCapacityScale", Lib.BuildString(
-					"desiredCap=", desiredCapacity.ToString("F3"),
-					" lastCap=", lastAppliedCapacity.ToString("F3"),
-					" thermalEff=", thermalEff.ToString("F3"),
-					" loopK=", loopK.ToString("F1")));
 
 			Lib.SetResource(part, resource, desiredCapacity, desiredCapacity);
 			Lib.RefreshPlanner();
