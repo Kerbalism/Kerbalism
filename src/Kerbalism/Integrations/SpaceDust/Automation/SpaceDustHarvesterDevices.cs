@@ -4,14 +4,6 @@ namespace KERBALISM
 {
 	internal static class SpaceDustHarvesterControl
 	{
-		internal const string ExcludedAtmosphereScoopPartName = "fft-atmosphere-scoop-1";
-
-		internal static bool IsAutomationEligiblePart(Part part) =>
-			part != null && part.name != ExcludedAtmosphereScoopPartName;
-
-		internal static bool IsAutomationEligiblePart(ProtoPartSnapshot partSnapshot) =>
-			partSnapshot != null && partSnapshot.partName != ExcludedAtmosphereScoopPartName;
-
 		internal static void SetEnabled(PartModule harvester, bool value)
 		{
 			if (harvester == null || SpaceDust.Get(harvester, "Enabled", false) == value)

@@ -19,9 +19,6 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				if (!SpaceDustHarvesterControl.IsAutomationEligiblePart(part))
-					continue;
-
 				SpaceDustHarvesterKerbalismUpdater updater = part.FindModuleImplementing<SpaceDustHarvesterKerbalismUpdater>();
 				if (updater == null)
 					continue;
@@ -38,9 +35,6 @@ namespace KERBALISM
 
 			foreach (ProtoPartSnapshot partSnapshot in v.protoVessel.protoPartSnapshots)
 			{
-				if (!SpaceDustHarvesterControl.IsAutomationEligiblePart(partSnapshot))
-					continue;
-
 				ProtoPartModuleSnapshot updater = IntegrationUtils.TryFindPartModuleSnapshot(partSnapshot, "SpaceDustHarvesterKerbalismUpdater");
 				if (updater == null)
 					continue;
