@@ -108,15 +108,89 @@ namespace KERBALISM
 			if (harvester == null || vessel == null)
 				return;
 
+			AddHarvestRatesFromModule(harvester, vessel, resourceChangeRequest, scale);
+		}
+
+		internal static void AddBackgroundHarvestRates(
+			Vessel v,
+			PartModule harvesterPrefab,
+			List<KeyValuePair<string, double>> resourceChangeRequest,
+			ProtoPartSnapshot partSnapshot,
+			string harvesterModuleId)
+		{
+			if (v == null || harvesterPrefab == null || partSnapshot == null)
+				return;
+
+			ProtoPartModuleSnapshot harvesterSnapshot = FindHarvesterSnapshot(partSnapshot, harvesterModuleId);
+			if (harvesterSnapshot == null || !Lib.Proto.GetBool(harvesterSnapshot, "Enabled"))
+				return;
+
+			double scale = GetBackgroundThermalScale(partSnapshot, harvesterPrefab, harvesterSnapshot);
+			float powerCost = SpaceDust.Get(harvesterPrefab, "PowerCost", 0f);
+			if (powerCost > 0f)
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -powerCost * scale));
+
+			AddHarvestRatesFromModule(harvesterPrefab, v, resourceChangeRequest, scale);
+		}
+
+		private static ProtoPartModuleSnapshot FindHarvesterSnapshot(ProtoPartSnapshot part, string harvesterModuleId)
+		{
+			ProtoPartModuleSnapshot fallback = null;
+			foreach (ProtoPartModuleSnapshot module in part.modules)
+			{
+				if (module.moduleName != "ModuleSpaceDustHarvester")
+					continue;
+
+				if (fallback == null)
+					fallback = module;
+
+				string moduleId = Lib.Proto.GetString(module, "ModuleID");
+				if (string.IsNullOrEmpty(harvesterModuleId) || moduleId == harvesterModuleId)
+					return module;
+			}
+
+			return fallback;
+		}
+
+		private static double GetBackgroundThermalScale(ProtoPartSnapshot part, PartModule harvesterPrefab, ProtoPartModuleSnapshot harvesterSnapshot)
+		{
+			string heatModuleId = SpaceDust.Get(harvesterPrefab, "HeatModuleID", "");
+			if (string.IsNullOrEmpty(heatModuleId))
+				return 1d;
+
+			foreach (ProtoPartModuleSnapshot module in part.modules)
+			{
+				if (module.moduleName != "ModuleSystemHeat")
+					continue;
+				if (Lib.Proto.GetString(module, "moduleID") != heatModuleId)
+					continue;
+
+				float loopTemp = Lib.Proto.GetFloat(module, "currentLoopTemperature");
+				if (loopTemp <= 0f)
+					return 1d;
+
+				object efficiencyCurve = IntegrationReflection.GetField<object>(harvesterPrefab, "SystemEfficiency");
+				return IntegrationReflection.EvaluateFloatCurve(efficiencyCurve, loopTemp, 1f);
+			}
+
+			return 1d;
+		}
+
+		private static void AddHarvestRatesFromModule(
+			PartModule harvester,
+			Vessel v,
+			List<KeyValuePair<string, double>> resourceChangeRequest,
+			double scale)
+		{
 			IList resources = SpaceDust.GetHarvestedResources(harvester);
 			if (resources == null || resources.Count == 0)
 				return;
 
-			double intakeVolume = ComputeIntakeVolume(harvester);
+			double intakeVolume = ComputeIntakeVolume(harvester, v);
 			if (intakeVolume <= double.Epsilon)
 				return;
 
-			double altitude = vessel.altitude + vessel.mainBody.Radius;
+			double altitude = v.altitude + v.mainBody.Radius;
 			for (int i = 0; i < resources.Count; i++)
 			{
 				object res = resources[i];
@@ -128,7 +202,7 @@ namespace KERBALISM
 					continue;
 
 				double density = SpaceDust.GetHarvestedResourceDensity(res);
-				double sample = SpaceDust.SampleResource(name, vessel.mainBody, altitude, vessel.latitude, vessel.longitude);
+				double sample = SpaceDust.SampleResource(name, v.mainBody, altitude, v.latitude, v.longitude);
 				double rate = sample * intakeVolume * SpaceDust.GetHarvestedResourceBaseEfficiency(res) * scale / density;
 				if (rate <= SpaceDust.GetHarvestedResourceMinHarvestValue(res))
 					continue;
@@ -137,49 +211,53 @@ namespace KERBALISM
 			}
 		}
 
-		private static double ComputeIntakeVolume(PartModule harvester)
+		private static double ComputeIntakeVolume(PartModule harvester, Vessel v)
 		{
-			Vessel vessel = harvester.vessel;
-			if (vessel == null)
+			if (harvester == null || v == null || v.mainBody == null)
 				return 0d;
 
-			string transformName = SpaceDust.Get(harvester, "HarvestIntakeTransformName", "");
 			Transform intakeTransform = null;
-			if (!string.IsNullOrEmpty(transformName))
-				intakeTransform = harvester.part.FindModelTransform(transformName);
-			if (intakeTransform == null)
-				intakeTransform = harvester.part.transform;
+			if (harvester.part != null)
+			{
+				string transformName = SpaceDust.Get(harvester, "HarvestIntakeTransformName", "");
+				if (!string.IsNullOrEmpty(transformName))
+					intakeTransform = harvester.part.FindModelTransform(transformName);
+				if (intakeTransform == null)
+					intakeTransform = harvester.part.transform;
+			}
 
 			object harvestType = IntegrationReflection.GetField<object>(harvester, "HarvestType");
 			string harvestTypeName = harvestType?.ToString() ?? "";
+			float intakeSpeedStatic = SpaceDust.Get(harvester, "IntakeSpeedStatic", 0f);
+			float intakeArea = SpaceDust.Get(harvester, "IntakeArea", 0f);
 
 			if (harvestTypeName.Contains("Atmosphere"))
 			{
-				if (vessel.atmDensity <= 0d)
+				if (v.atmDensity <= 0d)
 					return 0d;
 
-				Vector3d worldVelocity = vessel.srf_velocity;
-				double mach = vessel.mach;
-				double dot = Vector3d.Dot(worldVelocity, intakeTransform.forward);
+				Vector3d worldVelocity = v.srf_velocity;
+				double mach = v.mach;
+				double dot = intakeTransform != null
+					? Vector3d.Dot(worldVelocity, intakeTransform.forward)
+					: worldVelocity.magnitude;
 				object intakeVelocityScale = IntegrationReflection.GetField<object>(harvester, "IntakeVelocityScale");
-				float intakeSpeedStatic = SpaceDust.Get(harvester, "IntakeSpeedStatic", 0f);
-				float intakeArea = SpaceDust.Get(harvester, "IntakeArea", 0f);
 				return (worldVelocity.magnitude * Math.Max(dot, 0d) * IntegrationReflection.EvaluateFloatCurve(intakeVelocityScale, (float)mach, 1f) + intakeSpeedStatic) * intakeArea;
 			}
 
 			if (harvestTypeName.Contains("Exosphere"))
 			{
-				if (vessel.atmDensity > 0d)
+				if (v.atmDensity > 0d)
 					return 0d;
 
-				Vector3d worldVelocity = vessel.obt_velocity;
-				double dot = Vector3d.Dot(worldVelocity.normalized, intakeTransform.forward.normalized);
-				float intakeSpeedStatic = SpaceDust.Get(harvester, "IntakeSpeedStatic", 0f);
-				float intakeArea = SpaceDust.Get(harvester, "IntakeArea", 0f);
+				Vector3d worldVelocity = v.obt_velocity;
+				double dot = intakeTransform != null
+					? Vector3d.Dot(worldVelocity.normalized, intakeTransform.forward.normalized)
+					: 1d;
 				return (worldVelocity.magnitude * Math.Max(dot, 0d) + intakeSpeedStatic) * intakeArea;
 			}
 
-			return SpaceDust.Get(harvester, "IntakeSpeedStatic", 0f) * SpaceDust.Get(harvester, "IntakeArea", 0f);
+			return intakeSpeedStatic * intakeArea;
 		}
 
 		public static string BackgroundUpdate(
@@ -192,10 +270,8 @@ namespace KERBALISM
 			List<KeyValuePair<string, double>> resourceChangeRequest,
 			double elapsed_s)
 		{
-			ProtoPartModuleSnapshot harvesterSnapshot = IntegrationUtils.TryFindPartModuleSnapshot(part_snapshot, "ModuleSpaceDustHarvester");
-			if (harvesterSnapshot != null && Lib.Proto.GetBool(harvesterSnapshot, "Enabled"))
-				Lib.Proto.Set(harvesterSnapshot, "Enabled", false);
-
+			string harvesterModuleId = Lib.Proto.GetString(module_snapshot, "harvesterModuleID", "harvester");
+			AddBackgroundHarvestRates(v, proto_part_module, resourceChangeRequest, part_snapshot, harvesterModuleId);
 			SystemHeatBackgroundThermal.TryRun(v, elapsed_s);
 			return brokerTitle;
 		}

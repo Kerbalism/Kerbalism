@@ -55,7 +55,6 @@ namespace KERBALISM
 				if (!part.modules.Exists(module => module.moduleName == "SpaceDustHarvesterKerbalismUpdater"))
 					return true;
 
-				Lib.Proto.Set(harvester, "Enabled", false);
 				return false;
 			}
 

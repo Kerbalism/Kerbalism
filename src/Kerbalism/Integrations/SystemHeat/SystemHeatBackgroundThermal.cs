@@ -12,19 +12,29 @@ namespace KERBALISM
 	public static class SystemHeatBackgroundThermal
 	{
 		private static readonly Dictionary<Guid, double> lastRunTime = new Dictionary<Guid, double>();
-		private static readonly Dictionary<Guid, double> lastReactorLoopSimTime = new Dictionary<Guid, double>();
+		private static readonly HashSet<string> loggedRadiatorFallbacks = new HashSet<string>();
 
 		private static readonly string[] FusionReactorModuleNames = { "FusionReactor", "ModuleFusionEngine" };
 
 		internal static bool Enabled = true;
-		internal static float RadiatorCoefficient = 0.05f;
+		internal static float RadiatorCoefficient = 1f;
 		private const float TransientTemperatureTolerance = 5f;
 		private const float FluxEpsilonKw = 0.01f;
 		private const float CoolantDensity = 1f;
 		private const float CoolantHeatCapacity = 4.18f;
-		private const float HeatLoopDecayCoefficient = 0.01f;
+		private const float MaxThermalStepSeconds = 10f;
+		private const string FluxAnchorKwField = "backgroundFluxAnchorKw";
+		private const string FluxAnchorTemperatureField = "backgroundFluxAnchorTemperature";
+		private const string FluxAnchorValidField = "backgroundFluxAnchorValid";
+		/// <summary>Hard floor for loop temperature integration (space baseline), not ambient environment.</summary>
+		private const float MinimumLoopTemperatureK = 4f;
 
 		public static void CaptureLoadedTemperatures(Vessel v)
+		{
+			CaptureLoadedTemperatures(v, false);
+		}
+
+		public static void CaptureLoadedTemperatures(Vessel v, bool logFissionCapture)
 		{
 			if (!Enabled || v == null || !v.loaded)
 				return;
@@ -33,6 +43,8 @@ namespace KERBALISM
 			{
 				if (part == null || part.protoPartSnapshot == null)
 					continue;
+
+				CaptureLoadedFissionReactorState(part, logFissionCapture);
 
 				foreach (PartModule module in part.Modules)
 				{
@@ -44,12 +56,160 @@ namespace KERBALISM
 						continue;
 
 					float temperature = SystemHeat.CurrentLoopTemperature(module, 0f);
+					float flux = SystemHeat.Get(module, "currentLoopFlux", Lib.Proto.GetFloat(protoModule, "currentLoopFlux"));
 					if (temperature > 0f)
 						Lib.Proto.Set(protoModule, "currentLoopTemperature", temperature);
 
-					float flux = SystemHeat.Get(module, "currentLoopFlux", Lib.Proto.GetFloat(protoModule, "currentLoopFlux"));
 					Lib.Proto.Set(protoModule, "currentLoopFlux", flux);
+					CaptureFluxAnchorOnHeatModule(protoModule, temperature, flux);
 				}
+			}
+		}
+
+		/// <summary>
+		/// Sync NFE fission ProcessController state into proto before the vessel packs so background
+		/// automation and Profile modifiers see the same running flag as the loaded part.
+		/// </summary>
+		private static void CaptureLoadedFissionReactorState(Part part, bool logCapture = false)
+		{
+			foreach (ProcessControllerSystemHeat process in part.FindModulesImplementing<ProcessControllerSystemHeat>())
+			{
+				if (process == null || process.resource != "_Nukereactor")
+					continue;
+
+				ProtoPartModuleSnapshot protoModule = FindMatchingProcessModuleSnapshot(part.protoPartSnapshot, process.resource);
+				if (protoModule == null)
+					continue;
+
+				if (logCapture)
+					FissionReactorStateDebug.Log(part, "CaptureLoaded:process", Lib.BuildString(
+						"running=", process.running.ToString(),
+						" CoreDamage=", process.CoreDamage.ToString("F1")));
+
+				Lib.Proto.Set(protoModule, nameof(ProcessController.running), process.running);
+				Lib.Proto.Set(protoModule, nameof(ProcessController.broken), process.broken);
+				Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), process.CurrentPowerPercent);
+				Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CoreDamage), process.CoreDamage);
+
+				if (!part.Resources.Contains(process.resource))
+					continue;
+
+				PartResource pseudo = part.Resources[process.resource];
+				ProtoPartResourceSnapshot protoResource = part.protoPartSnapshot.resources.Find(k => k.resourceName == process.resource);
+				if (protoResource == null)
+					continue;
+
+				protoResource.flowState = pseudo.flowState;
+				protoResource.amount = pseudo.amount;
+				protoResource.maxAmount = pseudo.maxAmount;
+
+				if (logCapture)
+				{
+					FissionReactorStateDebug.Log(part, "CaptureLoaded", Lib.BuildString(
+						"writing proto running=", process.running.ToString(),
+						" power%=", process.CurrentPowerPercent.ToString("F1"),
+						" CoreDamage=", process.CoreDamage.ToString("F1"),
+						" pseudo=", pseudo.amount.ToString("F3")));
+				}
+			}
+		}
+
+		/// <summary>Sync fission reactor proto before leaving the flight scene.</summary>
+		public static void CaptureAllLoadedFissionReactors()
+		{
+			if (!Enabled || !HighLogic.LoadedSceneIsFlight)
+				return;
+
+			FissionReactorStateDebug.LogVessel(FlightGlobals.ActiveVessel, "CaptureOnSceneSwitch:begin", Lib.BuildString(
+				"vessels=", FlightGlobals.Vessels != null ? FlightGlobals.Vessels.Count.ToString() : "0"));
+
+			if (FlightGlobals.Vessels == null)
+				return;
+
+			foreach (Vessel v in FlightGlobals.Vessels)
+			{
+				if (v == null || !v.loaded)
+					continue;
+
+				CaptureLoadedTemperatures(v, true);
+			}
+		}
+
+		/// <summary>
+		/// Refresh frozen fission reactor pseudo-resources before Profile rules run on unloaded vessels.
+		/// </summary>
+		public static void PrepareFrozenFissionReactors(Vessel v, double elapsed_s)
+		{
+			if (!Enabled || v == null || v.loaded || elapsed_s <= 0f)
+				return;
+
+			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
+			{
+				Part prefab = PartLoader.getPartInfoByName(part.partName).partPrefab;
+
+				foreach (ProtoPartModuleSnapshot module in part.modules)
+				{
+					if (module.moduleName != "ProcessControllerSystemHeat"
+						|| Lib.Proto.GetString(module, "resource") != "_Nukereactor")
+						continue;
+
+					if (part.resources.Find(k => k.resourceName == "_Nukereactor") == null)
+						continue;
+
+					PartModule processPrefab = FindMatchingPrefabModule(prefab, module, "ProcessControllerSystemHeat");
+					SyncFrozenProcessReactor(v, part, module, processPrefab, prefab, elapsed_s);
+				}
+			}
+		}
+
+		private static void CaptureFluxAnchorOnHeatModule(ProtoPartModuleSnapshot protoModule, float temperature, float flux)
+		{
+			// ModuleSystemHeat UI flux is often gross producer input (+MW) or radiator capacity (-MW),
+			// not net loop balance. At a stable operating temperature net loop flux is ~0.
+			if (Lib.Proto.GetBool(protoModule, "ignoreTemperature", false))
+				flux = 0f;
+			else if (flux > FluxEpsilonKw && temperature > 0f)
+				flux = 0f;
+
+			Lib.Proto.Set(protoModule, FluxAnchorKwField, flux);
+			Lib.Proto.Set(protoModule, FluxAnchorTemperatureField, temperature > 0f ? temperature : 0f);
+			Lib.Proto.Set(protoModule, FluxAnchorValidField, true);
+		}
+
+		private static void TryCaptureFluxAnchorOnLoop(LoopState loop, ProtoPartModuleSnapshot heatModule)
+		{
+			if (Lib.Proto.GetBool(heatModule, FluxAnchorValidField))
+			{
+				bool ignoreTemperature = Lib.Proto.GetBool(heatModule, "ignoreTemperature", false);
+				float temperature = Lib.Proto.GetFloat(heatModule, FluxAnchorTemperatureField);
+				float flux = Lib.Proto.GetFloat(heatModule, FluxAnchorKwField);
+
+				if (ignoreTemperature)
+				{
+					if (temperature > 0f)
+						loop.anchorTemperature = temperature;
+					if (!loop.hasFluxAnchor)
+					{
+						loop.anchorFluxKw = 0f;
+						loop.hasFluxAnchor = temperature > 0f;
+					}
+					return;
+				}
+
+				loop.anchorFluxKw = flux;
+				if (temperature > 0f)
+					loop.anchorTemperature = temperature;
+				loop.hasFluxAnchor = true;
+				return;
+			}
+
+			// Save can run before scene-switch capture; persisted loop temperature is still the flight equilibrium.
+			float loopTemp = Lib.Proto.GetFloat(heatModule, "currentLoopTemperature");
+			if (loopTemp > 0f && !loop.hasFluxAnchor)
+			{
+				loop.anchorTemperature = loopTemp;
+				loop.anchorFluxKw = 0f;
+				loop.hasFluxAnchor = true;
 			}
 		}
 
@@ -100,6 +260,8 @@ namespace KERBALISM
 			if (Lib.Proto.GetString(module, "resource") != "_Nukereactor")
 				return;
 
+			FissionReactorStateDebug.LogProtoModule(v, part, module, "SyncFrozen:begin", Lib.BuildString("elapsed_s=", elapsed_s.ToString("F1")));
+
 			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == "_Nukereactor");
 			if (pseudoResource == null)
 				return;
@@ -110,14 +272,13 @@ namespace KERBALISM
 				return;
 			}
 
-			TryRun(v, elapsed_s);
+			EnsureUnloadedFissionLoopSimulated(v, (float)elapsed_s);
 
 			ProtoPartModuleSnapshot heatModule = GetLinkedHeatModule(part, partPrefab, Lib.Proto.GetString(module, "systemHeatModuleID"));
-			float loopTemperature = heatModule != null ? Lib.Proto.GetFloat(heatModule, "currentLoopTemperature") : GetEnvironmentTemperature(v);
+			float loopTemperature = heatModule != null ? Lib.Proto.GetFloat(heatModule, "currentLoopTemperature") : GetFallbackLoopTemperature();
 			if (loopTemperature <= 0f)
-				loopTemperature = GetEnvironmentTemperature(v);
+				loopTemperature = GetFallbackLoopTemperature();
 
-			ApplyFrozenCoreDamage(v, part, module, partPrefab, processPrefab, loopTemperature, (float)elapsed_s);
 			if (Lib.Proto.GetBool(module, "broken"))
 			{
 				pseudoResource.flowState = false;
@@ -125,19 +286,17 @@ namespace KERBALISM
 			}
 
 			bool running = Lib.Proto.GetBool(module, "running");
-			float safetyOverride = GetFissionSafetyOverride(partPrefab, module, processPrefab);
-			bool autoShutdown = IntegrationReflection.GetBool(processPrefab, "AutoShutdown", true);
-			if (running && autoShutdown && loopTemperature > safetyOverride)
-			{
-				Lib.Proto.Set(module, "running", false);
-				running = false;
-			}
+			float powerBefore = Lib.Proto.GetFloat(module, "CurrentPowerPercent", 0f);
 
 			if (!running)
 			{
-				pseudoResource.flowState = false;
+				ClearFrozenFissionPseudoResource(pseudoResource);
+				FissionReactorStateDebug.LogProtoModule(v, part, module, "SyncFrozen:notRunning");
 				return;
 			}
+
+			SyncFrozenFissionPowerPercent(module, processPrefab);
+			float powerAfter = Lib.Proto.GetFloat(module, "CurrentPowerPercent", 0f);
 
 			float capacity = IntegrationReflection.GetFloat(processPrefab, "capacity", Lib.Proto.GetFloat(module, "capacity"));
 			float heatPower = GetProcessHeatPower(part, partPrefab, module, processPrefab);
@@ -153,6 +312,24 @@ namespace KERBALISM
 				pseudoResource.maxAmount = desiredCapacity;
 			}
 			pseudoResource.flowState = desiredCapacity > 0.0;
+
+			FissionReactorStateDebug.LogProtoModule(v, part, module, "SyncFrozen:end", Lib.BuildString(
+				"running ", running.ToString(), "->", Lib.Proto.GetBool(module, "running").ToString(),
+				" power ", powerBefore.ToString("F1"), "->", powerAfter.ToString("F1"),
+				" desiredCap=", desiredCapacity.ToString("F3"),
+				" loopK=", loopTemperature.ToString("F1")));
+		}
+
+		private static void SyncFrozenFissionPowerPercent(ProtoPartModuleSnapshot module, PartModule processPrefab)
+		{
+			float minThrottle = processPrefab != null
+				? IntegrationReflection.GetFloat(processPrefab, "MinimumThrottle", 10f)
+				: 10f;
+			float power = Lib.Proto.GetFloat(module, "CurrentPowerPercent", 0f);
+			if (power < minThrottle)
+				Lib.Proto.Set(module, "CurrentPowerPercent", minThrottle);
+			else if (power > 100f)
+				Lib.Proto.Set(module, "CurrentPowerPercent", 100f);
 		}
 
 		private class LoopState
@@ -161,13 +338,25 @@ namespace KERBALISM
 			internal float temperature;
 			internal float previousTemperature;
 			internal float netFluxKw;
+			internal float producerFluxKw;
+			internal float heatSinkFluxOffsetKw;
 			internal float outletTemperature;
 			internal float shutdownTemperature = float.MaxValue;
 			internal bool hasActiveProducer;
 			internal bool hasRadiator;
+			internal bool hasFluxAnchor;
+			internal float anchorFluxKw;
+			internal float anchorTemperature;
 			internal readonly List<ProtoPartModuleSnapshot> heatModules = new List<ProtoPartModuleSnapshot>();
 			internal readonly List<HeatProducer> heatProducers = new List<HeatProducer>();
 			internal readonly List<HeatSink> heatSinks = new List<HeatSink>();
+			internal readonly List<RadiatorRejector> radiators = new List<RadiatorRejector>();
+		}
+
+		private class RadiatorRejector
+		{
+			internal Part prefab;
+			internal ProtoPartModuleSnapshot module;
 		}
 
 		private class HeatProducer
@@ -208,7 +397,10 @@ namespace KERBALISM
 
 						if (!loops.TryGetValue(loopId, out LoopState loop))
 						{
-							loop = new LoopState { temperature = loopTemp > 0f ? loopTemp : GetEnvironmentTemperature(v) };
+							loop = new LoopState
+							{
+								temperature = loopTemp > 0f ? loopTemp : GetFallbackLoopTemperature()
+							};
 							loops[loopId] = loop;
 						}
 
@@ -216,6 +408,7 @@ namespace KERBALISM
 						if (loopTemp > 0f)
 							loop.temperature = loopTemp;
 						loop.heatModules.Add(module);
+						TryCaptureFluxAnchorOnLoop(loop, module);
 					}
 					else if (module.moduleName == "ProcessControllerSystemHeat")
 					{
@@ -224,13 +417,13 @@ namespace KERBALISM
 						if (loopId < 0)
 							continue;
 
-						bool isFission = Lib.Proto.GetString(module, "resource") == "_Nukereactor";
+						bool isFissionProcess = Lib.Proto.GetString(module, "resource") == "_Nukereactor";
 						float meltdown = GetProcessField(prefab, module, "meltdownTemperature", 0f);
 						float maximum = GetProcessField(prefab, module, "MaximumTemperature", 0f);
-						if (isFission || (meltdown > 0f && maximum > meltdown))
+						if (meltdown > 0f && maximum > meltdown)
 							riskLoopIds.Add(loopId);
 
-						float shutdown = isFission
+						float shutdown = isFissionProcess
 							? GetFissionSafetyOverride(prefab, module, processPrefab)
 							: GetProcessField(prefab, module, "shutdownTemperature", float.MaxValue);
 						EnsureLoop(loops, loopId, v);
@@ -251,7 +444,7 @@ namespace KERBALISM
 							continue;
 
 						float power = GetProcessHeatPower(part, prefab, module, processPrefab) * GetProcessThrottle(module);
-						loop.netFluxKw += power;
+						loop.producerFluxKw += power;
 						MarkActiveProducer(loop, IntegrationReflection.GetFloat(processPrefab, "systemOutletTemperature", GetProcessField(prefab, module, "systemOutletTemperature", 0f)), power);
 					}
 					else if (module.moduleName == "HarvesterSystemHeat")
@@ -267,7 +460,7 @@ namespace KERBALISM
 						float shutdown = GetHarvesterField(prefab, module, "shutdownTemperature", float.MaxValue);
 						EnsureLoop(loops, loopId, v);
 						LoopState loop = loops[loopId];
-						loop.netFluxKw += power;
+						loop.producerFluxKw += power;
 						loop.shutdownTemperature = Math.Min(loop.shutdownTemperature, shutdown);
 						loop.heatProducers.Add(new HeatProducer { part = part, module = module, shutdownTemperature = shutdown });
 						MarkActiveProducer(loop, GetHarvesterField(prefab, module, "systemOutletTemperature", 0f), power);
@@ -283,8 +476,22 @@ namespace KERBALISM
 
 						EnsureLoop(loops, loopId, v);
 						LoopState loop = loops[loopId];
-						loop.netFluxKw -= GetRadiatorRejectPower(prefab, module, loop.temperature);
-						loop.hasRadiator = true;
+						RegisterLoopRadiator(loop, prefab, module);
+					}
+					else if (module.moduleName == "ModuleSystemHeatRadiator" || module.moduleName == "ModuleActiveRadiator")
+					{
+						if (IntegrationUtils.TryFindPartModuleSnapshot(part, "SystemHeatRadiatorKerbalism") != null)
+							continue;
+
+						if (!IsNativeRadiatorOperational(part, prefab, module))
+							continue;
+
+						int loopId = GetNativeRadiatorLoopId(part, prefab, module);
+						if (loopId < 0)
+							continue;
+
+						EnsureLoop(loops, loopId, v);
+						RegisterLoopRadiator(loops[loopId], prefab, module);
 					}
 					else if (module.moduleName == "SystemHeatConverterKerbalismUpdater")
 					{
@@ -302,7 +509,7 @@ namespace KERBALISM
 
 						EnsureLoop(loops, loopId, v);
 						LoopState loop = loops[loopId];
-						loop.netFluxKw += IntegrationReflection.GetFloat(converterPrefab, "systemPower");
+						loop.producerFluxKw += IntegrationReflection.GetFloat(converterPrefab, "systemPower");
 						loop.shutdownTemperature = Math.Min(loop.shutdownTemperature, IntegrationReflection.GetFloat(converterPrefab, "shutdownTemperature", float.MaxValue));
 						loop.heatProducers.Add(new HeatProducer { part = part, module = converter, shutdownTemperature = IntegrationReflection.GetFloat(converterPrefab, "shutdownTemperature", float.MaxValue) });
 						MarkActiveProducer(loop, IntegrationReflection.GetFloat(converterPrefab, "systemOutletTemperature"), IntegrationReflection.GetFloat(converterPrefab, "systemPower"));
@@ -323,19 +530,14 @@ namespace KERBALISM
 
 						EnsureLoop(loops, loopId, v);
 						LoopState loop = loops[loopId];
-						loop.netFluxKw += IntegrationReflection.GetFloat(harvesterPrefab, "systemPower");
+						loop.producerFluxKw += IntegrationReflection.GetFloat(harvesterPrefab, "systemPower");
 						loop.shutdownTemperature = Math.Min(loop.shutdownTemperature, IntegrationReflection.GetFloat(harvesterPrefab, "shutdownTemperature", float.MaxValue));
 						loop.heatProducers.Add(new HeatProducer { part = part, module = harvester, shutdownTemperature = IntegrationReflection.GetFloat(harvesterPrefab, "shutdownTemperature", float.MaxValue) });
 						MarkActiveProducer(loop, IntegrationReflection.GetFloat(harvesterPrefab, "systemOutletTemperature"), IntegrationReflection.GetFloat(harvesterPrefab, "systemPower"));
 					}
-					else if (module.moduleName == "SpaceDustHarvesterKerbalismUpdater")
+					else if (module.moduleName == "ModuleSpaceDustHarvester")
 					{
-						ProtoPartModuleSnapshot harvester = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleSpaceDustHarvester");
-						if (harvester == null)
-							continue;
-
-						if (Lib.Proto.GetBool(harvester, "Enabled"))
-							Lib.Proto.Set(harvester, "Enabled", false);
+						TryAddSpaceDustHarvesterHeat(part, prefab, module, loops, riskLoopIds, v, true);
 					}
 					else if (module.moduleName == "SystemHeatFissionReactorKerbalismUpdater")
 					{
@@ -372,7 +574,7 @@ namespace KERBALISM
 						{
 							float throttle = Lib.Proto.GetFloat(reactor, "CurrentReactorThrottle");
 							float heat = GetReactorWasteHeat(reactorPrefab, throttle);
-							loop.netFluxKw += heat;
+							loop.producerFluxKw += heat;
 							MarkActiveProducer(loop, reactorPrefab != null ? IntegrationReflection.GetFloat(reactorPrefab, "NominalTemperature") : 0f, heat);
 						}
 					}
@@ -411,7 +613,7 @@ namespace KERBALISM
 						{
 							float throttle = Lib.Proto.GetFloat(engine, "CurrentReactorThrottle");
 							float heat = GetReactorWasteHeat(enginePrefab, throttle);
-							loop.netFluxKw += heat;
+							loop.producerFluxKw += heat;
 							MarkActiveProducer(loop, enginePrefab != null ? IntegrationReflection.GetFloat(enginePrefab, "NominalTemperature") : 0f, heat);
 						}
 					}
@@ -435,7 +637,7 @@ namespace KERBALISM
 							continue;
 
 						temperatureSensitiveLoopIds.Add(loopId);
-						loops[loopId].netFluxKw += heat;
+						loops[loopId].producerFluxKw += heat;
 					}
 					else if (module.moduleName == "ModuleSystemHeatSink")
 					{
@@ -475,33 +677,18 @@ namespace KERBALISM
 							continue;
 
 						EnsureLoop(loops, loopId, v);
-						loops[loopId].netFluxKw += systemPower;
+						loops[loopId].producerFluxKw += systemPower;
 					}
 				}
 			}
 
+			foreach (LoopState loop in loops.Values)
+				SyncLoopNetFlux(loop);
+
 			ApplyHeatSinkStorage(loops, elapsed_s);
 
-			if (riskLoopIds.Count == 0 && temperatureSensitiveLoopIds.Count == 0)
-			{
-				AdvanceOrdinaryTransientLoops(v, loops, riskLoopIds, temperatureSensitiveLoopIds, elapsed_s);
-				SyncFrozenShutdowns(v);
-				return;
-			}
-
-			// Ordinary loops only advance while warming/cooling toward steady state.
-			// Risk loops keep advancing because their temperature drives damage/meltdown.
-			// Temperature-sensitive loops keep advancing because their temperature drives state such as cryo boiloff.
-			AdvanceOrdinaryTransientLoops(v, loops, riskLoopIds, temperatureSensitiveLoopIds, elapsed_s);
-
-			float envTemp = GetEnvironmentTemperature(v);
 			foreach (KeyValuePair<int, LoopState> entry in loops)
 			{
-				bool isRiskLoop = riskLoopIds.Contains(entry.Key);
-				bool isTemperatureSensitiveLoop = temperatureSensitiveLoopIds.Contains(entry.Key);
-				if (!isRiskLoop && !isTemperatureSensitiveLoop)
-					continue;
-
 				LoopState loop = entry.Value;
 				if (loop.volume <= 0f)
 					loop.volume = 1f;
@@ -511,7 +698,24 @@ namespace KERBALISM
 					continue;
 
 				loop.previousTemperature = loop.temperature;
-				AdvanceLoopTemperature(loop, thermalMass, envTemp, elapsed_s);
+				if (ShouldFreezeLoopAtAnchor(loop))
+				{
+					loop.temperature = loop.anchorTemperature;
+					SyncLoopNetFlux(loop);
+					LogLoopBalance(v, entry.Key, loop);
+
+					foreach (ProtoPartModuleSnapshot heatModule in loop.heatModules)
+					{
+						Lib.Proto.Set(heatModule, "currentLoopTemperature", loop.temperature);
+						Lib.Proto.Set(heatModule, "currentLoopFlux", loop.netFluxKw);
+					}
+
+					ApplyLoopThermalEffects(v, loop, elapsed_s);
+					continue;
+				}
+
+				AdvanceLoopTemperatureOverDuration(loop, thermalMass, elapsed_s);
+				LogLoopBalance(v, entry.Key, loop);
 
 				foreach (ProtoPartModuleSnapshot heatModule in loop.heatModules)
 				{
@@ -519,48 +723,95 @@ namespace KERBALISM
 					Lib.Proto.Set(heatModule, "currentLoopFlux", loop.netFluxKw);
 				}
 
-				if (!isRiskLoop)
-					continue;
-
-				foreach (HeatProducer producer in loop.heatProducers)
-					ApplyCoreDamage(v, producer, loop, elapsed_s);
-
-				if (loop.temperature >= loop.shutdownTemperature)
-				{
-					foreach (HeatProducer producer in loop.heatProducers)
-					{
-						if (loop.temperature < producer.shutdownTemperature)
-							continue;
-
-						switch (producer.module.moduleName)
-						{
-							case "ProcessControllerSystemHeat":
-							case "HarvesterSystemHeat":
-								Lib.Proto.Set(producer.module, "running", false);
-								break;
-							case "ModuleSystemHeatConverter":
-							case "ModuleSystemHeatHarvester":
-								Lib.Proto.Set(producer.module, "IsActivated", false);
-								break;
-							case "ModuleSystemHeatFissionReactor":
-							case "ModuleSystemHeatFissionEngine":
-								Lib.Proto.Set(producer.module, "Enabled", false);
-								break;
-							case "ModuleSpaceDustHarvester":
-								Lib.Proto.Set(producer.module, "Enabled", false);
-								break;
-						}
-					}
-				}
+				ApplyLoopThermalEffects(v, loop, elapsed_s);
 			}
 
-			SyncFrozenShutdowns(v);
+		}
+
+		private static bool ShouldFreezeLoopAtAnchor(LoopState loop)
+		{
+			return loop.hasFluxAnchor && loop.anchorTemperature > MinimumLoopTemperatureK;
+		}
+
+		private static void ApplyLoopThermalEffects(Vessel v, LoopState loop, float elapsed_s)
+		{
+			foreach (HeatProducer producer in loop.heatProducers)
+				ApplyCoreDamage(v, producer, loop, elapsed_s);
+
+			if (loop.temperature < loop.shutdownTemperature)
+				return;
+
+			foreach (HeatProducer producer in loop.heatProducers)
+			{
+				if (loop.temperature < producer.shutdownTemperature)
+					continue;
+
+				switch (producer.module.moduleName)
+				{
+					case "ProcessControllerSystemHeat":
+						ShutdownProcessProducer(v, producer);
+						break;
+					case "HarvesterSystemHeat":
+						Lib.Proto.Set(producer.module, "running", false);
+						break;
+					case "ModuleSystemHeatConverter":
+					case "ModuleSystemHeatHarvester":
+						Lib.Proto.Set(producer.module, "IsActivated", false);
+						break;
+					case "ModuleSystemHeatFissionReactor":
+					case "ModuleSystemHeatFissionEngine":
+					case "ModuleSpaceDustHarvester":
+						Lib.Proto.Set(producer.module, "Enabled", false);
+						break;
+				}
+			}
+		}
+
+		private static void ShutdownProcessProducer(Vessel v, HeatProducer producer)
+		{
+			Part prefab = PartLoader.getPartInfoByName(producer.part.partName).partPrefab;
+			PartModule processPrefab = FindMatchingPrefabModule(prefab, producer.module, "ProcessControllerSystemHeat");
+			if (processPrefab != null && !IntegrationReflection.GetBool(processPrefab, "AutoShutdown", true))
+				return;
+
+			if (Lib.Proto.GetString(producer.module, "resource") == "_Nukereactor")
+			{
+				SetProtoFissionRunning(v, producer.part, producer.module, false, Lib.BuildString(
+					"thermalShutdown loopK=", GetLinkedLoopTemperature(
+						producer.part, prefab, Lib.Proto.GetString(producer.module, "systemHeatModuleID"), v).ToString("F1"),
+					" limit=", producer.shutdownTemperature.ToString("F0")));
+				ProtoPartResourceSnapshot pseudo = producer.part.resources.Find(k => k.resourceName == "_Nukereactor");
+				if (pseudo != null)
+					ClearFrozenFissionPseudoResource(pseudo);
+				return;
+			}
+
+			Lib.Proto.Set(producer.module, "running", false);
+			SetPseudoResourceFlow(producer.part, producer.module, processPrefab, false);
+		}
+
+		private static void LogLoopBalance(Vessel v, int loopId, LoopState loop)
+		{
+			if (!FissionReactorStateDebug.Enabled || !loop.hasActiveProducer)
+				return;
+
+			FissionReactorStateDebug.LogVessel(v, "ThermalLoop", Lib.BuildString(
+				"loop=", loopId.ToString(),
+				" temp ", loop.previousTemperature.ToString("F1"), "->", loop.temperature.ToString("F1"),
+				" producerKw=", loop.producerFluxKw.ToString("F2"),
+				" radiatorKw=", GetRadiatorRejectTotal(loop, loop.temperature).ToString("F2"),
+				" sinkKw=", loop.heatSinkFluxOffsetKw.ToString("F2"),
+				" netKw=", loop.netFluxKw.ToString("F2"),
+				" radiators=", loop.radiators.Count.ToString(),
+				" sinks=", loop.heatSinks.Count.ToString()));
 		}
 
 		private static void EnsureLoop(Dictionary<int, LoopState> loops, int loopId, Vessel v)
 		{
-			if (!loops.ContainsKey(loopId))
-				loops[loopId] = new LoopState { temperature = GetEnvironmentTemperature(v) };
+			if (!loops.TryGetValue(loopId, out LoopState _))
+			{
+				loops[loopId] = new LoopState { temperature = GetFallbackLoopTemperature() };
+			}
 		}
 
 		private static void MarkActiveProducer(LoopState loop, float outletTemperature, float power)
@@ -573,67 +824,6 @@ namespace KERBALISM
 				loop.outletTemperature = outletTemperature;
 		}
 
-		private static void AdvanceOrdinaryTransientLoops(
-			Vessel v,
-			Dictionary<int, LoopState> loops,
-			HashSet<int> riskLoopIds,
-			HashSet<int> temperatureSensitiveLoopIds,
-			float elapsed_s)
-		{
-			float envTemp = GetEnvironmentTemperature(v);
-			foreach (KeyValuePair<int, LoopState> entry in loops)
-			{
-				if (riskLoopIds.Contains(entry.Key) || temperatureSensitiveLoopIds.Contains(entry.Key))
-					continue;
-
-				LoopState loop = entry.Value;
-				if (!IsOrdinaryLoopTransient(loop, envTemp))
-					continue;
-
-				if (loop.volume <= 0f)
-					loop.volume = 1f;
-
-				float thermalMass = loop.volume * CoolantDensity * CoolantHeatCapacity;
-				if (thermalMass <= 0f)
-					continue;
-
-				loop.previousTemperature = loop.temperature;
-				AdvanceLoopTemperature(loop, thermalMass, envTemp, elapsed_s);
-
-				// Ordinary producer loops are treated as warming/cooling toward their outlet
-				// setpoint, then frozen again instead of continuously integrating forever.
-				if (loop.hasActiveProducer && loop.outletTemperature > 0f)
-				{
-					if (loop.previousTemperature < loop.outletTemperature && loop.temperature > loop.outletTemperature)
-						loop.temperature = loop.outletTemperature;
-					else if (loop.previousTemperature > loop.outletTemperature && loop.temperature < loop.outletTemperature)
-						loop.temperature = loop.outletTemperature;
-				}
-
-				foreach (ProtoPartModuleSnapshot heatModule in loop.heatModules)
-				{
-					Lib.Proto.Set(heatModule, "currentLoopTemperature", loop.temperature);
-					Lib.Proto.Set(heatModule, "currentLoopFlux", loop.netFluxKw);
-				}
-			}
-		}
-
-		private static bool IsOrdinaryLoopTransient(LoopState loop, float envTemp)
-		{
-			if (loop.hasActiveProducer && loop.outletTemperature > 0f)
-			{
-				if (loop.netFluxKw > FluxEpsilonKw && loop.temperature < loop.outletTemperature - TransientTemperatureTolerance)
-					return true;
-				if (loop.netFluxKw < -FluxEpsilonKw && loop.temperature > loop.outletTemperature + TransientTemperatureTolerance)
-					return true;
-			}
-
-			return !loop.hasActiveProducer
-				&& loop.hasRadiator
-				&& loop.netFluxKw < -FluxEpsilonKw
-				&& loop.temperature > envTemp + TransientTemperatureTolerance;
-		}
-
 		private static void ApplyHeatSinkStorage(Dictionary<int, LoopState> loops, float elapsed_s)
 		{
 			if (elapsed_s <= 0f)
@@ -641,20 +831,28 @@ namespace KERBALISM
 
 			foreach (LoopState loop in loops.Values)
 			{
-				if (loop.netFluxKw <= FluxEpsilonKw || loop.heatSinks.Count == 0)
+				if (loop.heatSinks.Count == 0)
 					continue;
 
-				for (int i = 0; i < loop.heatSinks.Count && loop.netFluxKw > FluxEpsilonKw; i++)
+				float netFlux = GetLoopNetFluxKw(loop, loop.temperature);
+				if (netFlux <= FluxEpsilonKw)
+					continue;
+
+				for (int i = 0; i < loop.heatSinks.Count; i++)
 				{
+					netFlux = GetLoopNetFluxKw(loop, loop.temperature);
+					if (netFlux <= FluxEpsilonKw)
+						break;
+
 					HeatSink sink = loop.heatSinks[i];
-					float storedEnergy = StoreHeatInSink(sink, loop.netFluxKw, elapsed_s);
+					float storedEnergy = StoreHeatInSink(sink, netFlux, elapsed_s);
 					if (storedEnergy <= 0f)
 						continue;
 
-					loop.netFluxKw -= storedEnergy / elapsed_s;
-					if (loop.netFluxKw < 0f)
-						loop.netFluxKw = 0f;
+					loop.heatSinkFluxOffsetKw += storedEnergy / elapsed_s;
 				}
+
+				SyncLoopNetFlux(loop);
 			}
 		}
 
@@ -691,254 +889,141 @@ namespace KERBALISM
 			return storedEnergy;
 		}
 
-		private static void AdvanceLoopTemperature(LoopState loop, float thermalMass, float envTemp, float elapsed_s)
+		private static void RegisterLoopRadiator(LoopState loop, Part prefab, ProtoPartModuleSnapshot module)
 		{
-			float deltaT = loop.netFluxKw * 1000f / thermalMass * elapsed_s;
-			loop.temperature = Mathf.Clamp(loop.temperature + deltaT, envTemp, 5000f);
-
-			if (loop.netFluxKw <= 0f && loop.temperature > envTemp)
-			{
-				float decay = (loop.temperature - envTemp) * HeatLoopDecayCoefficient;
-				loop.temperature -= decay * 1000f / thermalMass * elapsed_s;
-				loop.temperature = Mathf.Max(loop.temperature, envTemp);
-			}
+			loop.hasRadiator = true;
+			loop.radiators.Add(new RadiatorRejector { prefab = prefab, module = module });
 		}
 
-		private static void CollectRiskLoopFlux(Vessel v, Dictionary<int, LoopState> loops, HashSet<int> riskLoopIds)
+		private static void SyncLoopNetFlux(LoopState loop)
 		{
-			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
+			loop.netFluxKw = GetLoopNetFluxKw(loop, loop.temperature);
+		}
+
+		private static float GetLoopNetFluxKw(LoopState loop, float loopTemperature)
+		{
+			return loop.producerFluxKw - loop.heatSinkFluxOffsetKw - GetRadiatorRejectTotal(loop, loopTemperature);
+		}
+
+		private static float GetRadiatorRejectTotal(LoopState loop, float loopTemperature)
+		{
+			int count = loop.radiators.Count;
+			if (count == 0)
+				return 0f;
+
+			if (loopTemperature <= MinimumLoopTemperatureK)
+				return 0f;
+
+			float total = 0f;
+			for (int i = 0; i < count; i++)
 			{
-				Part prefab = PartLoader.getPartInfoByName(part.partName).partPrefab;
+				RadiatorRejector radiator = loop.radiators[i];
+				total += GetRadiatorRejectPower(radiator.prefab, radiator.module, loopTemperature);
+			}
+			return total;
+		}
 
-				foreach (ProtoPartModuleSnapshot module in part.modules)
+		private static void AdvanceLoopTemperatureOverDuration(LoopState loop, float thermalMass, float elapsed_s, float maxTemperature = 5000f)
+		{
+			float remaining = elapsed_s;
+
+			SyncLoopNetFlux(loop);
+
+			while (remaining > 0f)
+			{
+				float step = Mathf.Min(remaining, MaxThermalStepSeconds);
+				AdvanceLoopTemperature(loop, thermalMass, step, maxTemperature);
+				remaining -= step;
+			}
+			SyncLoopNetFlux(loop);
+		}
+
+		private static void AdvanceLoopTemperature(LoopState loop, float thermalMass, float elapsed_s, float maxTemperature = 5000f)
+		{
+			float startTemperature = loop.temperature;
+			float startFlux = GetLoopNetFluxKw(loop, startTemperature);
+			loop.netFluxKw = startFlux;
+			if (Mathf.Abs(startFlux) <= FluxEpsilonKw)
+				return;
+
+			float deltaT = startFlux * 1000f / thermalMass * elapsed_s;
+			float targetTemperature = Mathf.Clamp(startTemperature + deltaT, MinimumLoopTemperatureK, maxTemperature);
+			if (Mathf.Abs(targetTemperature - startTemperature) <= 0.001f)
+				return;
+
+			float targetFlux = GetLoopNetFluxKw(loop, targetTemperature);
+			if (HasFluxSignChange(startFlux, targetFlux))
+			{
+				loop.temperature = FindFluxEquilibriumTemperature(loop, startTemperature, targetTemperature);
+				loop.netFluxKw = GetLoopNetFluxKw(loop, loop.temperature);
+				return;
+			}
+
+			loop.temperature = targetTemperature;
+			loop.netFluxKw = targetFlux;
+		}
+
+		private static bool HasFluxSignChange(float a, float b)
+		{
+			return (a > FluxEpsilonKw && b < -FluxEpsilonKw)
+				|| (a < -FluxEpsilonKw && b > FluxEpsilonKw);
+		}
+
+		private static float FindFluxEquilibriumTemperature(LoopState loop, float a, float b)
+		{
+			float low = Mathf.Min(a, b);
+			float high = Mathf.Max(a, b);
+			float lowFlux = GetLoopNetFluxKw(loop, low);
+			float highFlux = GetLoopNetFluxKw(loop, high);
+
+			if (!HasFluxSignChange(lowFlux, highFlux))
+				return (low + high) * 0.5f;
+
+			for (int i = 0; i < 24; i++)
+			{
+				float mid = (low + high) * 0.5f;
+				float midFlux = GetLoopNetFluxKw(loop, mid);
+				if (Mathf.Abs(midFlux) <= FluxEpsilonKw)
+					return mid;
+
+				if (HasFluxSignChange(lowFlux, midFlux))
 				{
-					if (module.moduleName == "ProcessControllerSystemHeat")
-					{
-						int loopId = GetLinkedLoopId(part, prefab, Lib.Proto.GetString(module, "systemHeatModuleID"));
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						PartModule processPrefab = FindMatchingPrefabModule(prefab, module, "ProcessControllerSystemHeat");
-						float shutdown = GetProcessField(prefab, module, "shutdownTemperature", float.MaxValue);
-						if (Lib.Proto.GetString(module, "resource") == "_Nukereactor")
-							shutdown = GetFissionSafetyOverride(prefab, module, processPrefab);
-
-						EnsureLoop(loops, loopId, v);
-						LoopState loop = loops[loopId];
-						loop.shutdownTemperature = Math.Min(loop.shutdownTemperature, shutdown);
-						loop.heatProducers.Add(new HeatProducer
-						{
-							part = part,
-							module = module,
-							shutdownTemperature = shutdown,
-							meltdownTemperature = GetProcessField(prefab, module, "meltdownTemperature", 0f),
-							maximumTemperature = GetProcessField(prefab, module, "MaximumTemperature", 2000f),
-							coreDamageRate = GetProcessField(prefab, module, "CoreDamageRate", 0f),
-							coreDamageCurve = IntegrationReflection.GetField(processPrefab, "coreDamageCurve", new FloatCurve())
-						});
-
-						if (!IsProcessOperational(part, prefab, module, processPrefab))
-							continue;
-
-						loop.netFluxKw += GetProcessHeatPower(part, prefab, module, processPrefab) * GetProcessThrottle(module);
-					}
-					else if (module.moduleName == "HarvesterSystemHeat")
-					{
-						if (!Lib.Proto.GetBool(module, "deployed") || !Lib.Proto.GetBool(module, "running") || Lib.Proto.GetString(module, "issue").Length > 0)
-							continue;
-
-						int loopId = GetLinkedLoopId(part, prefab, Lib.Proto.GetString(module, "systemHeatModuleID"));
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						float shutdown = GetHarvesterField(prefab, module, "shutdownTemperature", float.MaxValue);
-						EnsureLoop(loops, loopId, v);
-						loops[loopId].netFluxKw += GetHarvesterHeatPower(prefab, module);
-						loops[loopId].shutdownTemperature = Math.Min(loops[loopId].shutdownTemperature, shutdown);
-						loops[loopId].heatProducers.Add(new HeatProducer { part = part, module = module, shutdownTemperature = shutdown });
-					}
-					else if (module.moduleName == "SystemHeatRadiatorKerbalism")
-					{
-						if (!IsRadiatorOperational(part, module))
-							continue;
-
-						int loopId = GetRadiatorLoopId(part, prefab, module);
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						LoopState loop = loops[loopId];
-						loop.netFluxKw -= GetRadiatorRejectPower(prefab, module, loop.temperature);
-					}
-					else if (module.moduleName == "SystemHeatConverterKerbalismUpdater")
-					{
-						ProtoPartModuleSnapshot converter = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleSystemHeatConverter");
-						if (converter == null || !Lib.Proto.GetBool(converter, "IsActivated"))
-							continue;
-
-						PartModule converterPrefab = FindPrefabModule(prefab, "ModuleSystemHeatConverter");
-						if (converterPrefab == null)
-							continue;
-
-						int loopId = GetLinkedLoopId(part, prefab, GetSystemHeatModuleId(converterPrefab));
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						loops[loopId].netFluxKw += IntegrationReflection.GetFloat(converterPrefab, "systemPower");
-						loops[loopId].shutdownTemperature = Math.Min(loops[loopId].shutdownTemperature, IntegrationReflection.GetFloat(converterPrefab, "shutdownTemperature", float.MaxValue));
-						loops[loopId].heatProducers.Add(new HeatProducer { part = part, module = converter, shutdownTemperature = IntegrationReflection.GetFloat(converterPrefab, "shutdownTemperature", float.MaxValue) });
-					}
-					else if (module.moduleName == "SystemHeatHarvesterKerbalismUpdater")
-					{
-						ProtoPartModuleSnapshot harvester = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleSystemHeatHarvester");
-						if (harvester == null || !Lib.Proto.GetBool(harvester, "IsActivated"))
-							continue;
-
-						PartModule harvesterPrefab = FindPrefabModule(prefab, "ModuleSystemHeatHarvester");
-						if (harvesterPrefab == null)
-							continue;
-
-						int loopId = GetLinkedLoopId(part, prefab, GetSystemHeatModuleId(harvesterPrefab));
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						loops[loopId].netFluxKw += IntegrationReflection.GetFloat(harvesterPrefab, "systemPower");
-						loops[loopId].shutdownTemperature = Math.Min(loops[loopId].shutdownTemperature, IntegrationReflection.GetFloat(harvesterPrefab, "shutdownTemperature", float.MaxValue));
-						loops[loopId].heatProducers.Add(new HeatProducer { part = part, module = harvester, shutdownTemperature = IntegrationReflection.GetFloat(harvesterPrefab, "shutdownTemperature", float.MaxValue) });
-					}
-					else if (module.moduleName == "SpaceDustHarvesterKerbalismUpdater")
-					{
-						ProtoPartModuleSnapshot harvester = IntegrationUtils.FindPartModuleSnapshot(part, "ModuleSpaceDustHarvester");
-						if (harvester == null)
-							continue;
-
-						if (Lib.Proto.GetBool(harvester, "Enabled"))
-							Lib.Proto.Set(harvester, "Enabled", false);
-					}
-					else if (module.moduleName == "SystemHeatFissionReactorKerbalismUpdater")
-					{
-						ProtoPartModuleSnapshot reactor = IntegrationUtils.FindPartModuleSnapshot(part, "ModuleSystemHeatFissionReactor");
-						if (reactor == null || !Lib.Proto.GetBool(reactor, "Enabled"))
-							continue;
-
-						PartModule reactorPrefab = FindPrefabModule(prefab, "ModuleSystemHeatFissionReactor");
-						string heatModuleId = reactorPrefab != null ? GetSystemHeatModuleId(reactorPrefab) : "reactor";
-						int loopId = GetLinkedLoopId(part, prefab, heatModuleId);
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						float throttle = Lib.Proto.GetFloat(reactor, "CurrentReactorThrottle");
-						loops[loopId].netFluxKw += GetReactorWasteHeat(reactorPrefab, throttle);
-					}
-					else if (module.moduleName == "FFTFusionReactorKerbalismUpdater" || module.moduleName == "FFTFusionEngineKerbalismUpdater")
-					{
-						string fftReactorModule = module.moduleName == "FFTFusionEngineKerbalismUpdater"
-							? "ModuleFusionEngine"
-							: "FusionReactor";
-						ProtoPartModuleSnapshot reactor = IntegrationUtils.FindPartModuleSnapshot(part, fftReactorModule);
-						if (reactor == null || !Lib.Proto.GetBool(reactor, "Enabled"))
-							continue;
-
-						if (!TryGetFusionReactorHeatConfig(prefab, out string heatModuleId, out float systemPower))
-							continue;
-
-						int loopId = GetLinkedLoopId(part, prefab, heatModuleId);
-						if (loopId < 0 || !riskLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						loops[loopId].netFluxKw += systemPower;
-					}
+					high = mid;
+					highFlux = midFlux;
+				}
+				else
+				{
+					low = mid;
+					lowFlux = midFlux;
 				}
 			}
+
+			return (low + high) * 0.5f;
 		}
 
-		private static void SyncFrozenShutdowns(Vessel v)
+		private static float GetFallbackLoopTemperature()
 		{
-			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
-			{
-				Part prefab = PartLoader.getPartInfoByName(part.partName).partPrefab;
-
-				foreach (ProtoPartModuleSnapshot module in part.modules)
-				{
-					if (module.moduleName == "ProcessControllerSystemHeat")
-					{
-						if (!Lib.Proto.GetBool(module, "running") || Lib.Proto.GetBool(module, "broken"))
-							continue;
-
-						if (Lib.Proto.GetString(module, "resource") == "_Nukereactor")
-							continue;
-
-						float meltdown = GetProcessField(prefab, module, "meltdownTemperature", 0f);
-						float maximum = GetProcessField(prefab, module, "MaximumTemperature", 0f);
-						if (meltdown > 0f && maximum > meltdown)
-							continue;
-
-						float loopTemperature = GetLinkedLoopTemperature(part, prefab, Lib.Proto.GetString(module, "systemHeatModuleID"), v);
-						float shutdown = GetProcessField(prefab, module, "shutdownTemperature", float.MaxValue);
-						if (loopTemperature > shutdown)
-						{
-							Lib.Proto.Set(module, "running", false);
-							SetPseudoResourceFlow(part, module, FindMatchingPrefabModule(prefab, module, "ProcessControllerSystemHeat"), false);
-						}
-					}
-					else if (module.moduleName == "HarvesterSystemHeat")
-					{
-						if (!Lib.Proto.GetBool(module, "running"))
-							continue;
-
-						float loopTemperature = GetLinkedLoopTemperature(part, prefab, Lib.Proto.GetString(module, "systemHeatModuleID"), v);
-						float shutdown = GetHarvesterField(prefab, module, "shutdownTemperature", float.MaxValue);
-						if (loopTemperature > shutdown)
-							Lib.Proto.Set(module, "running", false);
-					}
-					else if (module.moduleName == "SystemHeatConverterKerbalismUpdater")
-					{
-						ProtoPartModuleSnapshot converter = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleSystemHeatConverter");
-						if (converter == null || !Lib.Proto.GetBool(converter, "IsActivated"))
-							continue;
-
-						PartModule converterPrefab = FindPrefabModule(prefab, "ModuleSystemHeatConverter");
-						if (converterPrefab == null)
-							continue;
-
-						float loopTemperature = GetLinkedLoopTemperature(part, prefab, GetSystemHeatModuleId(converterPrefab), v);
-						if (loopTemperature > IntegrationReflection.GetFloat(converterPrefab, "shutdownTemperature", float.MaxValue))
-							Lib.Proto.Set(converter, "IsActivated", false);
-					}
-					else if (module.moduleName == "SystemHeatHarvesterKerbalismUpdater")
-					{
-						ProtoPartModuleSnapshot harvester = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleSystemHeatHarvester");
-						if (harvester == null || !Lib.Proto.GetBool(harvester, "IsActivated"))
-							continue;
-
-						PartModule harvesterPrefab = FindPrefabModule(prefab, "ModuleSystemHeatHarvester");
-						if (harvesterPrefab == null)
-							continue;
-
-						float loopTemperature = GetLinkedLoopTemperature(part, prefab, GetSystemHeatModuleId(harvesterPrefab), v);
-						if (loopTemperature > IntegrationReflection.GetFloat(harvesterPrefab, "shutdownTemperature", float.MaxValue))
-							Lib.Proto.Set(harvester, "IsActivated", false);
-					}
-				}
-			}
-		}
-
-		private static float GetEnvironmentTemperature(Vessel v)
-		{
-			if (v.mainBody != null && v.altitude < 50000d)
-				return Mathf.Clamp((float)v.mainBody.GetTemperature(v.altitude), 4f, 50000f);
-			return 4f;
+			return MinimumLoopTemperatureK;
 		}
 
 		private static float GetModuleVolume(Part prefab, ProtoPartModuleSnapshot module)
 		{
-			PartModule heat = FindPrefabModule(prefab, "ModuleSystemHeat");
-			if (heat != null)
-				return IntegrationReflection.GetFloat(heat, "volume", 1f);
+			string moduleId = Lib.Proto.GetString(module, "moduleID");
+			PartModule fallback = null;
+			foreach (PartModule heat in prefab.FindModulesImplementing<PartModule>())
+			{
+				if (heat.moduleName != "ModuleSystemHeat")
+					continue;
+
+				if (fallback == null)
+					fallback = heat;
+
+				if (string.IsNullOrEmpty(moduleId) || GetModuleId(heat) == moduleId)
+					return IntegrationReflection.GetFloat(heat, "volume", 1f);
+			}
+
+			if (fallback != null)
+				return IntegrationReflection.GetFloat(fallback, "volume", 1f);
 			return 1f;
 		}
 
@@ -947,18 +1032,32 @@ namespace KERBALISM
 			if (HasNoWasteHeatSubtype(part))
 				return 0f;
 
+			float systemPower;
 			string resource = Lib.Proto.GetString(module, "resource");
 			if (processPrefab != null)
-				return IntegrationReflection.GetFloat(processPrefab, "systemPower");
-
-			foreach (PartModule pm in prefab.Modules)
+				systemPower = IntegrationReflection.GetFloat(processPrefab, "systemPower");
+			else
 			{
-				if (pm.moduleName != "ProcessControllerSystemHeat")
-					continue;
-				if (string.IsNullOrEmpty(resource) || IntegrationReflection.GetString(pm, "resource") == resource)
-					return IntegrationReflection.GetFloat(pm, "systemPower");
+				systemPower = 0f;
+				foreach (PartModule pm in prefab.Modules)
+				{
+					if (pm.moduleName != "ProcessControllerSystemHeat")
+						continue;
+					if (string.IsNullOrEmpty(resource) || IntegrationReflection.GetString(pm, "resource") == resource)
+					{
+						systemPower = IntegrationReflection.GetFloat(pm, "systemPower");
+						break;
+					}
+				}
+				if (systemPower <= 0f)
+					systemPower = Lib.Proto.GetFloat(module, "systemPower");
 			}
-			return Lib.Proto.GetFloat(module, "systemPower");
+
+			int multiplier = Lib.Proto.GetInt(module, "lastMultiplier", 1);
+			if (multiplier <= 0)
+				multiplier = 1;
+
+			return systemPower * multiplier;
 		}
 
 		private static float GetProcessThrottle(ProtoPartModuleSnapshot module)
@@ -967,14 +1066,40 @@ namespace KERBALISM
 			return Mathf.Clamp(percent, 0f, 100f) / 100f;
 		}
 
+		private static ProtoPartModuleSnapshot FindMatchingProcessModuleSnapshot(ProtoPartSnapshot part, string resource)
+		{
+			foreach (ProtoPartModuleSnapshot module in part.modules)
+			{
+				if (module.moduleName != "ProcessControllerSystemHeat")
+					continue;
+
+				if (Lib.Proto.GetString(module, "resource") == resource)
+					return module;
+			}
+
+			return null;
+		}
+
+		private static void ClearFrozenFissionPseudoResource(ProtoPartResourceSnapshot pseudoResource)
+		{
+			pseudoResource.flowState = false;
+			if (pseudoResource.amount > 0.0)
+				pseudoResource.amount = 0.0;
+		}
+
 		private static void SetPseudoResourceFlow(ProtoPartSnapshot part, ProtoPartModuleSnapshot module, PartModule processPrefab, bool flowState)
 		{
 			string resource = processPrefab != null
 				? IntegrationReflection.GetString(processPrefab, "resource", Lib.Proto.GetString(module, "resource"))
 				: Lib.Proto.GetString(module, "resource");
 			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == resource);
-			if (pseudoResource != null)
-				pseudoResource.flowState = flowState;
+			if (pseudoResource == null)
+				return;
+
+			if (!flowState)
+				ClearFrozenFissionPseudoResource(pseudoResource);
+			else
+				pseudoResource.flowState = true;
 		}
 
 		private static bool PartHasModule(ProtoPartSnapshot part, string moduleName)
@@ -1061,7 +1186,10 @@ namespace KERBALISM
 			switch (producer.module.moduleName)
 			{
 				case "ProcessControllerSystemHeat":
-					ApplyCoreDamageAtTemperature(v, producer.part, producer.module, averageTemperature, producer.meltdownTemperature, producer.maximumTemperature);
+					ApplyCoreDamageAtTemperature(
+						v, producer.part, producer.module, averageTemperature,
+						producer.meltdownTemperature, producer.maximumTemperature,
+						producer.coreDamageRate, producer.coreDamageCurve, elapsed_s);
 					break;
 				case "ModuleSystemHeatFissionReactor":
 				case "ModuleSystemHeatFissionEngine":
@@ -1070,20 +1198,24 @@ namespace KERBALISM
 			}
 		}
 
-		private static void ApplyFrozenCoreDamage(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, Part prefab, PartModule processPrefab, float loopTemperature, float elapsed_s)
-		{
-			float damageStart = GetProcessField(prefab, module, "meltdownTemperature", 0f);
-			float maximumTemperature = GetProcessField(prefab, module, "MaximumTemperature", 2000f);
-			ApplyCoreDamageAtTemperature(v, part, module, loopTemperature, damageStart, maximumTemperature);
-		}
-
-		private static bool ApplyCoreDamageAtTemperature(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, float loopTemperature, float damageStart, float maximumTemperature)
+		private static bool ApplyCoreDamageAtTemperature(
+			Vessel v,
+			ProtoPartSnapshot part,
+			ProtoPartModuleSnapshot module,
+			float loopTemperature,
+			float damageStart,
+			float maximumTemperature,
+			float coreDamageRate,
+			FloatCurve coreDamageCurve,
+			float elapsed_s)
 		{
 			if (damageStart <= 0f || maximumTemperature <= damageStart)
 				return false;
 
-			float damage = SystemHeatEditorSimulation.SyncCoreDamageFromTemperature(
-				loopTemperature, damageStart, maximumTemperature, Lib.Proto.GetFloat(module, "CoreDamage"));
+			float damage = SystemHeatEditorSimulation.AccumulateCoreDamage(
+				loopTemperature, damageStart, maximumTemperature,
+				Lib.Proto.GetFloat(module, "CoreDamage"),
+				coreDamageRate, coreDamageCurve, elapsed_s);
 			Lib.Proto.Set(module, "CoreDamage", damage);
 			if (damage < 100f)
 				return false;
@@ -1112,130 +1244,146 @@ namespace KERBALISM
 
 		private static void EnsureUnloadedFissionLoopSimulated(Vessel v, float elapsed_s)
 		{
-			if (!Enabled || v == null || elapsed_s <= 0f || v.loaded)
-				return;
-
-			double now = Planetarium.GetUniversalTime();
-			if (lastReactorLoopSimTime.TryGetValue(v.id, out double last) && last == now)
-				return;
-			lastReactorLoopSimTime[v.id] = now;
-
-			SimulateUnloadedFissionLoops(v, elapsed_s);
+			TryRun(v, elapsed_s);
 		}
 
-		private static void SimulateUnloadedFissionLoops(Vessel v, float elapsed_s)
+		private static void SetProtoFissionRunning(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, bool value, string reason)
 		{
-			var loops = new Dictionary<int, LoopState>();
-			var fissionLoopIds = new HashSet<int>();
-			float envTemp = GetEnvironmentTemperature(v);
-
-			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
-			{
-				Part prefab = PartLoader.getPartInfoByName(part.partName).partPrefab;
-
-				foreach (ProtoPartModuleSnapshot module in part.modules)
-				{
-					if (module.moduleName == "ModuleSystemHeat")
-					{
-						int loopId = Lib.Proto.GetInt(module, "currentLoopID");
-						float loopTemp = Lib.Proto.GetFloat(module, "currentLoopTemperature");
-						float volume = GetModuleVolume(prefab, module);
-
-						if (!loops.TryGetValue(loopId, out LoopState loop))
-						{
-							loop = new LoopState { temperature = loopTemp > 0f ? loopTemp : envTemp };
-							loops[loopId] = loop;
-						}
-
-						loop.volume += volume;
-						if (loopTemp > 0f)
-							loop.temperature = loopTemp;
-						loop.heatModules.Add(module);
-					}
-					else if (module.moduleName == "ProcessControllerSystemHeat" && Lib.Proto.GetString(module, "resource") == "_Nukereactor")
-					{
-						int loopId = GetLinkedLoopId(part, prefab, Lib.Proto.GetString(module, "systemHeatModuleID"));
-						if (loopId >= 0)
-							fissionLoopIds.Add(loopId);
-					}
-				}
-			}
-
-			if (fissionLoopIds.Count == 0)
+			if (Lib.Proto.GetBool(module, nameof(ProcessController.running)) == value)
 				return;
 
-			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
+			FissionReactorStateDebug.LogProtoModule(v, part, module, "SetProtoRunning", Lib.BuildString(
+				"value=", value.ToString(), " reason=", reason));
+			Lib.Proto.Set(module, nameof(ProcessController.running), value);
+		}
+
+		private static int GetNativeRadiatorLoopId(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot nativeModule)
+		{
+			PartModule nativePrefab = FindMatchingPrefabModule(prefab, nativeModule, nativeModule.moduleName);
+			string heatModuleId = nativePrefab != null
+				? GetSystemHeatModuleId(nativePrefab)
+				: Lib.Proto.GetString(nativeModule, "systemHeatModuleID");
+			return GetLinkedLoopId(part, prefab, heatModuleId);
+		}
+
+		private static bool IsNativeRadiatorOperational(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot nativeModule)
+		{
+			if (!Lib.Proto.GetBool(nativeModule, "IsCooling", true))
+				return false;
+
+			PartModule nativePrefab = FindMatchingPrefabModule(prefab, nativeModule, nativeModule.moduleName);
+			if (nativePrefab != null && !IntegrationReflection.GetBool(nativePrefab, "IsCooling", true))
+				return false;
+
+			foreach (ProtoPartModuleSnapshot reliability in part.modules)
 			{
-				Part prefab = PartLoader.getPartInfoByName(part.partName).partPrefab;
-
-				foreach (ProtoPartModuleSnapshot module in part.modules)
-				{
-					if (module.moduleName == "ProcessControllerSystemHeat" && Lib.Proto.GetString(module, "resource") == "_Nukereactor")
-					{
-						if (Lib.Proto.GetBool(module, "broken") || !Lib.Proto.GetBool(module, "running"))
-							continue;
-
-						PartModule processPrefab = FindMatchingPrefabModule(prefab, module, "ProcessControllerSystemHeat");
-
-						float power = GetProcessHeatPower(part, prefab, module, processPrefab) * GetProcessThrottle(module);
-						int loopId = GetLinkedLoopId(part, prefab, Lib.Proto.GetString(module, "systemHeatModuleID"));
-						if (loopId < 0 || !fissionLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						loops[loopId].netFluxKw += power;
-					}
-					else if (module.moduleName == "SystemHeatRadiatorKerbalism")
-					{
-						if (!IsRadiatorOperational(part, module))
-							continue;
-
-						int loopId = GetRadiatorLoopId(part, prefab, module);
-						if (loopId < 0 || !fissionLoopIds.Contains(loopId))
-							continue;
-
-						EnsureLoop(loops, loopId, v);
-						LoopState loop = loops[loopId];
-						loop.netFluxKw -= GetRadiatorRejectPower(prefab, module, loop.temperature);
-					}
-				}
-			}
-
-			foreach (int loopId in fissionLoopIds)
-			{
-				if (!loops.TryGetValue(loopId, out LoopState loop))
+				if (reliability.moduleName != "Reliability" || !Lib.Proto.GetBool(reliability, "broken"))
 					continue;
 
-				if (loop.volume <= 0f)
-					loop.volume = 1f;
-
-				float thermalMass = loop.volume * CoolantDensity * CoolantHeatCapacity;
-				if (thermalMass <= 0f)
-					continue;
-
-				float deltaT = loop.netFluxKw * 1000f / thermalMass * elapsed_s;
-				loop.temperature = Mathf.Clamp(loop.temperature + deltaT, envTemp, 5000f);
-
-				if (loop.netFluxKw <= 0f && loop.temperature > envTemp)
-				{
-					float decay = (loop.temperature - envTemp) * HeatLoopDecayCoefficient;
-					loop.temperature -= decay * 1000f / thermalMass * elapsed_s;
-					loop.temperature = Mathf.Max(loop.temperature, envTemp);
-				}
-
-				foreach (ProtoPartModuleSnapshot heatModule in loop.heatModules)
-					Lib.Proto.Set(heatModule, "currentLoopTemperature", loop.temperature);
+				string type = Lib.Proto.GetString(reliability, "type");
+				if (type == "SystemHeatRadiatorKerbalism"
+					|| type == "ModuleSystemHeatRadiator"
+					|| type == "ModuleActiveRadiator")
+					return false;
 			}
+
+			return true;
+		}
+
+		private static int GetSpaceDustHarvesterLoopId(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot harvesterModule)
+		{
+			PartModule harvesterPrefab = FindMatchingPrefabModule(prefab, harvesterModule, "ModuleSpaceDustHarvester")
+				?? FindPrefabModule(prefab, "ModuleSpaceDustHarvester");
+			if (harvesterPrefab == null)
+				return -1;
+
+			return GetLinkedLoopId(part, prefab, SpaceDust.Get(harvesterPrefab, "HeatModuleID", ""));
+		}
+
+		private static bool TryAddSpaceDustHarvesterHeat(
+			ProtoPartSnapshot part,
+			Part prefab,
+			ProtoPartModuleSnapshot harvesterModule,
+			Dictionary<int, LoopState> loops,
+			HashSet<int> riskLoopIds,
+			Vessel v,
+			bool registerRiskLoop)
+		{
+			if (!PartHasModule(part, "SpaceDustHarvesterKerbalismUpdater") || !Lib.Proto.GetBool(harvesterModule, "Enabled"))
+				return false;
+
+			PartModule harvesterPrefab = FindMatchingPrefabModule(prefab, harvesterModule, "ModuleSpaceDustHarvester")
+				?? FindPrefabModule(prefab, "ModuleSpaceDustHarvester");
+			if (harvesterPrefab == null)
+				return false;
+
+			int loopId = GetSpaceDustHarvesterLoopId(part, prefab, harvesterModule);
+			if (loopId < 0)
+				return false;
+
+			float systemPower = SpaceDust.Get(harvesterPrefab, "SystemPower", 0f);
+			if (systemPower <= 0f)
+				return false;
+
+			float shutdown = SpaceDust.Get(harvesterPrefab, "ShutdownTemperature", float.MaxValue);
+			if (registerRiskLoop && shutdown < float.MaxValue)
+				riskLoopIds.Add(loopId);
+
+			EnsureLoop(loops, loopId, v);
+			LoopState loop = loops[loopId];
+			loop.producerFluxKw += systemPower;
+			loop.shutdownTemperature = Math.Min(loop.shutdownTemperature, shutdown);
+			loop.heatProducers.Add(new HeatProducer { part = part, module = harvesterModule, shutdownTemperature = shutdown });
+			MarkActiveProducer(loop, SpaceDust.Get(harvesterPrefab, "SystemOutletTemperature", 0f), systemPower);
+			return true;
 		}
 
 		private static float GetLinkedLoopTemperature(ProtoPartSnapshot part, Part prefab, string moduleId, Vessel v)
 		{
 			ProtoPartModuleSnapshot heatModule = GetLinkedHeatModule(part, prefab, moduleId);
 			if (heatModule == null)
-				return GetEnvironmentTemperature(v);
+				return GetFallbackLoopTemperature();
 
 			float loopTemp = Lib.Proto.GetFloat(heatModule, "currentLoopTemperature");
-			return loopTemp > 0f ? loopTemp : GetEnvironmentTemperature(v);
+			return loopTemp > 0f ? loopTemp : GetFallbackLoopTemperature();
+		}
+
+		/// <summary>
+		/// After loading a vessel, snap the live loop temperature to the persisted anchor when background
+		/// simulation drifted above the flight equilibrium (prevents immediate emergency shutdown).
+		/// </summary>
+		public static void RestoreLoadedFissionLoopTemperature(Part part, PartModule heatModule)
+		{
+			if (!Enabled || part == null || heatModule == null || part.protoPartSnapshot == null)
+				return;
+
+			ProtoPartModuleSnapshot protoHeat = FindMatchingLoadedHeatModuleSnapshot(part.protoPartSnapshot, heatModule);
+			if (protoHeat == null)
+				return;
+
+			float temp = Lib.Proto.GetFloat(protoHeat, "currentLoopTemperature");
+			if (Lib.Proto.GetBool(protoHeat, FluxAnchorValidField))
+			{
+				float anchorTemp = Lib.Proto.GetFloat(protoHeat, FluxAnchorTemperatureField);
+				if (anchorTemp > 0f)
+				{
+					if (temp <= 0f)
+						temp = anchorTemp;
+					else if (temp < anchorTemp - TransientTemperatureTolerance)
+						temp = anchorTemp;
+					else if (temp > anchorTemp + TransientTemperatureTolerance * 4f)
+						temp = anchorTemp;
+				}
+			}
+
+			if (temp <= 0f)
+				temp = GetFallbackLoopTemperature();
+
+			if (temp > 0f)
+			{
+				Lib.Proto.Set(protoHeat, "currentLoopTemperature", temp);
+				SystemHeat.Set(heatModule, "currentLoopTemperature", temp);
+			}
 		}
 
 		private static bool IsRadiatorOperational(ProtoPartSnapshot part, ProtoPartModuleSnapshot radiatorModule)
@@ -1277,18 +1425,25 @@ namespace KERBALISM
 
 		private static float GetFissionSafetyOverride(Part prefab, ProtoPartModuleSnapshot module, PartModule processPrefab)
 		{
-			float meltdown = GetProcessField(prefab, module, "meltdownTemperature", 1300f);
 			float protoOverride = Lib.Proto.GetFloat(module, "CurrentSafetyOverride", 0f);
 			if (protoOverride > 0f)
 				return protoOverride;
 
-			return meltdown > 0f ? meltdown : IntegrationReflection.GetFloat(processPrefab, "CurrentSafetyOverride", 1000f);
+			if (processPrefab != null)
+			{
+				float prefabOverride = IntegrationReflection.GetFloat(processPrefab, "CurrentSafetyOverride", 0f);
+				if (prefabOverride > 0f)
+					return prefabOverride;
+			}
+
+			float meltdown = GetProcessField(prefab, module, "meltdownTemperature", 1300f);
+			return meltdown > 0f ? meltdown : 1000f;
 		}
 
 		private static void BreakProcessReactor(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module)
 		{
 			v.KerbalismData().ResetReliabilityStatus();
-			Lib.Proto.Set(module, "running", false);
+			SetProtoFissionRunning(v, part, module, false, "meltdown");
 			Lib.Proto.Set(module, "broken", true);
 			Lib.Proto.Set(module, "isEnabled", false);
 			Lib.Proto.Set(module, "enabled", false);
@@ -1356,27 +1511,99 @@ namespace KERBALISM
 
 		private static float GetRadiatorRejectPower(Part prefab, ProtoPartModuleSnapshot module, float loopTemperature)
 		{
-			string radiatorModuleName = Lib.Proto.GetString(module, "radiatorModuleName", "ModuleSystemHeatRadiator");
-			PartModule radiator = FindPrefabModule(prefab, radiatorModuleName)
-				?? FindPrefabModule(prefab, "ModuleSystemHeatRadiator")
-				?? FindPrefabModule(prefab, "ModuleActiveRadiator")
-				?? FindPrefabModule(prefab, "SystemHeatRadiatorKerbalism");
-
 			float scale = Lib.Proto.GetFloat(module, "scale", 1f);
 			if (scale <= 0f)
 				scale = 1f;
 			float scaleEmissionPower = Lib.Proto.GetFloat(module, "scaleEmissionPower", 2f);
 			float scaleFactor = (float)Math.Pow(scale, scaleEmissionPower);
 
-			if (radiator != null && loopTemperature > 0f)
+			float curvePower = EvaluateRadiatorCurvePower(prefab, module, loopTemperature, scaleFactor);
+			if (curvePower > 0f)
+				return curvePower;
+
+			float inputPower = GetRadiatorInputResourcePower(prefab, module, scaleFactor);
+			if (inputPower > 0f)
+				return inputPower;
+
+			string radiatorModuleName = Lib.Proto.GetString(module, "radiatorModuleName", "ModuleSystemHeatRadiator");
+			PartModule nativeRadiator = FindPrefabModule(prefab, radiatorModuleName)
+				?? FindPrefabModule(prefab, "ModuleSystemHeatRadiator")
+				?? FindPrefabModule(prefab, "ModuleActiveRadiator");
+			if (nativeRadiator != null)
 			{
-				float curvePower = SystemHeat.EvaluateFloatCurveField(radiator, "temperatureCurve", loopTemperature, 0f);
-				if (curvePower > 0f)
-					return curvePower * scaleFactor;
+				float maxTransfer = IntegrationReflection.GetFloat(nativeRadiator, "maxEnergyTransfer", 0f);
+				if (maxTransfer > 0f)
+					return maxTransfer * scaleFactor;
 			}
 
+			LogRadiatorFallback(prefab, module);
+			return 100f * RadiatorCoefficient * scaleFactor;
+		}
+
+		private static void LogRadiatorFallback(Part prefab, ProtoPartModuleSnapshot module)
+		{
+			string key = Lib.BuildString(prefab != null ? prefab.name : "?", ":", module != null ? module.moduleName : "?");
+			if (loggedRadiatorFallbacks.Contains(key))
+				return;
+
+			loggedRadiatorFallbacks.Add(key);
+			Lib.Log(Lib.BuildString(
+				"[Kerbalism.SystemHeatBackground] Radiator has no temperatureCurve/input rates/maxEnergyTransfer; using BackgroundRadiatorCoefficient fallback",
+				" | part=", prefab != null && prefab.partInfo != null ? prefab.partInfo.title : key,
+				" | module=", module != null ? module.moduleName : "?"));
+		}
+
+		private static float EvaluateRadiatorCurvePower(Part prefab, ProtoPartModuleSnapshot module, float loopTemperature, float scaleFactor)
+		{
+			if (loopTemperature <= 0f)
+				return 0f;
+
+			string radiatorModuleName = Lib.Proto.GetString(module, "radiatorModuleName", "ModuleSystemHeatRadiator");
+			PartModule nativeRadiator = FindPrefabModule(prefab, radiatorModuleName)
+				?? FindPrefabModule(prefab, "ModuleSystemHeatRadiator")
+				?? FindPrefabModule(prefab, "ModuleActiveRadiator");
+			if (nativeRadiator != null)
+			{
+				float power = SystemHeat.EvaluateFloatCurveField(nativeRadiator, "temperatureCurve", loopTemperature, 0f);
+				if (power > 0f)
+					return power * scaleFactor;
+			}
+
+			PartModule shRadiator = FindPrefabModule(prefab, "SystemHeatRadiatorKerbalism");
+			if (shRadiator != null)
+			{
+				FloatCurve shCurve = IntegrationReflection.GetField<FloatCurve>(shRadiator, "temperatureCurve");
+				if (shCurve != null && shCurve.Curve.length > 0)
+				{
+					float power = shCurve.Evaluate(loopTemperature);
+					if (power > 0f)
+						return power;
+				}
+
+				FloatCurve baseCurve = IntegrationReflection.GetField<FloatCurve>(shRadiator, "baseTemperatureCurve");
+				if (baseCurve != null && baseCurve.Curve.length > 0)
+				{
+					float power = baseCurve.Evaluate(loopTemperature) * scaleFactor;
+					if (power > 0f)
+						return power;
+				}
+			}
+
+			return 0f;
+		}
+
+		private static float GetRadiatorInputResourcePower(Part prefab, ProtoPartModuleSnapshot module, float scaleFactor)
+		{
+			string radiatorModuleName = Lib.Proto.GetString(module, "radiatorModuleName", "ModuleSystemHeatRadiator");
+			PartModule radiator = FindPrefabModule(prefab, radiatorModuleName)
+				?? FindPrefabModule(prefab, "ModuleSystemHeatRadiator")
+				?? FindPrefabModule(prefab, "ModuleActiveRadiator")
+				?? FindPrefabModule(prefab, "SystemHeatRadiatorKerbalism");
+			if (radiator == null)
+				return 0f;
+
 			float power = 0f;
-			IList inputResources = radiator != null ? SystemHeat.GetResHandlerInputResources(radiator) : null;
+			IList inputResources = SystemHeat.GetResHandlerInputResources(radiator);
 			if (inputResources != null)
 			{
 				for (int i = 0; i < inputResources.Count; i++)
@@ -1385,7 +1612,8 @@ namespace KERBALISM
 						power += (float)res.rate;
 				}
 			}
-			return (power > 0f ? power : 10f) * SystemHeatBackgroundThermal.RadiatorCoefficient * scaleFactor;
+
+			return power > 0f ? power * scaleFactor : 0f;
 		}
 
 		private static ProtoPartModuleSnapshot FindFissionEngineSnapshot(ProtoPartSnapshot part, ProtoPartModuleSnapshot updaterModule)

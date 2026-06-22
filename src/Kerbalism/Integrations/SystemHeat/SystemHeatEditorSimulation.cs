@@ -52,6 +52,30 @@ namespace KERBALISM
 			return Mathf.Clamp(Mathf.Max(currentDamage, tempDamage), 0f, 100f);
 		}
 
+		/// <summary>
+		/// Integrate rate-based core damage (CoreDamageRate + optional curve) then apply instantaneous temperature floor.
+		/// </summary>
+		public static float AccumulateCoreDamage(
+			float loopTemperatureK,
+			float damageStartK,
+			float fullMeltdownK,
+			float currentDamage,
+			float damageRatePerSecond,
+			FloatCurve damageCurve,
+			float elapsedSeconds)
+		{
+			float damage = currentDamage;
+			if (damageRatePerSecond > 0f && elapsedSeconds > 0f && loopTemperatureK > damageStartK)
+			{
+				float curveMult = 1f;
+				if (damageCurve != null && damageCurve.Curve.length > 0)
+					curveMult = damageCurve.Evaluate(loopTemperatureK);
+				damage = Mathf.Min(100f, damage + damageRatePerSecond * curveMult * elapsedSeconds * 100f);
+			}
+
+			return SyncCoreDamageFromTemperature(loopTemperatureK, damageStartK, fullMeltdownK, damage);
+		}
+
 		public static float GetCoreHealthPercent(float loopTemperatureK, float damageStartK, float fullMeltdownK, float coreDamage)
 		{
 			if (coreDamage >= 100f || ShouldInstantMeltdown(loopTemperatureK, fullMeltdownK))

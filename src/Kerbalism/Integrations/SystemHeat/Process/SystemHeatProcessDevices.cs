@@ -30,7 +30,22 @@ namespace KERBALISM
 
 		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
 
-		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, nameof(ProcessController.running)), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
+		public override string Status => Lib.Color(IsProtoRunning(), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
+
+		private bool IsProtoRunning()
+		{
+			if (Lib.Proto.GetBool(protoModule, nameof(ProcessController.broken)))
+				return false;
+
+			if (Lib.Proto.GetBool(protoModule, nameof(ProcessController.running)))
+				return true;
+
+			ProtoPartResourceSnapshot res = protoPart.resources.Find(k => k.resourceName == prefab.resource);
+			if (res == null || !res.flowState || res.amount <= 0.0)
+				return false;
+
+			return Lib.Proto.GetFloat(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent)) >= prefab.MinimumThrottle;
+		}
 
 		public override void Ctrl(bool value)
 		{
@@ -41,7 +56,16 @@ namespace KERBALISM
 			Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), value ? 100f : 0f);
 			ProtoPartResourceSnapshot res = protoPart.resources.Find(k => k.resourceName == prefab.resource);
 			if (res != null)
-				res.flowState = value;
+			{
+				if (!value)
+				{
+					res.flowState = false;
+					if (res.amount > 0.0)
+						res.amount = 0.0;
+				}
+				else
+					res.flowState = true;
+			}
 		}
 
 		public override void Toggle() => Ctrl(!Lib.Proto.GetBool(protoModule, nameof(ProcessController.running)));

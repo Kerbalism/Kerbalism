@@ -119,7 +119,8 @@ namespace KERBALISM
 			GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
 			GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
 
-			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
+			GameEvents.onGameSceneSwitchRequested.Add(this.OnGameSceneSwitchRequested);
+			GameEvents.onGamePause.Add(this.OnGamePauseCapture);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			// add editor events
@@ -142,6 +143,19 @@ namespace KERBALISM
             OnVesselModified(partVessel);
         }
 #endif
+
+		private void OnGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> data)
+		{
+			visible = false;
+			if (data.from == GameScenes.FLIGHT)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
+
+		private void OnGamePauseCapture()
+		{
+			if (HighLogic.LoadedSceneIsFlight)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
 
 		// Called when two vessels are about to be merged, while their state is not yet changed.
 		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
