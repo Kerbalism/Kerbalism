@@ -198,6 +198,9 @@
     <Compile Include="Integrations\SpaceDust\SpaceDustHarmony.cs" />
     <Compile Include="Integrations\SpaceDust\SpaceDustHarvesterKerbalismUpdater.cs" />
     <Compile Include="Integrations\SpaceDust\SpaceDustResourceBlocker.cs" />
+    <Compile Include="Integrations\SpaceDust\Automation\SpaceDustHarvesterDevices.cs" />
+    <Compile Include="Integrations\SpaceDust\Automation\SpaceDustDeviceCollector.cs" />
+    <Compile Include="Integrations\SpaceDust\Automation\SpaceDustComputerDevicesHarmony.cs" />
     <Compile Include="Integrations\SystemHeat\SystemHeatBackgroundThermal.cs" />
     <Compile Include="Integrations\SystemHeat\SystemHeatEditorSimulation.cs" />
     <Compile Include="Integrations\SystemHeat\SystemHeatHarmony.cs" />
@@ -221,6 +224,9 @@
     <Compile Include="Integrations\SystemHeat\Native\Fission\Automation\FissionReactorDevices.cs" />
     <Compile Include="Integrations\SystemHeat\Native\Fission\Automation\FissionDeviceCollector.cs" />
     <Compile Include="Integrations\SystemHeat\Native\Automation\ComputerDevicesFissionHarmony.cs" />
+    <Compile Include="Integrations\SystemHeat\Native\Automation\SystemHeatNativeModuleDevices.cs" />
+    <Compile Include="Integrations\SystemHeat\Native\Automation\SHNativeDeviceCollector.cs" />
+    <Compile Include="Integrations\SystemHeat\Native\Automation\ComputerDevicesSHNativeHarmony.cs" />
     <Compile Include="LocalizationCache.cs" />
     <Compile Include="Modules\AntennaDataTransmitterRemoteTech.cs" />
 	<Compile Include="Modules\ECDrainViaPM.cs" />

@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Reflection;
 using HarmonyLib;
 
 namespace KERBALISM
@@ -32,38 +30,41 @@ namespace KERBALISM
 			return part.FindModuleImplementing<SpaceDustHarvesterKerbalismUpdater>() != null;
 		}
 
-		internal static bool IsSpaceDustHarvesterFrame()
+		internal static bool TryBlockRequest(Part part, double demand, ref double __result)
 		{
-			var trace = new StackTrace(false);
-			for (int i = 0; i < trace.FrameCount && i < 12; i++)
-			{
-				MethodBase method = trace.GetFrame(i)?.GetMethod();
-				if (method == null)
-					continue;
+			if (!ShouldBlockRequest(part))
+				return false;
 
-				Type declaring = method.DeclaringType;
-				if (declaring == null)
-					continue;
+			// Pretend the request succeeded without touching part resources.
+			__result = demand;
+			return true;
+		}
+	}
 
-				if (declaring.FullName == "SpaceDust.ModuleSpaceDustHarvester")
-					return true;
-			}
-
-			return false;
+	[HarmonyPatch(typeof(Part), "RequestResource", new[] { typeof(int), typeof(double) })]
+	internal static class Patch_Part_RequestResource_SpaceDust_Int2
+	{
+		private static bool Prefix(Part __instance, double demand, ref double __result)
+		{
+			return !SpaceDustResourceBlocker.TryBlockRequest(__instance, demand, ref __result);
 		}
 	}
 
 	[HarmonyPatch(typeof(Part), "RequestResource", new[] { typeof(int), typeof(double), typeof(ResourceFlowMode), typeof(bool) })]
-	internal static class Patch_Part_RequestResource_SpaceDust
+	internal static class Patch_Part_RequestResource_SpaceDust_Int4
 	{
 		private static bool Prefix(Part __instance, double demand, ref double __result)
 		{
-			if (!SpaceDustResourceBlocker.ShouldBlockRequest(__instance)
-				|| !SpaceDustResourceBlocker.IsSpaceDustHarvesterFrame())
-				return true;
+			return !SpaceDustResourceBlocker.TryBlockRequest(__instance, demand, ref __result);
+		}
+	}
 
-			__result = demand;
-			return false;
+	[HarmonyPatch(typeof(Part), "RequestResource", new[] { typeof(string), typeof(double), typeof(ResourceFlowMode), typeof(bool) })]
+	internal static class Patch_Part_RequestResource_SpaceDust_String4
+	{
+		private static bool Prefix(Part __instance, double demand, ref double __result)
+		{
+			return !SpaceDustResourceBlocker.TryBlockRequest(__instance, demand, ref __result);
 		}
 	}
 }

@@ -58,7 +58,14 @@ namespace KERBALISM
 
 			float loopTemp = IntegrationReflection.GetFloat(heatModule, "currentLoopTemperature");
 			object efficiencyCurve = IntegrationReflection.GetField<object>(harvester, "SystemEfficiency");
-			return IntegrationReflection.EvaluateFloatCurve(efficiencyCurve, loopTemp, 1f);
+			return EvaluateThermalScale(efficiencyCurve, loopTemp);
+		}
+
+		/// <summary>SystemEfficiency curves are 0–1; clamp so Kerbalism rates never exceed nominal cfg.</summary>
+		private static double EvaluateThermalScale(object efficiencyCurve, float loopTemperatureK)
+		{
+			float thermal = IntegrationReflection.EvaluateFloatCurve(efficiencyCurve, loopTemperatureK, 1f);
+			return Mathf.Clamp(thermal, 0f, 1f);
 		}
 
 		private PartModule FindLinkedHeatModule(PartModule harvester)
@@ -170,7 +177,7 @@ namespace KERBALISM
 					return 1d;
 
 				object efficiencyCurve = IntegrationReflection.GetField<object>(harvesterPrefab, "SystemEfficiency");
-				return IntegrationReflection.EvaluateFloatCurve(efficiencyCurve, loopTemp, 1f);
+				return EvaluateThermalScale(efficiencyCurve, loopTemp);
 			}
 
 			return 1d;
@@ -271,9 +278,33 @@ namespace KERBALISM
 			double elapsed_s)
 		{
 			string harvesterModuleId = Lib.Proto.GetString(module_snapshot, "harvesterModuleID", "harvester");
-			AddBackgroundHarvestRates(v, proto_part_module, resourceChangeRequest, part_snapshot, harvesterModuleId);
+			PartModule harvesterPrefab = FindHarvesterPrefab(proto_part, harvesterModuleId);
+			AddBackgroundHarvestRates(v, harvesterPrefab, resourceChangeRequest, part_snapshot, harvesterModuleId);
 			SystemHeatBackgroundThermal.TryRun(v, elapsed_s);
 			return brokerTitle;
+		}
+
+		private static PartModule FindHarvesterPrefab(Part protoPart, string harvesterModuleId)
+		{
+			if (protoPart == null)
+				return null;
+
+			PartModule fallback = null;
+			for (int i = 0; i < protoPart.Modules.Count; i++)
+			{
+				PartModule module = protoPart.Modules[i];
+				if (!SpaceDust.IsHarvester(module) && module.moduleName != "ModuleSpaceDustHarvester")
+					continue;
+
+				if (fallback == null)
+					fallback = module;
+
+				string nativeId = SpaceDust.Get(module, "ModuleID", "");
+				if (string.IsNullOrEmpty(harvesterModuleId) || nativeId == harvesterModuleId)
+					return module;
+			}
+
+			return fallback;
 		}
 	}
 }
