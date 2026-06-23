@@ -13,19 +13,6 @@ namespace KERBALISM
 			cryoModule = CryoUtils.FindCryoTankModule(part);
 		}
 
-		public void FixedUpdate()
-		{
-			if (!CryoSettings.Enabled || !Lib.IsFlight())
-				return;
-
-			if (cryoModule == null)
-				cryoModule = CryoUtils.FindCryoTankModule(part);
-			if (cryoModule == null)
-				return;
-
-			CryoTankResourceSim.UpdateLoaded(cryoModule, vessel);
-		}
-
 		public string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
 			if (!CryoSettings.Enabled)

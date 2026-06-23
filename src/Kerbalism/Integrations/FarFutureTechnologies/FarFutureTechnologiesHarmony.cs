@@ -15,6 +15,12 @@ namespace KERBALISM
 			Patch(harmony, reactor, "RechargeCapacitors", reactorPrefix);
 			Patch(harmony, engine, "GeneratePower", enginePrefix);
 			Patch(harmony, engine, "RechargeCapacitors", enginePrefix);
+
+			System.Type antimatterTank = AccessTools.TypeByName("FarFutureTechnologies.ModuleAntimatterTank");
+			MethodInfo skipAntimatter = AccessTools.Method(typeof(FarFutureTechnologiesHarmony), nameof(SkipWhenAntimatterUpdaterPresent));
+			Patch(harmony, antimatterTank, "DoCatchup", skipAntimatter);
+			Patch(harmony, antimatterTank, "ConsumeCharge", skipAntimatter);
+			Patch(harmony, antimatterTank, "DoDetonation", skipAntimatter);
 		}
 
 		private static void Patch(Harmony harmony, System.Type type, string methodName, MethodInfo prefix)
@@ -32,6 +38,11 @@ namespace KERBALISM
 		private static bool SkipWhenFusionEngineUpdaterPresent(object __instance)
 		{
 			return !HasUpdater<FFTFusionEngineKerbalismUpdater>(__instance);
+		}
+
+		private static bool SkipWhenAntimatterUpdaterPresent(object __instance)
+		{
+			return !FarFutureTechnologies.HasKerbalismAntimatterUpdater(__instance as PartModule);
 		}
 
 		private static bool HasUpdater<T>(object instance) where T : PartModule

@@ -29,7 +29,15 @@ namespace KERBALISM
 			return null;
 		}
 
-		public static IList GetHarvestedResources(PartModule harvester) => IntegrationReflection.GetList(harvester, "resources");
+		public static IList GetHarvestedResources(PartModule harvester)
+		{
+			IList resources = IntegrationReflection.GetList(harvester, "resources");
+			if (resources != null && resources.Count > 0)
+				return resources;
+
+			resources = IntegrationReflection.GetList(harvester, "Resources");
+			return resources;
+		}
 
 		public static string GetHarvestedResourceName(object entry) => IntegrationReflection.GetString(entry, "Name");
 

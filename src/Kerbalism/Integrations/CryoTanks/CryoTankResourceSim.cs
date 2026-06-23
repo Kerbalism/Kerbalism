@@ -47,6 +47,7 @@ namespace KERBALISM
 			KERBALISM.ResourceBroker broker = KERBALISM.ResourceBroker.GetOrCreate(BrokerName, KERBALISM.ResourceBroker.BrokerCategory.VesselSystem, BrokerTitle);
 			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
 			double dt = TimeWarp.fixedDeltaTime;
+			double totalEcRate = 0.0;
 			double totalCost = 0.0;
 			bool coolingEnabled = CryoTanks.GetCoolingEnabled(cryoModule);
 			float coolingCost = CryoTanks.GetCoolingCost(cryoModule);
@@ -63,7 +64,9 @@ namespace KERBALISM
 
 				if (coolingEnabled && coolingCost > 0f)
 				{
-					totalCost += coolingCost * resource.amount * 0.001 * dt;
+					double fuelEcRate = coolingCost * resource.amount * 0.001;
+					totalEcRate += fuelEcRate;
+					totalCost += fuelEcRate * dt;
 				}
 				else
 				{
@@ -75,7 +78,8 @@ namespace KERBALISM
 
 			if (coolingEnabled && totalCost > double.Epsilon)
 			{
-				if (ec.Amount < totalCost)
+				// Fail only when EC cannot pay ~1s of cooling, not the full physics step.
+				if (ec.Amount < totalEcRate)
 					CryoTanks.SetCoolingEnabled(cryoModule, false);
 				else
 					ec.Consume(totalCost, broker);
@@ -128,12 +132,8 @@ namespace KERBALISM
 				}
 			}
 
-			if (totalEcCost > 0.0)
-			{
-				double ecNeed = totalEcCost * elapsed_s;
-				if (ec.Amount < ecNeed)
-					Lib.Proto.Set(cryoSnapshot, "CoolingEnabled", false);
-			}
+			if (totalEcCost > 0.0 && ec.Amount < totalEcCost)
+				Lib.Proto.Set(cryoSnapshot, "CoolingEnabled", false);
 
 			return brokerTitle;
 		}

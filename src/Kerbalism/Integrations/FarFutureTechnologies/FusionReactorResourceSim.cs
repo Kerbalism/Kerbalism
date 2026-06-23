@@ -160,20 +160,33 @@ namespace KERBALISM
 			SyncProtoFusionStatus(reactor, currentThrottle);
 		}
 
+		internal static bool HasChargeOperatingPower(PartModule reactor, Vessel v)
+		{
+			if (reactor == null || v == null)
+				return false;
+
+			float chargeRate = FarFutureTechnologies.Get(reactor, "ChargeRate", 0f);
+			if (chargeRate <= 0f)
+				return true;
+
+			return KERBALISM.ResourceCache.GetResource(v, "ElectricCharge").Amount >= chargeRate;
+		}
+
 		internal static bool UpdateLoadedCharge(PartModule reactor, Vessel v, string brokerName, string brokerTitle)
 		{
 			if (reactor == null || FarFutureTechnologies.Get(reactor, "Enabled", false) || !FarFutureTechnologies.Get(reactor, "Charging", false)
 				|| FarFutureTechnologies.Get(reactor, "Charged", false) || FarFutureTechnologies.Get(reactor, "ChargeRate", 0f) <= 0f)
 				return false;
 
+			float chargeRate = FarFutureTechnologies.Get(reactor, "ChargeRate", 0f);
 			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
-			double chargeRequest = FarFutureTechnologies.Get(reactor, "ChargeRate", 0f) * TimeWarp.fixedDeltaTime;
-			if (ec.Amount < chargeRequest)
+			if (ec.Amount < chargeRate)
 			{
 				SyncLoadedChargeUI(reactor, false);
 				return true;
 			}
 
+			double chargeRequest = chargeRate * TimeWarp.fixedDeltaTime;
 			ec.Consume(chargeRequest, KERBALISM.ResourceBroker.GetOrCreate(brokerName, KERBALISM.ResourceBroker.BrokerCategory.Converter, brokerTitle));
 
 			float chargeGoal = FarFutureTechnologies.Get(reactor, "ChargeGoal", 0f);
@@ -404,7 +417,7 @@ namespace KERBALISM
 			resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -chargeRate));
 
 			double ec = KERBALISM.ResourceCache.Get(v).GetResource(v, "ElectricCharge").Amount;
-			if (ec < chargeRate * elapsed_s)
+			if (ec < chargeRate)
 				return;
 
 			float chargeGoal = GetChargeGoal(prefab);

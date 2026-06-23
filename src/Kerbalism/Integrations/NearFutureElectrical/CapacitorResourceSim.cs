@@ -52,6 +52,16 @@ namespace KERBALISM
 				&& NearFutureElectrical.Get(capacitor, "CurrentCharge", 0f) > 1e-6f;
 		}
 
+		internal static bool HasChargeOperatingPower(PartModule capacitor, Vessel v)
+		{
+			float chargeRate = NearFutureElectrical.Get(capacitor, "ChargeRate", 0f);
+			if (chargeRate <= 0f)
+				return true;
+			if (v == null)
+				return false;
+			return KERBALISM.ResourceCache.GetResource(v, "ElectricCharge").Amount >= chargeRate;
+		}
+
 		internal static void AddPlannerRates(PartModule capacitor, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
 			if (IsDischarging(capacitor))
@@ -92,7 +102,7 @@ namespace KERBALISM
 				float chargeRate = NearFutureElectrical.Get(capacitor, "ChargeRate", 0f);
 				double request = chargeRate * dt;
 				ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
-				if (ec.Amount >= request)
+				if (ec.Amount >= chargeRate)
 				{
 					ec.Consume(request, broker);
 					AddStoredCharge(capacitor.part, request * NearFutureElectrical.Get(capacitor, "ChargeRatio", 1f), NearFutureElectrical.Get(capacitor, "MaximumCharge", 0f));
@@ -124,9 +134,17 @@ namespace KERBALISM
 			}
 			else if (IsCharging(capacitor))
 			{
-				NearFutureElectrical.Set(capacitor, "CapacitorStatus", Localizer.Format(
-					"#LOC_NFElectrical_ModuleDischargeCapacitor_Field_Status_Charging",
-					NearFutureElectrical.Get(capacitor, "ChargeRate", 0f).ToString("F2")));
+				if (HasChargeOperatingPower(capacitor, capacitor.vessel))
+				{
+					NearFutureElectrical.Set(capacitor, "CapacitorStatus", Localizer.Format(
+						"#LOC_NFElectrical_ModuleDischargeCapacitor_Field_Status_Charging",
+						NearFutureElectrical.Get(capacitor, "ChargeRate", 0f).ToString("F2")));
+				}
+				else
+				{
+					NearFutureElectrical.Set(capacitor, "CapacitorStatus", Localizer.Format(
+						"#LOC_NFElectrical_ModuleDischargeCapacitor_Field_Status_NoPower"));
+				}
 			}
 			else if (NearFutureElectrical.Get(capacitor, "Enabled", false) && !NearFutureElectrical.Get(capacitor, "Discharging", false) && HasChargeHeadroom(capacitor))
 			{
@@ -202,7 +220,7 @@ namespace KERBALISM
 
 				double ec = KERBALISM.ResourceCache.Get(v).GetResource(v, "ElectricCharge").Amount;
 				double chargeRequest = chargeRate * elapsed_s;
-				if (ec >= chargeRequest)
+				if (ec >= chargeRate)
 					AddStoredCharge(partSnapshot, chargeRequest * NearFutureElectrical.Get(prefabModule, "ChargeRatio", 1f), maximumCharge);
 			}
 

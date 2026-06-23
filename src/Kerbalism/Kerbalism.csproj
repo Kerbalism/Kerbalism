@@ -181,7 +181,7 @@
     <Compile Include="Integrations\FarFutureTechnologies\FFTSettings.cs" />
     <Compile Include="Integrations\FarFutureTechnologies\FFTFusionReactorKerbalismUpdater.cs" />
     <Compile Include="Integrations\FarFutureTechnologies\FFTFusionEngineKerbalismUpdater.cs" />
-    <Compile Include="Integrations\FarFutureTechnologies\FFTModuleAntimatterTankKerbalism.cs" />
+    <Compile Include="Integrations\FarFutureTechnologies\FFTAntimatterTankKerbalismUpdater.cs" />
     <Compile Include="Integrations\FarFutureTechnologies\Automation\FusionReactorDevices.cs" />
     <Compile Include="Integrations\FarFutureTechnologies\Automation\FFTComputerDevicesHarmony.cs" />
     <Compile Include="Integrations\IntegrationBootstrap.cs" />

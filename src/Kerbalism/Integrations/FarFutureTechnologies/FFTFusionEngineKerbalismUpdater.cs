@@ -112,12 +112,9 @@ namespace KERBALISM
 				}
 				else if (Lib.IsFlight())
 				{
-					bool hasPower = false;
-					if (FarFutureTechnologies.Get(engineModule, "Charging", false) && !FarFutureTechnologies.Get(engineModule, "Charged", false))
-					{
-						ResourceInfo ec = KERBALISM.ResourceCache.GetResource(vessel, "ElectricCharge");
-						hasPower = ec.Amount >= FarFutureTechnologies.Get(engineModule, "ChargeRate", 0f) * TimeWarp.fixedDeltaTime;
-					}
+					bool hasPower = FarFutureTechnologies.Get(engineModule, "Charging", false)
+						&& !FarFutureTechnologies.Get(engineModule, "Charged", false)
+						&& FusionReactorResourceSim.HasChargeOperatingPower(engineModule, vessel);
 					FusionReactorResourceSim.SyncLoadedChargeUI(engineModule, hasPower);
 				}
 

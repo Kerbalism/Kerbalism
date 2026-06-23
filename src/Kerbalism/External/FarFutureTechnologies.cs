@@ -59,6 +59,19 @@ namespace KERBALISM
 			return IsFusionEngine(module) && module.part.FindModuleImplementing<FFTFusionEngineKerbalismUpdater>() != null;
 		}
 
+		public static void SetPoweredState(PartModule tank, bool powered)
+		{
+			if (tank == null)
+				return;
+
+			Call(tank, "SetPoweredState", new[] { typeof(bool) }, new object[] { powered });
+		}
+
+		public static bool HasKerbalismAntimatterUpdater(PartModule module)
+		{
+			return module?.part != null && module.part.FindModuleImplementing<FFTAntimatterTankKerbalismUpdater>() != null;
+		}
+
 		private static PartModule FindModuleById(Part part, string moduleId, System.Func<PartModule, bool> typeCheck, string moduleName, string idField)
 		{
 			if (part == null)
