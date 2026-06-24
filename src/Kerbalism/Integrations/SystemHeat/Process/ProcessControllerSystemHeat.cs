@@ -607,32 +607,29 @@ namespace KERBALISM
 			if (heatModule == null)
 				heatModule = SystemHeat.FindHeatModule(part, systemHeatModuleID);
 
-			if (heatModule != null)
+			if (heatModule == null || !HighLogic.LoadedSceneIsFlight)
+				return;
+
+			if (IsFissionReactor() && fissionLoopRestoreFrames > 0)
 			{
-				if (HighLogic.LoadedSceneIsFlight)
-				{
-					if (IsFissionReactor() && fissionLoopRestoreFrames > 0)
-					{
-						fissionLoopRestoreFrames--;
-						SystemHeatBackgroundThermal.RestoreLoadedFissionLoopTemperature(part, heatModule);
-						if (IsRunning())
-						{
-							lastAppliedCapacity = -1;
-							ApplyThermalCapacityScale(force: true);
-						}
-					}
-
-					if (IsFissionReactor() && flightThermalGraceFrames > 0)
-						flightThermalGraceFrames--;
-				}
-
-				GenerateHeatFlight();
-				UpdateSystemHeatFlight();
+				fissionLoopRestoreFrames--;
+				SystemHeatBackgroundThermal.RestoreLoadedFissionLoopTemperature(part, heatModule);
 				if (IsRunning())
-					ApplyThermalCapacityScale();
-				else
-					SetEfficiencyPlaceholder();
+				{
+					lastAppliedCapacity = -1;
+					ApplyThermalCapacityScale(force: true);
+				}
 			}
+
+			if (IsFissionReactor() && flightThermalGraceFrames > 0)
+				flightThermalGraceFrames--;
+
+			GenerateHeatFlight();
+			UpdateSystemHeatFlight();
+			if (IsRunning())
+				ApplyThermalCapacityScale();
+			else
+				SetEfficiencyPlaceholder();
 		}
 
 		private void GenerateHeatEditor()
