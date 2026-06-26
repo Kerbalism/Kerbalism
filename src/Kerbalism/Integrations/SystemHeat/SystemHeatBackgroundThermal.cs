@@ -66,9 +66,6 @@ namespace KERBALISM
 		/// </summary>
 		public static void CaptureLoadedFissionReactorState(Part part)
 		{
-			if (!Enabled || part == null || part.protoPartSnapshot == null)
-				return;
-
 			foreach (ProcessControllerSystemHeat process in part.FindModulesImplementing<ProcessControllerSystemHeat>())
 			{
 				if (process == null || process.resource != "_Nukereactor")

@@ -121,9 +121,6 @@ namespace KERBALISM
 
 			GameEvents.onGameSceneSwitchRequested.Add(this.OnGameSceneSwitchRequested);
 			GameEvents.onGamePause.Add(this.OnGamePauseCapture);
-			GameEvents.onPartPack.Add(this.OnPartPackCapture);
-			GameEvents.onVesselSwitching.Add(this.OnVesselSwitchingCapture);
-			GameEvents.onVesselSwitchingToUnloaded.Add(this.OnVesselSwitchingCapture);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			// add editor events
@@ -158,18 +155,6 @@ namespace KERBALISM
 		{
 			if (HighLogic.LoadedSceneIsFlight)
 				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
-		}
-
-		private void OnPartPackCapture(Part part)
-		{
-			if (HighLogic.LoadedSceneIsFlight)
-				SystemHeatBackgroundThermal.CaptureLoadedFissionReactorState(part);
-		}
-
-		private void OnVesselSwitchingCapture(Vessel from, Vessel to)
-		{
-			if (HighLogic.LoadedSceneIsFlight)
-				SystemHeatBackgroundThermal.CaptureLoadedTemperatures(from);
 		}
 
 		// Called when two vessels are about to be merged, while their state is not yet changed.
