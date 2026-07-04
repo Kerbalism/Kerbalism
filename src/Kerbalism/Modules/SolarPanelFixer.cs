@@ -522,6 +522,15 @@ namespace KERBALISM
 			}
 
 			trackedSunInfo = vd.EnvSunsInfo.Find(p => p.SunData.bodyIndex == trackedSunIndex);
+			if (trackedSunInfo == null && vd.EnvSunsInfo.Count > 0)
+				trackedSunInfo = vd.EnvSunsInfo[0];
+
+			if (trackedSunInfo == null)
+			{
+				currentOutput = 0.0;
+				UnityEngine.Profiling.Profiler.EndSample();
+				return;
+			}
 
 			if (trackedSunInfo.SunlightFactor == 0.0)
 				exposureState = ExposureState.InShadow;
