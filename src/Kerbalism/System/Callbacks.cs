@@ -98,6 +98,13 @@ namespace KERBALISM
 			GameEvents.onVesselChange.Add((v) => { OnVesselModified(v); });
 			GameEvents.onVesselStandardModification.Add((v) => { OnVesselStandardModification(v); });
 
+			// the cached loaded PartModule lists and protoVessel module snapshot lists must not
+			// survive load/unload transitions : Vessel.Unload() replaces the protoVessel instance
+			// (so cached snapshot references would write to dead objects), and loading a vessel
+			// recreates all PartModules. None of the vessel-modified events fire on these transitions.
+			GameEvents.onVesselLoaded.Add((v) => Cache.PurgeVesselCaches(v));
+			GameEvents.onVesselUnloaded.Add((v) => Cache.PurgeVesselCaches(v));
+
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 
@@ -119,7 +126,8 @@ namespace KERBALISM
 			GameEvents.onGUILaunchScreenSpawn.Add((_) => visible = false);
 			GameEvents.onGUILaunchScreenDespawn.Add(() => visible = true);
 
-			GameEvents.onGameSceneSwitchRequested.Add((_) => visible = false);
+			GameEvents.onGameSceneSwitchRequested.Add(this.OnGameSceneSwitchRequested);
+			GameEvents.onGamePause.Add(this.OnGamePauseCapture);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
 			// add editor events
@@ -142,6 +150,19 @@ namespace KERBALISM
             OnVesselModified(partVessel);
         }
 #endif
+
+		private void OnGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> data)
+		{
+			visible = false;
+			if (data.from == GameScenes.FLIGHT)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
+
+		private void OnGamePauseCapture()
+		{
+			if (HighLogic.LoadedSceneIsFlight)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
 
 		// Called when two vessels are about to be merged, while their state is not yet changed.
 		private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)

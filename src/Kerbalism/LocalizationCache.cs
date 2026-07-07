@@ -601,7 +601,6 @@ namespace KERBALISM
 		public static string TELEMETRY_title = GetLoc("TELEMETRY_title"); // "TELEMETRY"
 		public static string TELEMETRY_EVASUIT = GetLoc("TELEMETRY_EVASUIT"); // "EVA SUIT"
 		public static string TELEMETRY_ENVIRONMENT = GetLoc("TELEMETRY_ENVIRONMENT"); // "ENVIRONMENT"
-		public static string TELEMETRY_SolarPanelsAverageExposure = GetLoc("TELEMETRY_SolarPanelsAverageExposure"); // "solar panels average exposure"
 		public static string TELEMETRY_Exposureignoringbodiesocclusion = GetLoc("TELEMETRY_Exposureignoringbodiesocclusion"); // "Exposure ignoring bodies occlusion"
 		public static string TELEMETRY_Exposureignoringbodiesocclusion_desc = GetLoc("TELEMETRY_Exposureignoringbodiesocclusion_desc"); // "Won't change on unloaded vessels\nMake sure to optimize it before switching"
 		public static string TELEMETRY_nosensorsinstalled = GetLoc("TELEMETRY_nosensorsinstalled"); // "no sensors installed"
@@ -1110,27 +1109,31 @@ namespace KERBALISM
 		// Module : SolarPanelFixer
 		////////////////////////////////////////////////////////////////////
 		public static ParamString SolarPanelFixer_occludedby = new ParamString("SolarPanelFixer_occludedby"); // "occluded by <<1>>"
-		public static string SolarPanelFixer_Solarpanel = GetLoc("SolarPanelFixer_Solarpanel"); // "Solar panel"
-		public static string SolarPanelFixer_Solarpaneloutput = GetLoc("SolarPanelFixer_Solarpaneloutput"); // "Solar panel output"
-		public static string SolarPanelFixer_simulated = GetLoc("SolarPanelFixer_simulated"); // "<color=#00ff00>simulated</color>"
-		public static string SolarPanelFixer_ignored = GetLoc("SolarPanelFixer_ignored"); // "<color=#ffff00>ignored</color>"
-		public static string SolarPanelFixer_inshadow = GetLoc("SolarPanelFixer_inshadow"); // "in shadow"
-		public static string SolarPanelFixer_occludedbyterrain = GetLoc("SolarPanelFixer_occludedbyterrain"); // "occluded by terrain"
-		public static string SolarPanelFixer_badorientation = GetLoc("SolarPanelFixer_badorientation"); // "bad orientation"
-		public static string SolarPanelFixer_analytic = GetLoc("SolarPanelFixer_analytic"); // "analytic"
-		public static string SolarPanelFixer_exposure = GetLoc("SolarPanelFixer_exposure"); // "exposure"
-		public static string SolarPanelFixer_wear = GetLoc("SolarPanelFixer_wear"); // "wear"
-		public static string SolarPanelFixer_Selecttrackedstar = GetLoc("SolarPanelFixer_Selecttrackedstar"); // "Select tracked star"
+		public static string SolarPanelFixer_mode = GetLoc("SolarPanelFixer_mode"); // "Solar Panel Mode"
+		public static string SolarPanelFixer_Solarpanel = GetLoc("SolarPanelFixer_Solarpanelstatus"); // "Solar Panel Status"
+		public static string SolarPanelFixer_Solarpaneloutput = GetLoc("SolarPanelFixer_Solarpaneloutput"); // "Solar Panel Output"
+		public static string SolarPanelFixer_simulated = GetLoc("SolarPanelFixer_simulated"); // "<color=#00ff00>Simulated</color>"
+		public static string SolarPanelFixer_ignored = GetLoc("SolarPanelFixer_ignored"); // "<color=#ffff00>Ignored</color>"
+		public static string SolarPanelFixer_sunDirect = GetLoc("SolarPanelFixer_sunDirect"); //"Sun Direct"
+		public static string SolarPanelFixer_inshadow = GetLoc("SolarPanelFixer_inshadow"); // "In Shadow"
+		public static string SolarPanelFixer_occludedbyterrain = GetLoc("SolarPanelFixer_occludedbyterrain"); // "Occluded By Terrain"
+		public static string SolarPanelFixer_badorientation = GetLoc("SolarPanelFixer_badorientation"); // "Bad Orientation"
+		public static string SolarPanelFixer_energy = GetLoc("SolarPanelFixer_energy"); // "Energy Output"
+		public static string SolarPanelFixer_exposure = GetLoc("SolarPanelFixer_exposure"); // "Exposure"
+		public static string SolarPanelFixer_wear = GetLoc("SolarPanelFixer_wear"); // "Wear"
+		public static string SolarPanelFixer_analytic = GetLoc("SolarPanelFixer_analytic"); // "Analytic Mode"
+		public static string SolarPanelFixer_realtime = GetLoc("SolarPanelFixer_realtime"); // "Real-time Mode"
+		public static string SolarPanelFixer_Selecttrackedstar = GetLoc("SolarPanelFixer_Selecttrackedstar"); // "Select Tracked Star"
 		public static string SolarPanelFixer_SelectTrackingBody = GetLoc("SolarPanelFixer_SelectTrackingBody"); // "SelectTrackingBody"
 		public static string SolarPanelFixer_SelectTrackedstar_msg = GetLoc("SolarPanelFixer_SelectTrackedstar_msg"); // "Select the star you want to track with this solar panel."
 		public static string SolarPanelFixer_Automatic = GetLoc("SolarPanelFixer_Automatic"); // "Automatic"
-		public static string SolarPanelFixer_retracted = GetLoc("SolarPanelFixer_retracted"); // "retracted"
-		public static string SolarPanelFixer_extending = GetLoc("SolarPanelFixer_extending"); // "extending"
-		public static string SolarPanelFixer_retracting = GetLoc("SolarPanelFixer_retracting"); // "retracting"
-		public static string SolarPanelFixer_broken = GetLoc("SolarPanelFixer_broken"); // "broken"
-		public static string SolarPanelFixer_failure = GetLoc("SolarPanelFixer_failure"); // "failure"
-		public static string SolarPanelFixer_invalidstate = GetLoc("SolarPanelFixer_invalidstate"); // "invalid state"
-		public static string SolarPanelFixer_Trackedstar = GetLoc("SolarPanelFixer_Trackedstar"); // "Tracked star"
+		public static string SolarPanelFixer_retracted = GetLoc("SolarPanelFixer_retracted"); // "Retracted"
+		public static string SolarPanelFixer_extending = GetLoc("SolarPanelFixer_extending"); // "Extending"
+		public static string SolarPanelFixer_retracting = GetLoc("SolarPanelFixer_retracting"); // "Retracting"
+		public static string SolarPanelFixer_broken = GetLoc("SolarPanelFixer_broken"); // "Broken"
+		public static string SolarPanelFixer_failure = GetLoc("SolarPanelFixer_failure"); // "Failure"
+		public static string SolarPanelFixer_invalidstate = GetLoc("SolarPanelFixer_invalidstate"); // "Invalid State"
+		public static string SolarPanelFixer_Trackedstar = GetLoc("SolarPanelFixer_Trackedstar"); // "Tracked Star"
 		public static string SolarPanelFixer_AutoTrack = GetLoc("SolarPanelFixer_AutoTrack"); // "[Auto] : "
 
 		////////////////////////////////////////////////////////////////////
@@ -1285,7 +1288,7 @@ namespace KERBALISM
 		public static string Planner_emission = GetLoc("Planner_emission"); // "emission"
 		public static string Planner_activeshielding = GetLoc("Planner_activeshielding"); // "active shielding"
 		public static string Planner_shielding = GetLoc("Planner_shielding"); // "shielding"
-		//traduce the redundancy metric to string
+																			  //traduce the redundancy metric to string
 		public static string Planner_none = GetLoc("Planner_none"); // "none"
 		public static string Planner_poor = GetLoc("Planner_poor"); // "poor"
 		public static string Planner_okay = GetLoc("Planner_okay"); // "okay"
@@ -1396,9 +1399,9 @@ namespace KERBALISM
 		////////////////////////////////////////////////////////////////////
 		//show warning message when a vessel cross a radiation belt
 		public static ParamString BeltWarnings_msg = new ParamString("BeltWarnings_msg"); // "<<1>> is crossing <<2>> radiation belt"
-		// Remove Symmetry On Visible Resource Switch
+																						  // Remove Symmetry On Visible Resource Switch
 		public static ParamString RemoveSymmetry_msg = new ParamString("RemoveSymmetry_msg"); // "Symmetry on <<1>>\nhas been removed because of switching the <<2>> capacity."
-		// Notify the user when crop can be harvested
+																							  // Notify the user when crop can be harvested
 		public static ParamString harvestedready_msg = new ParamString("harvestedready_msg"); // "On <<1>> the crop is ready to be harvested"
 		public static string BeltWarnings_msgSubtext = GetLoc("BeltWarnings_msgSubtext"); // "Exposed to extreme radiation"
 		public static string Fittingparticles_msg = GetLoc("Fittingparticles_msg"); // "Fitting particles to signed distance fields"

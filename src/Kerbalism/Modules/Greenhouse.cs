@@ -518,9 +518,9 @@ namespace KERBALISM
 			List<Data> ret = new List<Data>();
 			if (v.loaded)
 			{
-				foreach (Greenhouse greenhouse in Lib.FindModules<Greenhouse>(v))
+				foreach (Greenhouse greenhouse in PartModuleCache.GetModules<Greenhouse>(v))
 				{
-					if (greenhouse.active)
+					if (greenhouse.isEnabled && greenhouse.active)
 					{
 						Data gd = new Data
 						{
@@ -536,7 +536,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Greenhouse"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Greenhouse"))
 				{
 					if (Lib.Proto.GetBool(m, "active"))
 					{
