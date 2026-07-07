@@ -38,6 +38,10 @@ namespace KERBALISM
 		private Drive drive;
 		private double totalSampleMass;
 
+		private double lastAvailableDataCapacity = double.NegativeInfinity;
+		private int lastAvailableSlots = int.MinValue;
+		private double lastTotalSampleMass = double.NegativeInfinity;
+
 		List<KeyValuePair<string, double>> dataCapacities = null;
 		List<KeyValuePair<string, int>> sampleCapacities = null;
 
@@ -222,7 +226,7 @@ namespace KERBALISM
 		{
 			if (drive == null)
 				return;
-			
+
 			double mass = 0;
 			foreach (var sample in drive.samples.Values) mass += sample.mass;
 			totalSampleMass = mass;
@@ -243,18 +247,25 @@ namespace KERBALISM
 				availableSlots = Lib.SampleSizeToSlots(drive.SampleCapacityAvailable());
 			}
 
-			Capacity = string.Empty;
-			if(availableDataCapacity > double.Epsilon)
-				Capacity = Lib.HumanReadableDataSize(availableDataCapacity);
-			if(availableSlots > 0)
+			if (availableDataCapacity != lastAvailableDataCapacity
+				|| availableSlots != lastAvailableSlots
+				|| totalSampleMass != lastTotalSampleMass)
 			{
-				if (Capacity.Length > 0) Capacity += " ";
-				Capacity += Lib.HumanReadableSampleSize(availableSlots);
-			}
+				lastAvailableDataCapacity = availableDataCapacity;
+				lastAvailableSlots = availableSlots;
+				lastTotalSampleMass = totalSampleMass;
 
-			if(Lib.IsFlight() && totalSampleMass > double.Epsilon)
-			{
-				Capacity += " " + Lib.HumanReadableMass(totalSampleMass);
+				Capacity = string.Empty;
+				if (availableDataCapacity > double.Epsilon)
+					Capacity = Lib.HumanReadableDataSize(availableDataCapacity);
+				if (availableSlots > 0)
+				{
+					if (Capacity.Length > 0) Capacity += " ";
+					Capacity += Lib.HumanReadableSampleSize(availableSlots);
+				}
+
+				if (Lib.IsFlight() && totalSampleMass > double.Epsilon)
+					Capacity = Lib.BuildString(Capacity, " ", Lib.HumanReadableMass(totalSampleMass));
 			}
 		}
 
@@ -292,7 +303,7 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not evering copied"
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not everything copied"
 					Lib.BuildString(Local.HardDrive_WARNING)//"Storage is at capacity"
 				);
 			}
@@ -310,7 +321,7 @@ namespace KERBALISM
 			{
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not evering copied"
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true),//"WARNING: not everything copied"
 					Lib.BuildString(Local.HardDrive_WARNING)//"Storage is at capacity"
 				);
 			}
@@ -455,7 +466,7 @@ namespace KERBALISM
 		{
 			double result = 0;
 
-			if(effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
+			if (effectiveSampleCapacity > sampleCapacity && sampleCapacity > 0)
 			{
 				var sampleMultiplier = (effectiveSampleCapacity / sampleCapacity) - 1;
 				result += sampleMultiplier * sampleCapacityCost;

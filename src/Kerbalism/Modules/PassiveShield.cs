@@ -175,8 +175,9 @@ namespace KERBALISM
 			double total = 0.0;
 			if (v.loaded)
 			{
-				foreach (var shield in Lib.FindModules<PassiveShield>(v))
+				foreach (var shield in PartModuleCache.GetModules<PassiveShield>(v))
 				{
+					if (!shield.isEnabled) continue;
 					if (ec.Amount > 0 || shield.ec_rate <= 0)
 					{
 						if (shield.deployed)
@@ -186,7 +187,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "PassiveShield"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "PassiveShield"))
 				{
 					if (ec.Amount > 0 || Lib.Proto.GetDouble(m, "ec_rate") <= 0)
 					{

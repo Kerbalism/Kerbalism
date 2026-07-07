@@ -75,6 +75,7 @@ namespace KERBALISM
 			harmonyInstance = new Harmony("Kerbalism");
 			harmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
 			KerbalismSentinel.ApplyHarmonyPatches(harmonyInstance);
+			IntegrationBootstrap.ApplyHarmonyPatches(harmonyInstance);
 
 			// register loading callbacks
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
@@ -105,7 +106,9 @@ namespace KERBALISM
 
 		public static void ModuleManagerPostLoad()
 		{
+			Profile.Parse();
 			Lib.LoadResourceUnitInfo();
+			IntegrationBootstrap.ApplyDeferredHarmonyPatches(harmonyInstance);
 		}
 
 		void SaveHabitatData()

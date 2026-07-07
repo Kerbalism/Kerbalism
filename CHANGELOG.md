@@ -1,3 +1,16 @@
+## v3.32 for all versions of KSP from 1.8.0 to 1.12.x
+
+ - 2026-05-15
+
+ ### Changes since the last release
+ * Fixed: Life support would occasionally not run and thus issue consequenes to Kerbals due to early load nullrefs that are now guarded against (@R-T-B)
+ * Fixed: Some localization typos in english were corrected (@dlesbre)
+ * Fixed: Refactor HoursInDay to use GameSettings (@adriangm44)
+ * Optimized: A ton of garbage collection microoptimizations improving performance (@siimav)
+ * Added: A non-default difficulty option to have repairs consume repair kits (@KerballOne)
+ * Changed: Make clicking on PAW buttons toggle windows (@siimav)
+ 
+
 ## v3.31 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2025-12-27

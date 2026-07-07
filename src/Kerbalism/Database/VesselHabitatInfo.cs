@@ -100,7 +100,10 @@ namespace KERBALISM
 		internal void Update(Vessel vessel, VesselData vd, double elapsedSeconds)
 		{
 			if (vessel == null)
+			{
+				vd.IsSimulated = vd.CheckIfSimulated();
 				return;
+			}
 
 			if (vessel.loaded)
 			{
@@ -298,40 +301,47 @@ namespace KERBALISM
 
 		internal void HabitatsRadiationUpdate(Vessel v)
 		{
-			if (habitatIndex < 0)
+			try
 			{
-				// first run, do them all
-				foreach (var habitat in habitatWrappers)
+				if (habitatIndex < 0)
 				{
-					// only calculate radiation for enabled habitats
-					if (habitat.State == State.enabled || habitat.State == State.evaKerbal)
-						RaytraceToSun(habitat.LoadedPart);
-					else
-						// remove disabled habitat from shielding calculations
-						habitatShieldings.Remove(habitat.LoadedPart.flightID);
+					// first run, do them all
+					foreach (var habitat in habitatWrappers)
+					{
+						// only calculate radiation for enabled habitats
+						if (habitat.State == State.enabled || habitat.State == State.evaKerbal)
+							RaytraceToSun(habitat.LoadedPart);
+						else
+							// remove disabled habitat from shielding calculations
+							habitatShieldings.Remove(habitat.LoadedPart.flightID);
+					}
+					habitatIndex = 0;
 				}
-				habitatIndex = 0;
-			}
-			else
-			{
-				// only do one habitat at a time to preserve some performance
-				// and check that part still exists
-				if (habitatWrappers[habitatIndex].LoadedPart == null)
-					habitatWrappers.RemoveAt(habitatIndex);
 				else
 				{
-					// only calculate radiation for enabled habitats
-					if (habitatWrappers[habitatIndex].State == State.enabled || habitatWrappers[habitatIndex].State == State.evaKerbal)
-						RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
+					// only do one habitat at a time to preserve some performance
+					// and check that part still exists
+					if (habitatWrappers[habitatIndex].LoadedPart == null)
+						habitatWrappers.RemoveAt(habitatIndex);
 					else
-						// remove disabled habitat from shielding calculations
-						habitatShieldings.Remove(habitatWrappers[habitatIndex].LoadedPart.flightID);
-				}
+					{
+						// only calculate radiation for enabled habitats
+						if (habitatWrappers[habitatIndex].State == State.enabled || habitatWrappers[habitatIndex].State == State.evaKerbal)
+							RaytraceToSun(habitatWrappers[habitatIndex].LoadedPart);
+						else
+							// remove disabled habitat from shielding calculations
+							habitatShieldings.Remove(habitatWrappers[habitatIndex].LoadedPart.flightID);
+					}
 
-				if (habitatWrappers.Count == 0)
-					habitatIndex = -1;
-				else
-					habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
+					if (habitatWrappers.Count == 0)
+						habitatIndex = -1;
+					else
+						habitatIndex = (habitatIndex + 1) % habitatWrappers.Count;
+				}
+			}
+			catch
+			{
+				// guard against early init logspam errors when going on EVA as a kerbal
 			}
 		}
 

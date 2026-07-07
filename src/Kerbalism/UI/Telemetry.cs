@@ -60,14 +60,15 @@ namespace KERBALISM
 			HashSet<string> readings = new HashSet<string>();
 			if (v.loaded)
 			{
-				foreach (var s in Lib.FindModules<Sensor>(v))
+				foreach (var s in PartModuleCache.GetModules<Sensor>(v))
 				{
+					if (s.isEnabled)
 					readings.Add(s.type);
 				}
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Sensor"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Sensor"))
 				{
 					readings.Add(Lib.Proto.GetString(m, "type"));
 				}

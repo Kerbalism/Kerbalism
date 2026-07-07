@@ -143,6 +143,9 @@ namespace KERBALISM
 			internal Module_type type;
 		}
 
+		private static readonly Dictionary<string, double> availableResources = new Dictionary<string, double>();
+		private static readonly List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+
 		public static void Update(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
 		{
 			if (!Lib.IsVessel(v))
@@ -152,10 +155,10 @@ namespace KERBALISM
 			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
 			List<ResourceInfo> allResources = resources.GetAllResources(v);
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			availableResources.Clear();
 			foreach (var ri in allResources)
 				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+			resourceChangeRequests.Clear();
 
 			foreach (var e in Background_PMs(v))
 			{
