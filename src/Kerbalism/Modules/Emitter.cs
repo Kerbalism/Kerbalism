@@ -239,8 +239,9 @@ namespace KERBALISM
 				var vd = n.KerbalismData();
 				if (!vd.IsSimulated) continue;
 
-				foreach (var emitter in Lib.FindModules<Emitter>(n))
+				foreach (var emitter in PartModuleCache.GetModules<Emitter>(n))
 				{
+					if (!emitter.isEnabled) continue;
 					if (emitter.part == null || emitter.part.transform == null) continue;
 					if (emitter.radiation <= 0) continue; // ignore shielding effects here
 					if (!emitter.running) continue;
@@ -265,8 +266,9 @@ namespace KERBALISM
 			double tot = 0.0;
 			if (v.loaded)
 			{
-				foreach (var emitter in Lib.FindModules<Emitter>(v))
+				foreach (var emitter in PartModuleCache.GetModules<Emitter>(v))
 				{
+					if (!emitter.isEnabled) continue;
 					if (ec.Amount > double.Epsilon || emitter.ec_rate <= double.Epsilon)
 					{
 						if (emitter.running)
@@ -279,7 +281,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Emitter"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Emitter"))
 				{
 					if (ec.Amount > double.Epsilon || Lib.Proto.GetDouble(m, "ec_rate") <= double.Epsilon)
 					{

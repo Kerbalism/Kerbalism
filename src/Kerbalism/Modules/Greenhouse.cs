@@ -518,9 +518,9 @@ namespace KERBALISM
 			List<Data> ret = new List<Data>();
 			if (v.loaded)
 			{
-				foreach (Greenhouse greenhouse in Lib.FindModules<Greenhouse>(v))
+				foreach (Greenhouse greenhouse in PartModuleCache.GetModules<Greenhouse>(v))
 				{
-					if (greenhouse.active)
+					if (greenhouse.isEnabled && greenhouse.active)
 					{
 						Data gd = new Data
 						{
@@ -536,7 +536,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Greenhouse"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Greenhouse"))
 				{
 					if (Lib.Proto.GetBool(m, "active"))
 					{
@@ -556,7 +556,7 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>Greenhouse"; } // attempt to display at the top//""+Local.Greenhouse
+		public string GetModuleTitle() { return "<size=1><color=#00000000>00</color></size>" + Local.Greenhouse; }
 		public override string GetModuleDisplayName() { return "<size=1><color=#00000000>00</color></size>"+Local.Greenhouse; } // Attempt to display at top of tooltip//"Greenhouse"
 		public string GetPrimaryField() { return String.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }

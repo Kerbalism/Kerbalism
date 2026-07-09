@@ -27,6 +27,9 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("#KERBALISM_EngineMalfunctions", toolTip = "#KERBALISM_EngineMalfunctions_desc")]//Engine Malfunctions--Allow engine failures on ignition and exceeded burn durations
 		public bool engineFailures = true;
 
+		[GameParameters.CustomParameterUI("#KERBALISM_RequireRepairKits", toolTip = "#KERBALISM_RequireRepairKits_desc")]//Require Repair Kits--Require Repair Kits to repair parts
+		public bool requireRepairKits = true;
+
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_EngineIgnitionFailureChance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "#KERBALISM_EngineIgnitionFailureChance_desc")]//Engine Ignition Failure Chance--Adjust the probability of engine failures on ignition
 		public float ignitionFailureChance = 1.0f;
 
@@ -48,6 +51,7 @@ namespace KERBALISM
 					engineOperationFailureChance = 0.5f;
 					engineFailures = false;
 					mtbfFailures = false;
+					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Normal:
 					criticalChance = 0.25f;
@@ -56,6 +60,7 @@ namespace KERBALISM
 					engineOperationFailureChance = 0.75f;
 					engineFailures = true;
 					mtbfFailures = true;
+					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Moderate:
 					criticalChance = 0.3f;
@@ -64,6 +69,7 @@ namespace KERBALISM
 					engineOperationFailureChance = 0.8f;
 					engineFailures = true;
 					mtbfFailures = true;
+					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Hard:
 					criticalChance = 0.35f;
@@ -72,15 +78,16 @@ namespace KERBALISM
 					engineOperationFailureChance = 1f;
 					engineFailures = true;
 					mtbfFailures = true;
+					requireRepairKits = false;
 					break;
 				default:
 					break;
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (1)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section1; } }
 
-		public override string Section { get { return "Kerbalism (1)"; } }
+		public override string Section { get { return Local.Preferences_Section1; } }
 
 		public override int SectionOrder { get { return 1; } }
 
@@ -151,9 +158,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (1)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section1; } }
 
-		public override string Section { get { return "Kerbalism (1)"; } }
+		public override string Section { get { return Local.Preferences_Section1; } }
 
 		public override int SectionOrder { get { return 2; } }
 
@@ -211,9 +218,9 @@ namespace KERBALISM
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism (2)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section2; } }
 
-		public override string Section { get { return "Kerbalism (2)"; } }
+		public override string Section { get { return Local.Preferences_Section2; } }
 
 		public override int SectionOrder { get { return 0; } }
 
@@ -299,9 +306,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (2)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section2; } }
 
-		public override string Section { get { return "Kerbalism (2)"; } }
+		public override string Section { get { return Local.Preferences_Section2; } }
 
 		public override int SectionOrder { get { return 1; } }
 
@@ -389,9 +396,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (1)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section1; } }
 
-		public override string Section { get { return "Kerbalism (1)"; } }
+		public override string Section { get { return Local.Preferences_Section1; } }
 
 		public override int SectionOrder { get { return 0; } }
 

@@ -67,6 +67,9 @@ namespace KERBALISM
 
 				if (IsScanning)
 				{
+					// SCANsat experiments are all configured with Situation = InSpaceHigh
+					// (see the KERBALISM_EXPERIMENT blocks in the SCANsat support config).
+					// Use the explicit situation directly — consistent with the background path.
 					Situation scanSatSituation = new Situation(vessel.mainBody.flightGlobalsIndex, ScienceSituation.InSpaceHigh);
 					SubjectData subject = ScienceDB.GetSubjectData(expInfo, scanSatSituation);
 					if (subject == null)
@@ -106,8 +109,8 @@ namespace KERBALISM
 				}
 				else if(vd.scansat_id.Contains(part.flightID))
 				{
-					
-					if (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9) // restart when 90% of capacity is available 
+
+					if (vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9) // restart when 90% of capacity is available
 					{
 						StartScan();
 						vd.scansat_id.Remove(part.flightID);
@@ -152,7 +155,7 @@ namespace KERBALISM
 			if (!Features.Science)
 			{
 				if(is_scanning && ec.Amount < double.Epsilon)
-				{					
+				{
 					SCANsat.StopScanner(vessel, scanner, part_prefab);
 					is_scanning = false;
 
@@ -210,7 +213,20 @@ namespace KERBALISM
 				if (is_scanning)
 				{
 					ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(kerbalismScansat.experimentType);
-					SubjectData subject = ScienceDB.GetSubjectData(expInfo, vd.VesselSituations.GetExperimentSituation(expInfo));
+					if (expInfo == null)
+						return;
+
+					// SCANsat experiments are all configured with Situation = InSpaceHigh
+					// (see the KERBALISM_EXPERIMENT blocks in the SCANsat support config).
+					// Use the explicit situation directly instead of calling
+					// vd.VesselSituations.GetExperimentSituation(). For unloaded vessels,
+					// VesselSituations.body is set by EvaluateEnvironment(), which is
+					// throttled to once per second of game time (VesselData.Evaluate).
+					// BackgroundUpdate can run before that first evaluation completes,
+					// causing a NullReferenceException when GetExperimentSituation()
+					// dereferences the still-null body field.
+					Situation scanSatSituation = new Situation(vessel.mainBody.flightGlobalsIndex, ScienceSituation.InSpaceHigh);
+					SubjectData subject = ScienceDB.GetSubjectData(expInfo, scanSatSituation);
 					if (subject == null)
 						return;
 

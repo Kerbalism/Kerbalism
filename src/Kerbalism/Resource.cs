@@ -189,6 +189,8 @@ namespace KERBALISM
 		private Dictionary<int, ResourceInfo> resources = new Dictionary<int, ResourceInfo>(32);
 		private ResourceInfo GetResInfo(string resName) { resources.TryGetValue(resName.GetHashCode(), out var ri); return ri; }
 		private List<ResourceRecipe> recipes = new List<ResourceRecipe>(4);
+		private readonly List<string> _allResourceNames = new List<string>();
+		private readonly List<ResourceInfo> _allResources = new List<ResourceInfo>();
 
 		/// <summary> return a VesselResources handler </summary>
 		public ResourceInfo GetResource(Vessel v, string resource_name)
@@ -284,18 +286,19 @@ namespace KERBALISM
 
 		internal List<ResourceInfo> GetAllResources(Vessel v)
 		{
-			List<string> knownResources = new List<string>();
-			List<ResourceInfo> result = new List<ResourceInfo>();
+			_allResourceNames.Clear();
+			_allResources.Clear();
 
 			if (v.loaded)
 			{
 				foreach (Part p in v.Parts)
 				{
-					foreach (PartResource r in p.Resources)
+					for (int i = 0; i < p.Resources.Count; i++)
 					{
-						if (knownResources.Contains(r.resourceName)) continue;
-						knownResources.Add(r.resourceName);
-						result.Add(GetResource(v, r.resourceName));
+						PartResource r = p.Resources[i];
+						if (_allResourceNames.Contains(r.resourceName)) continue;
+						_allResourceNames.Add(r.resourceName);
+						_allResources.Add(GetResource(v, r.resourceName));
 					}
 				}
 			}
@@ -305,14 +308,14 @@ namespace KERBALISM
 				{
 					foreach (ProtoPartResourceSnapshot r in p.resources)
 					{
-						if (knownResources.Contains(r.resourceName)) continue;
-						knownResources.Add(r.resourceName);
-						result.Add(GetResource(v, r.resourceName));
+						if (_allResourceNames.Contains(r.resourceName)) continue;
+						_allResourceNames.Add(r.resourceName);
+						_allResources.Add(GetResource(v, r.resourceName));
 					}
 				}
 			}
 
-			return result;
+			return _allResources;
 		}
 
 		/// <summary> record deferred production of a resource (shortcut) </summary>

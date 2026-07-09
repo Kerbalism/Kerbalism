@@ -143,6 +143,9 @@ namespace KERBALISM
 			internal Module_type type;
 		}
 
+		private static readonly Dictionary<string, double> availableResources = new Dictionary<string, double>();
+		private static readonly List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+
 		public static void Update(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)
 		{
 			if (!Lib.IsVessel(v))
@@ -152,10 +155,10 @@ namespace KERBALISM
 			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
 			List<ResourceInfo> allResources = resources.GetAllResources(v);
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			availableResources.Clear();
 			foreach (var ri in allResources)
 				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+			resourceChangeRequests.Clear();
 
 			foreach (var e in Background_PMs(v))
 			{
@@ -179,7 +182,7 @@ namespace KERBALISM
 					case Module_type.RadioisotopeGenerator: ProcessRadioisotopeGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
 					case Module_type.CryoTank: ProcessCryoTank(v, e.p, e.m, e.module_prefab, resources, ec, elapsed_s); break;
 					case Module_type.FNGenerator: ProcessFNGenerator(v, e.p, e.m, e.module_prefab, ec, elapsed_s); break;
-					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
+					case Module_type.SolarPanelFixer: SolarPanelFixer.BackgroundUpdate(v, e.p, e.m, e.module_prefab as SolarPanelFixer, vd, ec, elapsed_s); break;
 					case Module_type.KerbalismSentinel: KerbalismSentinel.BackgroundUpdate(v, e.m, e.module_prefab as KerbalismSentinel, vd, ec, elapsed_s); break;
 					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
 				}
@@ -563,7 +566,7 @@ namespace KERBALISM
 					vd.scansat_id.Add(p.flightID);
 
 					// give the user some feedback
-					if (vd.cfg_ec) Message.Post(Lib.BuildString("SCANsat sensor was disabled on <b>", v.vesselName, "</b>"));
+					if (vd.cfg_ec) Message.Post(Local.Scansat_sensordisabled.Format("<b>" + v.vesselName + "</b>"));
 				}
 			}
 			// if it was disabled in background
@@ -579,7 +582,7 @@ namespace KERBALISM
 					is_scanning = true;
 
 					// give the user some feedback
-					if (vd.cfg_ec) Message.Post(Lib.BuildString("SCANsat sensor resumed operations on <b>", v.vesselName, "</b>"));
+					if (vd.cfg_ec) Message.Post(Local.Scansat_sensorresumed.Format("<b>" + v.vesselName + "</b>"));
 				}
 			}
 
@@ -719,7 +722,6 @@ namespace KERBALISM
 
 			m.moduleName = "SolarPanelFixer";
 			Lib.Proto.Set(m, "state", state);
-			Lib.Proto.Set(m, "persistentFactor", 0.75);
 			Lib.Proto.Set(m, "launchUT", Planetarium.GetUniversalTime());
 			Lib.Proto.Set(m, "nominalRate", panelModule.chargeRate);
 		}

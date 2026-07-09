@@ -21,12 +21,39 @@ namespace KERBALISM
 		public string BodyName => body.name;
 		public string BiomeName => biome != null ? biome.name.Replace(" ", string.Empty) : string.Empty;
 
-		public string FirstSituationTitle =>
-			biome != null
-			? Lib.BuildString(BodyTitle, " ", situations[0].Title(), " ", BiomeTitle)
-			: Lib.BuildString(BodyTitle, " ", situations[0].Title());
+		public string FirstSituationTitle
+		{
+			get
+			{
+				try
+				{
+					if (biome == null)
+					{
+						return Lib.BuildString(BodyTitle, " ", situations[0].Title());
+					}
+					return Lib.BuildString(BodyTitle, " ", situations[0].Title(), " ", BiomeTitle);
+				}
+				catch
+				{
+					return ""; //indicates we are not ready, happens when things query this too early during rover EVAs and such. There is probably a better fix somehow.
+				}
+			}
+		}
 
-		public Situation FirstSituation => new Situation(body.flightGlobalsIndex, situations[0], biomeIndex);
+		public Situation FirstSituation
+		{
+			get
+			{
+				try
+				{
+					return new Situation(body.flightGlobalsIndex, situations[0], biomeIndex);
+				}
+				catch
+				{
+					return null; //indicates we are not ready, happens when things query this too early during rover EVAs and such. There is probably a better fix somehow.
+				}
+			}
+		}
 
 		public string[] SituationsTitle
 		{

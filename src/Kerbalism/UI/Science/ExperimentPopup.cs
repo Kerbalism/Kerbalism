@@ -1,15 +1,16 @@
+using KERBALISM.KsmGui;
+using KSP.Localization;
 using KSP.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.Events;
-using static KERBALISM.ExperimentRequirements;
 using static KERBALISM.Experiment;
-using KERBALISM.KsmGui;
+using static KERBALISM.ExperimentRequirements;
 using static KERBALISM.ScienceDB;
-using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -59,17 +60,18 @@ namespace KERBALISM
 		KsmGuiHeader rndArchiveHeader;
 		ExperimentSubjectList rndArchiveView;
 
-		private static List<long> activePopups = new List<long>();
+		private static Dictionary<long, KsmGuiWindow> activePopups = new Dictionary<long, KsmGuiWindow>();
 		private long popupId;
 
 		public ExperimentPopup(Vessel v, Experiment moduleOrPrefab, uint partId, string partName, ProtoPartModuleSnapshot protoModule = null)
 		{
 			popupId = partId + moduleOrPrefab.experiment_id.GetHashCode();
 
-			if (activePopups.Contains(popupId))
+			if (activePopups.TryGetValue(popupId, out KsmGuiWindow existingWindow))
+			{
+				existingWindow.Close();
 				return;
-
-			activePopups.Add(popupId);
+			}
 
 			if (protoModule == null)
 			{
@@ -92,6 +94,7 @@ namespace KERBALISM
 
 			// create the window
 			window = new KsmGuiWindow(KsmGuiWindow.LayoutGroupType.Vertical, true, KsmGuiStyle.defaultWindowOpacity, true, 0, TextAnchor.UpperLeft, 5f);
+			activePopups.Add(popupId, window);
 			window.OnClose = () => activePopups.Remove(popupId);
 			window.SetLayoutElement(false, false, -1, -1, -1, 150);
 			window.SetUpdateAction(GetData);
@@ -162,6 +165,11 @@ namespace KERBALISM
 				int situationId = Lib.Proto.GetInt(protoModule, "situationId", 0);
 				expInfo = ScienceDB.GetExperimentInfo(moduleOrPrefab.experiment_id);
 				subjectData = ScienceDB.GetSubjectData(expInfo, situationId);
+				if (subjectData == null)
+				{
+					vd.IsSimulated = vd.CheckIfSimulated();
+					return;
+				}
 				issue = Lib.Proto.GetString(protoModule, "issue");
 				prodFactor = Lib.Proto.GetDouble(protoModule, "prodFactor");
 				if (isSample) remainingSampleMass = Lib.Proto.GetDouble(protoModule, "remainingSampleMass", 0.0);
