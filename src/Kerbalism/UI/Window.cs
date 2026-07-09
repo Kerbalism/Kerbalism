@@ -37,6 +37,11 @@ namespace KERBALISM
 			this.refresh = refresh;
 		}
 
+		public bool IsCurrentRefreshTarget(Action<Panel> refresh)
+		{
+			return this.refresh != null && this.refresh.Target == refresh.Target && this.refresh.Method == refresh.Method;
+		}
+
 		public void Close()
 		{
 			// clear input locks

@@ -418,8 +418,11 @@ namespace KERBALISM
 				}
 			}
 
-			// open the window
-			UI.Open(Window_body);
+			// toggle the window
+			if (UI.window.IsCurrentRefreshTarget(Window_body))
+				UI.window.Close();
+			else
+				UI.Open(Window_body);
 		}
 
 

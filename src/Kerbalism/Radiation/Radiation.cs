@@ -738,8 +738,15 @@ namespace KERBALISM
 					}
                 }
 
-                // avoid loops in the chain
-                body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
+                if (Lib.IsSun(body))
+				{
+					body = null;
+				}
+				else
+				{
+					// avoid loops in the chain
+					body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
+				}
             }
 
             // add extern radiation

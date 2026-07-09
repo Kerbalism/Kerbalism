@@ -521,7 +521,7 @@ namespace KERBALISM
 			else
 				Message.Post
 				(
-					Lib.Color(Lib.BuildString("WARNING: not evering copied"), Lib.Kolor.Red, true),
+					Lib.Color(Lib.BuildString(Local.HardDrive_WARNING_title), Lib.Kolor.Red, true), //"WARNING: not everything copied"
 					Lib.BuildString(Local.Generic_FROM, " <b>", src.vesselName, "</b> ", Local.Generic_TO, " <b>", dst.vesselName, "</b>")
 				);
 		}
@@ -648,6 +648,11 @@ namespace KERBALISM
 				double available = drive.SampleCapacityAvailable(subject);
 				if (size > double.Epsilon && available < size)
 					continue;
+				if (drive.samples.ContainsKey(subject)) // Use the first drive that contains a matching subject, if one exists
+				{
+					result = drive;
+					break;
+				}
 				if (available > result.SampleCapacityAvailable(subject))
 					result = drive;
 			}
@@ -665,4 +670,3 @@ namespace KERBALISM
 
 
 } // KERBALISM
-

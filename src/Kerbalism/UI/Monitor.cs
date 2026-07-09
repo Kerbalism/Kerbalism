@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -404,7 +403,7 @@ namespace KERBALISM
 
 		void Problem_sunlight(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			if (vd.EnvInFullShadow)
+			if (vd.EnvSolarFluxTotal <= 1e-5)
 			{
 				icons.Add(Textures.sun_black);
 				tooltips.Add(Local.Monitor_Inshadow);//"In shadow"
@@ -527,7 +526,14 @@ namespace KERBALISM
 			if (Features.SpaceWeather) Problem_storm(v, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Profile.rules.Count > 0) Problem_kerbals(crew, ref problem_icons, ref problem_tooltips);
 			if (crew.Count > 0 && Features.Radiation) Problem_radiation(vd, ref problem_icons, ref problem_tooltips);
-			Problem_greenhouses(v, vd.Greenhouses, ref problem_icons, ref problem_tooltips);
+			try
+			{
+				if (vd.Greenhouses.Count > 0) Problem_greenhouses(v, vd.Greenhouses, ref problem_icons, ref problem_tooltips);
+			}
+			catch
+			{
+				//Not clear why we need this, but if we don't logspam occasionally happens on load.  Greenhouses seem to function regardless.
+			}
 			if (Features.Poisoning) Problem_poisoning(vd, ref problem_icons, ref problem_tooltips);
 
 			// choose problem icon
