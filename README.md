@@ -20,7 +20,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
-## Current version: 3.31
+## Current version: 3.32
  
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  

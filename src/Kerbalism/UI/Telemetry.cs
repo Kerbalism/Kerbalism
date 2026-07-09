@@ -60,14 +60,15 @@ namespace KERBALISM
 			HashSet<string> readings = new HashSet<string>();
 			if (v.loaded)
 			{
-				foreach (var s in Lib.FindModules<Sensor>(v))
+				foreach (var s in PartModuleCache.GetModules<Sensor>(v))
 				{
+					if (s.isEnabled)
 					readings.Add(s.type);
 				}
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Sensor"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Sensor"))
 				{
 					readings.Add(Lib.Proto.GetString(m, "type"));
 				}
@@ -76,16 +77,9 @@ namespace KERBALISM
 
 			p.AddSection(Local.TELEMETRY_ENVIRONMENT);//"ENVIRONMENT"
 
-			if (vd.SolarPanelsAverageExposure >= 0.0)
-			{
-				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
-				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.Kolor.Orange);
-				p.AddContent(Local.TELEMETRY_SolarPanelsAverageExposure, exposureString, "<b>"+Local.TELEMETRY_Exposureignoringbodiesocclusion +"</b>\n<i>"+Local.TELEMETRY_Exposureignoringbodiesocclusion_desc +"</i>");//"solar panels average exposure""Exposure ignoring bodies occlusion""Won't change on unloaded vessels\nMake sure to optimize it before switching
-			}
-
 			foreach (string type in readings)
 			{
-				p.AddContent(type.ToLower().Replace('_', ' '), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
+				p.AddContent(Sensor.DisplayName(type), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));
 			}
 			if (readings.Count == 0) p.AddContent("<i>"+Local.TELEMETRY_nosensorsinstalled +"</i>");//no sensors installed
 		}

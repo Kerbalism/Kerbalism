@@ -110,17 +110,17 @@ namespace KERBALISM
 			rad += rbSun.radiation_pause;
 
 			if (rb.inner_visible)
-				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner)) : "n/a";
+				inner = rb.model.has_inner ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_inner)) : Local.Generic_notapplicable;
 			else
 				inner = Local.BodyInfo_unknown;//"unknown"
 
 			if (rb.outer_visible)
-				outer = rb.model.has_outer ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_outer)) : "n/a";
+				outer = rb.model.has_outer ? "~" + Lib.HumanReadableRadiation(Math.Max(0, rad + rb.radiation_outer)) : Local.Generic_notapplicable;
 			else
 				outer = Local.BodyInfo_unknown;//"unknown"
 
 			if (rb.pause_visible)
-				pause = rb.model.has_pause ? "∆" + Lib.HumanReadableRadiation(Math.Abs(rb.radiation_pause)) : "n/a";
+				pause = rb.model.has_pause ? "∆" + Lib.HumanReadableRadiation(Math.Abs(rb.radiation_pause)) : Local.Generic_notapplicable;
 			else
 				pause = Local.BodyInfo_unknown;//"unknown"
 

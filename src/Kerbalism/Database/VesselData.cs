@@ -447,11 +447,6 @@ namespace KERBALISM
 		/// </summary>
 		public double VesselEmissivity => vesselEmissivity; double vesselEmissivity = 0.9;
 
-		/// <summary>evaluated on loaded vessels based on the data pushed by SolarPanelFixer. This doesn't change for unloaded vessel, so the value is persisted</summary>
-		public double SolarPanelsAverageExposure => solarPanelsAverageExposure; double solarPanelsAverageExposure = -1.0;
-		private List<double> solarPanelsExposure = new List<double>(); // values are added by SolarPanelFixer, then cleared by VesselData once solarPanelsAverageExposure has been computed
-		public void SaveSolarPanelExposure(double exposure) => solarPanelsExposure.Add(exposure); // meant to be called by SolarPanelFixer
-
 		private List<ReliabilityInfo> reliabilityStatus;
 		public List<ReliabilityInfo> ReliabilityStatus()
 		{
@@ -823,7 +818,6 @@ namespace KERBALISM
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
-			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
@@ -904,7 +898,6 @@ namespace KERBALISM
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 
-			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
@@ -979,8 +972,9 @@ namespace KERBALISM
 			// malfunction stuff
 			if (Features.Reliability)
 			{
-				malfunction = Reliability.HasMalfunction(Vessel);
-				critical = Reliability.HasCriticalFailure(Vessel);
+				Profiler.Start("Reliability");
+				Reliability.GetVesselState(Vessel, out malfunction, out critical);
+				Profiler.Stop("Reliability");
 			}
 			else
 			{
@@ -1001,12 +995,6 @@ namespace KERBALISM
 
 			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 
-			// solar panels data
-			if (Vessel.loaded)
-			{
-				solarPanelsAverageExposure = SolarPanelFixer.GetSolarPanelsAverageExposure(solarPanelsExposure);
-				solarPanelsExposure.Clear();
-			}
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion

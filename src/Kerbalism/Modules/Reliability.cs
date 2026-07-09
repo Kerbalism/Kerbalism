@@ -585,6 +585,7 @@ namespace KERBALISM
 
 			if (broken)
 			{
+#if (KSP111 || KSP112)
 				if (PreferencesReliability.Instance.requireRepairKits) // REQUIRE REPAIR KIT - Settings Option
 				{
 					int repairKits = 0;
@@ -618,7 +619,7 @@ namespace KERBALISM
 						kerbalEVA.ModuleInventoryPartReference.RemoveNPartsFromInventory("evaRepairKit", 1, true);
 					}
 				}
-				
+#endif
 				// flag as not broken
 				broken = false;
 
@@ -752,6 +753,8 @@ namespace KERBALISM
 						Lib.Proto.Set(proto_module, nameof(ProcessController.broken), true);
 				}
 
+				ProtoPartModuleCache.Purge(Lib.VesselID(v));
+
 				// type-specific hacks
 				switch (reliability.type)
 				{
@@ -822,7 +825,7 @@ namespace KERBALISM
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			if (redundancy.Length > 0) specs.Add(Local.Reliability_info1, redundancy);//"Redundancy"
+			if (redundancy.Length > 0) specs.Add(Local.Reliability_info1, LocalizeRedundancyGroup(redundancy));//"Redundancy"
 			specs.Add(Local.Reliability_info2, new CrewSpecs(repair).Info());//"Repair"
 
 			
@@ -848,9 +851,9 @@ namespace KERBALISM
 			return specs;
 		}
 
-		// module info support
-		public string GetModuleTitle() { return Lib.BuildString(title, " Reliability"); }
-		public override string GetModuleDisplayName() { return Lib.BuildString(title, " ",Local.Reliability_Reliability); }//Reliability
+        // module info support
+        public string GetModuleTitle() { return Lib.BuildString(title, " ", Local.Reliability_Reliability); }
+        public override string GetModuleDisplayName() { return Lib.BuildString(title, " ",Local.Reliability_Reliability); }//Reliability
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
@@ -996,9 +999,9 @@ namespace KERBALISM
 		{
 			if (v.loaded)
 			{
-				foreach (Reliability m in Lib.FindModules<Reliability>(v))
+				foreach (Reliability m in PartModuleCache.GetModules<Reliability>(v))
 				{
-					if (m.redundancy == redundancy)
+					if (m.isEnabled && m.redundancy == redundancy)
 					{
 						m.next += m.next - m.last;
 					}
@@ -1098,7 +1101,7 @@ namespace KERBALISM
 			if (v.loaded)
 			{
 				// choose a module at random
-				var modules = Lib.FindModules<Reliability>(v).FindAll(k => !k.broken);
+				var modules = PartModuleCache.GetModules<Reliability>(v).FindAll(k => k.isEnabled && !k.broken);
 				if (modules.Count == 0) return;
 				var m = modules[Lib.RandomInt(modules.Count)];
 
@@ -1109,7 +1112,7 @@ namespace KERBALISM
 			else
 			{
 				// choose a module at random
-				var modules = Lib.FindModules(v.protoVessel, "Reliability").FindAll(k => !Lib.Proto.GetBool(k, "broken"));
+				var modules = ProtoPartModuleCache.GetModules(v.protoVessel, "Reliability").FindAll(k => !Lib.Proto.GetBool(k, "broken"));
 				if (modules.Count == 0) return;
 				var m = modules[Lib.RandomInt(modules.Count)];
 
@@ -1136,46 +1139,65 @@ namespace KERBALISM
 		}
 
 
-		// return true if at least a component has malfunctioned or had a critical failure
-		public static bool HasMalfunction(Vessel v)
+		///<summary>evaluate the malfunction and critical failure state of a vessel in a single pass</summary>
+		public static void GetVesselState(Vessel v, out bool malfunction, out bool critical)
 		{
+			malfunction = false;
+			critical = false;
+
 			if (v.loaded)
 			{
-				foreach (Reliability m in Lib.FindModules<Reliability>(v))
+				foreach (Reliability m in PartModuleCache.GetModules<Reliability>(v))
 				{
-					if (m.broken) return true;
+					malfunction |= m.broken;
+					critical |= m.critical;
 				}
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Reliability"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Reliability"))
 				{
-					if (Lib.Proto.GetBool(m, "broken")) return true;
+					malfunction |= Lib.Proto.GetBool(m, "broken");
+					critical |= Lib.Proto.GetBool(m, "critical");
 				}
 			}
-
-			return false;
 		}
 
-
-		// return true if at least a component has a critical failure
-		public static bool HasCriticalFailure(Vessel v)
+		public static string LocalizeRedundancyGroup(string group)
 		{
-			if (v.loaded)
+			switch (group)
 			{
-				foreach (Reliability m in Lib.FindModules<Reliability>(v))
-				{
-					if (m.critical) return true;
-				}
+				case "Life Support": return Local.Reliability_group_LifeSupport;
+				case "Power Generation": return Local.Reliability_group_PowerGeneration;
+				case "Attitude Control": return Local.Reliability_group_AttitudeControl;
+				case "Landing": return Local.Reliability_group_Landing;
+				case "Propulsion": return Local.Reliability_group_Propulsion;
+				case "Communication": return Local.Reliability_group_Communication;
 			}
-			else
+			return group;
+		}
+
+		public static string LocalizeTitle(string title)
+		{
+			switch (title)
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Reliability"))
-				{
-					if (Lib.Proto.GetBool(m, "critical")) return true;
-				}
+				case "ECLSS": return Local.Reliability_title_ECLSS;
+				case "Shield": return Local.Reliability_title_Shield;
+				case "Solar Panel": return Local.Reliability_title_SolarPanel;
+				case "Reaction Wheel": return Local.Reliability_title_ReactionWheel;
+				case "RCS": return Local.Reliability_title_RCS;
+				case "Light": return Local.Reliability_title_Light;
+				case "Parachute": return Local.Reliability_title_Parachute;
+				case "Engine": return Local.Reliability_title_Engine;
+				case "Radiator": return Local.Reliability_title_Radiator;
+				case "Radiator motor": return Local.Reliability_title_Radiatormotor;
+				case "Radiator panel": return Local.Reliability_title_Radiatorpanel;
+				case "Converter": return Local.Reliability_title_Converter;
+				case "Harvester": return Local.Reliability_title_Harvester;
+				case "ScienceInstrument": return Local.Reliability_title_ScienceInstrument;
+				case "Data Transmitter": return Local.Reliability_title_DataTransmitter;
 			}
-			return false;
+			return title;
 		}
 	}
 

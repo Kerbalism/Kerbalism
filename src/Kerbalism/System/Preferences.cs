@@ -85,9 +85,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (1)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section1; } }
 
-		public override string Section { get { return "Kerbalism (1)"; } }
+		public override string Section { get { return Local.Preferences_Section1; } }
 
 		public override int SectionOrder { get { return 1; } }
 
@@ -158,9 +158,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (1)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section1; } }
 
-		public override string Section { get { return "Kerbalism (1)"; } }
+		public override string Section { get { return Local.Preferences_Section1; } }
 
 		public override int SectionOrder { get { return 2; } }
 
@@ -218,9 +218,9 @@ namespace KERBALISM
 
 		public override bool HasPresets { get { return false; } }
 
-		public override string DisplaySection { get { return "Kerbalism (2)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section2; } }
 
-		public override string Section { get { return "Kerbalism (2)"; } }
+		public override string Section { get { return Local.Preferences_Section2; } }
 
 		public override int SectionOrder { get { return 0; } }
 
@@ -306,9 +306,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (2)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section2; } }
 
-		public override string Section { get { return "Kerbalism (2)"; } }
+		public override string Section { get { return Local.Preferences_Section2; } }
 
 		public override int SectionOrder { get { return 1; } }
 
@@ -396,9 +396,9 @@ namespace KERBALISM
 			}
 		}
 
-		public override string DisplaySection { get { return "Kerbalism (1)"; } }
+		public override string DisplaySection { get { return Local.Preferences_Section1; } }
 
-		public override string Section { get { return "Kerbalism (1)"; } }
+		public override string Section { get { return Local.Preferences_Section1; } }
 
 		public override int SectionOrder { get { return 0; } }
 

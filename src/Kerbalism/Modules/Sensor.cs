@@ -30,7 +30,7 @@ namespace KERBALISM
 			pin_anim = new Animator(part, pin);
 
 			// setup ui
-			Fields["Status"].guiName = Lib.SpacesOnCaps(Lib.SpacesOnUnderscore(type));
+			Fields["Status"].guiName = DisplayName(type);
 		}
 
 
@@ -73,6 +73,18 @@ namespace KERBALISM
 			return specs;
 		}
 
+
+		public static string DisplayName(string type)
+		{
+			switch (type)
+			{
+				case "temperature": return Local.Planner_temperature;
+				case "radiation": return Local.TELEMETRY_radiation;
+				case "habitat_radiation": return Local.TELEMETRY_habitatradiation;
+				case "pressure": return Local.TELEMETRY_pressure;
+			}
+			return Lib.SpacesOnCaps(Lib.SpacesOnUnderscore(type));
+		}
 
 		// get readings value in [0,1] range, for pin animation
 		public static double Telemetry_pin(Vessel v, VesselData vd, string type)
