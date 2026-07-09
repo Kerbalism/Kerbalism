@@ -648,6 +648,11 @@ namespace KERBALISM
 				double available = drive.SampleCapacityAvailable(subject);
 				if (size > double.Epsilon && available < size)
 					continue;
+				if (drive.samples.ContainsKey(subject)) // Use the first drive that contains a matching subject, if one exists
+				{
+					result = drive;
+					break;
+				}
 				if (available > result.SampleCapacityAvailable(subject))
 					result = drive;
 			}

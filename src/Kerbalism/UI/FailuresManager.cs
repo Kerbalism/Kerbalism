@@ -64,7 +64,7 @@ namespace KERBALISM
 		private static string Group2Section(string group)
 		{
 			if (string.IsNullOrEmpty(group)) return Local.QualityManagement_Misc;//"Misc"
-			return group;
+			return Reliability.LocalizeRedundancyGroup(group);
 		}
 
 		private static string StatusString(ReliabilityInfo ri)

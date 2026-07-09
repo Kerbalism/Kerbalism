@@ -47,52 +47,53 @@ namespace KERBALISM
 		{
 			// environment factors
 			firm_ground = env_firm_ground;
-			try
-			{
-				if (Lib.CrewCount(v.protoVessel) > 1)
-				{
-					this.not_alone = true;
-				}
-				else
-				{
-					this.not_alone = false;
-				}
-			}
-			catch
-			{
-				this.not_alone = env_not_alone;
-			}
 			call_home = env_call_home;
 
-			// scan parts for comfort
-			foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Comfort"))
+			if (v.loaded)
 			{
-				switch (Lib.Proto.GetString(m, "bonus"))
+				not_alone = env_not_alone;
+				bool multiCrew = Lib.CrewCount(v) > 1;
+
+				// scan parts for comfort
+				foreach (Comfort c in PartModuleCache.GetModules<Comfort>(v))
 				{
-					case "firm-ground": firm_ground = true; break;
-					case "not-alone": not_alone = (Lib.CrewCount(v.protoVessel) > 1); break;
-					case "call-home": call_home = true; break;
-					case "exercise": exercise = true; break;
-					case "panorama": panorama = true; break;
-					case "plants": plants = true; break;
+					if (c.isEnabled)
+						ApplyBonus(c.bonus, multiCrew);
+				}
+
+				// scan parts for gravity ring
+				if (Lib.IsPowered(v))
+				{
+					firm_ground |= Lib.HasModule<GravityRing>(v, k => k.deployed);
 				}
 			}
+			else
+			{
+				bool multiCrew;
+				try
+				{
+					multiCrew = Lib.CrewCount(v.protoVessel) > 1;
+				}
+				catch
+				{
+					multiCrew = env_not_alone;
+				}
+				not_alone = multiCrew;
 
-			// scan parts for gravity ring
-			if (Lib.IsPowered(v))
+				// scan parts for comfort
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Comfort"))
+				{
+					ApplyBonus(Lib.Proto.GetString(m, "bonus"), multiCrew);
+				}
+
+				// scan parts for gravity ring
+				if (Lib.IsPowered(v))
 				{
 					firm_ground |= Lib.HasModule(v.protoVessel, "GravityRing", k => Lib.Proto.GetBool(k, "deployed"));
 				}
+			}
 
-			// calculate factor
-			factor = 0.1;
-			if (firm_ground) factor += PreferencesComfort.Instance.firmGround;
-			if (not_alone) factor += PreferencesComfort.Instance.notAlone;
-			if (call_home) factor += PreferencesComfort.Instance.callHome;
-			if (exercise) factor += PreferencesComfort.Instance.exercise;
-			if (panorama) factor += PreferencesComfort.Instance.panorama;
-			if (plants) factor += PreferencesComfort.Instance.plants;
-			factor = Lib.Clamp(factor, 0.1, 1.0);
+			CalculateFactor();
 		}
 
 
@@ -113,18 +114,10 @@ namespace KERBALISM
 					if (!m.isEnabled) continue;
 
 					// comfort
-					if (m.moduleName == "Comfort") 
+					// note: this runs in the editor where modules have no vessel, env_not_alone already is the crew count check
+					if (m.moduleName == "Comfort")
 					{
-						Comfort c = m as Comfort;
-						switch (c.bonus)
-						{
-							case "firm-ground": firm_ground = true; break;
-							case "not-alone": not_alone = (Lib.CrewCount(c.vessel) > 1); break;
-							case "call-home": call_home = true; break;
-							case "exercise": exercise = true; break;
-							case "panorama": panorama = true; break;
-							case "plants": plants = true; break;
-						}
+						ApplyBonus((m as Comfort).bonus, env_not_alone);
 					}
 					// gravity ring
 					// - ignoring if ec is present or not here
@@ -137,6 +130,26 @@ namespace KERBALISM
 			}
 
 			// calculate factor
+			CalculateFactor();
+		}
+
+		///<summary>register the bonus provided by a comfort provider</summary>
+		private void ApplyBonus(string bonus, bool multiCrew)
+		{
+			switch (bonus)
+			{
+				case "firm-ground": firm_ground = true; break;
+				case "not-alone": not_alone = multiCrew; break;
+				case "call-home": call_home = true; break;
+				case "exercise": exercise = true; break;
+				case "panorama": panorama = true; break;
+				case "plants": plants = true; break;
+			}
+		}
+
+		///<summary>compute the comfort factor from the individual bonuses</summary>
+		private void CalculateFactor()
+		{
 			factor = 0.1;
 			if (firm_ground) factor += PreferencesComfort.Instance.firmGround;
 			if (not_alone) factor += PreferencesComfort.Instance.notAlone;
@@ -146,8 +159,6 @@ namespace KERBALISM
 			if (plants) factor += PreferencesComfort.Instance.plants;
 			factor = Lib.Clamp(factor, 0.1, 1.0);
 		}
-
-
 
 		public string Tooltip()
 		{

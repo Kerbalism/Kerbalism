@@ -430,7 +430,7 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return "Hard Drive"; }
+		public string GetModuleTitle() { return Local.HardDrive; }
 		public override string GetModuleDisplayName() { return Local.HardDrive; }//"Hard Drive"
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }

@@ -2373,29 +2373,6 @@ namespace KERBALISM
 		#endregion
 
 		#region MODULE
-		///<summary>
-		/// return all modules implementing a specific type in a vessel
-		/// note: disabled modules are not returned
-		/// </summary>
-		public static List<T> FindModules<T>(Vessel v) where T : class
-		{
-			List<T> ret = new List<T>();
-			for (int i = 0; i < v.parts.Count; ++i)
-			{
-				Part p = v.parts[i];
-				for (int j = 0; j < p.Modules.Count; ++j)
-				{
-					PartModule m = p.Modules[j];
-					if (m.isEnabled)
-					{
-						if (m is T t)
-							ret.Add(t);
-					}
-				}
-			}
-			return ret;
-		}
-
 		public static bool HasPart(Vessel v, string part_name)
 		{
 			if (Cache.HasVesselObjectsCache(v, "has_part:" + part_name))
@@ -2412,27 +2389,6 @@ namespace KERBALISM
 			}
 
 			Cache.SetVesselObjectsCache(v, "has_part:" + part_name, ret);
-			return ret;
-		}
-
-		/// <summary>
-		/// return all proto modules with a specified name in a vessel.
-		/// note: disabled modules are not returned
-		/// </summary>
-		public static List<ProtoPartModuleSnapshot> FindModules(ProtoVessel v, string module_name)
-		{
-			var ret = Cache.VesselObjectsCache<List<ProtoPartModuleSnapshot>>(v, "mod:" + module_name);
-			if (ret != null)
-				return ret;
-
-			ret = new List<ProtoPartModuleSnapshot>(8);
-			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
-			{
-				ProtoPartSnapshot p = v.protoPartSnapshots[i];
-				ret.AddRange(FindModules(p, module_name));
-			}
-
-			Cache.SetVesselObjectsCache(v, "mod:" + module_name, ret);
 			return ret;
 		}
 
@@ -2460,39 +2416,28 @@ namespace KERBALISM
 		///</summary>
 		public static bool HasModule<T>(Vessel v, Predicate<T> filter) where T : class
 		{
-			for (int i = 0; i < v.parts.Count; ++i)
+			List<T> modules = PartModuleCache.GetModules<T>(v);
+			for (int i = 0; i < modules.Count; ++i)
 			{
-				Part p = v.parts[i];
-				for (int j = 0; j < p.Modules.Count; ++j)
-				{
-					PartModule m = p.Modules[j];
-					if (m.isEnabled)
-					{
-						if (m is T t && filter(t))
-							return true;
-					}
-				}
+				T t = modules[i];
+				if ((t as PartModule).isEnabled && filter(t))
+					return true;
 			}
 			return false;
 		}
 
 		///<summary>
 		/// return true if a proto module with the specified name and satisfying the predicate specified exist in a vessel
-		///note: disabled modules are not returned
+		/// note: disabled modules are ignored
+		/// note: the module list is cached per-vessel (see ProtoPartModuleCache), the predicate is evaluated on every call
 		///</summary>
 		public static bool HasModule(ProtoVessel v, string module_name, Predicate<ProtoPartModuleSnapshot> filter)
 		{
-			for (int i = 0; i < v.protoPartSnapshots.Count; ++i)
+			List<ProtoPartModuleSnapshot> modules = ProtoPartModuleCache.GetModules(v, module_name);
+			for (int i = 0; i < modules.Count; ++i)
 			{
-				ProtoPartSnapshot p = v.protoPartSnapshots[i];
-				for (int j = 0; j < p.modules.Count; ++j)
-				{
-					ProtoPartModuleSnapshot m = p.modules[j];
-					if (m.moduleName == module_name && Proto.GetBool(m, "isEnabled") && filter(m))
-					{
-						return true;
-					}
-				}
+				if (filter(modules[i]))
+					return true;
 			}
 			return false;
 		}
@@ -2901,7 +2846,7 @@ namespace KERBALISM
 				if (v.loaded)
 				{
 					// get all science containers/experiments with data
-					List<IScienceDataContainer> modules = Lib.FindModules<IScienceDataContainer>( v ).FindAll( k => k.GetData().Length > 0 );
+					List<IScienceDataContainer> modules = PartModuleCache.GetModules<IScienceDataContainer>( v ).FindAll( k => (k as PartModule).isEnabled && k.GetData().Length > 0 );
 
 					// remove a data sample at random
 					if (modules.Count > 0)
@@ -2916,8 +2861,8 @@ namespace KERBALISM
 				{
 					// get all science containers/experiments with data
 					var modules = new List<ProtoPartModuleSnapshot>();
-					modules.AddRange( Lib.FindModules( v.protoVessel, "ModuleScienceContainer" ).FindAll( k => k.moduleValues.GetNodes( "ScienceData" ).Length > 0 ) );
-					modules.AddRange( Lib.FindModules( v.protoVessel, "ModuleScienceExperiment" ).FindAll( k => k.moduleValues.GetNodes( "ScienceData" ).Length > 0 ) );
+					modules.AddRange( ProtoPartModuleCache.GetModules( v.protoVessel, "ModuleScienceContainer" ).FindAll( k => k.moduleValues.GetNodes( "ScienceData" ).Length > 0 ) );
+					modules.AddRange( ProtoPartModuleCache.GetModules( v.protoVessel, "ModuleScienceExperiment" ).FindAll( k => k.moduleValues.GetNodes( "ScienceData" ).Length > 0 ) );
 
 					// remove a data sample at random
 					if (modules.Count > 0)

@@ -66,7 +66,7 @@ namespace KERBALISM
 
 				if (!vd.Connection.linked || vd.Connection.rate < prefab.comms_rate)
 				{
-					return "Comms connection too weak";
+					return Local.Sentinel_CommsTooWeak;
 				}
 
 				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");

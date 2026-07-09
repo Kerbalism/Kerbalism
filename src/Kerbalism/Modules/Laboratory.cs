@@ -329,7 +329,7 @@ namespace KERBALISM
 			}
 			else // unloaded vessel
 			{
-				foreach (ProtoPartModuleSnapshot m in Lib.FindModules(v.protoVessel, "Experiment"))
+				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Experiment"))
 				{
 					restoredAmount -= Experiment.RestoreSampleMass(restoredAmount, m, filename.ExpInfo.ExperimentId);
 					if (restoredAmount < double.Epsilon) return;

@@ -739,13 +739,20 @@ namespace KERBALISM
 					}
                 }
 
-                // avoid loops in the chain
-                body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
-			}
-			Profiler.EndSample();
+                if (Lib.IsSun(body))
+				{
+					body = null;
+				}
+				else
+				{
+					// avoid loops in the chain
+					body = (body.referenceBody != null && body.referenceBody.referenceBody == body) ? null : body.referenceBody;
+				}
+            }
+            Profiler.EndSample();
 
-			// add extern radiation
-			radiation += Settings.ExternRadiation / 3600.0;
+            // add extern radiation
+            radiation += Settings.ExternRadiation / 3600.0;
 
 #if DEBUG_RADIATION
 			if (v.loaded) Lib.Log("Radiation " + v + " extern: " + Lib.HumanReadableRadiation(radiation) + " gamma: " + Lib.HumanReadableRadiation(Settings.ExternRadiation));

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -404,7 +403,7 @@ namespace KERBALISM
 
 		void Problem_sunlight(VesselData vd, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			if (vd.EnvInFullShadow)
+			if (vd.EnvSolarFluxTotal <= 1e-5)
 			{
 				icons.Add(Textures.sun_black);
 				tooltips.Add(Local.Monitor_Inshadow);//"In shadow"

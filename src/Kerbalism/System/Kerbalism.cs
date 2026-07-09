@@ -101,6 +101,10 @@ namespace KERBALISM
 		private void OnDestroy()
 		{
 			Fetch = null;
+
+			// better to clear the caches during scene switch so that GC can clean up early, instead of waiting for the next OnLoad() call
+			Cache.Clear();
+			ResourceCache.Clear();
 		}
 
 		public override void OnLoad(ConfigNode node)
@@ -352,6 +356,8 @@ namespace KERBALISM
 					resources.Sync(v, vd, elapsed_s);
 					Profiler.EndSample();
 
+					SystemHeatBackgroundThermal.CaptureLoadedTemperatures(v);
+
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
 
@@ -408,14 +414,22 @@ namespace KERBALISM
 				CommsMessages.Update(last_v, last_vd, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Unloaded.Profile");
-				// apply rules
-				Profile.Execute(last_v, last_vd, last_resources, last_time);
-				Profiler.EndSample();
-
 				Profiler.BeginSample("Unloaded.Background");
 				// simulate modules in background
 				Background.Update(last_v, last_vd, last_resources, last_time);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.SystemHeat");
+				SystemHeatBackgroundThermal.TryRun(last_v, last_time);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.FissionReactor");
+				SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(last_v, last_time);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.Profile");
+				// apply rules
+				Profile.Execute(last_v, last_vd, last_resources, last_time);
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Unloaded.Science");
