@@ -63,8 +63,8 @@ namespace KERBALISM
 			// also prevent executing when hab state isn't yet populated in the 2-3 first fixedUpdates
 			if (vd.CrewCount == 0) return;
 
-			// store list of crew to kill
-			List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
+			// used for storing list of crew to kill
+			deferred_kills.Clear();
 
 			// get input resource handler
 			ResourceInfo res = input.Length > 0 ? resources.GetResource(v, input) : null;
@@ -299,6 +299,8 @@ namespace KERBALISM
 		public string relax_message;      // .
 		public bool lifetime;             // does this value accumulate over the lifetime of a kerbal
 		public ResourceBroker broker;
+
+		private static readonly List<ProtoCrewMember> deferred_kills = new List<ProtoCrewMember>();
 	}
 
 

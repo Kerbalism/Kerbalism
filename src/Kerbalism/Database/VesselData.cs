@@ -18,7 +18,7 @@ namespace KERBALISM
 		public bool is_eva_dead;
 
 		/// <summary>False in the following cases : asteroid, debris, flag, deployed ground part, dead eva, rescue</summary>
-		public bool IsSimulated { get; private set; }
+		public bool IsSimulated { get; set; }
 
 		/// <summary>False if the vessel partmodules OnStart()/OnStartFinished() haven't been called yet. Always true on unloaded vessels.</summary>
 		public bool PartsStarted => Vessel.loaded ? Vessel.rootPart.started : true;
@@ -396,11 +396,6 @@ namespace KERBALISM
 		/// <summary>data capacity of all public drives</summary>
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 
-		/// <summary>evaluated on loaded vessels based on the data pushed by SolarPanelFixer. This doesn't change for unloaded vessel, so the value is persisted</summary>
-		public double SolarPanelsAverageExposure => solarPanelsAverageExposure; double solarPanelsAverageExposure = -1.0;
-		private List<double> solarPanelsExposure = new List<double>(); // values are added by SolarPanelFixer, then cleared by VesselData once solarPanelsAverageExposure has been computed
-		public void SaveSolarPanelExposure(double exposure) => solarPanelsExposure.Add(exposure); // meant to be called by SolarPanelFixer
-
 		private List<ReliabilityInfo> reliabilityStatus;
 		public List<ReliabilityInfo> ReliabilityStatus()
 		{
@@ -453,7 +448,7 @@ namespace KERBALISM
 			}
 		}
 
-		private bool CheckIfSimulated()
+		public bool CheckIfSimulated()
 		{
 			// determine if this is a valid vessel
 			is_vessel = Lib.IsVessel(Vessel);
@@ -663,7 +658,7 @@ namespace KERBALISM
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
 
 			ExistsInFlight = true;	// vessel exists
-			IsSimulated = false;	// will be evaluated in next fixedupdate
+			IsSimulated = true;	// will be evaluated in next fixedupdate
 
 			Vessel = vessel;
 			VesselId = Vessel.id;
@@ -693,7 +688,7 @@ namespace KERBALISM
 		{
 			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.VesselData.Ctor");
 			ExistsInFlight = false;
-			IsSimulated = false;
+			IsSimulated = true;
 
 			VesselId = protoVessel.vesselID;
 
@@ -772,7 +767,6 @@ namespace KERBALISM
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
-			solarPanelsAverageExposure = Lib.ConfigValue(node, "solarPanelsAverageExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			stormData = new StormData(node.GetNode("StormData"));
@@ -847,7 +841,6 @@ namespace KERBALISM
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 
-			node.AddValue("solarPanelsAverageExposure", solarPanelsAverageExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
 			stormData.Save(node.AddNode("StormData"));
@@ -913,8 +906,17 @@ namespace KERBALISM
 			crewCapacity = Lib.CrewCapacity(Vessel);
 
 			// malfunction stuff
-			malfunction = Reliability.HasMalfunction(Vessel);
-			critical = Reliability.HasCriticalFailure(Vessel);
+			if (Features.Reliability)
+			{
+				Profiler.Start("Reliability");
+				Reliability.GetVesselState(Vessel, out malfunction, out critical);
+				Profiler.Stop("Reliability");
+			}
+			else
+			{
+				malfunction = false;
+				critical = false;
+			}
 
 			// communications info
 			CommHandler.UpdateConnection(connection);
@@ -929,12 +931,6 @@ namespace KERBALISM
 
 			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 
-			// solar panels data
-			if (Vessel.loaded)
-			{
-				solarPanelsAverageExposure = SolarPanelFixer.GetSolarPanelsAverageExposure(solarPanelsExposure);
-				solarPanelsExposure.Clear();
-			}
 			UnityEngine.Profiling.Profiler.EndSample();
 		}
 		#endregion
