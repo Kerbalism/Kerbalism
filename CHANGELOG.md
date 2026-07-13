@@ -1,3 +1,35 @@
+## v3.40 for KSP 1.12.x
+
+ - 2026-07-13
+
+ ### Changes since the last release
+ * Added: SystemHeat native integration with automation devices, background thermal simulation, DynamicRadiation support for Sterling Systems power-dependent emitters, and expanded optional-mod configs for CryoTanks, Far Future Technologies, Near Future Electrical, Sterling Systems, KPBS, Buffalo SAFER, and SpaceDust harvesters (#1052, @Aebestach)
+ * Added: VABOrganizer part categories (#983, @LouisB3)
+ * Added: HabTech2 part upgrade dependency (#979, @LouisB3)
+ * Added: Near Future Propulsion electric engine reliability (#995, @LouisB3)
+ * Added: CryoEnginesExtensions engine reliability (#996, @LouisB3)
+ * Added: NF Launch Vehicles LH2 fuel cell configs (#997, @LouisB3)
+ * Added: Restock chemical plant and ECLSS models (#998, @LouisB3)
+ * Added: SupplementaryElectricEngines support (#1000, @LouisB3)
+ * Added: Stock, ReStock+, and NF Exploration antenna configs (#1003, @LouisB3)
+ * Fixed: Planner power consumption for electric engines and RCS (#1036, @Aebestach)
+ * Fixed: Multi-star solar panel energy output; added Universal Storage 2 configs (#986, @Aebestach)
+ * Fixed: Radiation archives issue (#987, @Aebestach)
+ * Fixed: NullReferenceException and UI errors for Probodobodyne OKTO2 in VAB/SPH (#982, @Aebestach)
+ * Fixed: NullReferenceException in KerbalismScansat background processing (#1050, @liujisi)
+ * Fixed: SolarPanelFixer guard against stale sun indices; removed empty FFT tankage patch (@Aebestach)
+ * Changed: Drop kbin multi-version build and KerbalismBootstrap; migrate to KSPBuildTools with an SDK-style csproj, `Kerbalism.slnx`, and `Kerbalism.props.user` local config; ship a single Kerbalism.dll targeting KSP 1.12.x only (@Aebestach)
+ * Changed: Expanded zh-cn coverage; localized flight UI strings, Kerbalism experiment titles, planner/reliability/sickbay UI, and CryoTanks refill messages (#1033, @Aebestach)
+ * Changed: Normalized BranchLoc keys and localized branch support configs (@Aebestach)
+ * Changed: CryoTanks chemistry support and related config updates (@Aebestach)
+ * Changed: Prioritize science drive already containing the subject when selecting a drive (#1048, @SerShrubert)
+ * Changed: Revised NFE RTG EC and radiation values (#999, @LouisB3)
+ * Changed: NFElectric.cfg updates for renamed and new fission reactors (#985, @Sandoleathy)
+ * Changed: Renamed sample transfer difficulty option for clarity (#993, @dlesbre)
+ * Changed: Universal Storage 2 science experiments (#1002, @Aebestach)
+ * Optimized: Improve in-game profiler — unified Unity/Kerbalism sampling, sortable columns, WORST column, µs display fix, and UI fixes (#1045, @siimav)
+ * Optimized: Improve PartModule caching and clear vessel caches on scene cleanup rather than next scene load (#1043, @siimav)
+
 ## v3.32 for all versions of KSP from 1.8.0 to 1.12.x
 
  - 2026-05-15

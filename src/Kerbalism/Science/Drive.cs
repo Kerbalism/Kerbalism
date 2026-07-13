@@ -553,7 +553,7 @@ namespace KERBALISM
 
 		public static List<Drive> GetDrives (VesselData vd, bool includePrivate = false)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Drive.GetDrives");
+			Profiler.BeginSample("Drive.GetDrives");
 			List<Drive> drives = new List<Drive>();
 
 			foreach (PartData partData in vd.PartDatas)
@@ -564,7 +564,7 @@ namespace KERBALISM
 				}
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 			return drives;
 		}
 

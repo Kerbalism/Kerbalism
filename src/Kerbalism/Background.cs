@@ -12,33 +12,19 @@ namespace KERBALISM
 		{
 			private static Type[] signature = { typeof(Vessel), typeof(ProtoPartSnapshot), typeof(ProtoPartModuleSnapshot), typeof(PartModule), typeof(Part), typeof(Dictionary<string, double>), typeof(List<KeyValuePair<string, double>>), typeof(double) };
 
-#if KSP18
-			// non-generic actions are too new to be used in pre-KSP18
-			internal Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string> function;
-#else
 			internal MethodInfo methodInfo;
-#endif
+
 			private BackgroundDelegate(MethodInfo methodInfo)
 			{
-#if KSP18
-				function = (Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string>)Delegate.CreateDelegate(typeof(Func<Vessel, ProtoPartSnapshot, ProtoPartModuleSnapshot, PartModule, Part, Dictionary<string, double>, List<KeyValuePair<string, double>>, double, string>), methodInfo);
-#else
 				this.methodInfo = methodInfo;
-#endif
 			}
 
 			public string invoke(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule module_prefab, Part part_prefab, Dictionary<string, double> availableRresources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
 			{
 				// TODO optimize this for performance
-#if KSP18
-				var result = function(v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s);
-				if (string.IsNullOrEmpty(result)) result = module_prefab.moduleName;
-				return result;
-#else
 				var result = methodInfo.Invoke(null, new object[] { v, p, m, module_prefab, part_prefab, availableRresources, resourceChangeRequest, elapsed_s });
 				if(result == null) return module_prefab.moduleName;
 				return result.ToString();
-#endif
 			}
 
 			public static BackgroundDelegate Instance(PartModule module_prefab)
@@ -160,7 +146,9 @@ namespace KERBALISM
 				availableResources[ri.ResourceName] = ri.Amount;
 			resourceChangeRequests.Clear();
 
-			foreach (var e in Background_PMs(v))
+			var pms = Background_PMs(v);
+			Profiler.BeginSample("Process_Background_PMs");
+			foreach (var e in pms)
 			{
 				switch(e.type)
 				{
@@ -187,6 +175,7 @@ namespace KERBALISM
 					case Module_type.APIModule: ProcessApiModule(v, e.p, e.m, e.part_prefab, e.module_prefab, resources, availableResources, resourceChangeRequests, elapsed_s); break;
 				}
 			}
+			Profiler.EndSample();
 		}
 
 		internal static List<BackgroundPM> Background_PMs(Vessel v)
@@ -253,6 +242,7 @@ namespace KERBALISM
 		private static void ProcessApiModule(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m,
 			Part part_prefab, PartModule module_prefab, VesselResources resources, Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequests, double elapsed_s)
 		{
+			Profiler.BeginSample("ApiModule.BackgroundUpdate");
 			resourceChangeRequests.Clear();
 
 			try
@@ -269,6 +259,7 @@ namespace KERBALISM
 			{
 				Lib.Log("BackgroundUpdate in PartModule " + module_prefab.moduleName + " excepted: " + ex.Message + "\n" + ex.ToString());
 			}
+			Profiler.EndSample();
 		}
 
 		static void ProcessFNGenerator(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, PartModule fission_generator, ResourceInfo ec, double elapsed_s)
@@ -323,6 +314,7 @@ namespace KERBALISM
 
 		static void ProcessConverter(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleResourceConverter converter, VesselResources resources, double elapsed_s)
 		{
+			Profiler.BeginSample("Converter.BackgroundUpdate");
 			// note: ignore stock temperature mechanic of converters
 			// note: ignore auto shutdown
 			// note: non-mandatory resources 'dynamically scale the ratios', that is exactly what mandatory resources do too (DERP ALERT)
@@ -375,6 +367,7 @@ namespace KERBALISM
 				// undo stock behavior by forcing last_update_time to now
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
+			Profiler.EndSample();
 		}
 
 

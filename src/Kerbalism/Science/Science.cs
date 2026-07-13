@@ -113,7 +113,7 @@ namespace KERBALISM
 			if (xmitFiles.Count == 0)
 				return;
 
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.Update-Loop");
+			Profiler.BeginSample("Update-Loop");
 
 			// traverse the list in reverse because :
 			// - warp cache files are at the end, and they are always transmitted regerdless of transmit capacity
@@ -168,7 +168,7 @@ namespace KERBALISM
 				}
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			// consume EC cost for transmission (ec_idle is consumed above)
 			double transmittedTotal = totalTransmitCapacity - remainingTransmitCapacity;
@@ -178,7 +178,7 @@ namespace KERBALISM
 
 		private static void GetFilesToTransmit(Vessel v, VesselData vd)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit");
+			Profiler.BeginSample("GetFilesToTransmit");
 			Drive warpCache = vd.TransmitBufferDrive;
 
 			xmitFiles.Clear();
@@ -215,9 +215,9 @@ namespace KERBALISM
 
 			// sort files by science value per MB ascending order so high value files are transmitted first
 			// because XmitFile list is processed from end to start
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Science.GetFilesToTransmit-Sort");
+			Profiler.BeginSample("GetFilesToTransmit-Sort");
 			xmitFiles.Sort((x, y) => x.sciencePerMB.CompareTo(y.sciencePerMB));
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			// add all warpcache files to the beginning of the XmitFile list
 			foreach (File f in warpCache.files.Values)
@@ -235,7 +235,7 @@ namespace KERBALISM
 					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true)); // should not be happening, but better safe than sorry
 
 			}
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 
 		// return module acting as container of an experiment

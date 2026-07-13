@@ -1,10 +1,9 @@
 {
   "NAME": "Kerbalism",
+  "VERSION": "3.40.0",
   "URL": "https://raw.githubusercontent.com/Kerbalism/Kerbalism/master/GameData/Kerbalism/Kerbalism.version",
   "DOWNLOAD": "https://github.com/Kerbalism/Kerbalism/releases",
-  "CHANGE_LOG_URL": "https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md",
-  "VERSION": {"MAJOR": 3, "MINOR": 32, "PATCH": 0, "BUILD": 0},
-  "KSP_VERSION": {"MAJOR": 1, "MINOR": 12, "PATCH": 0},
-  "KSP_VERSION_MIN": {"MAJOR": 1, "MINOR": 8, "PATCH": 0},
-  "KSP_VERSION_MAX": {"MAJOR": 1, "MINOR": 12, "PATCH": 9}
+  "KSP_VERSION": "1.12.5",
+  "KSP_VERSION_MIN": "1.12.0",
+  "KSP_VERSION_MAX": "1.12.99"
 }

@@ -467,11 +467,11 @@ namespace KERBALISM
 				if (setup.tech.Length > 0)
 				{
 					if (!org.ContainsKey(setup.tech)) org.Add(setup.tech, new List<string>());
-					org[setup.tech].Add(setup.title);
+					org[setup.tech].Add(Localizer.Format(setup.title));
 				}
 				else
 				{
-					specs.Add(Lib.BuildString("• <b>", setup.title, "</b>"));
+					specs.Add(Lib.BuildString("• <b>", Localizer.Format(setup.title), "</b>"));
 				}
 			}
 
@@ -578,7 +578,7 @@ namespace KERBALISM
 			}
 
 			// set metadata
-			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(title, Styles.ScaleStringLength(40)), "</color>"));//Configure
+			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(Localizer.Format(title), Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
 		}
 
@@ -591,13 +591,15 @@ namespace KERBALISM
 
 			// render panel title
 			// only allow reconfiguration if there are more setups than slots
+			string setupTitle = Localizer.Format(setup.title);
+			string setupDesc = Localizer.Format(setup.desc);
 			if (unlocked.Count <= selected.Count)
 			{
-				p.AddSection(Lib.Ellipsis(setup.title, Styles.ScaleStringLength(70)), setup.desc);
+				p.AddSection(Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70)), setupDesc);
 			}
 			else
 			{
-				p.AddSection(Lib.Ellipsis(setup.title, Styles.ScaleStringLength(70)), setup.desc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
+				p.AddSection(Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70)), setupDesc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
 			}
 
 			// render details

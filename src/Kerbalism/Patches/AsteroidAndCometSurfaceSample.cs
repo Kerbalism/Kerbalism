@@ -83,8 +83,6 @@ namespace KERBALISM
 		}
 	}
 
-#if !KSP18
-
 	[HarmonyPatch(typeof(ModuleComet))]
 	[HarmonyPatch("TakeSampleEVAEvent")]
 	class CometSurfaceSample
@@ -134,7 +132,5 @@ namespace KERBALISM
 			return false;
 		}
 	}
-
-#endif
 
 }

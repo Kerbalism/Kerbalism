@@ -1,5 +1,4 @@
-﻿#if !KSP18 && !KSP110
-using HarmonyLib;
+﻿using HarmonyLib;
 
 namespace KERBALISM
 {
@@ -19,4 +18,3 @@ namespace KERBALISM
 		}
 	}
 }
-#endif

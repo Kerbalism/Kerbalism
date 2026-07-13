@@ -226,7 +226,7 @@ namespace KERBALISM
 				this.paramString = Localizer.Format(prefix + paramString);
 			}
 
-			/// <summary>
+			/// <summary> 
 			/// Replace &lt;&lt;x&gt;&gt; tags with the provided params. Doesn't support nested "#xxx" strings in the params, but faster.
 			/// </summary>
 			public string Format(params string[] parameters)
@@ -238,7 +238,7 @@ namespace KERBALISM
 				return Grammar.useGrammar(paramString, parameterCache);
 			}
 
-			/// <summary>
+			/// <summary> 
 			/// Replace &lt;&lt;x&gt;&gt; tags with the provided params. Support nested "#xxx" strings in the params, but slower.
 			/// </summary>
 			public string FormatNested(params string[] parameters)
@@ -582,7 +582,7 @@ namespace KERBALISM
 		public static string FILEMANAGER_DeleteConfirm_button1 = GetLoc("FILEMANAGER_DeleteConfirm_button1"); // "Delete it"
 		public static string FILEMANAGER_DeleteConfirm_button2 = GetLoc("FILEMANAGER_DeleteConfirm_button2"); // "Keep it"
 		public static string FILEMANAGER_analysis = GetLoc("FILEMANAGER_analysis"); // "Flag the file for analysis in a <b>laboratory</b>"
-		public static string FILEMANAGER_Dumpsample = GetLoc("FILEMANAGER_Dumpsample"); // "Dump the sample"
+		public static string FILEMANAGER_Dumpsample = GetLoc("FILEMANAGER_Dumpsample"); // "Dump the sample"																
 		public static string FILEMANAGER_DumpConfirm_button1 = GetLoc("FILEMANAGER_DumpConfirm_button1"); // "Dump it"
 		public static string FILEMANAGER_DumpConfirm_button2 = GetLoc("FILEMANAGER_DumpConfirm_button2"); // "Keep it"
 
@@ -800,7 +800,7 @@ namespace KERBALISM
 		public static string Module_Experiment_Specifics_info11_unmanned = GetLoc("Module_Experiment_Specifics_info11_unmanned"); // "unmanned"
 		public static string Module_Experiment_Specifics_info12 = GetLoc("Module_Experiment_Specifics_info12"); // "Reset"
 		public static string Module_Experiment_Specifics_info12_none = GetLoc("Module_Experiment_Specifics_info12_none"); // "none"
-		public static string Module_Experiment_MultipleRunsMessage_title = GetLoc("Module_Experiment_MultipleRunsMessage_title"); // "ALREADY RUNNING"
+		public static string Module_Experiment_MultipleRunsMessage_title = GetLoc("Module_Experiment_MultipleRunsMessage_title"); // "ALREADY RUNNING"																														
 		public static string Module_Experiment_Message1 = GetLoc("Module_Experiment_Message1"); // "I'm not qualified for this"
 		public static string Module_Experiment_Message2 = GetLoc("Module_Experiment_Message2"); // "I will not even know where to start"
 		public static string Module_Experiment_Message3 = GetLoc("Module_Experiment_Message3"); // "I'm afraid I can't do that"
@@ -828,7 +828,7 @@ namespace KERBALISM
 		public static string Greenhouse_Greenhouse = GetLoc("Greenhouse_Greenhouse"); // "Greenhouse"
 		public static string Greenhouse_desc = GetLoc("Greenhouse_desc"); // "Grow crops in space and on the surface of celestial bodies, even far from the sun."
 		public static string Greenhouse_disabled = GetLoc("Greenhouse_disabled"); // "disabled"
-		public static string Greenhouse_enabled = GetLoc("Greenhouse_enabled"); // "enabled"
+		public static string Greenhouse_enabled = GetLoc("Greenhouse_enabled"); // "enabled"																	
 		public static string Greenhouse_issue1 = GetLoc("Greenhouse_issue1"); // "insufficient lighting"
 		public static string Greenhouse_issue2 = GetLoc("Greenhouse_issue2"); // "insufficient pressure"
 		public static string Greenhouse_issue3 = GetLoc("Greenhouse_issue3"); // "excessive radiation"
@@ -916,7 +916,7 @@ namespace KERBALISM
 		public static string Harvester_atmo_valid = GetLoc("Harvester_atmo_valid"); // "not in atmosphere"
 		public static string Harvester_space_valid = GetLoc("Harvester_space_valid"); // "not in space"
 		public static string Harvester_pressurebelow = GetLoc("Harvester_pressurebelow"); // "pressure below threshold"
-		public static string Harvester_abundancebelow = GetLoc("Harvester_abundancebelow"); // "abundance below threshold"
+		public static string Harvester_abundancebelow = GetLoc("Harvester_abundancebelow"); // "abundance below threshold"																				
 		public static string Harvester_simulatedabundance = GetLoc("Harvester_simulatedabundance"); // "Simulate at abundance"
 		public static string Harvester_source1 = GetLoc("Harvester_source1"); // "the surface"
 		public static string Harvester_source2 = GetLoc("Harvester_source2"); // "the ocean"

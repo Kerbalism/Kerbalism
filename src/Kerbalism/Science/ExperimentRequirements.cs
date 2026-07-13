@@ -115,7 +115,7 @@ namespace KERBALISM
 
 		public double TestRequirements(Vessel v)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
+			Profiler.BeginSample("ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
 			double result = 1.0;
 
@@ -124,19 +124,19 @@ namespace KERBALISM
 				double reqResult = EvaluateRequirement(v, vd, Requires[i]);
 				if (reqResult == 0.0)
 				{
-					UnityEngine.Profiling.Profiler.EndSample();
+					Profiler.EndSample();
 					return 0.0;
 				}
 				result *= reqResult;
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 			return result;
 		}
 
 		public double TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.ExperimentRequirements.TestRequirements");
+			Profiler.BeginSample("ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
 			results = new RequireResult[Requires.Length];
 			double result = 1.0;
@@ -148,14 +148,14 @@ namespace KERBALISM
 
 				if (!testAll && results[i].result == 0.0)
 				{
-					UnityEngine.Profiling.Profiler.EndSample();
+					Profiler.EndSample();
 					return 0.0;
 				}
 
 				result *= results[i].result;
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 			return result;
 		}
 

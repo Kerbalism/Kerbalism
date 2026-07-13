@@ -31,10 +31,11 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// update RMB ui
-			if (string.IsNullOrEmpty(title))
-				title = radiation >= 0.0 ? "Radiation" : "Active shield";
+			// Prefer localized defaults; also rewrite legacy persisted English titles from older saves.
+			if (string.IsNullOrEmpty(title) || title == "Radiation" || title == "Active shield")
+				title = radiation >= 0.0 ? Local.Group_Radiation : Local.Emitter_ActiveShielding;
 
-			Fields["Status"].guiName = title;
+			Fields["Status"].guiName = Localizer.Format(title);
 			Events["Toggle"].active = toggle;
 			Actions["Action"].active = toggle;
 

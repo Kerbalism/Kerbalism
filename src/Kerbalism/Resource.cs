@@ -218,9 +218,9 @@ namespace KERBALISM
 		public void Sync(Vessel v, VesselData vd, double elapsed_s)
 		{
 			// execute all recorded recipes
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.ExecuteRecipes");
+			Profiler.BeginSample("ExecuteRecipes");
 			ResourceRecipe.ExecuteRecipes(v, this, recipes);
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			// forget the recipes
 			recipes.Clear();
@@ -234,7 +234,7 @@ namespace KERBALISM
 			// the first time they're used, but all created objects are stored and reused each execution
 			// so there shouldn't be much garbage creation at all (indeed there will only be new garbage when the cache
 			// is insufficient).
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.SyncAll");
+			Profiler.BeginSample("SyncAll");
 
 			// Create sync sets for each resource, based on whether the vessel is loaded (wrappers for PartResource)
 			// or unloaded (wrappers for ProtoPartResourceSnapshot). Store priority as well for resources that use a
@@ -281,7 +281,7 @@ namespace KERBALISM
 
 			ResourceInfo.ResetSyncCaches();
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 
 		internal List<ResourceInfo> GetAllResources(Vessel v)
@@ -833,7 +833,7 @@ namespace KERBALISM
 		/// </remarks>
 		public void Sync(Vessel v, VesselData vd, double elapsed_s)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Resource.Sync");
+			Profiler.BeginSample("Sync");
 			// # OVERVIEW
 			// - consumption/production is accumulated in "Deferred", then this function called
 			// - VesselResources.Sync will fill our sync set (and collect current amount/capacity) prior to call
@@ -964,7 +964,7 @@ namespace KERBALISM
 
 			// reset amount added/removed from interval-based rules
 			intervalRuleAmount = 0.0;
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 
 		/// <summary>estimate time until depletion, including the simulated rate from interval-based rules</summary>

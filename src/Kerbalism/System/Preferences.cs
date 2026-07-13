@@ -126,7 +126,7 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_AntennaSpeed", asPercentage = true, minValue = 0.01f, maxValue = 2f, displayFormat = "F2", toolTip = "#KERBALISM_AntennaSpeed_desc")]//Antenna Speed--Antenna Bandwidth factor
 		public float transmitFactor = 1.0f;
 
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_Alwaysallowsampletransfers", toolTip = "#KERBALISM_Alwaysallowsampletransfers_desc")]//Always allow sample transfers---When off, sample transfer is only available in crewed vessels
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_Alwaysallowsampletransfers", toolTip = "#KERBALISM_Alwaysallowsampletransfers_desc")]//Allow sample transfers in uncrewed vessels---When off, sample transfer is only available in crewed vessels
 		public bool sampleTransfer = true;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }

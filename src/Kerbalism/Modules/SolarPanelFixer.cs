@@ -407,11 +407,11 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.FixedUpdate");
+			Profiler.BeginSample("Kerbalism.SolarPanelFixer.FixedUpdate");
 			// sanity check
 			if (SolarPanel == null)
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -432,14 +432,14 @@ namespace KERBALISM
 			{
 				exposureState = ExposureState.Disabled;
 				currentOutput = 0.0;
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
 			// do nothing else in editor
 			if (Lib.IsEditor())
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -449,7 +449,7 @@ namespace KERBALISM
 			// do nothing if vessel is invalid
 			if (!vd.IsSimulated)
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -528,7 +528,7 @@ namespace KERBALISM
 			if (trackedSunInfo == null)
 			{
 				currentOutput = 0.0;
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -620,7 +620,7 @@ namespace KERBALISM
 			if (currentOutput < 1e-10)
 			{
 				currentOutput = 0.0;
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -629,12 +629,12 @@ namespace KERBALISM
 
 			// produce resource
 			res.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 
 		public static void BackgroundUpdate(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, SolarPanelFixer prefab, VesselData vd, ResourceInfo ec, double elapsed_s)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.SolarPanelFixer.BackgroundUpdate");
+			Profiler.BeginSample("SolarPanelFixer.BackgroundUpdate");
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
@@ -648,7 +648,7 @@ namespace KERBALISM
 					string type = Lib.Proto.GetString(p.modules[i], "type");
 					if (type == "SolarPanelFixer" || (prefab.SolarPanel != null && prefab.SolarPanel.TargetModule != null && type == prefab.SolarPanel.TargetModule.moduleName))
 					{
-						UnityEngine.Profiling.Profiler.EndSample();
+						Profiler.EndSample();
 						return;
 					}
 				}
@@ -662,7 +662,7 @@ namespace KERBALISM
 			string state = Lib.Proto.GetString(m, "state");
 			if (!(state == "Static" || state == "Extended" || state == "ExtendedFixed"))
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -759,7 +759,7 @@ namespace KERBALISM
 
 			// produce EC
 			ec.Produce(output * elapsed_s, ResourceBroker.SolarPanel);
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 		#endregion
 

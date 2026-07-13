@@ -314,12 +314,12 @@ namespace KERBALISM
 
 		public virtual void FixedUpdate()
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
+			Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 
 			// basic sanity checks
 			if (Lib.IsEditor())
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -327,7 +327,7 @@ namespace KERBALISM
 
 			if (!vd.IsSimulated)
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -340,7 +340,7 @@ namespace KERBALISM
 					vd.IsSimulated = vd.CheckIfSimulated();
 					return;
 				}
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -353,14 +353,14 @@ namespace KERBALISM
 					vd.IsSimulated = vd.CheckIfSimulated();
 					return;
 				}
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				Toggle();
 				return;
 			}
 
 			shrouded = part.ShieldedFromAirstream;
 
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate.RunningUpdate");
+			Profiler.BeginSample("Experiment.FixedUpdate.RunningUpdate");
 			prodFactor = RunningUpdate(
 				vessel, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded,
 				ResourceCache.GetResource(vessel, "ElectricCharge"),
@@ -373,23 +373,23 @@ namespace KERBALISM
 				ref remainingSampleMass,
 				out subject,
 				out issue);
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			var newStatus = GetStatus(expState, subject, issue);
 			API.OnExperimentStateChanged.Notify(vessel, experiment_id, status, newStatus);
 			status = newStatus;
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 
 		// note : we use a non-static method so it can be overriden
 		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, ResourceInfo ec, VesselResources resources, double elapsed_s)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate");
+			Profiler.BeginSample("Experiment.BackgroundUpdate");
 
 			if (!vd.IsSimulated)
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -410,7 +410,7 @@ namespace KERBALISM
 					vd.IsSimulated = vd.CheckIfSimulated();
 					return;
 				}
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -424,7 +424,7 @@ namespace KERBALISM
 			string issue;
 			SubjectData subjectData;
 
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.BackgroundUpdate.RunningUpdate");
+			Profiler.BeginSample("Experiment.BackgroundUpdate.RunningUpdate");
 			try
 			{
 				double prodFactor = RunningUpdate(
@@ -445,7 +445,7 @@ namespace KERBALISM
 				vd.IsSimulated = vd.CheckIfSimulated();
 				return;
 			}
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			var newStatus = GetStatus(expState, subjectData, issue);
 			Lib.Proto.Set(m, "situationId", situationId);
@@ -458,7 +458,7 @@ namespace KERBALISM
 
 			API.OnExperimentStateChanged.Notify(v, experiment_id, oldStatus, newStatus);
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 		}
 
 		private static double RunningUpdate(
@@ -690,14 +690,14 @@ namespace KERBALISM
 
 		private static Drive GetDrive(VesselData vesselData, uint hdId, double chunkSize, SubjectData subjectData)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Experiment.GetDrive");
+			Profiler.BeginSample("Experiment.GetDrive");
 			bool isFile = subjectData.ExpInfo.SampleMass == 0.0;
 			Drive drive = null;
 			if (hdId != 0)
 				drive = vesselData.GetPartData(hdId).Drive;
 			else
 				drive = isFile ? Drive.FileDrive(vesselData, chunkSize) : Drive.SampleDrive(vesselData, chunkSize, subjectData);
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 			return drive;
 		}
 

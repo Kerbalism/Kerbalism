@@ -297,22 +297,21 @@ Please observe some basic style rules for your contributions:
 
 ## Setup guide
 
-Kerbalism uses a custom build and deployment system. From your IDE, don't try to change the project references and don't change anything in the project properties, that won't work.
+Kerbalism uses [KSPBuildTools](https://github.com/KSPModdingLibs/KSPBuildTools) for building and deploying to a local KSP install.
 
 ### Project Setup
 
-Before you can build Kerbalism, your IDE has to know where the Unity and KSP assemblies are, and what version of KSP you are using. 
+1. Install the [.NET SDK](https://dotnet.microsoft.com/download) (8.x or later).
+2. Copy `Kerbalism.props.user.example` to `Kerbalism.props.user` in the repository root.
+3. Edit `Kerbalism.props.user` and set `KSPBT_GameRoot` to your KSP 1.12 install path.
+4. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) (and other dependencies) into that KSP install via CKAN or manually.
+5. Build from the repository root:
 
-This is done by editing a configuration file :
+       dotnet build -c Release src/Kerbalism/Kerbalism.csproj
 
-  - Close your IDE (Visual Studio or Monodevelop)
-  - In you file explorer, go to the **BuildSystem** folder
-  - Make a copy of the **UserConfigDevEnv.xml.CopyMe** file and rename it to **UserConfigDevEnv.xml**
-  - Open this file in a text editor and follow the instructions in the comments.
-  - Save the file
-  - Open you IDE and make sure you are in the **Debug** configuration
-  
-The release configuration require a special setup, ask us first if you really need to build it.
+The compiled `Kerbalism.dll` is written to `GameData/Kerbalism/`. When `KSPBT_GameRoot` is set, the build also deploys `GameData/Kerbalism` and `GameData/KerbalismConfig` to your KSP install.
+
+Open `Kerbalism.slnx` in Visual Studio or Rider for IDE debugging.
 
 ### Debugging
 
@@ -328,8 +327,7 @@ To be able to place breakpoint and use the debugging functions of Visual Studio,
 #### Downloading the Unity player
 You will need to download and install the exact version of Unity Editor that was used to build the version of KSP you are working with.
 
-For **KSP 1.4 to 1.7** the Unity version is **Unity v2017.1.3p1** 
-For **KSP 1.8+** the Unity version is **Unity v2019.2.2f1** 
+For **KSP 1.12** the Unity version is **Unity v2019.4.18f1** (2019.4 LTS — KSP 1.8 originally shipped on 2019.2, but 1.12 uses 2019.4)
 You can download the unity editor from the [Unity download archive](https://unity3d.com/get-unity/download/archive)
 
 #### Creating a KSP dev install
@@ -340,12 +338,9 @@ To do that, follow these steps:
 
   - Copy your game install to another location
   - Find your Unity install, and go into the subdirectory `Unity\Editor\Data\PlaybackEngines\windowsstandalonesupport\Variations\win64_development_mono`.
-  - **[KSP 1.4 to 1.7]** Copy the file `player_win.exe` from the `win64_development_mono` folder to your KSP install root directory.
-  - **[KSP 1.4 to 1.7]** Rename `player_win.exe` to `KSP_x64_Dbg.exe`.
-  - **[KSP 1.4 to 1.7]** Copy the `PlayerConnectionConfigFile` file available in the Kerbalism repository in `BuildSystem\DevEnvInstall\Windows` and put it into your KSP dev `KSP_x64_Data` folder.
-  - **[KSP 1.8+]** Copy the `WindowsPlayer.exe`, `UnityPlayer.dll` and `WinPixEventRuntime.dll` from the `win64_development_mono` folder to your KSP install root directory. You need to overwrite the original `UnityPlayer.dll`.
-  - **[KSP 1.8+]** Rename `WindowsPlayer.exe` to `KSP_x64_Dbg.exe`.
-  - **[KSP 1.8+]** Edit the `KSP_x64_Data\boot.config` file in a text editor and add the following line : `player-connection-debug=1`
+  - Copy the `WindowsPlayer.exe`, `UnityPlayer.dll` and `WinPixEventRuntime.dll` from the `win64_development_mono` folder to your KSP install root directory. You need to overwrite the original `UnityPlayer.dll`.
+  - Rename `WindowsPlayer.exe` to `KSP_x64_Dbg.exe`.
+  - Edit the `KSP_x64_Data\boot.config` file in a text editor and add the following line : `player-connection-debug=1`
   - Create a junction in your KSP dev install folder named `KSP_x64_Dbg_Data` linking to your KSP dev `KSP_x64_Data` folder.
   This is done by opening a command prompt in your KSP dev install folder and running the following command:
 
@@ -379,7 +374,7 @@ To save startup time, seconds of our life and the environment, it is recommended
 
 You can use the Unity Editor profiler by starting the Unity Editor, opening a blank project (or any project for that matter) and then use the **Window Menu->Profiler** option to open the Profiler Window. Now you can start your KSP dev install debug executable either standalone or with Visual Studio.
 
-By default you will only see the MonoBehavior methods (Update, FixedUpdate, etc...) but you can add calls in your code to profile anything you like. To do this, add to your code pairs of `Profiler.BeginSample("MyLabel");` and `Profiler.EndSample();`. Be aware that if a frame takes too long to execute the profiler will skip it.
+By default you will only see the MonoBehavior methods (Update, FixedUpdate, etc...) but you can add calls in your code to profile anything you like. To do this, add to your code pairs of `Profiler.BeginSample("MyLabel");` and `Profiler.EndSample();`. These calls resolve to Kerbalism's own `KERBALISM.Profiler` wrapper (see below), which forwards to the Unity profiler when the `ENABLE_PROFILER` compile constant is set. Be aware that if a frame takes too long to execute the profiler will skip it.
 
 For more information see the KSP Forum thread [KSP Plugin debugging and profiling for Visual Studio and Monodevelop on all OS](http://forum.kerbalspaceprogram.com/index.php?/topic/102909-ksp-plugin-debugging-and-profiling-for-visual-studio-and-monodevelop-on-all-os/&page=1).
 
@@ -387,7 +382,9 @@ For more information see the KSP Forum thread [KSP Plugin debugging and profilin
 
 In addition, there is a simple "frame-based" profiler included in the KSP Kerbalism code base, that is appropriate for quick performance measurements.
 
-In the code, wrap the code you want in pairs of `Kerbalism.Profiler.Start("MyLabel")` and `Kerbalism.Profiler.Stop("MyLabel")`.
+In the code, wrap the code you want in pairs of `Profiler.BeginSample("MyLabel")` and `Profiler.EndSample()` (the `KERBALISM.Profiler` class). This is the same call used for the Unity profiler above: a single pair feeds *both* profilers. The in-game profiler is gated by the `DEBUG_PROFILER` compile constant and the Unity profiler by `ENABLE_PROFILER` — a pair feeds whichever is enabled, and both are compiled out entirely (zero overhead) when neither constant is defined, as in release builds.
+
+`EndSample()` closes the most recently opened sample — the pairs nest like Unity's, so every `BeginSample` must have a matching `EndSample` on all code paths. The `Profiler.ProfileScope` `IDisposable` can wrap a `using` block to guarantee a balanced pair.
 
 In-game, start it by pressing Ctrl-P. It shows each code entry belonging to one label as one line. The columns show:
 
@@ -404,7 +401,7 @@ You can enable/disable the display of any calls not called in the last frame wit
 
   - Complete the `CHANGELOG.md` file, and fill out the release date field. Make sure to credit all contributors.
   - Adjust the compatible KSP version numbers in `Kerbalism.version`. Actually test if they work in all the KSP version claimed compatible.
-  - Bump the version number in `Kerbalism.version` and `Properties\AssemblyInfo.cs` according the the versioning rules [below](#versioning).
+  - Bump the version number in `Kerbalism.version` and the `<Version>` property in `src/Kerbalism/Kerbalism.csproj` according the the versioning rules [below](#versioning).
   - Check with Git that your working directory is clean. No Changes are allowed, everything must be committed.
   - Build the Project in release mode
   - Clean out the `GameData` folder of your KSP install, only the ´Squad` folder should remain.

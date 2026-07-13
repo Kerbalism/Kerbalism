@@ -20,12 +20,12 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
-## Current version: 3.32
+## Current version: 3.40
  
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
-**KSP version** : 1.8.x to 1.12.x  
+**KSP version** : 1.12.x  
 **Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
 
 **[Mod compatibility]** - [Changelog] - [Dev Builds]
@@ -98,7 +98,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
   - Check the technical guide on the wiki
   - Pull requests are welcome, especially for mod support configs. For code contributions, it is recommended to talk to us on [Discord] before engaging anything.
   - Read the [contributing] documentation
-  - To build the plugin from the source code, read the [BuildSystem] documentation
+  - To build the plugin from the source code, see [CONTRIBUTING.md](CONTRIBUTING.md#setup-guide)
 
 ## Disclaimer and license
 
@@ -112,7 +112,6 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 [Mod Compatibility]: https://github.com/Kerbalism/Kerbalism/wiki/Home-~-Mod-Support
 [Changelog]: https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md
 [Contributing]: https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md
-[BuildSystem]: https://github.com/Kerbalism/Kerbalism/blob/master/BuildSystem/README.MD
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
 [KSP forums thread]: https://forum.kerbalspaceprogram.com/index.php?/topic/201171-kerbalism
 [Discord]: https://discord.gg/3JAE2JE

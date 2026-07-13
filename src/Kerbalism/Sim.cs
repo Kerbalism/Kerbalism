@@ -241,12 +241,12 @@ namespace KERBALISM
 		/// </summary>
 		public static double SampleSunFactor(Vessel v, double elapsedSeconds, CelestialBody sun)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("Kerbalism.Sim.SunFactor2");
+			Profiler.BeginSample("Sim.SunFactor2");
 
 			bool isSurf = Lib.Landed(v);
 			if (v.orbitDriver == null || v.orbitDriver.orbit == null || (!isSurf && double.IsNaN(v.orbit.inclination)))
 			{
-				UnityEngine.Profiling.Profiler.EndSample();
+				Profiler.EndSample();
 				return 1d; // fail safe
 			}
 
@@ -325,7 +325,7 @@ namespace KERBALISM
 					++sunSamples;
 			}
 
-			UnityEngine.Profiling.Profiler.EndSample();
+			Profiler.EndSample();
 
 			double sunFactor = (double)sunSamples / (double)sampleCount;
 			//Lib.Log("Vessel " + v + " sun factor: " + sunFactor + " " + sunSamples + "/" + sampleCount + " #s=" + sampleCount + " e=" + elapsedSeconds + " step=" + stepLength);
