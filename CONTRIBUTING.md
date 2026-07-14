@@ -304,12 +304,13 @@ Kerbalism uses [KSPBuildTools](https://github.com/KSPModdingLibs/KSPBuildTools) 
 1. Install the [.NET SDK](https://dotnet.microsoft.com/download) (8.x or later).
 2. Copy `Kerbalism.props.user.example` to `Kerbalism.props.user` in the repository root.
 3. Edit `Kerbalism.props.user` and set `KSPBT_GameRoot` to your KSP 1.12 install path.
-4. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) (and other dependencies) into that KSP install via CKAN or manually.
-5. Build from the repository root:
+4. Optionally set `Kerbalism_DeployToKsp` to `true` if you want the build to copy `GameData/Kerbalism` and `GameData/KerbalismConfig` into that install (off by default).
+5. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) (and other dependencies) into that KSP install via CKAN or manually.
+6. Build from the repository root:
 
        dotnet build -c Release src/Kerbalism/Kerbalism.csproj
 
-The compiled `Kerbalism.dll` is written to `GameData/Kerbalism/`. When `KSPBT_GameRoot` is set, the build also deploys `GameData/Kerbalism` and `GameData/KerbalismConfig` to your KSP install.
+The compiled `Kerbalism.dll` is written to `GameData/Kerbalism/`. Live-install deployment only runs when `Kerbalism_DeployToKsp` is `true`.
 
 Open `Kerbalism.slnx` in Visual Studio or Rider for IDE debugging.
 

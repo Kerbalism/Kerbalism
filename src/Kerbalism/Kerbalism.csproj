@@ -12,6 +12,8 @@
 
     <KSPBT_ModRoot>$(ProjectRootDir)GameData\Kerbalism</KSPBT_ModRoot>
     <KSPBT_ModPluginFolder>.</KSPBT_ModPluginFolder>
+    <!-- Opt-in: copy GameData to the live KSP install. Set in Kerbalism.props.user. -->
+    <Kerbalism_DeployToKsp Condition=" '$(Kerbalism_DeployToKsp)' == '' ">false</Kerbalism_DeployToKsp>
 
     <LangVersion>latest</LangVersion>
     <DebugType>portable</DebugType>
@@ -58,7 +60,8 @@
     </None>
   </ItemGroup>
 
-  <Target Name="DeployGameDataToKsp" AfterTargets="KSPBT_CopyDLLsToPluginFolder" Condition=" '$(KSPBT_GameRoot)' != '' ">
+  <Target Name="DeployGameDataToKsp" AfterTargets="KSPBT_CopyDLLsToPluginFolder"
+          Condition=" '$(Kerbalism_DeployToKsp)' == 'true' And '$(KSPBT_GameRoot)' != '' ">
     <PropertyGroup>
       <_KspKerbalismDeployDir>$(KSPBT_GameRoot)/GameData/Kerbalism</_KspKerbalismDeployDir>
       <_KspKerbalismConfigDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismConfig</_KspKerbalismConfigDeployDir>
