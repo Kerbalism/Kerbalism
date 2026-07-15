@@ -446,8 +446,8 @@ namespace KERBALISM
 			// get vessel data from cache
 			VesselData vd = vessel.KerbalismData();
 
-			// do nothing if vessel is invalid
-			if (!vd.IsSimulated)
+			// do nothing if vessel is invalid, or sun info not ready yet (first FixedUpdates after load)
+			if (!vd.IsSimulated || vd.EnvSunsInfo == null)
 			{
 				Profiler.EndSample();
 				return;
@@ -638,6 +638,13 @@ namespace KERBALISM
 			// this is ugly spaghetti code but initializing the prefab at loading time is messy because the targeted solar panel module may not be loaded yet
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
+			// OnStart may fail to bind a supported panel module (e.g. prefab part has SolarPanelFixer but no usable target).
+			if (prefab.SolarPanel == null || vd.EnvSunsInfo == null)
+			{
+				Profiler.EndSample();
+				return;
+			}
+
 			// check if the panel is broken by Reliability
 			// If Reliability targets ModuleDeployableSolarPanel, SolarPanelFixer (this module) remains enabled
 			// so we have to manually check if the target module is broken
@@ -646,7 +653,7 @@ namespace KERBALISM
 				if (p.modules[i].moduleName == "Reliability" && Lib.Proto.GetBool(p.modules[i], "broken"))
 				{
 					string type = Lib.Proto.GetString(p.modules[i], "type");
-					if (type == "SolarPanelFixer" || (prefab.SolarPanel != null && prefab.SolarPanel.TargetModule != null && type == prefab.SolarPanel.TargetModule.moduleName))
+					if (type == "SolarPanelFixer" || (prefab.SolarPanel.TargetModule != null && type == prefab.SolarPanel.TargetModule.moduleName))
 					{
 						Profiler.EndSample();
 						return;
@@ -738,6 +745,11 @@ namespace KERBALISM
 			}
 
 			if (trackedSunInfo == null && vd.EnvSunsInfo.Count > 0) trackedSunInfo = vd.EnvSunsInfo[0];
+			if (trackedSunInfo == null)
+			{
+				Profiler.EndSample();
+				return;
+			}
 
 			double powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking);
 			efficiencyFactor = powerFactor;
@@ -1263,6 +1275,9 @@ namespace KERBALISM
 					if (sunCatcherPosition == null)
 						sunCatcherPosition = panelModule.part.FindModelTransform(panelModule.secondaryTransformName);
 
+					if (sunCatcherPosition == null)
+						return occludingFactor;
+
 					Physics.Raycast(sunCatcherPosition.position + (sunDir * panelModule.raycastOffset), sunDir, out raycastHit, 10000f);
 				}
 				else
@@ -1297,7 +1312,15 @@ namespace KERBALISM
 				{
 					case ModuleDeployableSolarPanel.PanelType.FLAT:
 						if (!analytic)
+						{
+							// trackingDotTransform can be null for a few FixedUpdates after vessel unpack
+							if (panelModule.trackingDotTransform == null)
+								return 0.0;
 							return Math.Max(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward), 0.0);
+						}
+
+						if (sunCatcherPivot == null)
+							return 0.0;
 
 						if (panelModule.isTracking)
 							return Math.Cos(1.57079632679 - Math.Acos(Vector3d.Dot(sunDir, sunCatcherPivot.up)));
@@ -1305,6 +1328,8 @@ namespace KERBALISM
 							return Math.Max(Vector3d.Dot(sunDir, sunCatcherPivot.forward), 0.0);
 
 					case ModuleDeployableSolarPanel.PanelType.CYLINDRICAL:
+						if (panelModule.trackingDotTransform == null)
+							return 0.0;
 						return Math.Max((1.0 - Math.Abs(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward))) * (1.0 / Math.PI), 0.0);
 					case ModuleDeployableSolarPanel.PanelType.SPHERICAL:
 						return 0.25;
