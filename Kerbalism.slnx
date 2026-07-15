@@ -1,5 +1,6 @@
 <Solution>
   <Configurations>
+    <BuildType Name="Debug" />
     <BuildType Name="Release" />
   </Configurations>
   <Project Path="src/Kerbalism/Kerbalism.csproj" Id="7cf587a9-6e49-46e8-ab3f-87b80a6276da" />

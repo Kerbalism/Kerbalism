@@ -457,6 +457,12 @@ namespace KERBALISM
 		/// <param name="endNegOffset">distance from which the ray will stop before hitting the 'end' point, put the body radius here if the end point is a CB</param>
 		public static bool RaytracePhysic(Vessel vessel, Vector3d vesselPos, Vector3d end, double endNegOffset = 0.0)
 		{
+			return RaytracePhysic(vessel, vesselPos, end, endNegOffset, null);
+		}
+
+		/// <summary>Return true if there is no CelestialBody between the vessel position and the 'end' point. Hits on <paramref name="ignoreBody"/> are treated as reaching the ray target.</summary>
+		public static bool RaytracePhysic(Vessel vessel, Vector3d vesselPos, Vector3d end, double endNegOffset, CelestialBody ignoreBody)
+		{
 			// for unloaded vessels, position in scaledSpace is 1 fixedUpdate frame desynchronized :
 			if (!vessel.loaded)
 				vesselPos += vessel.mainBody.position - vessel.mainBody.getTruePositionAtUT(Planetarium.GetUniversalTime() + TimeWarp.fixedDeltaTime);
@@ -465,9 +471,39 @@ namespace KERBALISM
 			ScaledSpace.LocalToScaledSpace(ref vesselPos);
 			ScaledSpace.LocalToScaledSpace(ref end);
 			Vector3d dir = end - vesselPos;
-			if (endNegOffset > 0) dir -= dir.normalized * (endNegOffset * ScaledSpace.InverseScaleFactor);
 
-			return !Physics.Raycast(vesselPos, dir, (float)dir.magnitude, planetaryLayerMask);
+			if (endNegOffset > 0.0)
+				dir -= dir.normalized * (endNegOffset * ScaledSpace.InverseScaleFactor);
+
+			float maxDist = (float)dir.magnitude;
+			if (maxDist <= 0f)
+				return true;
+
+			if (!Physics.Raycast(vesselPos, dir, out RaycastHit hit, maxDist, planetaryLayerMask))
+				return true;
+
+			// Hitting the target body itself means the line of sight reached it - not occlusion.
+			if (ignoreBody != null && IsScaledBodyCollider(hit.collider, ignoreBody))
+				return true;
+
+			return false;
+		}
+
+		/// <summary>True if <paramref name="col"/> belongs to <paramref name="body"/>'s scaled-space hierarchy.</summary>
+		static bool IsScaledBodyCollider(Collider col, CelestialBody body)
+		{
+			if (col == null || body == null || body.scaledBody == null)
+				return false;
+
+			Transform root = body.scaledBody.transform;
+			Transform t = col.transform;
+			while (t != null)
+			{
+				if (t == root)
+					return true;
+				t = t.parent;
+			}
+			return false;
 		}
 
 		/// <summary> return true if the ray 'dir' starting at 'start' and of length 'dist' doesn't hit 'body'</summary>
@@ -503,8 +539,10 @@ namespace KERBALISM
 
 			// for very small bodies the analytic method is very unreliable at high latitudes
 			// we use a physic raycast (a lot slower)
+			// Pass body as ignoreBody: the ray targets that CB (usually a sun/star); hitting its
+			// own scaled mesh must not count as occlusion (#1053).
 			if (Lib.Landed(vessel) && vessel.mainBody.Radius < 100000.0 && (vessel.latitude < -45.0 || vessel.latitude > 45.0))
-				return RaytracePhysic(vessel, vesselPos, body.position, body.Radius);
+				return RaytracePhysic(vessel, vesselPos, body.position, body.Radius, body);
 
 			// check if the ray intersect one of the provided bodies
 			foreach (CelestialBody occludingBody in occludingBodies)
