@@ -639,7 +639,7 @@ namespace KERBALISM
 			if (!prefab.isInitialized) prefab.OnStart(StartState.None);
 
 			// OnStart may fail to bind a supported panel module (e.g. prefab part has SolarPanelFixer but no usable target).
-			if (prefab.SolarPanel == null || vd.EnvSunsInfo == null)
+			if (prefab.SolarPanel == null || !prefab.isEnabled || vd.EnvSunsInfo == null)
 			{
 				Profiler.EndSample();
 				return;
