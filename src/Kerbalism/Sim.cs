@@ -1468,12 +1468,17 @@ namespace KERBALISM
 		#endregion
 
 		#region SIGNAL
+		// Fallback used when auto-calc fails (DSN cannot reach 2 AU, etc). Matches pre-comms-refactor stock ~6.
+		private const double DefaultDataRateDampingExponent = 6.0;
+		private const double DefaultDataRateDampingExponentRT = 2.4;
+
 		private static double dampingExponent = 0;
 		public static double DataRateDampingExponent
 		{
 			get
 			{
-				if (dampingExponent != 0)
+				// NaN != 0 is true, so explicitly reject a cached failed calculation
+				if (dampingExponent != 0 && !double.IsNaN(dampingExponent) && !double.IsInfinity(dampingExponent))
 					return dampingExponent;
 
 				if (Settings.DampingExponentOverride != 0)
@@ -1519,12 +1524,23 @@ namespace KERBALISM
 				// Value selected so we match pre-comms refactor damping exponent of ~6 in stock
 				var desiredRateAt2AU = 0.3925;
 
-				// dataRate = baseRate * (strengthAt2AU ^ exponent)
-				// so...
-				// exponent = log_strengthAt2AU(dataRate / baseRate)
-				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+				// Math.Log(x, base) requires base in (0, 1) U (1, +inf). strengthAt2AU is in [0, 1];
+				// when DSN cannot reach 2 AU, strength is 0 and Log -> NaN (see #1031, also #721).
+				bool canCalculateExponent = strengthAt2AU > 0.0 && strengthAt2AU < 1.0;
+				if (canCalculateExponent)
+					dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+				else
+					dampingExponent = DefaultDataRateDampingExponent;
 
-				Lib.Log($"Calculated DataRateDampingExponent: {dampingExponent.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")})");
+				if (!canCalculateExponent || double.IsNaN(dampingExponent) || double.IsInfinity(dampingExponent) || dampingExponent <= 0.0)
+				{
+					Lib.Log($"DataRateDampingExponent calc failed (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")}), using fallback {DefaultDataRateDampingExponent}");
+					dampingExponent = DefaultDataRateDampingExponent;
+				}
+				else
+				{
+					Lib.Log($"Calculated DataRateDampingExponent: {dampingExponent.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")})");
+				}
 
 				return dampingExponent;
 			}
@@ -1534,7 +1550,7 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (dampingExponent != 0)
+				if (dampingExponent != 0 && !double.IsNaN(dampingExponent) && !double.IsInfinity(dampingExponent))
 					return dampingExponent;
 
 				if (Settings.DampingExponentOverride != 0)
@@ -1578,16 +1594,20 @@ namespace KERBALISM
 				// dataRate = baseRate * (strengthAt2AU ^ exponent)
 				// so...
 				// exponent = log_strengthAt2AU(dataRate / baseRate)
-				dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+				bool canCalculateExponent = strengthAt2AU > 0.0 && strengthAt2AU < 1.0;
+				if (canCalculateExponent)
+					dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
+				else
+					dampingExponent = DefaultDataRateDampingExponentRT;
 
-				// 2.4 seems good for RemoteTech
-				if (double.IsNaN(dampingExponent))
+				// 2.4 seems good for RemoteTech (#914); same failure mode as CommNet (#1031)
+				if (!canCalculateExponent || double.IsNaN(dampingExponent) || double.IsInfinity(dampingExponent) || dampingExponent <= 0.0)
 				{
-					Lib.Log("dampingExponent is " + dampingExponent + ",... setting to 2.4");
-					dampingExponent = 2.4;
+					Lib.Log($"DataRateDampingExponentRT calc failed (strength at 2.53 AU: {strengthAt2AU.ToString("F3")}), using fallback {DefaultDataRateDampingExponentRT}");
+					dampingExponent = DefaultDataRateDampingExponentRT;
 				}
 
-				return DataRateDampingExponent;
+				return dampingExponent;
 			}
 		}
 
