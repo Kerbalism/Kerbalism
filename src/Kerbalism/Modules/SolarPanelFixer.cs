@@ -521,7 +521,15 @@ namespace KERBALISM
 				}
 			}
 
-			trackedSunInfo = vd.EnvSunsInfo.Find(p => p.SunData.bodyIndex == trackedSunIndex);
+			trackedSunInfo = null;
+			for (int i = 0; i < vd.EnvSunsInfo.Count; i++)
+			{
+				if (vd.EnvSunsInfo[i].SunData.bodyIndex == trackedSunIndex)
+				{
+					trackedSunInfo = vd.EnvSunsInfo[i];
+					break;
+				}
+			}
 			if (trackedSunInfo == null && vd.EnvSunsInfo.Count > 0)
 				trackedSunInfo = vd.EnvSunsInfo[0];
 
@@ -610,7 +618,7 @@ namespace KERBALISM
 			}
 
 			wearFactor = 1.0;
-			if (timeEfficCurve?.Curve.keys.Length > 1)
+			if (timeEfficCurve?.Curve.length > 1)
 				wearFactor = Lib.Clamp(timeEfficCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 
 			currentOutput = nominalRate * wearFactor * powerFactor;
@@ -680,7 +688,15 @@ namespace KERBALISM
 			bool manualTracking = Lib.Proto.GetBool(m, "manualTracking");
 			bool isTracking = prefab.SolarPanel.IsTracking;
 
-			VesselData.SunInfo trackedSunInfo = vd.EnvSunsInfo.Find(s => s.SunData.bodyIndex == trackedSunIndex);
+			VesselData.SunInfo trackedSunInfo = null;
+			for (int i = 0; i < vd.EnvSunsInfo.Count; i++)
+			{
+				if (vd.EnvSunsInfo[i].SunData.bodyIndex == trackedSunIndex)
+				{
+					trackedSunInfo = vd.EnvSunsInfo[i];
+					break;
+				}
+			}
 
 			// Auto-tracking logic for background/analytic mode
 			if (!manualTracking && isTracking && vd.EnvSunsInfo.Count > 0)
@@ -1254,7 +1270,7 @@ namespace KERBALISM
 			public override FloatCurve GetTimeCurve()
 			{
 
-				if (panelModule.timeEfficCurve?.Curve.keys.Length > 1)
+				if (panelModule.timeEfficCurve?.Curve.length > 1)
 				{
 					FloatCurve timeCurve = new FloatCurve();
 					foreach (Keyframe key in panelModule.timeEfficCurve.Curve.keys)
