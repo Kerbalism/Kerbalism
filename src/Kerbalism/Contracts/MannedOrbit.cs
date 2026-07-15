@@ -7,7 +7,7 @@ namespace KERBALISM.CONTRACTS
 {
 
 
-	// put a kerbal in orbit for 30 days
+	// keep a crewed vessel in orbit for 30 days
 	public sealed class MannedOrbit : Contract
 	{
 		protected override bool Generate()
