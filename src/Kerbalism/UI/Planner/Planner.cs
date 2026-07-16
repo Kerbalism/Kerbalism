@@ -518,12 +518,12 @@ namespace KERBALISM.Planner
 			string repair_tooltip = string.Empty;
 			if (vessel_analyzer.crew_engineer)
 			{
-				repair_str = "engineer";
+				repair_str = Local.Trait_Engineer;
 				repair_tooltip = Local.Planner_engineer_tip;//"The engineer on board should\nbe able to handle all repairs"
 			}
 			else if (vessel_analyzer.crew_capacity == 0)
 			{
-				repair_str = "safemode";
+				repair_str = Local.Planner_repair_safemode;
 				repair_tooltip = Local.Planner_safemode_tip;//"We have a chance of repairing\nsome of the malfunctions remotely"
 			}
 

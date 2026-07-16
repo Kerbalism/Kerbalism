@@ -289,11 +289,13 @@ namespace KERBALISM
 			return Specs().Info();
 		}
 
+		public override string GetModuleDisplayName() { return Local.Module_GravityRing; }//"Gravity Ring"
+
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add(Local.GravityRing_info1, "firm-ground");//"bonus"
+			specs.Add(Local.GravityRing_info1, Local.Comfort_firmground);//"bonus"
 			if (Settings.UseSIUnits)
 				specs.Add(Local.Deploy_actualCost, Lib.SIRate(ec_rate, Lib.ECResID));
 			else

@@ -8,6 +8,44 @@ namespace KERBALISM
 
 	public sealed class CrewSpecs
 	{
+		/// <summary>localize stock (and known) crew trait names for UI</summary>
+		public static string LocalizeTrait(string traitName)
+		{
+			if (string.IsNullOrEmpty(traitName)) return traitName;
+			switch (traitName)
+			{
+				case "Pilot": return Local.Trait_Pilot;
+				case "Engineer": return Local.Trait_Engineer;
+				case "Scientist": return Local.Trait_Scientist;
+				default: return traitName;
+			}
+		}
+
+		/// <summary>localize a trait spec that may list several traits separated by commas (OR)</summary>
+		public static string LocalizeTraitList(string traitSpec)
+		{
+			if (string.IsNullOrEmpty(traitSpec)) return traitSpec;
+			if (traitSpec.IndexOf(',') < 0) return LocalizeTrait(traitSpec);
+
+			var parts = traitSpec.Split(',');
+			for (int i = 0; i < parts.Length; ++i)
+				parts[i] = LocalizeTrait(parts[i].Trim());
+			return string.Join(", ", parts);
+		}
+
+		bool TraitMatches(string crewTrait)
+		{
+			if (trait.Length == 0) return true;
+			if (trait.IndexOf(',') < 0) return crewTrait == trait;
+
+			var parts = trait.Split(',');
+			for (int i = 0; i < parts.Length; ++i)
+			{
+				if (crewTrait == parts[i].Trim()) return true;
+			}
+			return false;
+		}
+
 		public CrewSpecs(string value)
 		{
 			// if empty or false: not enabled
@@ -85,7 +123,7 @@ namespace KERBALISM
 		public bool Check(ProtoCrewMember c)
 		{
 			if (crewOnly && c.type == ProtoCrewMember.KerbalType.Tourist) return false;
-			return trait.Length == 0 || (c.trait == trait && c.experienceLevel >= level);
+			return trait.Length == 0 || (TraitMatches(c.trait) && c.experienceLevel >= level);
 		}
 
 		/// <summary>
@@ -118,7 +156,7 @@ namespace KERBALISM
 			if(requiredLevel == Int16.MinValue) {
 				requiredLevel = (int)level;
 			}
-			if (trait.Length == 0 || c.trait != trait) return 0;
+			if (trait.Length == 0 || !TraitMatches(c.trait)) return 0;
 			return (int)(c.experienceLevel - requiredLevel);
 		}
 
@@ -130,7 +168,7 @@ namespace KERBALISM
 			return Lib.BuildString
 			(
 			  "<b>",
-			  (trait.Length == 0 ? Local.SCIENCEARCHIVE_info_Crew : trait),//"Crew"
+			  (trait.Length == 0 ? Local.SCIENCEARCHIVE_info_Crew : LocalizeTraitList(trait)),//"Crew"
 			  "</b> ",
 			  (level == 0 ? string.Empty : Local.SCIENCEARCHIVE_info_levelReq + " <b>" + level + "</b> "),//of level
 			  Local.SCIENCEARCHIVE_info_Req//"is required"
@@ -144,7 +182,7 @@ namespace KERBALISM
 		{
 			if (!enabled) return Local.SCIENCEARCHIVE_info_no;//"no"
 			else if (trait.Length == 0) return Local.SCIENCEARCHIVE_info_anyone;//"anyone"
-			else return Lib.BuildString(trait, (level == 0 ? string.Empty : " (" + Local.SCIENCEARCHIVE_info_level + " " + level + ")"));//"level:"
+			else return Lib.BuildString(LocalizeTraitList(trait), (level == 0 ? string.Empty : " (" + Local.SCIENCEARCHIVE_info_level + " " + level + ")"));//"level:"
 		}
 
 		// can check if enabled by bool comparison

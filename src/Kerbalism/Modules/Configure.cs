@@ -504,7 +504,7 @@ namespace KERBALISM
 				// add setup titles
 				foreach (string setup_title in setup_titles)
 				{
-					specs.Add(Lib.BuildString("• <b>", setup_title, "</b>\n   at ", Lib.Color(tech_title, Lib.Kolor.Science)));
+					specs.Add(Lib.BuildString("• <b>", setup_title, "</b>\n   ", Local.Module_Configure_techAt.Format(Lib.Color(tech_title, Lib.Kolor.Science))));
 				}
 			}
 

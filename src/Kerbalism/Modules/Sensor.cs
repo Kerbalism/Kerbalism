@@ -65,11 +65,13 @@ namespace KERBALISM
 			return Specs().Info();
 		}
 
+		public override string GetModuleDisplayName() { return Local.Module_Sensor; }//"Sensor"
+
 		// specifics support
 		public Specifics Specs()
 		{
 			var specs = new Specifics();
-			specs.Add(Local.Sensor_Type, type);//"Type"
+			specs.Add(Local.Sensor_Type, DisplayName(type));//"Type"
 			return specs;
 		}
 

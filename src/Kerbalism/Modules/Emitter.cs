@@ -210,6 +210,8 @@ namespace KERBALISM
 			return Specs().Info(desc);
 		}
 
+		public override string GetModuleDisplayName() { return Local.Module_Emitter; }//"Emitter"
+
 		// specifics support
 		public Specifics Specs()
 		{
