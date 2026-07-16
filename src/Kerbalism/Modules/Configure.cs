@@ -27,7 +27,8 @@ namespace KERBALISM
 	public class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
 	{
 		// config
-		[KSPField] public string title = string.Empty;           // short description
+		[KSPField] public string title = string.Empty;           // short description (may be a #loc key; display via Localizer.Format)
+		[KSPField] public string configureId = string.Empty;     // stable MM-safe id (no #); use HAS[#configureId[...]] instead of HAS[#title[#loc]]
 		[KSPField] public string data = string.Empty;            // store setups as serialized data
 		[KSPField] public uint slots = 1;                        // how many setups can be selected
 		[KSPField] public string reconfigure = string.Empty;     // true if it can be reconfigured in flight
@@ -93,7 +94,7 @@ namespace KERBALISM
 			reconfigure_cs = new CrewSpecs(reconfigure);
 
 			// set toggle window button label
-			Events["ToggleWindow"].guiName = Lib.BuildString(Local.Module_Configure, " <b>", title, "</b>");//"Configure"
+			Events["ToggleWindow"].guiName = Lib.BuildString(Local.Module_Configure, " <b>", Localizer.Format(title), "</b>");//"Configure"
 
 			// only show toggle in flight if this is reconfigurable
 			Events["ToggleWindow"].active = Lib.IsEditor() || reconfigure_cs;
@@ -638,8 +639,8 @@ namespace KERBALISM
 		public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Module_Configurable, " ", title); } // attempt to display at the top//Configurable
-		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Module_Configurable, " ", title); } // attempt to display at the top//Configurable
+		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Module_Configurable, " ", Localizer.Format(title)); } // attempt to display at the top//Configurable
+		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>00</color></size>", Local.Module_Configurable, " ", Localizer.Format(title)); } // attempt to display at the top//Configurable
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

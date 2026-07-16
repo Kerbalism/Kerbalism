@@ -59,7 +59,7 @@ namespace KERBALISM
 			// in editor, merely update ui button label
 			if (Lib.IsEditor())
 			{
-				Events["Toggle"].guiName = Lib.StatusToggle(title, running ? Local.Harvester_running : Local.Harvester_stopped);//"running""stopped"
+				Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format(title), running ? Local.Harvester_running : Local.Harvester_stopped);//"running""stopped"
 			}
 
 			// if in flight, and the stock planet resource system is online
@@ -84,7 +84,7 @@ namespace KERBALISM
 								? Local.Harvester_running//"running"
 								: Lib.BuildString("<color=yellow>", issue, "</color>");
 
-						Events["Toggle"].guiName = Lib.StatusToggle(title, status);
+						Events["Toggle"].guiName = Lib.StatusToggle(Localizer.Format(title), status);
 						Abundance = abundance > double.Epsilon ? Lib.HumanReadablePerc(abundance, "F2") : Local.Harvester_none;//"none"
 					}
 				}
@@ -265,8 +265,8 @@ namespace KERBALISM
 		public bool IsSituationValid() { return true; }
 
 		// module info support
-		public string GetModuleTitle() { return title; }
-		public override string GetModuleDisplayName() { return title; }
+		public string GetModuleTitle() { return Localizer.Format(title); }
+		public override string GetModuleDisplayName() { return Localizer.Format(title); }
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

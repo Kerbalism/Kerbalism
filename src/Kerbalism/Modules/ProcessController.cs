@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 namespace KERBALISM
 {
@@ -105,7 +106,7 @@ namespace KERBALISM
 			Events["DumpValve"].active = dumpValve.CanSwitchValves;
 
 			// set action group ui
-			Actions["Action"].guiName = Lib.BuildString(Local.ProcessController_Start_Stop, " ", title);//"Start/Stop
+			Actions["Action"].guiName = Lib.BuildString(Local.ProcessController_Start_Stop, " ", Localizer.Format(title));//"Start/Stop
 
 			// hide toggle if specified
 			Events["Toggle"].active = toggle;
@@ -167,7 +168,7 @@ namespace KERBALISM
 				return;
 
 			// update rmb ui
-			Events["Toggle"].guiName = Lib.StatusToggle(lastMultiplier + " " + title, broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
+			Events["Toggle"].guiName = Lib.StatusToggle(lastMultiplier + " " + Localizer.Format(title), broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped);//"broken""running""stopped"
 			Events["DumpValve"].guiName = Lib.StatusToggle(Local.ProcessController_Dump, dumpValve.ValveTitle);//"Dump"
 		}
 
@@ -202,7 +203,7 @@ namespace KERBALISM
 		// part tooltip
 		public override string GetInfo()
 		{
-			return isConfigurable ? string.Empty : Specs().Info(desc);
+			return isConfigurable ? string.Empty : Specs().Info(Localizer.Format(desc));
 		}
 
 		public bool IsRunning() {
@@ -232,8 +233,8 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
-		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", title); }  // Display after config widget
+		public string GetModuleTitle() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", Localizer.Format(title)); }  // Display after config widget
+		public override string GetModuleDisplayName() { return Lib.BuildString("<size=1><color=#00000000>01</color></size>", Localizer.Format(title)); }  // Display after config widget
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 

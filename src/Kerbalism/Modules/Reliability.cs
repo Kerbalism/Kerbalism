@@ -53,9 +53,9 @@ namespace KERBALISM
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			Fields["Status"].guiName = title;
+			Fields["Status"].guiName = LocalizeTitle(title);
 #if DEBUG_RELIABILITY
-			Events["Break"].guiName = "Break " + title + " [DEBUG]";
+			Events["Break"].guiName = "Break " + LocalizeTitle(title) + " [DEBUG]";
 #endif
 
 			// do nothing in the editors and when compiling parts
@@ -86,8 +86,8 @@ namespace KERBALISM
 			repair_cs = new CrewSpecs(repair);
 
 			// setup ui
-			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>"+title+"</b>");//Lib.BuildString("Inspect <<1>>)
-			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>"+title+"</b>");//Lib.BuildString("Repair <<1>>)
+			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>"+LocalizeTitle(title)+"</b>");//Lib.BuildString("Inspect <<1>>)
+			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>"+LocalizeTitle(title)+"</b>");//Lib.BuildString("Repair <<1>>)
 			
 			// sync monobehaviour state with module state
 			// - required as the monobehaviour state is not serialized
@@ -257,7 +257,7 @@ namespace KERBALISM
 
 					if (needMaintenance)
 					{
-						Events["Repair"].guiName = Local.Reliability_Service.Format("<b>" + title + "</b>");//Lib.BuildString("Service <<1>>")
+						Events["Repair"].guiName = Local.Reliability_Service.Format("<b>" + LocalizeTitle(title) + "</b>");//Lib.BuildString("Service <<1>>")
 					}
 				}
 
@@ -281,7 +281,7 @@ namespace KERBALISM
 				// update ui
 				if (part.IsPAWVisible())
 				{
-					Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + title + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
+					Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + LocalizeTitle(title) + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
 
 					Status = string.Empty;
 					if (mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
@@ -604,7 +604,7 @@ namespace KERBALISM
 					{
 						Message.Post
 						(
-						  Local.Reliability_MessagePost30.Format("<b>" + title + "</b>"),//Lib.BuildString("<<1>> needs a repair kit")
+						  Local.Reliability_MessagePost30.Format("<b>" + LocalizeTitle(title) + "</b>"),//Lib.BuildString("<<1>> needs a repair kit")
 						  Lib.TextVariant
 						  (
 							Local.Reliability_MessagePost31,//"Did I forget something."
@@ -640,7 +640,7 @@ namespace KERBALISM
 				// notify user
 				Message.Post
 				(
-				  Local.Reliability_MessagePost14.Format("<b>"+title+"</b>"),//Lib.BuildString("<<1>> repaired")
+				  Local.Reliability_MessagePost14.Format("<b>"+LocalizeTitle(title)+"</b>"),//Lib.BuildString("<<1>> repaired")
 				  Lib.TextVariant
 				  (
 					Local.Reliability_MessagePost15,//"A powerkick did the trick."
@@ -653,7 +653,7 @@ namespace KERBALISM
 				// notify user
 				Message.Post
 				(
-				  Local.Reliability_MessagePost19.Format("<b>"+title+"</b>"),//Lib.BuildString(<<1>> serviced")
+				  Local.Reliability_MessagePost19.Format("<b>"+LocalizeTitle(title)+"</b>"),//Lib.BuildString(<<1>> serviced")
 				  Lib.TextVariant
 				  (
 					Local.Reliability_MessagePost20,//"I don't know how this was still working."
@@ -851,8 +851,8 @@ namespace KERBALISM
 		}
 
 		// module info support
-		public string GetModuleTitle() { return Lib.BuildString(title, " ", Local.Reliability_Reliability); }
-		public override string GetModuleDisplayName() { return Lib.BuildString(title, " ",Local.Reliability_Reliability); }//Reliability
+		public string GetModuleTitle() { return Lib.BuildString(LocalizeTitle(title), " ", Local.Reliability_Reliability); }
+		public override string GetModuleDisplayName() { return Lib.BuildString(LocalizeTitle(title), " ",Local.Reliability_Reliability); }//Reliability
 		public string GetPrimaryField() { return string.Empty; }
 		public Callback<Rect> GetDrawModulePanelCallback() { return null; }
 
@@ -1059,6 +1059,7 @@ namespace KERBALISM
 
 		static void Broken_msg(Vessel v, string title, bool critical)
 		{
+			title = LocalizeTitle(title);
 			if (v.KerbalismData().cfg_malfunction)
 			{
 				if (!critical)
@@ -1085,6 +1086,7 @@ namespace KERBALISM
 
 		static void Safemode_msg(Vessel v, string title)
 		{
+			title = LocalizeTitle(title);
 			Message.Post
 			(
 			  Local.Reliability_MessagePost28.Format("<b>" + title + "</b>", "<b>" + v.vesselName + "</b>"),//Lib.BuildString("There has been a problem with <<1>> on <<2>>)
@@ -1179,6 +1181,13 @@ namespace KERBALISM
 
 		public static string LocalizeTitle(string title)
 		{
+			if (string.IsNullOrEmpty(title))
+				return title;
+
+			// Loc keys (#KERBALISM_...) — do not match English switch cases below
+			if (title[0] == '#')
+				return Localizer.Format(title);
+
 			switch (title)
 			{
 				case "ECLSS": return Local.Reliability_title_ECLSS;
@@ -1197,7 +1206,7 @@ namespace KERBALISM
 				case "ScienceInstrument": return Local.Reliability_title_ScienceInstrument;
 				case "Data Transmitter": return Local.Reliability_title_DataTransmitter;
 			}
-			return title;
+			return Localizer.Format(title);
 		}
 	}
 

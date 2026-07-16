@@ -26,15 +26,29 @@ namespace KERBALISM
 
 		public override string GetInfo()
 		{
-			return Specs().Info(desc);
+			return Specs().Info(Localizer.Format(desc));
 		}
 
 		// specifics support
 		public Specifics Specs()
 		{
 			Specifics specs = new Specifics();
-			specs.Add("bonus", bonus);
+			specs.Add(Local.Comfort_bonus, LocalizeBonus(bonus));
 			return specs;
+		}
+
+		static string LocalizeBonus(string bonus)
+		{
+			switch (bonus)
+			{
+				case "firm-ground": return Local.Comfort_firmground;
+				case "exercise": return Local.Comfort_exercise;
+				case "not-alone": return Local.Comfort_notalone;
+				case "call-home": return Local.Comfort_callhome;
+				case "panorama": return Local.Comfort_panorama;
+				case "plants": return Local.Comfort_plants;
+				default: return bonus;
+			}
 		}
 
 		public override string GetModuleDisplayName() { return Local.Module_Comfort; }//"Comfort"
