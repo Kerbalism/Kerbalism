@@ -13,6 +13,10 @@ namespace KERBALISM
 			// Search for "LightShifter" components, added by Kopernicus to bodies that are stars
 			foreach (CelestialBody body in FlightGlobals.Bodies)
 			{
+				// Some Kopernicus bodies (e.g. invisible barycenters) have no scaledBody
+				if (body.scaledBody == null)
+					continue;
+
 				foreach (var c in body.scaledBody.GetComponentsInChildren<MonoBehaviour>(true))
 				{
 					if (c.GetType().ToString().Contains("LightShifter"))
