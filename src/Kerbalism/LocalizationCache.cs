@@ -1105,6 +1105,8 @@ namespace KERBALISM
 		public static string Sensor_notbreathable = GetLoc("Sensor_notbreathable"); // "not breathable"
 		public static string Sensor_insidethermosphere = GetLoc("Sensor_insidethermosphere"); // "inside <b>thermosphere</b>"
 		public static string Sensor_insideexosphere = GetLoc("Sensor_insideexosphere"); // "inside <b>exosphere</b>"
+		public static string Sensor_gravioli = GetLoc("Sensor_gravioli"); // "gravioli"
+		public static string Sensor_vessel_temperature = GetLoc("Sensor_vessel_temperature"); // "vessel temperature"
 		public static string Sensor_Graviolidetection = GetLoc("Sensor_Graviolidetection"); // "Gravioli detection events per-year: "
 		public static string Sensor_info1 = GetLoc("Sensor_info1"); // "The elusive negative gravioli particle\nseems to be much harder to detect than expected."
 		public static string Sensor_info2 = GetLoc("Sensor_info2"); // "On the other\nhand there seems to be plenty\nof useless positive graviolis around."

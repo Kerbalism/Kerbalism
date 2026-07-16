@@ -81,9 +81,11 @@ namespace KERBALISM
 			switch (type)
 			{
 				case "temperature": return Local.Planner_temperature;
+				case "vessel_temperature": return Local.Sensor_vessel_temperature;
 				case "radiation": return Local.TELEMETRY_radiation;
 				case "habitat_radiation": return Local.TELEMETRY_habitatradiation;
 				case "pressure": return Local.TELEMETRY_pressure;
+				case "gravioli": return Local.Sensor_gravioli;
 			}
 			return Lib.SpacesOnCaps(Lib.SpacesOnUnderscore(type));
 		}
