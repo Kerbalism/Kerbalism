@@ -9,6 +9,8 @@ namespace KERBALISM
 
 	public class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
 	{
+		const double ReadyThreshold = 0.99;
+
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced by harvests
 		[KSPField] public double crop_size;             // amount of resource produced by harvests
@@ -25,11 +27,15 @@ namespace KERBALISM
 
 		// persistence
 		[KSPField(isPersistant = true)] public bool active;               // on/off flag
+		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#KERBALISM_Greenhouse_AutoHarvest", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]
+		[UI_Toggle(enabledText = "#KERBALISM_Generic_ON", disabledText = "#KERBALISM_Generic_OFF")]
+		public bool auto_harvest = false;                                 // optional automatic harvest when crop is ready
 		[KSPField(isPersistant = true)] public double growth;             // current growth level
 		[KSPField(isPersistant = true)] public double natural;            // natural lighting flux
 		[KSPField(isPersistant = true)] public double artificial;         // artificial lighting flux
 		[KSPField(isPersistant = true)] public double tta;                // time to harvest
 		[KSPField(isPersistant = true)] public string issue;              // first detected issue, or empty if there is none
+		[KSPField(isPersistant = true)] public bool storage_wait_notified; // true after posting the waiting-for-storage message
 
 		// rmb ui status
 		[KSPField(guiActive = true, guiName = "#KERBALISM_Greenhouse_status_natural", groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
@@ -107,19 +113,19 @@ namespace KERBALISM
 				// update ui
 				if (part.IsPAWVisible())
 				{
-					string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth > 0.99 ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
+					string status = issue.Length > 0 ? Lib.BuildString("<color=yellow>", issue, "</color>") : growth >= ReadyThreshold ? Local.TELEMETRY_readytoharvest : Local.TELEMETRY_growing;//"ready to harvest""growing"
 					Events["Toggle"].guiName = Lib.StatusToggle(Local.Greenhouse_Greenhouse, active ? status : Local.Greenhouse_disabled);//"Greenhouse""disabled"
-					Fields["status_natural"].guiActive = active && growth < 0.99;
-					Fields["status_artificial"].guiActive = active && growth < 0.99;
-					Fields["status_tta"].guiActive = active && growth < 0.99;
+					Fields["status_natural"].guiActive = active && growth < ReadyThreshold;
+					Fields["status_artificial"].guiActive = active && growth < ReadyThreshold;
+					Fields["status_tta"].guiActive = active && growth < ReadyThreshold;
 					status_natural = Lib.HumanReadableFlux(natural);
 					status_artificial = Lib.HumanReadableFlux(artificial);
 					status_tta = Lib.HumanReadableDuration(tta);
 
 					// show/hide harvest buttons
 					bool manned = FlightGlobals.ActiveVessel.isEVA || Lib.CrewCount(vessel) > 0;
-					Events["Harvest"].active = manned && growth >= 0.99;
-					Events["EmergencyHarvest"].active = manned && growth >= 0.5 && growth < 0.99;
+					Events["Harvest"].active = manned && growth >= ReadyThreshold;
+					Events["EmergencyHarvest"].active = manned && growth >= 0.5 && growth < ReadyThreshold;
 				}
 			}
 			// in editor
@@ -135,113 +141,33 @@ namespace KERBALISM
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
 
-			// if enabled and not ready for harvest
-			if (active && growth < 0.99)
+			// idle when disabled, or when ripe and waiting for a manual harvest
+			if (!active) return;
+			if (growth >= ReadyThreshold && !auto_harvest)
 			{
-				// get vessel info from the cache
-				// - if the vessel is not valid (eg: flagged as debris) then solar flux will be 0 and landed false (but that's okay)
-				VesselData vd = vessel.KerbalismData();
-
-				// get resource cache
-				VesselResources resources = ResourceCache.Get(vessel);
-				ResourceInfo ec = resources.GetResource(vessel, "ElectricCharge");
-
-				// deal with corner cases when greenhouse is assembled using KIS
-				if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
-
-				// calculate natural and artificial lighting
-				natural = vd.EnvSolarFluxTotal;
-				artificial = Math.Max(light_tolerance - natural, 0.0);
-
-				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(ec_rate * (artificial / light_tolerance) * Kerbalism.elapsed_s, ResourceBroker.Greenhouse);
-
-				// reset artificial lighting if there is no ec left
-				// - comparing against amount in previous simulation step
-				if (ec.Amount <= double.Epsilon) artificial = 0.0;
-
-				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
-				foreach (ModuleResource input in resHandler.inputResources)
-				{
-					// WasteAtmosphere is primary combined input
-					if (WACO2 && input.name == Habitat.WasteAtmoResName) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "CarbonDioxide");
-					// CarbonDioxide is secondary combined input
-					else if (WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * Kerbalism.elapsed_s, "");
-					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName)) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
-					else recipe.AddInput(input.name, input.rate * Kerbalism.elapsed_s);
-				}
-				foreach (ModuleResource output in resHandler.outputResources)
-				{
-					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * Kerbalism.elapsed_s, true);
-					else recipe.AddOutput(output.name, output.rate * Kerbalism.elapsed_s, true);
-				}
-				resources.AddRecipe(recipe);
-
-				// determine environment conditions
-				bool lighting = natural + artificial >= light_tolerance;
-				bool pressure = pressure_tolerance <= double.Epsilon || vd.Pressure >= pressure_tolerance;
-				bool radiation = radiation_tolerance <= double.Epsilon || (1.0 - vd.Shielding) * vd.EnvHabitatRadiation < radiation_tolerance;
-
-				// determine input resources conditions
-				// - comparing against amounts in previous simulation step
-				bool inputs = true;
-				string missing_res = string.Empty;
-				bool dis_WACO2 = false;
-				foreach (ModuleResource input in resHandler.inputResources)
-				{
-					// combine WasteAtmosphere and CO2 if both exist
-					if (input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide")
-					{
-						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
-						if (WACO2)
-						{
-							if (resources.GetResource(vessel, Habitat.WasteAtmoResName).Amount <= double.Epsilon && resources.GetResource(vessel, "CarbonDioxide").Amount <= double.Epsilon)
-							{
-								inputs = false;
-								missing_res = "CarbonDioxide";
-								break;
-							}
-							dis_WACO2 = true;
-							continue;
-						}
-					}
-					if (resources.GetResource(vessel, input.name).Amount <= double.Epsilon)
-					{
-						inputs = false;
-						missing_res = input.name;
-						break;
-					}
-				}
-
-				// if growing
-				if (lighting && pressure && radiation && inputs)
-				{
-					// increase growth
-					growth += crop_rate * Kerbalism.elapsed_s;
-					growth = Math.Min(growth, 1.0);
-
-					// notify the user when crop can be harvested
-					if (growth >= 0.99)
-					{
-						Message.Post(Local.harvestedready_msg.Format("<b>" + vessel.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
-						growth = 1.0;
-					}
-				}
-
-				// update time-to-harvest
-				tta = (1.0 - growth) / crop_rate;
-
-				// update issues
-				issue =
-				  !inputs ? Lib.BuildString(Local.Greenhouse_resoucesmissing.Format(missing_res))//"missing <<1>>"
-				: !lighting ? Local.Greenhouse_issue1//"insufficient lighting"
-				: !pressure ? Local.Greenhouse_issue2//"insufficient pressure"
-				: !radiation ? Local.Greenhouse_issue3//"excessive radiation"
-				: string.Empty;
+				if (issue == Local.Greenhouse_issue4) issue = string.Empty;
+				return;
 			}
+
+			// deal with corner cases when greenhouse is assembled using KIS
+			if (double.IsNaN(growth) || double.IsInfinity(growth)) growth = 0.0;
+
+			VesselData vd = vessel.KerbalismData();
+			VesselResources resources = ResourceCache.Get(vessel);
+
+			SimulateGreenhouse(
+				vessel,
+				this,
+				vd,
+				resources,
+				Kerbalism.elapsed_s,
+				auto_harvest,
+				ref growth,
+				ref natural,
+				ref artificial,
+				ref tta,
+				ref issue,
+				ref storage_wait_notified);
 		}
 
 
@@ -249,118 +175,373 @@ namespace KERBALISM
 											VesselData vd, VesselResources resources, double elapsed_s)
 		{
 			Profiler.BeginSample("Greenhouse.BackgroundUpdate");
-			// get protomodule data
 			bool active = Lib.Proto.GetBool(m, "active");
+			bool auto_harvest = Lib.Proto.GetBool(m, "auto_harvest");
 			double growth = Lib.Proto.GetDouble(m, "growth");
 
-			// if enabled and not ready for harvest
-			if (active && growth < 0.99)
+			if (active && (growth < ReadyThreshold || auto_harvest))
 			{
-				// get resource handler
-				ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+				double natural = Lib.Proto.GetDouble(m, "natural");
+				double artificial = Lib.Proto.GetDouble(m, "artificial");
+				double tta = Lib.Proto.GetDouble(m, "tta");
+				string issue = Lib.Proto.GetString(m, "issue");
+				bool storage_wait_notified = Lib.Proto.GetBool(m, "storage_wait_notified");
 
-				// calculate natural and artificial lighting
-				double natural = vd.EnvSolarFluxTotal;
-				double artificial = Math.Max(g.light_tolerance - natural, 0.0);
+				SimulateGreenhouse(
+					v,
+					g,
+					vd,
+					resources,
+					elapsed_s,
+					auto_harvest,
+					ref growth,
+					ref natural,
+					ref artificial,
+					ref tta,
+					ref issue,
+					ref storage_wait_notified);
 
-				// consume EC for the lamps, scaled by artificial light intensity
-				if (artificial > double.Epsilon) ec.Consume(g.ec_rate * (artificial / g.light_tolerance) * elapsed_s, ResourceBroker.Greenhouse);
-
-				// reset artificial lighting if there is no ec left
-				// note: comparing against amount in previous simulation step
-				if (ec.Amount <= double.Epsilon) artificial = 0.0;
-
-				// execute recipe
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
-				foreach (ModuleResource input in g.resHandler.inputResources) //recipe.Input(input.name, input.rate * elapsed_s);
-				{
-					// WasteAtmosphere is primary combined input
-					if (g.WACO2 && input.name == Habitat.WasteAtmoResName) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "CarbonDioxide");
-					// CarbonDioxide is secondary combined input
-					else if (g.WACO2 && input.name == "CarbonDioxide") recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * elapsed_s, "");
-					// if atmosphere is breathable disable WasteAtmosphere / CO2
-					else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName)) recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate, "");
-					else
-						recipe.AddInput(input.name, input.rate * elapsed_s);
-				}
-				foreach (ModuleResource output in g.resHandler.outputResources)
-				{
-					// if atmosphere is breathable disable Oxygen
-					if (output.name == "Oxygen") recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * elapsed_s, true);
-					else recipe.AddOutput(output.name, output.rate * elapsed_s, true);
-				}
-				resources.AddRecipe(recipe);
-
-				// determine environment conditions
-				bool lighting = natural + artificial >= g.light_tolerance;
-				bool pressure = g.pressure_tolerance <= 0 || vd.Pressure >= g.pressure_tolerance;
-				bool radiation = g.radiation_tolerance <= 0 || vd.EnvRadiation * (1.0 - vd.Shielding) < g.radiation_tolerance;
-
-				// determine inputs conditions
-				// note: comparing against amounts in previous simulation step
-				bool inputs = true;
-				string missing_res = string.Empty;
-				bool dis_WACO2 = false;
-				foreach (ModuleResource input in g.resHandler.inputResources)
-				{
-					// combine WasteAtmosphere and CO2 if both exist
-					if (input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide")
-					{
-						if (dis_WACO2 || vd.EnvBreathable) continue;    // skip if already checked or atmosphere is breathable
-						if (g.WACO2)
-						{
-							if (resources.GetResource(v, Habitat.WasteAtmoResName).Amount <= double.Epsilon && resources.GetResource(v, "CarbonDioxide").Amount <= double.Epsilon)
-							{
-								inputs = false;
-								missing_res = "CarbonDioxide";
-								break;
-							}
-							dis_WACO2 = true;
-							continue;
-						}
-					}
-					if (resources.GetResource(v, input.name).Amount <= double.Epsilon)
-					{
-						inputs = false;
-						missing_res = input.name;
-						break;
-					}
-				}
-
-				// if growing
-				if (lighting && pressure && radiation && inputs)
-				{
-					// increase growth
-					growth += g.crop_rate * elapsed_s;
-					growth = Math.Min(growth, 1.0);
-
-					// notify the user when crop can be harvested
-					if (growth >= 0.99)
-					{
-						Message.Post(Local.harvestedready_msg.Format("<b>" + v.vesselName + "</b>"));//Lib.BuildString("On <<1>> the crop is ready to be harvested")
-						growth = 1.0;
-					}
-				}
-
-				// update time-to-harvest
-				double tta = (1.0 - growth) / g.crop_rate;
-
-				// update issues
-				string issue =
-				  !inputs ? Lib.BuildString(Local.Greenhouse_resoucesmissing.Format(missing_res))//"missing ", missing_res
-				: !lighting ? Local.Greenhouse_issue1//"insufficient lighting"
-				: !pressure ? Local.Greenhouse_issue2//"insufficient pressure"
-				: !radiation ? Local.Greenhouse_issue3//"excessive radiation"
-				: string.Empty;
-
-				// update protomodule data
 				Lib.Proto.Set(m, "natural", natural);
 				Lib.Proto.Set(m, "artificial", artificial);
 				Lib.Proto.Set(m, "tta", tta);
 				Lib.Proto.Set(m, "issue", issue);
 				Lib.Proto.Set(m, "growth", growth);
+				Lib.Proto.Set(m, "storage_wait_notified", storage_wait_notified);
+			}
+			else if (active && growth >= ReadyThreshold && Lib.Proto.GetString(m, "issue") == Local.Greenhouse_issue4)
+			{
+				Lib.Proto.Set(m, "issue", string.Empty);
 			}
 			Profiler.EndSample();
+		}
+
+		/// <summary>
+		/// Shared loaded/background greenhouse simulation.
+		/// Supports multi-cycle auto-harvest across large elapsed times and capacity-safe harvests.
+		/// </summary>
+		static void SimulateGreenhouse(
+			Vessel v,
+			Greenhouse g,
+			VesselData vd,
+			VesselResources resources,
+			double elapsed_s,
+			bool auto_harvest,
+			ref double growth,
+			ref double natural,
+			ref double artificial,
+			ref double tta,
+			ref string issue,
+			ref bool storage_wait_notified)
+		{
+			natural = vd.EnvSolarFluxTotal;
+			artificial = Math.Max(g.light_tolerance - natural, 0.0);
+
+			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+			if (Available(ec) <= double.Epsilon) artificial = 0.0;
+
+			bool lighting = natural + artificial >= g.light_tolerance;
+			bool pressure = g.pressure_tolerance <= double.Epsilon || vd.Pressure >= g.pressure_tolerance;
+			bool radiation = g.radiation_tolerance <= double.Epsilon
+				|| (1.0 - vd.Shielding) * vd.EnvHabitatRadiation < g.radiation_tolerance;
+
+			bool inputs = HasInputs(v, g, vd, resources, out string missing_res);
+			bool environment_ok = lighting && pressure && radiation;
+			double remaining = Math.Max(elapsed_s, 0.0);
+			double harvested_total = 0.0;
+			bool became_ready_manual = false;
+			issue = string.Empty;
+			List<ResourceRecipe> immediate_recipes = new List<ResourceRecipe>(1);
+
+			while (true)
+			{
+				if (growth >= ReadyThreshold)
+				{
+					growth = 1.0;
+
+					if (!auto_harvest)
+						break;
+
+					if (TryAutoHarvest(v, resources, g.crop_resource, g.crop_size, ref growth, ref storage_wait_notified, ref harvested_total))
+					{
+						// continue growing with any remaining time
+						if (remaining <= double.Epsilon)
+							break;
+						continue;
+					}
+
+					issue = Local.Greenhouse_issue4;
+					if (!storage_wait_notified)
+					{
+						Message.Post(Local.Greenhouse_msg_storage.Format("<b>" + v.vesselName + "</b>"));
+						storage_wait_notified = true;
+					}
+					break;
+				}
+
+				if (remaining <= double.Epsilon)
+					break;
+
+				if (!environment_ok || !inputs || g.crop_rate <= double.Epsilon)
+				{
+					// keep prior behavior: still run lamps/recipe while growing but blocked
+					ExecuteResourceRecipe(v, g, vd, resources, remaining, immediate_recipes);
+					double blocked_lamp_fraction = LampFraction(ec, g, artificial, remaining);
+					ConsumeLamp(ec, g, artificial, remaining * blocked_lamp_fraction);
+					remaining = 0.0;
+					issue =
+						!inputs ? Lib.BuildString(Local.Greenhouse_resoucesmissing.Format(missing_res))
+						: !lighting ? Local.Greenhouse_issue1
+						: !pressure ? Local.Greenhouse_issue2
+						: !radiation ? Local.Greenhouse_issue3
+						: string.Empty;
+					break;
+				}
+
+				double time_to_ripe = (ReadyThreshold - growth) / g.crop_rate;
+				double dt = Math.Min(remaining, time_to_ripe);
+				if (dt <= double.Epsilon)
+					break;
+
+				double resource_fraction = InputFraction(v, g, vd, resources, dt);
+				double lamp_fraction = LampFraction(ec, g, artificial, dt);
+				double growth_fraction = Math.Min(resource_fraction, lamp_fraction);
+				double processed_time = dt * growth_fraction;
+
+				remaining -= dt;
+				if (processed_time > double.Epsilon)
+				{
+					double executed_fraction = ExecuteResourceRecipe(v, g, vd, resources, processed_time, immediate_recipes);
+					processed_time *= executed_fraction;
+					growth_fraction = processed_time / dt;
+					ConsumeLamp(ec, g, artificial, processed_time);
+					growth += g.crop_rate * processed_time;
+				}
+
+				if (growth_fraction < 1.0 - 1e-9)
+				{
+					if (lamp_fraction < resource_fraction)
+					{
+						artificial = 0.0;
+						issue = Local.Greenhouse_issue1;
+					}
+					else
+					{
+						HasInputs(v, g, vd, resources, out missing_res);
+						issue = Lib.BuildString(Local.Greenhouse_resoucesmissing.Format(missing_res));
+					}
+					break;
+				}
+
+				if (growth >= ReadyThreshold - 1e-12)
+				{
+					growth = 1.0;
+					if (!auto_harvest)
+					{
+						became_ready_manual = true;
+						break;
+					}
+					// auto path handles harvest at the top of the next loop iteration
+				}
+			}
+
+			if (harvested_total > double.Epsilon)
+			{
+				PostHarvestMessage(v, g.crop_resource, harvested_total, emergency: false);
+				if (!Lib.Landed(v)) DB.landmarks.space_harvest = true;
+			}
+			else if (became_ready_manual)
+			{
+				Message.Post(Local.harvestedready_msg.Format("<b>" + v.vesselName + "</b>"));
+			}
+
+			if (g.crop_rate > double.Epsilon && growth < ReadyThreshold)
+				tta = (ReadyThreshold - growth) / g.crop_rate;
+			else
+				tta = 0.0;
+
+			if (issue.Length == 0 && growth >= ReadyThreshold && auto_harvest && !HasCropStorage(resources, v, g.crop_resource, g.crop_size))
+				issue = Local.Greenhouse_issue4;
+		}
+
+		static double Available(ResourceInfo resource)
+		{
+			return Math.Max(resource.Amount + resource.Deferred, 0.0);
+		}
+
+		static bool HasInputs(Vessel v, Greenhouse g, VesselData vd, VesselResources resources, out string missing_resource)
+		{
+			missing_resource = string.Empty;
+			bool checked_combined = false;
+
+			foreach (ModuleResource input in g.resHandler.inputResources)
+			{
+				bool carbon_input = input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide";
+				if (carbon_input && vd.EnvBreathable) continue;
+
+				if (carbon_input && g.WACO2)
+				{
+					if (checked_combined) continue;
+					checked_combined = true;
+					double available_carbon = Available(resources.GetResource(v, Habitat.WasteAtmoResName))
+						+ Available(resources.GetResource(v, "CarbonDioxide"));
+					if (available_carbon <= double.Epsilon)
+					{
+						missing_resource = "CarbonDioxide";
+						return false;
+					}
+					continue;
+				}
+
+				if (Available(resources.GetResource(v, input.name)) <= double.Epsilon)
+				{
+					missing_resource = input.name;
+					return false;
+				}
+			}
+			return true;
+		}
+
+		static double InputFraction(Vessel v, Greenhouse g, VesselData vd, VesselResources resources, double elapsed_s)
+		{
+			if (elapsed_s <= double.Epsilon) return 1.0;
+
+			double fraction = 1.0;
+			bool checked_combined = false;
+			foreach (ModuleResource input in g.resHandler.inputResources)
+			{
+				bool carbon_input = input.name == Habitat.WasteAtmoResName || input.name == "CarbonDioxide";
+				if (carbon_input && vd.EnvBreathable) continue;
+
+				if (carbon_input && g.WACO2)
+				{
+					if (checked_combined) continue;
+					checked_combined = true;
+
+					double combined_rate = 0.0;
+					foreach (ModuleResource combined_input in g.resHandler.inputResources)
+					{
+						if (combined_input.name == Habitat.WasteAtmoResName || combined_input.name == "CarbonDioxide")
+							combined_rate += combined_input.rate;
+					}
+
+					if (combined_rate > double.Epsilon)
+					{
+						double available_carbon = Available(resources.GetResource(v, Habitat.WasteAtmoResName))
+							+ Available(resources.GetResource(v, "CarbonDioxide"));
+						fraction = Math.Min(fraction, available_carbon / (combined_rate * elapsed_s));
+					}
+					continue;
+				}
+
+				if (input.rate > double.Epsilon)
+				{
+					double available = Available(resources.GetResource(v, input.name));
+					fraction = Math.Min(fraction, available / (input.rate * elapsed_s));
+				}
+			}
+			return Lib.Clamp(fraction, 0.0, 1.0);
+		}
+
+		static double ExecuteResourceRecipe(
+			Vessel v,
+			Greenhouse g,
+			VesselData vd,
+			VesselResources resources,
+			double elapsed_s,
+			List<ResourceRecipe> immediate_recipes)
+		{
+			if (elapsed_s <= double.Epsilon) return 1.0;
+
+			double input_fraction = InputFraction(v, g, vd, resources, elapsed_s);
+			if (input_fraction <= double.Epsilon) return 0.0;
+			double processed_s = elapsed_s * input_fraction;
+
+			ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
+			foreach (ModuleResource input in g.resHandler.inputResources)
+			{
+				if (g.WACO2 && input.name == Habitat.WasteAtmoResName)
+					recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * processed_s, "CarbonDioxide");
+				else if (g.WACO2 && input.name == "CarbonDioxide")
+					recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * processed_s, "");
+				else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName))
+					recipe.AddInput(input.name, vd.EnvBreathable ? 0.0 : input.rate * processed_s, "");
+				else
+					recipe.AddInput(input.name, input.rate * processed_s);
+			}
+			foreach (ModuleResource output in g.resHandler.outputResources)
+			{
+				if (output.name == "Oxygen")
+					recipe.AddOutput(output.name, vd.EnvBreathable ? 0.0 : output.rate * processed_s, true);
+				else
+					recipe.AddOutput(output.name, output.rate * processed_s, true);
+			}
+
+			immediate_recipes.Clear();
+			immediate_recipes.Add(recipe);
+			ResourceRecipe.ExecuteRecipes(v, resources, immediate_recipes);
+			return input_fraction * Lib.Clamp(1.0 - recipe.left, 0.0, 1.0);
+		}
+
+		static double LampFraction(ResourceInfo ec, Greenhouse g, double artificial, double elapsed_s)
+		{
+			if (artificial <= double.Epsilon || g.ec_rate <= double.Epsilon || elapsed_s <= double.Epsilon)
+				return 1.0;
+
+			double required = g.ec_rate * (artificial / g.light_tolerance) * elapsed_s;
+			return Lib.Clamp(Available(ec) / required, 0.0, 1.0);
+		}
+
+		static void ConsumeLamp(ResourceInfo ec, Greenhouse g, double artificial, double elapsed_s)
+		{
+			if (artificial <= double.Epsilon || g.ec_rate <= double.Epsilon || elapsed_s <= double.Epsilon)
+				return;
+
+			double required = g.ec_rate * (artificial / g.light_tolerance) * elapsed_s;
+			ec.Consume(required, ResourceBroker.Greenhouse);
+		}
+
+		static bool HasCropStorage(VesselResources resources, Vessel v, string resource_name, double amount)
+		{
+			ResourceInfo res = resources.GetResource(v, resource_name);
+			return res.Capacity - (res.Amount + res.Deferred) + 1e-9 >= amount;
+		}
+
+		static bool TryAutoHarvest(
+			Vessel v,
+			VesselResources resources,
+			string crop_resource,
+			double crop_size,
+			ref double growth,
+			ref bool storage_wait_notified,
+			ref double harvested_total)
+		{
+			if (crop_size <= double.Epsilon)
+				return false;
+			if (!HasCropStorage(resources, v, crop_resource, crop_size))
+				return false;
+
+			resources.Produce(v, crop_resource, crop_size, ResourceBroker.Greenhouse);
+			growth = 0.0;
+			storage_wait_notified = false;
+			harvested_total += crop_size;
+			return true;
+		}
+
+		static void PostHarvestMessage(Vessel v, string crop_resource, double amount, bool emergency)
+		{
+			string amount_text = "<color=ffffff>" + amount.ToString("F0") + " " + Lib.GetResourceDisplayName(crop_resource) + "</color>";
+			if (emergency)
+			{
+				Message.Post(Lib.BuildString(
+					Local.Greenhouse_msg_1.Format("<color=ffffff>" + v.vesselName + "</color> "),
+					Local.Greenhouse_msg_3.Format(" " + amount_text)));
+			}
+			else
+			{
+				Message.Post(Lib.BuildString(
+					Local.Greenhouse_msg_1.Format("<color=ffffff>" + v.vesselName + "</color> "),
+					Local.Greenhouse_msg_2.Format(amount_text)));
+			}
 		}
 
 
@@ -382,35 +563,21 @@ namespace KERBALISM
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_Harvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public void Harvest()
 		{
-			// produce reduced quantity of food, proportional to current growth
 			ResourceCache.Produce(vessel, crop_resource, crop_size, ResourceBroker.Greenhouse);
-
-			// reset growth
 			growth = 0.0;
-
-			// show message
-			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_2.Format("<color=ffffff>" + crop_size.ToString("F0") + " " + Lib.GetResourceDisplayName(crop_resource) + "</color>")));//"On <<1>>""harvest produced <<1>>", 
-
-			// record first harvest
+			storage_wait_notified = false;
+			PostHarvestMessage(vessel, crop_resource, crop_size, emergency: false);
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, guiName = "#KERBALISM_Greenhouse_EmergencyHarvest", active = false, groupName = "Greenhouse", groupDisplayName = "#KERBALISM_Group_Greenhouse")]//Greenhouse
 		public void EmergencyHarvest()
 		{
-			// calculate reduced harvest size
 			double reduced_harvest = crop_size * growth * 0.5;
-
-			// produce reduced quantity of food, proportional to current growth
 			ResourceCache.Produce(vessel, crop_resource, reduced_harvest, ResourceBroker.Greenhouse);
-
-			// reset growth
 			growth = 0.0;
-
-			// show message
-			Message.Post(Lib.BuildString(Local.Greenhouse_msg_1.Format("<color=ffffff>" + vessel.vesselName + "</color> "), Local.Greenhouse_msg_3.Format(" <color=ffffff>"+ reduced_harvest.ToString("F0")+ " " + crop_resource +"</color>")));//"On <<1>>""emergency harvest produced"
-
-			// record first harvest
+			storage_wait_notified = false;
+			PostHarvestMessage(vessel, crop_resource, reduced_harvest, emergency: true);
 			if (!Lib.Landed(vessel)) DB.landmarks.space_harvest = true;
 		}
 
@@ -566,5 +733,3 @@ namespace KERBALISM
 
 
 } // KERBALISM
-
-
