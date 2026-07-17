@@ -71,6 +71,20 @@ namespace KERBALISM
 				fixedHeight = ScaleFloat(16.0f)
 			};
 
+			// Opt-in row container for selectable content whose label may wrap.
+			entry_container_wrap = new GUIStyle
+			{
+				stretchWidth = true
+			};
+
+			// Compact IMGUI scrollbar matching the 10 px KsmGui scrollbars used by
+			// windows such as the Science Archive.
+			vertical_scrollbar = new GUIStyle(HighLogic.Skin.verticalScrollbar)
+			{
+				fixedWidth = ScaleFloat(10.0f)
+			};
+			vertical_scrollbar.normal.background = blackBackground;
+
 			// entry label text
 			entry_label = new GUIStyle(HighLogic.Skin.label)
 			{
@@ -153,6 +167,7 @@ namespace KERBALISM
 			{
 				stretchWidth = true,
 				stretchHeight = true,
+				wordWrap = true,
 				fontSize = ScaleInteger(12),
 				alignment = TextAnchor.MiddleCenter,
 				border = new RectOffset(0, 0, 0, 0),
@@ -211,6 +226,7 @@ namespace KERBALISM
 		public static void ReloadBackgroundStyles()
 		{
 			section_container.normal.background = blackBackground;
+			vertical_scrollbar.normal.background = blackBackground;
 			tooltip.normal.background = blackBackground;
 			message.normal.background = blackBackground;
 		}
@@ -253,6 +269,8 @@ namespace KERBALISM
 		public static GUIStyle section_container;         // container for a section subtitle
 		public static GUIStyle section_text;              // text for a section subtitle
 		public static GUIStyle entry_container;           // container for a row
+		public static GUIStyle entry_container_wrap;      // selectable row container that allows wrapped labels
+		public static GUIStyle vertical_scrollbar;         // compact scrollbar for IMGUI popup windows
 		public static GUIStyle entry_label;               // left content for a row
 		public static GUIStyle entry_label_nowrap;        // left content for a row that doesn't wrap
 		public static GUIStyle entry_value;               // right content for a row
