@@ -879,13 +879,14 @@ namespace KERBALISM.Planner
 
 		void Process_solarPanel(SolarPanelFixer spf, EnvironmentAnalyzer env)
 		{
-			if (spf.part.editorStarted && spf.isInitialized && spf.isEnabled && spf.editorEnabled)
+			if (spf.part.editorStarted && spf.isInitialized && spf.isEnabled && spf.editorEnabled && spf.SolarPanel != null)
 			{
 				double editorOutput = 0.0;
 				switch (Planner.Sunlight)
 				{
 					case Planner.SunlightState.SunlightNominal:
-						editorOutput = spf.nominalRate * (env.solar_flux / Sim.SolarFluxAtHome);
+						// Apply panel-type peak exposure (CYLINDRICAL = 1/π, SPHERICAL = 0.25, FLAT = 1)
+						editorOutput = spf.nominalRate * spf.SolarPanel.GetMaxCosineFactor() * (env.solar_flux / Sim.SolarFluxAtHome);
 						if (editorOutput > 0.0) Resource("ElectricCharge").Produce(editorOutput, Local.Planner_source_solarpanel_nominal);
 						break;
 					case Planner.SunlightState.SunlightSimulated:

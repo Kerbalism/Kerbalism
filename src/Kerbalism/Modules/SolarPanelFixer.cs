@@ -1143,6 +1143,23 @@ namespace KERBALISM
 			/// <summary>Type of the panel</summary>
 			public virtual ModuleDeployableSolarPanel.PanelType Type => ModuleDeployableSolarPanel.PanelType.FLAT;
 
+			/// <summary>
+			/// Peak cosine/exposure factor for planner nominal estimates.
+			/// SPHERICAL is fixed at 0.25; CYLINDRICAL peaks at 1/π; FLAT peaks at 1.
+			/// </summary>
+			public virtual double GetMaxCosineFactor()
+			{
+				switch (Type)
+				{
+					case ModuleDeployableSolarPanel.PanelType.SPHERICAL:
+						return 0.25;
+					case ModuleDeployableSolarPanel.PanelType.CYLINDRICAL:
+						return 1.0 / Math.PI;
+					default:
+						return 1.0;
+				}
+			}
+
 			/// <summary>Kopernicus stars support : must set the animation tracked body</summary>
 			public virtual void SetTrackedBody(CelestialBody body) { }
 
@@ -1216,7 +1233,7 @@ namespace KERBALISM
 		// - we still reuse most of the stock calculations
 		// - we let the module fixedupdate/update handle animations/suncatching
 		// - we prevent stock EC generation by reseting the reshandler rate
-		// - we don't support cylindrical/spherical panel types
+		// - FLAT / CYLINDRICAL / SPHERICAL panel types are supported via GetCosineFactor
 		private class StockPanel : SupportedPanel<ModuleDeployableSolarPanel>
 		{
 			private Transform sunCatcherPosition;   // middle point of the panel surface (usually). Use only position, panel surface direction depend on the pivot transform, even for static panels.
@@ -1344,6 +1361,9 @@ namespace KERBALISM
 							return Math.Max(Vector3d.Dot(sunDir, sunCatcherPivot.forward), 0.0);
 
 					case ModuleDeployableSolarPanel.PanelType.CYLINDRICAL:
+						// An orientable cylindrical panel can reach peak exposure when the sun is perpendicular to its axis
+						if (analytic && panelModule.isTracking)
+							return 1.0 / Math.PI;
 						if (panelModule.trackingDotTransform == null)
 							return 0.0;
 						return Math.Max((1.0 - Math.Abs(Vector3d.Dot(sunDir, panelModule.trackingDotTransform.forward))) * (1.0 / Math.PI), 0.0);
