@@ -947,8 +947,9 @@ namespace KERBALISM
 				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
 			}
 
-			if (part.PartActionWindow != null && part.PartActionWindow.isActiveAndEnabled)
-				part.PartActionWindow.displayDirty = true;
+			UIPartActionWindow paw = part.GetVisiblePAW();
+			if (paw != null)
+				paw.displayDirty = true;
 		}
 
         public override string GetModuleDisplayName() { return Local.Habitat; }//"Habitat"

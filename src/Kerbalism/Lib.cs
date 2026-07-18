@@ -1809,11 +1809,45 @@ namespace KERBALISM
 		}
 
 		/// <summary>
+		/// Return the currently visible Part Action Window for this part, or null.
+		/// ResourceDisplay tooltips can leave <see cref="Part.PartActionWindow"/> pointing at a
+		/// hidden ResourceOnly window while a normal PAW is still open.
+		/// </summary>
+		public static UIPartActionWindow GetVisiblePAW(this Part part)
+		{
+			UIPartActionWindow paw = part.PartActionWindow;
+			if (paw == null)
+				return null;
+
+			// Keep the common case O(1). Only ResourceDisplay's stale ResourceOnly reference
+			// requires looking up the real PAW in the controller list.
+			if (paw.Display != UIPartActionWindow.DisplayType.ResourceOnly)
+				return paw.isActiveAndEnabled ? paw : null;
+
+			UIPartActionController controller = UIPartActionController.Instance;
+			if (controller != null && controller.windows != null)
+			{
+				List<UIPartActionWindow> windows = controller.windows;
+				for (int i = 0, count = windows.Count; i < count; i++)
+				{
+					UIPartActionWindow window = windows[i];
+					if (window != null
+						&& window.isActiveAndEnabled
+						&& window.part == part
+						&& window.Display != UIPartActionWindow.DisplayType.ResourceOnly)
+						return window;
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
 		/// Return true if the Part Action Window for this part is shown, false otherwise
 		/// </summary>
 		public static bool IsPAWVisible(this Part part)
 		{
-			return part.PartActionWindow != null && part.PartActionWindow.isActiveAndEnabled;
+			return part.GetVisiblePAW() != null;
 		}
 
 		#endregion
