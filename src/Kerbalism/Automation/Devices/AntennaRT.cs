@@ -7,7 +7,9 @@ namespace KERBALISM
 	{
 		public AntennaRTDevice(PartModule module) : base(module) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "antenna";
+		public override string DisplayName => Local.Automation_antenna;
 
 		public override string Status
 		{
@@ -29,7 +31,9 @@ namespace KERBALISM
 		public ProtoAntennaRTDevice(PartModule prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "antenna";
+		public override string DisplayName => Local.Automation_antenna;
 
 		public override string Status
 		{

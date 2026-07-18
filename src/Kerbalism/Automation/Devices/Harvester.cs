@@ -14,7 +14,9 @@ namespace KERBALISM
 			animator = module.part.FindModuleImplementing<ModuleAnimationGroup>();
 		}
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => Lib.BuildString(module.resource, " harvester").ToLower();
+		public override string DisplayName => Local.Automation_harvester.Format(module.resource);
 
 		public override string Status
 		{
@@ -54,7 +56,9 @@ namespace KERBALISM
 			this.animator = protoPart.FindModule("ModuleAnimationGroup");
 		}
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => Lib.BuildString(prefab.resource, " harvester").ToLower();
+		public override string DisplayName => Local.Automation_harvester.Format(prefab.resource);
 
 		public override string Status
 		{

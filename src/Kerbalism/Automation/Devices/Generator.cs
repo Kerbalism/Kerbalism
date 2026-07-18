@@ -10,7 +10,9 @@ namespace KERBALISM
 	{
 		public GeneratorDevice(ModuleGenerator module) : base(module) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "generator";
+		public override string DisplayName => Local.Planner_source_generator;
 
 		public override string Status
 			=> module.isAlwaysActive ? Local.Generic_ALWAYSON : Lib.Color(module.generatorIsActive, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF,  Lib.Kolor.Yellow);
@@ -36,7 +38,9 @@ namespace KERBALISM
 		public ProtoGeneratorDevice(ModuleGenerator prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "generator";
+		public override string DisplayName => Local.Planner_source_generator;
 
 		public override string Status
 		{

@@ -567,6 +567,8 @@ namespace KERBALISM
 		// Automation
 		////////////////////////////////////////////////////////////////////
 		public static string Automation_datatransmission = GetLoc("Automation_datatransmission"); // "data transmission"
+		public static string Automation_antenna = GetLoc("Automation_antenna"); // "antenna"
+		public static ParamString Automation_harvester = new ParamString("Automation_harvester"); // "<<1>> harvester"
 
 		////////////////////////////////////////////////////////////////////
 		// Monitor UI : file manager

@@ -10,7 +10,9 @@ namespace KERBALISM
 	{
 		public DrillDevice(ModuleResourceHarvester module) : base(module) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "drill";
+		public override string DisplayName => Local.Brokers_StockDrill;
 
 		public override string Status
 		{
@@ -40,7 +42,9 @@ namespace KERBALISM
 		public ProtoDrillDevice(ModuleResourceHarvester prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "drill";
+		public override string DisplayName => Local.Brokers_StockDrill;
 
 		public override string Status
 		{
