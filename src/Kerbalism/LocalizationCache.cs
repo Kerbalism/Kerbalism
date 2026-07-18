@@ -1373,6 +1373,7 @@ namespace KERBALISM
 		public static string Experiment_issue = GetLoc("Experiment_issue"); // "issue :"
 		public static string Experiment_sciencevalue = GetLoc("Experiment_sciencevalue"); // "science value :"
 		public static string Experiment_completion = GetLoc("Experiment_completion"); // "completion :"
+		public static string Process_capacity = GetLoc("Process_capacity"); // "Process capacity :"
 		public static string SolarPanel_deployable = GetLoc("SolarPanel_deployable"); // "solar panel (deployable)"
 		public static string SolarPanel_nonretractable = GetLoc("SolarPanel_nonretractable"); // "solar panel (non retractable)"
 

@@ -155,7 +155,7 @@ namespace KERBALISM
 
 				// Capture after the controls and draw in screen space.
 				tooltip.Capture();
-				tooltip.Draw(win_rect);
+				tooltip.Draw();
 			}
 			else
 			{

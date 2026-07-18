@@ -10,7 +10,7 @@ namespace KERBALISM
 
 		public override string DisplayName => Localizer.Format("#KERBALISM_Device_FissionReactor");
 
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", module.ModuleInfo);
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold(Local.Process_capacity), "\n", module.ModuleInfo);
 
 		public override string Status => Lib.Color(module.IsRunning(), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
@@ -28,7 +28,7 @@ namespace KERBALISM
 
 		public override string DisplayName => Localizer.Format("#KERBALISM_Device_FissionReactor");
 
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold(Local.Process_capacity), "\n", prefab.ModuleInfo);
 
 		public override string Status => Lib.Color(IsProtoRunning(), Local.Generic_RUNNING, Lib.Kolor.Green, Local.Generic_STOPPED, Lib.Kolor.Yellow);
 
@@ -84,7 +84,7 @@ namespace KERBALISM
 
 		public override string DisplayName => module.title;
 
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", module.ModuleInfo);
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold(Local.Process_capacity), "\n", module.ModuleInfo);
 
 		public override string Status => !module.IsDeployedForUse()
 			? Local.Generic_notdeployed
@@ -115,7 +115,7 @@ namespace KERBALISM
 
 		public override string DisplayName => prefab.title;
 
-		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold("Process capacity :"), "\n", prefab.ModuleInfo);
+		public override string Tooltip => Lib.BuildString(base.Tooltip, "\n", Lib.Bold(Local.Process_capacity), "\n", prefab.ModuleInfo);
 
 		public override string Status
 		{

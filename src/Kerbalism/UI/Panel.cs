@@ -27,7 +27,6 @@ namespace KERBALISM
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
 			compact_scrollbar = false;
-			tooltips_outside_window = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -38,7 +37,6 @@ namespace KERBALISM
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
 			compact_scrollbar = false;
-			tooltips_outside_window = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -382,16 +380,10 @@ namespace KERBALISM
 			compact_scrollbar = true;
 		}
 
-		public void PlaceTooltipsOutsideWindow()
-		{
-			tooltips_outside_window = true;
-		}
-
 		// get medata
 		public string Title() { return win_title; }
 		public float Width() { return min_width; }
 		public bool UsesCompactScrollbar() { return compact_scrollbar; }
-		public bool PlacesTooltipsOutsideWindow() { return tooltips_outside_window; }
 
 		sealed class Header
 		{
@@ -440,7 +432,6 @@ namespace KERBALISM
 		string win_title;        // metadata stored in panel
 		float min_width;         // metadata stored in panel
 		bool compact_scrollbar;  // opt-in compact vertical scrollbar
-		bool tooltips_outside_window; // opt-in tooltip placement outside the parent window
 		public PanelType paneltype;
 	}
 } // KERBALISM

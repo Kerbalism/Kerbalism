@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -21,10 +20,10 @@ namespace KERBALISM
 			Get_tooltip();
 		}
 
-		/// <summary>Draw the captured tooltip in screen space.</summary>
-		public void Draw(Rect parentRect, bool outsideParent = false)
+		/// <summary>Draw the captured tooltip in screen space, anchored to the mouse.</summary>
+		public void Draw()
 		{
-			if (tooltip.Length > 0) Render_tooltip(parentRect, outsideParent);
+			if (tooltip.Length > 0) Render_tooltip();
 		}
 
 		void Get_tooltip()
@@ -53,7 +52,7 @@ namespace KERBALISM
 		}
 
 
-		void Render_tooltip(Rect parentRect, bool outsideParent)
+		void Render_tooltip()
 		{
 			// Input.mousePosition is bottom-left based, while IMGUI screen coordinates
 			// are top-left based. Convert explicitly instead of relying on Mouse.screenPos,
@@ -78,25 +77,17 @@ namespace KERBALISM
 			}
 			tooltipHeight = Mathf.Min(tooltipHeight, maxHeight);
 
-			float x = mouse_pos.x - Mathf.Floor(tooltipWidth / 2.0f);
-			float y;
-			if (outsideParent)
-			{
-				// Configure dropdowns keep tooltips outside the window so they don't
-				// cover nearby options.
-				float gap = Styles.ScaleFloat(8.0f);
-				float yAbove = parentRect.yMin - tooltipHeight - gap;
-				float yBelow = parentRect.yMax + gap;
-				y = yAbove >= margin ? yAbove : yBelow;
-			}
-			else
-			{
-				// Other windows retain the familiar cursor-relative placement.
-				y = mouse_pos.y - tooltipHeight - Styles.ScaleFloat(10.0f);
-				if (y < margin)
-					y = mouse_pos.y + Styles.ScaleFloat(20.0f);
-			}
+			// Prefer the lower-right of the cursor so the hovered control stays visible.
+			// Flip independently on each axis when the preferred side doesn't fit.
+			float cursorGap = Styles.ScaleFloat(16.0f);
+			float right = mouse_pos.x + cursorGap;
+			float left = mouse_pos.x - tooltipWidth - cursorGap;
+			float below = mouse_pos.y + cursorGap;
+			float above = mouse_pos.y - tooltipHeight - cursorGap;
+			float x = right + tooltipWidth <= Screen.width - margin ? right : left;
+			float y = below + tooltipHeight <= Screen.height - margin ? below : above;
 
+			// Keep the final rect fully on-screen on both axes.
 			x = Mathf.Clamp(x, margin, Screen.width - tooltipWidth - margin);
 			y = Mathf.Clamp(y, margin, Screen.height - tooltipHeight - margin);
 
@@ -118,4 +109,3 @@ namespace KERBALISM
 
 
 } // KERBALISM
-

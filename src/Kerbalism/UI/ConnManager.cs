@@ -38,7 +38,7 @@ namespace KERBALISM
 						if (hop == null || hop.Length < 1) continue;
 						string name = hop[0];
 						string value = hop.Length >= 2 ? hop[1] : "";
-						string tooltip = hop.Length >= 3 ? ("\n" + hop[2]) : "";
+						string tooltip = hop.Length >= 3 ? hop[2] : "";
 						p.AddContent(name, value, tooltip);
 					}
 				}

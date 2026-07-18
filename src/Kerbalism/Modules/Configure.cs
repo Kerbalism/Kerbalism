@@ -603,7 +603,6 @@ namespace KERBALISM
 			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(Localizer.Format(title), Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
 			p.UseCompactScrollbar();
-			p.PlaceTooltipsOutsideWindow();
 		}
 
 		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)

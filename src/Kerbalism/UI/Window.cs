@@ -97,7 +97,7 @@ namespace KERBALISM
 
 			// Tooltips are drawn after the window in screen space so they aren't clipped
 			// or constrained by the parent panel.
-			tooltip.Draw(win_rect, panel.PlacesTooltipsOutsideWindow());
+			tooltip.Draw();
 
 			// get mouse over state
 			//bool mouse_over = win_rect.Contains(Event.current.mousePosition);
