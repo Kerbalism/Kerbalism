@@ -57,7 +57,7 @@ namespace KERBALISM
 				FindExperiment();
 
 			if (experiment != null)
-				ObserveStatus(experiment.Status);
+				ObserveStatus(experiment.Status, experiment.prodFactor > 0.0);
 		}
 
 		private void FindExperiment()
@@ -74,13 +74,14 @@ namespace KERBALISM
 			}
 		}
 
-		private void ObserveStatus(ExpStatus status)
+		private void ObserveStatus(ExpStatus status, bool producedThisUpdate)
 		{
 			// Require a producing state before Waiting. This makes unlocking part-local:
 			// a subject completed previously by another vessel doesn't unlock a fresh part.
-			if (status == ExpStatus.Running || status == ExpStatus.Forced)
+			if (status == ExpStatus.Running || status == ExpStatus.Forced || producedThisUpdate)
 				observedProducing = true;
-			else if (observedProducing && status == ExpStatus.Waiting)
+
+			if (observedProducing && status == ExpStatus.Waiting)
 				unlocked = true;
 		}
 
@@ -322,9 +323,11 @@ namespace KERBALISM
 					continue;
 
 				ExpStatus status = Lib.Proto.GetEnum(candidate, "status", ExpStatus.Stopped);
-				if (status == ExpStatus.Running || status == ExpStatus.Forced)
+				bool producedThisUpdate = Lib.Proto.GetDouble(candidate, "prodFactor") > 0.0;
+				if (status == ExpStatus.Running || status == ExpStatus.Forced || producedThisUpdate)
 					wasProducing = true;
-				else if (wasProducing && status == ExpStatus.Waiting)
+
+				if (wasProducing && status == ExpStatus.Waiting)
 					isUnlocked = true;
 				break;
 			}
