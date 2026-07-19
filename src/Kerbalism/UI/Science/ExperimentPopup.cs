@@ -20,6 +20,7 @@ namespace KERBALISM
 		Vessel v;
 		Experiment moduleOrPrefab;
 		ProtoPartModuleSnapshot protoModule;
+		ProtoPartSnapshot protoPart;
 
 		VesselData vd;
 
@@ -84,6 +85,19 @@ namespace KERBALISM
 
 			this.moduleOrPrefab = moduleOrPrefab;
 			this.v = v;
+			this.protoPart = null;
+			if (isProto && v.protoVessel != null)
+			{
+				List<ProtoPartSnapshot> parts = v.protoVessel.protoPartSnapshots;
+				for (int i = 0; i < parts.Count; i++)
+				{
+					if (parts[i].flightID == partId)
+					{
+						this.protoPart = parts[i];
+						break;
+					}
+				}
+			}
 			vd = v.KerbalismData();
 			expInfo = GetExperimentInfo(moduleOrPrefab.experiment_id);
 			isSample = expInfo.IsSample;
@@ -301,7 +315,8 @@ namespace KERBALISM
 			sb.Length = 0;
 
 			RequireResult[] reqs;
-			moduleOrPrefab.Requirements.TestRequirements(v, out reqs, true);
+			Part reqPart = (!isProto && moduleOrPrefab.part != null && moduleOrPrefab.part.vessel == v) ? moduleOrPrefab.part : null;
+			moduleOrPrefab.Requirements.TestRequirements(v, out reqs, true, reqPart, moduleOrPrefab.pointing_axis, isProto ? protoPart : null);
 
 			bool first = true;
 			foreach (RequireResult req in reqs)

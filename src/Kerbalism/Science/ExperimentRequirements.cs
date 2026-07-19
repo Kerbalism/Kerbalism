@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using KSP.Localization;
+using UnityEngine;
 
 namespace KERBALISM
 {
@@ -40,6 +41,19 @@ namespace KERBALISM
 
 			SunAngleMin,
 			SunAngleMax,
+
+			/// <summary> Max vessel angular velocity magnitude (rad/s). </summary>
+			AngularVelocityMax,
+			/// <summary> Max angle (degrees) between the experiment pointing axis and the direction to the main sun. Requires a loaded part. </summary>
+			SunPointingMax,
+
+			/// <summary>
+			/// Min heliocentric distance as a fraction of the home body's SMA (AU in stock/RSS terms).
+			/// Requires the vessel SOI body to be a sun/star. Uses FlightGlobals.GetHomeBody().
+			/// </summary>
+			HomeStarDistanceMin,
+			/// <summary> Max heliocentric distance as a fraction of the home body's SMA. </summary>
+			HomeStarDistanceMax,
 
 			AbsoluteZero,
 			InnerBelt,
@@ -108,15 +122,34 @@ namespace KERBALISM
 		// not ideal because unboxing at but least we won't be parsing strings all the time and the array should be fast
 		public RequireDef[] Requires { get; private set; }
 
+		// Optional context for part-local requirements (SunPointingMax). Cleared after each TestRequirements call.
+		private Part evalPart;
+		private ProtoPartSnapshot evalProtoPart;
+		private string evalPointingAxis;
+
 		public ExperimentRequirements(string requires)
 		{
 			Requires = ParseRequirements(requires);
 		}
 
-		public double TestRequirements(Vessel v)
+		private void BeginEvalContext(Part part, ProtoPartSnapshot protoPart, string pointingAxis)
+		{
+			evalPart = part;
+			evalProtoPart = protoPart;
+			evalPointingAxis = string.IsNullOrEmpty(pointingAxis) ? "Forward" : pointingAxis;
+		}
+
+		private void EndEvalContext()
+		{
+			evalPart = null;
+			evalProtoPart = null;
+		}
+
+		public double TestRequirements(Vessel v, Part part = null, string pointingAxis = null, ProtoPartSnapshot protoPart = null)
 		{
 			Profiler.BeginSample("ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
+			BeginEvalContext(part, protoPart, pointingAxis);
 			double result = 1.0;
 
 			for (int i = 0; i < Requires.Length; i++)
@@ -124,20 +157,23 @@ namespace KERBALISM
 				double reqResult = EvaluateRequirement(v, vd, Requires[i]);
 				if (reqResult == 0.0)
 				{
+					EndEvalContext();
 					Profiler.EndSample();
 					return 0.0;
 				}
 				result *= reqResult;
 			}
 
+			EndEvalContext();
 			Profiler.EndSample();
 			return result;
 		}
 
-		public double TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false)
+		public double TestRequirements(Vessel v, out RequireResult[] results, bool testAll = false, Part part = null, string pointingAxis = null, ProtoPartSnapshot protoPart = null)
 		{
 			Profiler.BeginSample("ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
+			BeginEvalContext(part, protoPart, pointingAxis);
 			results = new RequireResult[Requires.Length];
 			double result = 1.0;
 
@@ -148,6 +184,7 @@ namespace KERBALISM
 
 				if (!testAll && results[i].result == 0.0)
 				{
+					EndEvalContext();
 					Profiler.EndSample();
 					return 0.0;
 				}
@@ -155,6 +192,7 @@ namespace KERBALISM
 				result *= results[i].result;
 			}
 
+			EndEvalContext();
 			Profiler.EndSample();
 			return result;
 		}
@@ -211,6 +249,53 @@ namespace KERBALISM
 				case Require.VolumePerCrewMax      : { double val = vd.VolumePerCrew;            mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
 				case Require.SunAngleMin           : { double val = vd.EnvSunBodyAngle;          mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
 				case Require.SunAngleMax           : { double val = vd.EnvSunBodyAngle;          mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.AngularVelocityMax    : { double val = v.angularVelocity.magnitude; mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
+				case Require.SunPointingMax:
+				{
+					double val = TestSunPointingAngle(v, vd);
+					if (double.IsNaN(val))
+					{
+						// No part context available: cannot evaluate pointing.
+						mv = null;
+						reqResult = 1.0;
+					}
+					else
+					{
+						mv = val;
+						reqResult = val <= (double)rv ? 1.0 : 0.0;
+					}
+					break;
+				}
+				case Require.HomeStarDistanceMin:
+				{
+					double val = TestHomeStarDistanceAU(v, vd);
+					if (double.IsNaN(val))
+					{
+						mv = null;
+						reqResult = 0.0;
+					}
+					else
+					{
+						mv = val;
+						reqResult = val >= (double)rv ? 1.0 : 0.0;
+					}
+					break;
+				}
+				case Require.HomeStarDistanceMax:
+				{
+					double val = TestHomeStarDistanceAU(v, vd);
+					if (double.IsNaN(val))
+					{
+						mv = null;
+						reqResult = 0.0;
+					}
+					else
+					{
+						mv = val;
+						reqResult = val <= (double)rv ? 1.0 : 0.0;
+					}
+					break;
+				}
 				case Require.SurfaceSpeedMin       : { double val = v.srfSpeed;                  mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
 				case Require.SurfaceSpeedMax       : { double val = v.srfSpeed;                  mv = val; reqResult = val <= (double)rv ? 1.0 : 0.0; break; }
 				case Require.VerticalSpeedMin      : { double val = v.verticalSpeed;             mv = val; reqResult = val >= (double)rv ? 1.0 : 0.0; break; }
@@ -338,6 +423,10 @@ namespace KERBALISM
 				case Require.AtmosphereAltMax:
 				case Require.SunAngleMin:
 				case Require.SunAngleMax:
+				case Require.AngularVelocityMax:
+				case Require.SunPointingMax:
+				case Require.HomeStarDistanceMin:
+				case Require.HomeStarDistanceMax:
 				case Require.SurfaceSpeedMin:
 				case Require.SurfaceSpeedMax:
 				case Require.VerticalSpeedMin:
@@ -383,6 +472,92 @@ namespace KERBALISM
 			double maxlevel = ScenarioUpgradeableFacilities.GetFacilityLevelCount(facility);
 			if (maxlevel <= 0) maxlevel = 2; // not sure why, but GetFacilityLevelCount return -1 in career
 			return (int)Math.Round(ScenarioUpgradeableFacilities.GetFacilityLevel(facility) * maxlevel + 1); // They start counting at 0
+		}
+
+		/// <summary>
+		/// Heliocentric distance / home-body SMA. Requires sun SOI. Returns NaN when unavailable.
+		/// Uses FlightGlobals.GetHomeBody() so RSS/Kopernicus follow the configured home world.
+		/// EnvMainSun.Distance is surface distance; home SMA is center-to-center, so Radius is added.
+		/// </summary>
+		private static double TestHomeStarDistanceAU(Vessel vessel, VesselData vd)
+		{
+			if (vessel == null || !Lib.IsSun(vessel.mainBody))
+				return double.NaN;
+
+			CelestialBody home = FlightGlobals.GetHomeBody();
+			if (home == null || home.orbit == null || home.orbit.semiMajorAxis <= 0.0)
+				return double.NaN;
+
+			double heliocentric;
+			if (vd?.EnvMainSun != null && vd.EnvMainSun.SunData.body == vessel.mainBody)
+				heliocentric = vd.EnvMainSun.Distance + vessel.mainBody.Radius;
+			else
+				heliocentric = Vector3d.Distance(Lib.VesselPosition(vessel), vessel.mainBody.position);
+
+			return heliocentric / home.orbit.semiMajorAxis;
+		}
+
+		/// <summary>
+		/// Angle in degrees between the experiment pointing axis and the direction from the vessel to the main sun.
+		/// Works for loaded parts and unloaded proto parts. Returns NaN when no part context is available.
+		/// </summary>
+		private double TestSunPointingAngle(Vessel vessel, VesselData vd)
+		{
+			if (vd.EnvMainSun == null)
+				return 180.0;
+
+			Vector3 pointing;
+			if (evalPart != null && vessel.loaded && evalPart.vessel == vessel)
+			{
+				pointing = GetPointingAxis(evalPart, evalPointingAxis);
+			}
+			else if (evalProtoPart != null)
+			{
+				pointing = GetPointingAxisUnloaded(vessel, evalProtoPart, evalPointingAxis);
+			}
+			else
+			{
+				return double.NaN;
+			}
+
+			Vector3 sunDir = (Vector3)vd.EnvMainSun.Direction;
+			return Vector3.Angle(pointing, sunDir);
+		}
+
+		public static Vector3 GetLocalPointingAxis(string axis)
+		{
+			switch (axis)
+			{
+				case "Right": return Vector3.right;
+				case "NegRight": return Vector3.left;
+				case "Up": return Vector3.up;
+				case "NegUp": return Vector3.down;
+				case "NegForward": return Vector3.back;
+				case "Forward":
+				default: return Vector3.forward;
+			}
+		}
+
+		public static Vector3 GetPointingAxis(Part part, string axis)
+		{
+			if (part == null)
+				return GetLocalPointingAxis(axis);
+
+			return part.transform.rotation * GetLocalPointingAxis(axis);
+		}
+
+		/// <summary>
+		/// Reconstruct world-space pointing for an unloaded part from vessel + proto rotation.
+		/// ProtoPartSnapshot.rotation is vessel-relative.
+		/// </summary>
+		public static Vector3 GetPointingAxisUnloaded(Vessel vessel, ProtoPartSnapshot protoPart, string axis)
+		{
+			if (vessel == null || protoPart == null)
+				return GetLocalPointingAxis(axis);
+
+			Transform vesselTransform = vessel.vesselTransform != null ? vessel.vesselTransform : vessel.transform;
+			Quaternion worldRot = vesselTransform.rotation * protoPart.rotation;
+			return worldRot * GetLocalPointingAxis(axis);
 		}
 
 		private double TestAsteroidDistance(Vessel vessel)
@@ -436,9 +611,15 @@ namespace KERBALISM
 					return ((double)reqValue).ToString("F2");
 				case Require.SunAngleMin:
 				case Require.SunAngleMax:
+				case Require.SunPointingMax:
 				case Require.OrbitMinInclination:
 				case Require.OrbitMaxInclination:
 					return Lib.HumanReadableAngle((double)reqValue);
+				case Require.AngularVelocityMax:
+					return ((double)reqValue).ToString("F3") + " rad/s";
+				case Require.HomeStarDistanceMin:
+				case Require.HomeStarDistanceMax:
+					return ((double)reqValue).ToString("F2") + " AU";
 				case Require.TemperatureMin:
 				case Require.TemperatureMax:
 					return Lib.HumanReadableTemp((double)reqValue);
@@ -516,6 +697,10 @@ namespace KERBALISM
 				case Require.VolumePerCrewMax:         return Local.ExperimentReq_VolumePerCrewMax;//"Max. vol./crew "
 				case Require.SunAngleMin:              return Local.ExperimentReq_SunAngleMin;//"Min sun-surface angle"
 				case Require.SunAngleMax:              return Local.ExperimentReq_SunAngleMax;//"Max sun-surface angle"
+				case Require.AngularVelocityMax:       return Local.ExperimentReq_AngularVelocityMax;//"Max. angular velocity"
+				case Require.SunPointingMax:           return Local.ExperimentReq_SunPointingMax;//"Max. sun pointing angle"
+				case Require.HomeStarDistanceMin:      return Local.ExperimentReq_HomeStarDistanceMin;//"Min. home-star distance"
+				case Require.HomeStarDistanceMax:      return Local.ExperimentReq_HomeStarDistanceMax;//"Max. home-star distance"
 				case Require.SurfaceSpeedMin:          return Local.ExperimentReq_SurfaceSpeedMin;//"Min. surface speed "
 				case Require.SurfaceSpeedMax:          return Local.ExperimentReq_SurfaceSpeedMax;//"Max. surface speed "
 				case Require.VerticalSpeedMin:         return Local.ExperimentReq_VerticalSpeedMin;//"Min. vertical speed "
@@ -549,16 +734,16 @@ namespace KERBALISM
 				case Require.AdministrationLevelMax:   return Local.ExperimentReq_AdministrationLevelMax;//"Administration max level "
 				case Require.Part:                     return Local.ExperimentReq_Part;//"Need part "
 				case Require.Module:                   return Local.ExperimentReq_Module;//"Need module "
+				case Require.AbsoluteZero:             return Local.ExperimentReq_AbsoluteZero;//"Absolute zero"
+				case Require.InnerBelt:                return Local.ExperimentReq_InnerBelt;//"Inner belt"
+				case Require.OuterBelt:                return Local.ExperimentReq_OuterBelt;//"Outer belt"
+				case Require.MagneticBelt:             return Local.ExperimentReq_MagneticBelt;//"Magnetic belt"
+				case Require.Magnetosphere:            return Local.ExperimentReq_Magnetosphere;//"Magnetosphere"
+				case Require.InterStellar:             return Local.ExperimentReq_InterStellar;//"Interstellar"
+				case Require.Shadow:                   return Local.ExperimentReq_Shadow;//"Shadow"
+				case Require.Sunlight:                 return Local.ExperimentReq_Sunlight;//"Sunlight"
+				case Require.Greenhouse:               return Local.ExperimentReq_Greenhouse;//"Greenhouse"
 
-				case Require.AbsoluteZero:
-				case Require.InnerBelt:
-				case Require.OuterBelt:
-				case Require.MagneticBelt:
-				case Require.Magnetosphere:
-				case Require.InterStellar:
-				case Require.Shadow:
-				case Require.Sunlight:
-				case Require.Greenhouse:
 				default:
 					return req.ToString();
 			}
