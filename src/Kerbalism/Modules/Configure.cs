@@ -26,6 +26,9 @@ namespace KERBALISM
 
 	public class Configure : PartModule, IPartCostModifier, IPartMassModifier, IModuleInfo, ISpecifics, IConfigurable
 	{
+		const string COLOR_SAME_MODULE = "#ff5555";
+		const string COLOR_SAME_VESSEL = "#ffcc55";
+
 		// config
 		[KSPField] public string title = string.Empty;           // short description (may be a #loc key; display via Localizer.Format)
 		[KSPField] public string configureId = string.Empty;     // stable MM-safe id (no #); use HAS[#configureId[...]] instead of HAS[#title[#loc]]
@@ -50,6 +53,8 @@ namespace KERBALISM
 		bool initialized;                                         // keep track of first configuration
 		CrewSpecs reconfigure_cs;                                 // in-flight reconfiguration crew specs
 		Dictionary<int, int> changes;                             // store 'deferred' changes to avoid problems with unity gui
+		HashSet<int> expanded_slots;                              // per-slot dropdown expansion state
+		HashSet<string> vessel_experiment_ids;                    // experiment ids selected by other Configure modules
 
 		// used to avoid infinite recursion when dealing with symmetry group
 		static bool avoid_inf_recursion;
@@ -101,6 +106,8 @@ namespace KERBALISM
 
 			// store configuration changes
 			changes = new Dictionary<int, int>();
+			expanded_slots = new HashSet<int>();
+			vessel_experiment_ids = new HashSet<string>();
 		}
 
 
@@ -564,9 +571,23 @@ namespace KERBALISM
 				if (GetInstanceID() == 0) return;
 			}
 
+			vessel_experiment_ids = CollectVesselExperimentIds();
+
+			int expandedSlot = -1;
+			foreach (int slot in expanded_slots)
+			{
+				expandedSlot = slot;
+				break;
+			}
+
 			// for each selected setup
 			for (int selected_i = 0; selected_i < selected.Count; ++selected_i)
 			{
+				// While choosing an option, temporarily hide every other slot. Mixing
+				// collapsed slot details into the same scroll view makes the dropdown
+				// ambiguous and can leave its pinned title detached from its entries.
+				if (expandedSlot >= 0 && selected_i != expandedSlot) continue;
+
 				// find index in unlocked setups
 				for (int setup_i = 0; setup_i < unlocked.Count; ++setup_i)
 				{
@@ -581,6 +602,7 @@ namespace KERBALISM
 			// set metadata
 			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(Localizer.Format(title), Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
+			p.UseCompactScrollbar();
 		}
 
 		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
@@ -590,37 +612,179 @@ namespace KERBALISM
 			//       see comment inside generate_details() to understand why this was necessary instead
 			setup.Generate_details(this);
 
-			// render panel title
-			// only allow reconfiguration if there are more setups than slots
+			bool canReconfigure = unlocked.Count > selected.Count;
+			bool isExpanded = canReconfigure && expanded_slots.Contains(selected_i);
 			string setupTitle = Localizer.Format(setup.title);
 			string setupDesc = Localizer.Format(setup.desc);
-			if (unlocked.Count <= selected.Count)
+			string titleColor = SetupHighlightColor(setup, selected_i);
+			string titleText = Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70));
+			if (titleColor != null)
 			{
-				p.AddSection(Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70)), setupDesc);
+				titleText = Lib.BuildString("<color=", titleColor, ">", titleText, "</color>");
+			}
+			if (canReconfigure)
+			{
+				titleText = Lib.BuildString(titleText, isExpanded ? "  ▲" : "  ▼");
+			}
+
+			int capturedSlot = selected_i;
+			p.AddSection(
+				titleText,
+				isExpanded ? string.Empty : setupDesc,
+				click: canReconfigure ? (Action)(() => Toggle_expansion(capturedSlot)) : null,
+				pin: isExpanded);
+
+			if (isExpanded)
+			{
+				int canonicalNoneIndex = unlocked.FindIndex(k => k.name == "None");
+				if (canonicalNoneIndex < 0)
+					canonicalNoneIndex = unlocked.FindIndex(k => IsNoneName(k.name));
+
+				for (int i = 0; i < unlocked.Count; ++i)
+				{
+					ConfigureSetup option = unlocked[i];
+					bool isCurrent = i == setup_i;
+					if (!isCurrent && IsNoneName(option.name) && i != canonicalNoneIndex) continue;
+
+					int capturedIndex = i;
+					string optionTitle = Lib.Ellipsis(Localizer.Format(option.title), Styles.ScaleStringLength(60));
+					string optionColor = isCurrent ? null : SetupHighlightColor(option, capturedSlot);
+					if (optionColor != null)
+						optionTitle = Lib.BuildString("<color=", optionColor, ">", optionTitle, "</color>");
+					if (isCurrent)
+						optionTitle = Lib.BuildString("<b>", optionTitle, "</b>");
+
+					p.AddSelectableContent(
+						optionTitle,
+						isCurrent ? "✓" : string.Empty,
+						Localizer.Format(option.desc),
+						() => Select_setup(capturedSlot, capturedIndex));
+				}
 			}
 			else
 			{
-				p.AddSection(Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70)), setupDesc, () => Change_setup(-1, selected_i, ref setup_i), () => Change_setup(1, selected_i, ref setup_i));
-			}
-
-			// render details
-			foreach (var det in setup.details)
-			{
+				foreach (var det in setup.details)
 				p.AddContent(det.label, det.value);
 			}
 		}
 
-		// utility, used as callback in panel select
-		void Change_setup(int change, int selected_i, ref int setup_i)
+		void Toggle_expansion(int slot)
 		{
+			if (expanded_slots.Contains(slot))
+			{
+				expanded_slots.Clear();
+			}
+			else
+			{
+				expanded_slots.Clear();
+				expanded_slots.Add(slot);
+			}
+			UI.window.ResetScroll();
+		}
 
+		static bool IsNonePaddingName(string name)
+		{
+			if (string.IsNullOrEmpty(name) || !name.StartsWith("None ", StringComparison.Ordinal)) return false;
+			return int.TryParse(name.Substring(5).Trim(), out _);
+		}
 
+		static bool IsNoneName(string name)
+		{
+			return name == "None" || IsNonePaddingName(name);
+		}
 
+		string SetupHighlightColor(ConfigureSetup setup, int slot)
+		{
+			if (setup == null || IsNoneName(setup.name)) return null;
+			if (SetupConflictsWithOtherSlot(setup, slot)) return COLOR_SAME_MODULE;
+			if (SetupOverlapsExperimentIds(setup, vessel_experiment_ids)) return COLOR_SAME_VESSEL;
+			return null;
+		}
 
-			if (setup_i + change == unlocked.Count) setup_i = 0;
-			else if (setup_i + change < 0) setup_i = unlocked.Count - 1;
-			else setup_i += change;
-			changes.Add(selected_i, setup_i);
+		bool SetupConflictsWithOtherSlot(ConfigureSetup setup, int currentSlot)
+		{
+			HashSet<string> experimentIds = new HashSet<string>(SetupExperimentIds(setup));
+			if (experimentIds.Count == 0) return false;
+
+			for (int i = 0; i < selected.Count; ++i)
+			{
+				if (i == currentSlot) continue;
+				ConfigureSetup other = setups.Find(k => k.name == selected[i]);
+				if (other == null) continue;
+				if (other.name == setup.name) return true;
+				if (experimentIds.Count > 0 && SetupOverlapsExperimentIds(other, experimentIds)) return true;
+			}
+			return false;
+		}
+
+		static IEnumerable<string> SetupExperimentIds(ConfigureSetup setup)
+		{
+			if (setup?.modules == null) yield break;
+			foreach (ConfigureModule module in setup.modules)
+			{
+				if (module.type == nameof(Experiment)
+					&& module.id_field == "experiment_id"
+					&& !string.IsNullOrEmpty(module.id_value))
+				{
+					yield return module.id_value;
+				}
+			}
+		}
+
+		static bool SetupOverlapsExperimentIds(ConfigureSetup setup, HashSet<string> experimentIds)
+		{
+			if (experimentIds == null || experimentIds.Count == 0) return false;
+			foreach (string experimentId in SetupExperimentIds(setup))
+				if (experimentIds.Contains(experimentId)) return true;
+			return false;
+		}
+
+		HashSet<string> CollectVesselExperimentIds()
+		{
+			HashSet<string> experimentIds = new HashSet<string>();
+			List<Part> vesselParts = null;
+
+			if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch?.ship != null)
+				vesselParts = EditorLogic.fetch.ship.parts;
+			else if (part.vessel != null)
+				vesselParts = part.vessel.parts;
+
+			if (vesselParts == null) return experimentIds;
+
+			foreach (Part vesselPart in vesselParts)
+			{
+				if (vesselPart == null) continue;
+
+				foreach (PartModule partModule in vesselPart.Modules)
+				{
+					if (!(partModule is Configure other)
+						|| ReferenceEquals(other, this)
+						|| !other.enabled
+						|| other.selected == null)
+						continue;
+
+					foreach (string selectedName in other.selected)
+					{
+						ConfigureSetup selectedSetup = other.setups?.Find(k => k.name == selectedName);
+						if (selectedSetup == null
+							|| (selectedSetup.tech.Length > 0 && !Lib.HasTech(selectedSetup.tech)))
+							continue;
+
+						foreach (string experimentId in SetupExperimentIds(selectedSetup))
+							experimentIds.Add(experimentId);
+					}
+				}
+			}
+
+			return experimentIds;
+		}
+
+		void Select_setup(int slot, int setup_i)
+		{
+			expanded_slots.Remove(slot);
+			UI.window.ResetScroll();
+			if (selected[slot] != unlocked[setup_i].name)
+				changes[slot] = setup_i;
 		}
 
 		// access setups

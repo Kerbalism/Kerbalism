@@ -12,7 +12,9 @@ namespace KERBALISM
 	{
 		public RingDevice(GravityRing module) : base(module) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "gravity ring";
+		public override string DisplayName => Local.Brokers_GravityRing;
 
 		public override string Status => Lib.Color(module.deployed, Local.Generic_DEPLOYED, Lib.Kolor.Green, Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 
@@ -36,7 +38,9 @@ namespace KERBALISM
 		public ProtoRingDevice(GravityRing prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "gravity ring";
+		public override string DisplayName => Local.Brokers_GravityRing;
 
 		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "deployed"), Local.Generic_DEPLOYED, Lib.Kolor.Green, Local.Generic_RETRACTED, Lib.Kolor.Yellow);
 

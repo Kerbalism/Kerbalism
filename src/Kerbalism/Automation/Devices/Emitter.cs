@@ -10,7 +10,9 @@ namespace KERBALISM
 	{
 		public EmitterDevice(Emitter module) : base(module) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "emitter";
+		public override string DisplayName => Local.Module_Emitter;
 
 		public override string Status => Lib.Color(module.running, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 
@@ -33,7 +35,9 @@ namespace KERBALISM
 		public ProtoEmitterDevice(Emitter prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "emitter";
+		public override string DisplayName => Local.Module_Emitter;
 
 		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "running"), Local.Generic_ACTIVE, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
 

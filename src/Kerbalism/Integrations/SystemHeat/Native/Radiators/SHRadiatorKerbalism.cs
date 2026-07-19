@@ -35,11 +35,18 @@ namespace KERBALISM
 		[KSPField(isPersistant = false)]
 		public string radiatorModuleID = "";
 
+		[KSPField(isPersistant = false)]
+		public string systemHeatRadiatorModuleID = "";
+
 		public static string radiatorTitle = Localizer.Format("#KERBALISM_Brokers_Radiator");
 
 		public FloatCurve temperatureCurve;
 		List<InputResourceSnapshot> inputRateSnapshots;
 		FloatCurve baseTemperatureCurve;
+		int lastUSRadiatorSelection = -1;
+		float lastUSRadiatorScale = -1f;
+		bool lastSyncedSystemHeatCooling;
+		bool hasSyncedSystemHeatCooling;
 
 		public override void OnLoad(ConfigNode node)
 		{
@@ -50,16 +57,16 @@ namespace KERBALISM
 		public override void OnStart(StartState state)
 		{
 			base.OnStart(state);
-			SyncCoolingState();
 			CaptureInputRateSnapshots();
 			EnsureBaseTemperatureCurve();
 			if (scale != 1f)
 				RebuildTemperatureCurve();
+			SyncRadiatorState();
 		}
 
 		public override void OnSave(ConfigNode node)
 		{
-			SyncCoolingState();
+			SyncRadiatorState();
 			base.OnSave(node);
 		}
 
@@ -88,6 +95,125 @@ namespace KERBALISM
 			}
 
 			return fallback;
+		}
+
+		/// <summary>Native radiator modules controlled by this sidecar (used by Reliability break/repair).</summary>
+		public List<PartModule> FindNativeRadiatorsForReliability()
+		{
+			var radiators = new List<PartModule>();
+			PartModule nativeRadiator = FindNativeRadiatorModule();
+			if (nativeRadiator != null)
+				radiators.Add(nativeRadiator);
+
+			// USRadiatorSwitch must stay enabled for its mesh/function switching UI, so it
+			// can't be replaced in-place. Its linked SystemHeat radiator is a second native
+			// module and must follow the same Reliability state.
+			if (nativeRadiator?.moduleName == "USRadiatorSwitch")
+			{
+				PartModule systemHeatRadiator = FindLinkedSystemHeatRadiator();
+				if (systemHeatRadiator != null && !radiators.Contains(systemHeatRadiator))
+					radiators.Add(systemHeatRadiator);
+			}
+
+			return radiators;
+		}
+
+		/// <summary>Remove the last registered rejection flux before a failed native radiator is disabled.</summary>
+		public void ClearRadiatorFluxForReliability(PartModule radiator)
+		{
+			if (radiator == null || !SystemHeat.IsRadiator(radiator))
+				return;
+
+			string heatModuleId = SystemHeat.Get(radiator, "systemHeatModuleID", "");
+			PartModule heatModule = SystemHeat.FindHeatModule(part, heatModuleId);
+			SystemHeat.AddFlux(heatModule, SystemHeat.GetModuleId(radiator), 0f, 0f, false);
+		}
+
+		PartModule FindLinkedSystemHeatRadiator()
+		{
+			if (part == null)
+				return null;
+
+			PartModule fallback = null;
+			for (int i = 0; i < part.Modules.Count; i++)
+			{
+				PartModule module = part.Modules[i];
+				if (module == null || module.moduleName != "ModuleSystemHeatRadiator")
+					continue;
+
+				if (fallback == null)
+					fallback = module;
+
+				if (string.IsNullOrEmpty(systemHeatRadiatorModuleID)
+					|| SystemHeat.GetModuleId(module) == systemHeatRadiatorModuleID)
+					return module;
+			}
+
+			return fallback;
+		}
+
+		bool TryGetUSRadiatorSelection(PartModule radiator, out int selection, out float power)
+		{
+			selection = -1;
+			power = 0f;
+			if (radiator == null || radiator.moduleName != "USRadiatorSwitch")
+				return false;
+
+			string powersString = IntegrationReflection.GetString(radiator, "RadiatorPower");
+			if (string.IsNullOrEmpty(powersString))
+				return false;
+
+			string[] powers = powersString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+			selection = IntegrationReflection.GetInt(radiator, "CurrentSelection", -1);
+			if (selection < 0 || selection >= powers.Length)
+				return false;
+
+			return float.TryParse(powers[selection].Trim(), System.Globalization.NumberStyles.Float,
+				System.Globalization.CultureInfo.InvariantCulture, out power)
+				&& !float.IsNaN(power) && !float.IsInfinity(power);
+		}
+
+		void SyncUSRadiatorSwitch()
+		{
+			PartModule radiator = FindNativeRadiatorModule();
+			PartModule systemHeatRadiator = FindLinkedSystemHeatRadiator();
+			if (radiator?.moduleName != "USRadiatorSwitch" || systemHeatRadiator == null
+				|| !TryGetUSRadiatorSelection(radiator, out int selection, out float stockTransferPower))
+				return;
+
+			// ModuleActiveRadiator maxEnergyTransfer/RadiatorPower is fifty times the
+			// equivalent SystemHeat temperature-curve output in kW.
+			float scaleFactor = (float)Math.Pow(scale, scaleEmissionPower);
+			float systemHeatPower = Math.Max(0f, stockTransferPower / 50f) * scaleFactor;
+			if (selection != lastUSRadiatorSelection || !Mathf.Approximately(scaleFactor, lastUSRadiatorScale))
+			{
+				var curve = new FloatCurve();
+				curve.Add(0f, 0f);
+				curve.Add(400f, systemHeatPower);
+				IntegrationReflection.SetField(systemHeatRadiator, "temperatureCurve", curve);
+				lastUSRadiatorSelection = selection;
+				lastUSRadiatorScale = scaleFactor;
+			}
+
+			// Vostok-style US radiators use AutoEnable=False and never call Enable(), so
+			// IsCooling stays false even on the radiator mesh. ActiveCooling is the
+			// persistent desired state; also honor ModuleSystemHeatRadiator PAW toggles.
+			bool hasRadiatorPower = systemHeatPower > 0f && radiator.isEnabled;
+			bool shCooling = IntegrationReflection.GetBool(systemHeatRadiator, "IsCooling", false);
+			bool desiredCooling = hasRadiatorPower
+				&& IntegrationReflection.GetBool(radiator, "ActiveCooling", true);
+
+			if (hasRadiatorPower && hasSyncedSystemHeatCooling && shCooling != lastSyncedSystemHeatCooling)
+			{
+				desiredCooling = shCooling;
+				IntegrationReflection.SetField(radiator, "ActiveCooling", desiredCooling);
+			}
+
+			IntegrationReflection.SetField(radiator, "IsCooling", desiredCooling);
+			IntegrationReflection.SetField(systemHeatRadiator, "IsCooling", desiredCooling);
+			IsCooling = desiredCooling;
+			lastSyncedSystemHeatCooling = desiredCooling;
+			hasSyncedSystemHeatCooling = true;
 		}
 
 		PartModule FindPrefabRadiatorModule(Part prefab)
@@ -124,6 +250,15 @@ namespace KERBALISM
 			IsCooling = NativeIsCooling();
 		}
 
+		void SyncRadiatorState()
+		{
+			PartModule radiator = FindNativeRadiatorModule();
+			if (radiator?.moduleName == "USRadiatorSwitch" && FindLinkedSystemHeatRadiator() != null)
+				SyncUSRadiatorSwitch();
+			else
+				SyncCoolingState();
+		}
+
 		void CaptureInputRateSnapshots()
 		{
 			IList inputResources = GetNativeInputResources();
@@ -149,8 +284,38 @@ namespace KERBALISM
 				CaptureInputRateSnapshots();
 		}
 
-		void AppendInputResourceRequests(List<KeyValuePair<string, double>> resourceChangeRequest, float scaleFactor, float scaleEmissionPowerFactor)
+		bool TryAppendUSRadiatorSwitchRequest(List<KeyValuePair<string, double>> resourceChangeRequest, float scaleFactor, float scaleEmissionPowerFactor, int? selectionOverride)
 		{
+			PartModule radiator = FindNativeRadiatorModule();
+			if (radiator == null || radiator.moduleName != "USRadiatorSwitch")
+				return false;
+
+			string ratesString = IntegrationReflection.GetString(radiator, "RadiatorEnergy");
+			if (string.IsNullOrEmpty(ratesString))
+				return false;
+
+			string[] rates = ratesString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+			int selection = selectionOverride ?? IntegrationReflection.GetInt(radiator, "CurrentSelection", -1);
+			if (selection < 0 || selection >= rates.Length)
+				return false;
+
+			if (!double.TryParse(rates[selection].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double rate)
+				|| double.IsNaN(rate) || double.IsInfinity(rate))
+				return false;
+
+			if (rate > 0.0)
+			{
+				double emissionScale = Math.Pow(scaleFactor, scaleEmissionPowerFactor);
+				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -rate * emissionScale));
+			}
+			return true;
+		}
+
+		void AppendInputResourceRequests(List<KeyValuePair<string, double>> resourceChangeRequest, float scaleFactor, float scaleEmissionPowerFactor, int? selectionOverride = null)
+		{
+			if (TryAppendUSRadiatorSwitchRequest(resourceChangeRequest, scaleFactor, scaleEmissionPowerFactor, selectionOverride))
+				return;
+
 			EnsureInputRateSnapshots();
 			if (inputRateSnapshots == null)
 				return;
@@ -224,14 +389,40 @@ namespace KERBALISM
 			return radiatorTitle;
 		}
 
+		static bool IsRadiatorReliabilityBroken(ProtoPartSnapshot part)
+		{
+			if (part == null)
+				return false;
+
+			for (int i = 0; i < part.modules.Count; i++)
+			{
+				ProtoPartModuleSnapshot module = part.modules[i];
+				if (module.moduleName != "Reliability" || !Lib.Proto.GetBool(module, "broken"))
+					continue;
+
+				string type = Lib.Proto.GetString(module, "type");
+				if (type == "SystemHeatRadiatorKerbalism"
+					|| type == "ModuleSystemHeatRadiator"
+					|| type == "ModuleActiveRadiator"
+					|| type == "USRadiatorSwitch")
+					return true;
+			}
+			return false;
+		}
+
 		public static string BackgroundUpdate(Vessel v, ProtoPartSnapshot part_snapshot, ProtoPartModuleSnapshot module_snapshot, PartModule proto_part_module, Part proto_part, Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest, double elapsed_s)
 		{
-			if (Lib.Proto.GetBool(module_snapshot, "IsCooling", true))
+			if (!IsRadiatorReliabilityBroken(part_snapshot) && Lib.Proto.GetBool(module_snapshot, "IsCooling", true))
 			{
 				float scale = Lib.Proto.GetFloat(module_snapshot, "scale");
 				float scaleEmissionPower = Lib.Proto.GetFloat(module_snapshot, "scaleEmissionPower");
 				if (proto_part_module is SystemHeatRadiatorKerbalism radiator)
-					radiator.AppendInputResourceRequests(resourceChangeRequest, scale, scaleEmissionPower);
+				{
+					ProtoPartModuleSnapshot nativeRadiator = IntegrationUtils.TryFindPartModuleSnapshot(part_snapshot, radiator.radiatorModuleName);
+					int savedSelection = nativeRadiator == null ? -1 : Lib.Proto.GetInt(nativeRadiator, "CurrentSelection", -1);
+					int? selection = savedSelection < 0 ? (int?)null : savedSelection;
+					radiator.AppendInputResourceRequests(resourceChangeRequest, scale, scaleEmissionPower, selection);
+				}
 				else
 				{
 					IList inputResources = SystemHeat.GetResHandlerInputResources(proto_part_module);
@@ -253,7 +444,7 @@ namespace KERBALISM
 
 		public string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
-			SyncCoolingState();
+			SyncRadiatorState();
 			if (IsCooling)
 				AppendInputResourceRequests(resourceChangeRequest, scale, scaleEmissionPower);
 			return radiatorTitle;
@@ -261,7 +452,7 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
-			SyncCoolingState();
+			SyncRadiatorState();
 		}
 	}
 }

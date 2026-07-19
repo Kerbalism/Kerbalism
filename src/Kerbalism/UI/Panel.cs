@@ -26,6 +26,7 @@ namespace KERBALISM
 			callbacks = new List<Action>();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
+			compact_scrollbar = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -35,6 +36,7 @@ namespace KERBALISM
 			sections.Clear();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
+			compact_scrollbar = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -73,7 +75,7 @@ namespace KERBALISM
 			}
 		}
 
-		public void AddSection(string title, string desc = "", Action left = null, Action right = null, Boolean sort = false)
+		public void AddSection(string title, string desc = "", Action left = null, Action right = null, Boolean sort = false, Action click = null, Boolean pin = false)
 		{
 			Section p = new Section
 			{
@@ -81,6 +83,8 @@ namespace KERBALISM
 				desc = desc,
 				left = left,
 				right = right,
+				click = click,
+				pin = pin,
 				sort = sort,
 				needsSort = false,
 				entries = new List<Entry>()
@@ -97,9 +101,31 @@ namespace KERBALISM
 				tooltip = tooltip,
 				click = click,
 				hover = hover,
+				selectable = false,
 				icons = new List<Icon>()
 			};
 			if (sections.Count > 0) {
+				Section section = sections[sections.Count - 1];
+				section.entries.Add(e);
+				section.needsSort = section.sort;
+			}
+		}
+
+		/// <summary>Adds an opt-in, whole-row selectable entry that can grow when its label wraps.</summary>
+		public void AddSelectableContent(string label, string value, string tooltip, Action click)
+		{
+			Entry e = new Entry
+			{
+				label = label,
+				value = value,
+				tooltip = tooltip,
+				click = click,
+				hover = null,
+				selectable = true,
+				icons = new List<Icon>()
+			};
+			if (sections.Count > 0)
+			{
 				Section section = sections[sections.Count - 1];
 				section.entries.Add(e);
 				section.needsSort = section.sort;
@@ -125,6 +151,13 @@ namespace KERBALISM
 				Header h = headers[headers.Count - 1];
 				h.icons.Add(i);
 			}
+		}
+
+		/// <summary>Render section titles explicitly pinned above the panel scroll view.</summary>
+		public void RenderPinned()
+		{
+			foreach (Section section in sections)
+				if (section.pin) RenderSectionTitle(section);
 		}
 
 		public void Render()
@@ -153,20 +186,7 @@ namespace KERBALISM
 			// sections
 			foreach (Section p in sections)
 			{
-				// section title
-				GUILayout.BeginHorizontal(Styles.section_container);
-				if (p.left != null)
-				{
-					GUILayout.Label(Textures.left_arrow, Styles.left_icon);
-					if (Lib.IsClicked()) callbacks.Add(p.left);
-				}
-				GUILayout.Label(p.title, Styles.section_text);
-				if (p.right != null)
-				{
-					GUILayout.Label(Textures.right_arrow, Styles.right_icon);
-					if (Lib.IsClicked()) callbacks.Add(p.right);
-				}
-				GUILayout.EndHorizontal();
+				if (!p.pin) RenderSectionTitle(p);
 
 				// description
 				if (p.desc.Length > 0)
@@ -183,17 +203,26 @@ namespace KERBALISM
 				}
 				foreach (Entry e in p.entries)
 				{
-					GUILayout.BeginHorizontal(Styles.entry_container);
+					if (e.selectable)
+						GUILayout.BeginHorizontal(Styles.entry_container_wrap, GUILayout.MinHeight(Styles.entry_container.fixedHeight));
+					else
+						GUILayout.BeginHorizontal(Styles.entry_container);
 					if (e.leftIcon != null)
 					{
 						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
 						if (e.leftIcon.click != null && Lib.IsClicked())
 							callbacks.Add(e.leftIcon.click);
 					}
-					GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+					if (e.selectable)
+						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label);
+					else
+						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
-					if (e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
+					if (e.selectable)
+						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Width(Styles.ScaleWidthFloat(20.0f)));
+					else
+						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
+					if (!e.selectable && e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
 					foreach (Icon i in e.icons)
 					{
@@ -201,6 +230,26 @@ namespace KERBALISM
 						if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
 					}
 					GUILayout.EndHorizontal();
+
+					if (e.selectable)
+					{
+						Rect rowRect = GUILayoutUtility.GetLastRect();
+						if (Event.current.type == EventType.MouseDown
+							&& Event.current.button == 0
+							&& rowRect.Contains(Event.current.mousePosition))
+						{
+							callbacks.Add(e.click);
+							Event.current.Use();
+						}
+						else if (Event.current.type == EventType.Repaint
+							&& rowRect.Contains(Event.current.mousePosition))
+						{
+							Color previousColor = GUI.color;
+							GUI.color = new Color(1.0f, 1.0f, 1.0f, 0.12f);
+							GUI.DrawTexture(rowRect, Texture2D.whiteTexture);
+							GUI.color = previousColor;
+						}
+					}
 				}
 
 				// spacing
@@ -215,6 +264,30 @@ namespace KERBALISM
 			}
 		}
 
+		void RenderSectionTitle(Section section)
+		{
+			GUILayout.BeginHorizontal(Styles.section_container);
+			if (section.left != null)
+			{
+				GUILayout.Label(Textures.left_arrow, Styles.left_icon);
+				if (Lib.IsClicked()) callbacks.Add(section.left);
+			}
+			GUILayout.Label(section.title, Styles.section_text);
+			if (section.right != null)
+			{
+				GUILayout.Label(Textures.right_arrow, Styles.right_icon);
+				if (Lib.IsClicked()) callbacks.Add(section.right);
+			}
+			GUILayout.EndHorizontal();
+			if (section.click != null && Event.current.type == EventType.MouseDown
+				&& Event.current.button == 0
+				&& GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
+			{
+				callbacks.Add(section.click);
+				Event.current.Use();
+			}
+		}
+
 		public float Height()
 		{
 			float h = 0.0f;
@@ -223,7 +296,21 @@ namespace KERBALISM
 
 			foreach (Section p in sections)
 			{
-				h += Styles.ScaleFloat(18.0f + (float)p.entries.Count * 16.0f + 16.0f);
+				h += Styles.ScaleFloat(34.0f);
+				foreach (Entry e in p.entries)
+				{
+					if (e.selectable)
+					{
+						float labelWidth = Math.Max(Styles.ScaleWidthFloat(40.0f),
+							min_width - Styles.ScaleWidthFloat(50.0f));
+						h += Math.Max(Styles.entry_container.fixedHeight,
+							Styles.entry_label.CalcHeight(new GUIContent(e.label), labelWidth));
+					}
+					else
+					{
+						h += Styles.entry_container.fixedHeight;
+					}
+				}
 				if (p.desc.Length > 0)
 				{
 					h += Styles.desc.CalcHeight(new GUIContent(p.desc), min_width - Styles.ScaleWidthFloat(20.0f));
@@ -288,9 +375,15 @@ namespace KERBALISM
 			min_width = Math.Max(w, min_width);
 		}
 
+		public void UseCompactScrollbar()
+		{
+			compact_scrollbar = true;
+		}
+
 		// get medata
 		public string Title() { return win_title; }
 		public float Width() { return min_width; }
+		public bool UsesCompactScrollbar() { return compact_scrollbar; }
 
 		sealed class Header
 		{
@@ -307,6 +400,8 @@ namespace KERBALISM
 			public string desc;
 			public Action left;
 			public Action right;
+			public Action click;
+			public Boolean pin;
 			public Boolean sort;
 			public Boolean needsSort;
 			public List<Entry> entries;
@@ -319,6 +414,7 @@ namespace KERBALISM
 			public string tooltip;
 			public Action click;
 			public Action hover;
+			public Boolean selectable;
 			public List<Icon> icons;
 			public Icon leftIcon;
 		}
@@ -335,6 +431,7 @@ namespace KERBALISM
 		List<Action> callbacks;  // functions to call on input events
 		string win_title;        // metadata stored in panel
 		float min_width;         // metadata stored in panel
+		bool compact_scrollbar;  // opt-in compact vertical scrollbar
 		public PanelType paneltype;
 	}
 } // KERBALISM

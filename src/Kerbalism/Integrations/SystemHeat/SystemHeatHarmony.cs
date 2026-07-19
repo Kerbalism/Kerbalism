@@ -15,6 +15,7 @@ namespace KERBALISM
 			PatchPrefix(harmony, "SystemHeat.ModuleSystemHeatFissionEngine", "HandleResourceActivities", nameof(SkipWhenFissionEngineUpdaterPresent));
 			PatchPrefix(harmony, "SystemHeat.ModuleSystemHeatFissionEngine", "DoCatchup", nameof(SkipWhenFissionEngineUpdaterPresent));
 			PatchPrefix(harmony, "SystemHeat.ModuleSystemHeatRadiator", "FixedUpdate", nameof(SkipRadiatorRatesWhenKerbalismPresent));
+			PatchPrefix(harmony, "ModuleActiveRadiator", "FixedUpdate", nameof(SkipStockRadiatorRatesWhenKerbalismPresent));
 		}
 
 		private static void PatchPrefix(Harmony harmony, string typeName, string methodName, string prefixName)
@@ -74,6 +75,28 @@ namespace KERBALISM
 				return true;
 
 			ZeroResHandlerInputRates(radiator);
+			return true;
+		}
+
+		private static bool SkipStockRadiatorRatesWhenKerbalismPresent(object __instance)
+		{
+			PartModule radiator = __instance as PartModule;
+			if (radiator?.part == null)
+				return true;
+
+			SystemHeatRadiatorKerbalism wrapper = radiator.part.FindModuleImplementing<SystemHeatRadiatorKerbalism>();
+			if (wrapper == null)
+				return true;
+
+			ZeroResHandlerInputRates(radiator);
+
+			// A USRadiatorSwitch remains on the part to preserve mesh/function switching.
+			// Once a real SystemHeat radiator is linked, suppress its inherited stock heat
+			// transfer as well as its resource draw.
+			if (radiator.moduleName == "USRadiatorSwitch"
+				&& IntegrationUtils.FindModule(radiator.part, "ModuleSystemHeatRadiator") != null)
+				return false;
+
 			return true;
 		}
 

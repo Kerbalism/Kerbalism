@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -12,16 +11,19 @@ namespace KERBALISM
 		public Tooltip()
 		{
 			tooltip = string.Empty;
+			window_id = Lib.RandomInt(int.MaxValue);
 		}
 
-		public void Draw(Rect screen_rect)
+		/// <summary>Capture the tooltip selected by controls in the current GUI window.</summary>
+		public void Capture()
 		{
-			// draw tooltip, if there is one specified
-			if (tooltip.Length > 0) Render_tooltip(screen_rect);
-
-			// get tooltip
-			// - need to be after the drawing, to play nice with unity layout engine
 			Get_tooltip();
+		}
+
+		/// <summary>Draw the captured tooltip in screen space, anchored to the mouse.</summary>
+		public void Draw()
+		{
+			if (tooltip.Length > 0) Render_tooltip();
 		}
 
 		void Get_tooltip()
@@ -50,45 +52,60 @@ namespace KERBALISM
 		}
 
 
-		void Render_tooltip(Rect screen_rect)
+		void Render_tooltip()
 		{
-			// get mouse pos
-			Vector2 mouse_pos = Mouse.screenPos;
+			// Input.mousePosition is bottom-left based, while IMGUI screen coordinates
+			// are top-left based. Convert explicitly instead of relying on Mouse.screenPos,
+			// whose coordinate space differs between GUI.Window and screen-level drawing.
+			Vector2 mouse_pos = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
 
-			// correct for non-origin screen rect
-			mouse_pos -= new Vector2(screen_rect.xMin, screen_rect.yMin);
-
-			// calculate tooltip size
 			GUIContent tooltip_content = new GUIContent(tooltip);
-			Vector2 tooltip_size = Styles.tooltip.CalcSize(tooltip_content);
-			tooltip_size.y = Styles.tooltip.CalcHeight(tooltip_content, tooltip_size.x);
+			float margin = Styles.ScaleFloat(8.0f);
+			float screenWidth = Screen.width - margin * 2.0f;
+			float preferredMaxWidth = Mathf.Min(Styles.ScaleWidthFloat(420.0f), screenWidth);
+			float naturalWidth = Styles.tooltip.CalcSize(tooltip_content).x;
+			float tooltipWidth = Mathf.Clamp(naturalWidth, Styles.ScaleWidthFloat(80.0f), preferredMaxWidth);
+			float tooltipHeight = Styles.tooltip.CalcHeight(tooltip_content, tooltipWidth);
+			float maxHeight = Screen.height - margin * 2.0f;
 
-			// calculate tooltip position, default vertical position is above the cursor
-			Rect tooltip_rect = new Rect(mouse_pos.x - Mathf.Floor(tooltip_size.x / 2.0f), mouse_pos.y - tooltip_size.y - 10.0f, tooltip_size.x, tooltip_size.y);
-
-			// if vertical position above cursor goes outside the screen, change that to below the cursor
-			if (tooltip_rect.yMin < 0f)
+			// Only widen beyond the preferred cap when that is necessary to keep all
+			// wrapped text visible vertically.
+			while (tooltipHeight > maxHeight && tooltipWidth < screenWidth)
 			{
-				tooltip_rect.yMin = mouse_pos.y + 20f;
-				tooltip_rect.yMax = tooltip_rect.yMin + tooltip_size.y;
+				tooltipWidth = Mathf.Min(tooltipWidth * 1.25f, screenWidth);
+				tooltipHeight = Styles.tooltip.CalcHeight(tooltip_content, tooltipWidth);
 			}
+			tooltipHeight = Mathf.Min(tooltipHeight, maxHeight);
 
-			// horizontal position : clamp to screen rect
-			float offset_x = Math.Max(0.0f, -tooltip_rect.xMin) + Math.Min(0.0f, screen_rect.width - tooltip_rect.xMax);
-			tooltip_rect.xMin += offset_x;
-			tooltip_rect.xMax += offset_x;
+			// Prefer the lower-right of the cursor so the hovered control stays visible.
+			// Flip independently on each axis when the preferred side doesn't fit.
+			float cursorGap = Styles.ScaleFloat(16.0f);
+			float right = mouse_pos.x + cursorGap;
+			float left = mouse_pos.x - tooltipWidth - cursorGap;
+			float below = mouse_pos.y + cursorGap;
+			float above = mouse_pos.y - tooltipHeight - cursorGap;
+			float x = right + tooltipWidth <= Screen.width - margin ? right : left;
+			float y = below + tooltipHeight <= Screen.height - margin ? below : above;
 
-			// finally, render the tooltip
-			GUILayout.BeginArea(tooltip_rect, Styles.tooltip_container);
-			GUILayout.Label(tooltip_content, Styles.tooltip);
-			GUILayout.EndArea();
+			// Keep the final rect fully on-screen on both axes.
+			x = Mathf.Clamp(x, margin, Screen.width - tooltipWidth - margin);
+			y = Mathf.Clamp(y, margin, Screen.height - tooltipHeight - margin);
+
+			tooltip_rect = new Rect(x, y, tooltipWidth, tooltipHeight);
+			GUI.Window(window_id, tooltip_rect, DrawTooltipWindow, string.Empty, GUIStyle.none);
+			GUI.BringWindowToFront(window_id);
 		}
 
+		void DrawTooltipWindow(int _)
+		{
+			GUI.Label(new Rect(0.0f, 0.0f, tooltip_rect.width, tooltip_rect.height), tooltip, Styles.tooltip);
+		}
 
 		// tooltip text
 		string tooltip;
+		readonly int window_id;
+		Rect tooltip_rect;
 	}
 
 
 } // KERBALISM
-

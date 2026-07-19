@@ -92,6 +92,13 @@ namespace KERBALISM
 			// draw the window
 			win_rect = GUILayout.Window(win_id, win_rect, Draw_window, "", Styles.win);
 
+			// Draw_window can close the window and clear the panel.
+			if (panel == null) return;
+
+			// Tooltips are drawn after the window in screen space so they aren't clipped
+			// or constrained by the parent panel.
+			tooltip.Draw();
+
 			// get mouse over state
 			//bool mouse_over = win_rect.Contains(Event.current.mousePosition);
 			bool mouse_over = win_rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
@@ -126,8 +133,14 @@ namespace KERBALISM
 			GUILayout.EndHorizontal();
 			if (b) { Close(); return; }
 
+			// Keep explicitly pinned section titles outside the scrolling viewport.
+			panel.RenderPinned();
+
 			// start scrolling view
-			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
+			GUIStyle verticalScrollbar = panel.UsesCompactScrollbar()
+				? Styles.vertical_scrollbar
+				: HighLogic.Skin.verticalScrollbar;
+			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, verticalScrollbar);
 
 			// render panel content
 			panel.Render();
@@ -135,8 +148,9 @@ namespace KERBALISM
 			// end scroll view
 			GUILayout.EndScrollView();
 
-			// draw tooltip
-			tooltip.Draw(win_rect);
+			// Capture after all controls have been rendered. Drawing happens outside the
+			// GUI.Window so the tooltip can use the full screen bounds.
+			tooltip.Capture();
 
 			// right click close the window
 			if (Event.current.type == EventType.MouseDown
@@ -157,6 +171,11 @@ namespace KERBALISM
 		public void Position(uint x, uint y)
 		{
 			win_rect.Set((float)x, (float)y, win_rect.width, win_rect.height);
+		}
+
+		public void ResetScroll()
+		{
+			scroll_pos = Vector2.zero;
 		}
 
 		public uint Left()
