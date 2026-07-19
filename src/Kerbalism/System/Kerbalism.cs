@@ -242,7 +242,7 @@ namespace KERBALISM
 		private void LoadFailedPopup(string error)
 		{
 			string popupMsg = "Kerbalism has encountered an unrecoverable error and KSP must be closed\n\n";
-			popupMsg += "If you can't fix it, ask for help in the <b>kerbalism discord</b> or at the KSP forums thread\n\n";
+			popupMsg += "If you can't fix it, ask for help in the <b>Kerbalism Discord</b> or at the <b>GitHub Issues</b>\n\n";
 			popupMsg += "Please provide a screenshot of this message, and your ksp.log file found in your KSP install folder\n\n";
 			popupMsg += error;
 
@@ -577,7 +577,7 @@ namespace KERBALISM
 			{
 				msg += "<color=#FF4500>Mods with limited compatibility found:</color>\n";
 				foreach (var m in warningModsFound) msg += "- " + m + "\n";
-				msg += "You might have problems with these mods. Please consult the FAQ on on kerbalism.github.io\n\n";
+				msg += "You might have problems with these mods. Please consult the FAQ on kerbalism.github.io\n\n";
 			}
 
 			DisplayWarning(msg);
