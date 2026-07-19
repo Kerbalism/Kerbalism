@@ -60,7 +60,7 @@ namespace KERBALISM
 		public abstract string Status { get; }
 
 		// return tooltip string
-		public virtual string Tooltip => Lib.BuildString(Lib.Bold(DisplayName), "\non ", PartName);
+		public virtual string Tooltip => Lib.BuildString(Lib.Bold(DisplayName), "\n", Local.Experiment_on, " ", PartName);
 
 		// return icon/button
 		public virtual DeviceIcon Icon => null;

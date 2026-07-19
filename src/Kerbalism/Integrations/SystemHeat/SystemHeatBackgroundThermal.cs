@@ -27,6 +27,8 @@ namespace KERBALISM
 		private const string FluxAnchorValidField = "backgroundFluxAnchorValid";
 		/// <summary>Hard floor for loop temperature integration (space baseline), not ambient environment.</summary>
 		private const float MinimumLoopTemperatureK = 4f;
+		/// <summary>Stock SystemHeat radiator patches reach their rated rejection at 400 K.</summary>
+		private const float StockRadiatorRatedTemperatureK = 400f;
 
 		public static void CaptureLoadedTemperatures(Vessel v)
 		{
@@ -321,6 +323,7 @@ namespace KERBALISM
 
 		private class RadiatorRejector
 		{
+			internal ProtoPartSnapshot part;
 			internal Part prefab;
 			internal ProtoPartModuleSnapshot module;
 		}
@@ -433,7 +436,7 @@ namespace KERBALISM
 					}
 					else if (module.moduleName == "SystemHeatRadiatorKerbalism")
 					{
-						if (!IsRadiatorOperational(part, module))
+						if (!IsRadiatorOperational(part, prefab, module))
 							continue;
 
 						int loopId = GetRadiatorLoopId(part, prefab, module);
@@ -442,7 +445,7 @@ namespace KERBALISM
 
 						EnsureLoop(loops, loopId, v);
 						LoopState loop = loops[loopId];
-						RegisterLoopRadiator(loop, prefab, module);
+						RegisterLoopRadiator(loop, part, prefab, module);
 					}
 					else if (module.moduleName == "ModuleSystemHeatRadiator" || module.moduleName == "ModuleActiveRadiator")
 					{
@@ -457,7 +460,7 @@ namespace KERBALISM
 							continue;
 
 						EnsureLoop(loops, loopId, v);
-						RegisterLoopRadiator(loops[loopId], prefab, module);
+						RegisterLoopRadiator(loops[loopId], part, prefab, module);
 					}
 					else if (module.moduleName == "SystemHeatConverterKerbalismUpdater")
 					{
@@ -834,10 +837,10 @@ namespace KERBALISM
 			return storedEnergy;
 		}
 
-		private static void RegisterLoopRadiator(LoopState loop, Part prefab, ProtoPartModuleSnapshot module)
+		private static void RegisterLoopRadiator(LoopState loop, ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot module)
 		{
 			loop.hasRadiator = true;
-			loop.radiators.Add(new RadiatorRejector { prefab = prefab, module = module });
+			loop.radiators.Add(new RadiatorRejector { part = part, prefab = prefab, module = module });
 		}
 
 		private static void SyncLoopNetFlux(LoopState loop)
@@ -863,7 +866,7 @@ namespace KERBALISM
 			for (int i = 0; i < count; i++)
 			{
 				RadiatorRejector radiator = loop.radiators[i];
-				total += GetRadiatorRejectPower(radiator.prefab, radiator.module, loopTemperature);
+				total += GetRadiatorRejectPower(radiator.part, radiator.prefab, radiator.module, loopTemperature);
 			}
 			return total;
 		}
@@ -1226,7 +1229,8 @@ namespace KERBALISM
 				string type = Lib.Proto.GetString(reliability, "type");
 				if (type == "SystemHeatRadiatorKerbalism"
 					|| type == "ModuleSystemHeatRadiator"
-					|| type == "ModuleActiveRadiator")
+					|| type == "ModuleActiveRadiator"
+					|| type == "USRadiatorSwitch")
 					return false;
 			}
 
@@ -1329,9 +1333,49 @@ namespace KERBALISM
 			}
 		}
 
-		private static bool IsRadiatorOperational(ProtoPartSnapshot part, ProtoPartModuleSnapshot radiatorModule)
+		private static string GetConfiguredRadiatorModuleName(Part prefab, ProtoPartModuleSnapshot radiatorModule)
+		{
+			PartModule wrapperPrefab = FindPrefabModule(prefab, "SystemHeatRadiatorKerbalism");
+			string fallback = IntegrationReflection.GetString(wrapperPrefab, "radiatorModuleName", "ModuleSystemHeatRadiator");
+			return Lib.Proto.GetString(radiatorModule, "radiatorModuleName", fallback);
+		}
+
+		private static bool TryGetUSRadiatorSelectedPower(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot radiatorModule, out float selectedPower)
+		{
+			selectedPower = 0f;
+			if (GetConfiguredRadiatorModuleName(prefab, radiatorModule) != "USRadiatorSwitch")
+				return false;
+
+			PartModule nativePrefab = FindPrefabModule(prefab, "USRadiatorSwitch");
+			ProtoPartModuleSnapshot nativeSnapshot = IntegrationUtils.TryFindPartModuleSnapshot(part, "USRadiatorSwitch");
+			if (nativePrefab == null || nativeSnapshot == null)
+				return true;
+
+			int selection = Lib.Proto.GetInt(nativeSnapshot, "CurrentSelection", IntegrationReflection.GetInt(nativePrefab, "CurrentSelection", -1));
+			string powersString = IntegrationReflection.GetString(nativePrefab, "RadiatorPower");
+			if (string.IsNullOrEmpty(powersString))
+				return true;
+
+			string[] powers = powersString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+			if (selection < 0 || selection >= powers.Length)
+				return true;
+
+			if (!float.TryParse(powers[selection].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out selectedPower)
+				|| float.IsNaN(selectedPower) || float.IsInfinity(selectedPower))
+				selectedPower = 0f;
+			else
+				// Stock ModuleActiveRadiator transfer power is fifty times the
+				// equivalent SystemHeat temperature-curve output in kW.
+				selectedPower = Math.Max(0f, selectedPower / 50f);
+			return true;
+		}
+
+		private static bool IsRadiatorOperational(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot radiatorModule)
 		{
 			if (!Lib.Proto.GetBool(radiatorModule, "IsCooling", true))
+				return false;
+
+			if (TryGetUSRadiatorSelectedPower(part, prefab, radiatorModule, out float selectedPower) && selectedPower <= 0f)
 				return false;
 
 			foreach (ProtoPartModuleSnapshot module in part.modules)
@@ -1342,7 +1386,8 @@ namespace KERBALISM
 				string type = Lib.Proto.GetString(module, "type");
 				if (type == "SystemHeatRadiatorKerbalism"
 					|| type == "ModuleSystemHeatRadiator"
-					|| type == "ModuleActiveRadiator")
+					|| type == "ModuleActiveRadiator"
+					|| type == "USRadiatorSwitch")
 					return false;
 			}
 
@@ -1452,13 +1497,19 @@ namespace KERBALISM
 			return null;
 		}
 
-		private static float GetRadiatorRejectPower(Part prefab, ProtoPartModuleSnapshot module, float loopTemperature)
+		private static float GetRadiatorRejectPower(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot module, float loopTemperature)
 		{
 			float scale = Lib.Proto.GetFloat(module, "scale", 1f);
 			if (scale <= 0f)
 				scale = 1f;
 			float scaleEmissionPower = Lib.Proto.GetFloat(module, "scaleEmissionPower", 2f);
 			float scaleFactor = (float)Math.Pow(scale, scaleEmissionPower);
+
+			if (TryGetUSRadiatorSelectedPower(part, prefab, module, out float selectedPower))
+			{
+				float temperatureFactor = Mathf.Clamp01(loopTemperature / StockRadiatorRatedTemperatureK);
+				return selectedPower * temperatureFactor * scaleFactor;
+			}
 
 			float curvePower = EvaluateRadiatorCurvePower(prefab, module, loopTemperature, scaleFactor);
 			if (curvePower > 0f)

@@ -567,6 +567,8 @@ namespace KERBALISM
 		// Automation
 		////////////////////////////////////////////////////////////////////
 		public static string Automation_datatransmission = GetLoc("Automation_datatransmission"); // "data transmission"
+		public static string Automation_antenna = GetLoc("Automation_antenna"); // "antenna"
+		public static ParamString Automation_harvester = new ParamString("Automation_harvester"); // "<<1>> harvester"
 
 		////////////////////////////////////////////////////////////////////
 		// Monitor UI : file manager
@@ -607,8 +609,8 @@ namespace KERBALISM
 		public static string TELEMETRY_title = GetLoc("TELEMETRY_title"); // "TELEMETRY"
 		public static string TELEMETRY_EVASUIT = GetLoc("TELEMETRY_EVASUIT"); // "EVA SUIT"
 		public static string TELEMETRY_ENVIRONMENT = GetLoc("TELEMETRY_ENVIRONMENT"); // "ENVIRONMENT"
-		public static string TELEMETRY_Exposureignoringbodiesocclusion = GetLoc("TELEMETRY_Exposureignoringbodiesocclusion"); // "Exposure ignoring bodies occlusion"
-		public static string TELEMETRY_Exposureignoringbodiesocclusion_desc = GetLoc("TELEMETRY_Exposureignoringbodiesocclusion_desc"); // "Won't change on unloaded vessels\nMake sure to optimize it before switching"
+		public static string TELEMETRY_SolarPanelsAverageExposure = GetLoc("TELEMETRY_SolarPanelsAverageExposure"); // "solar panels average exposure"
+		public static string TELEMETRY_SolarPanelsAverageExposure_desc = GetLoc("TELEMETRY_SolarPanelsAverageExposure_desc"); // "Realtime: average panel exposure\nAnalytic/unloaded: modeled power versus unobscured maximum"
 		public static string TELEMETRY_nosensorsinstalled = GetLoc("TELEMETRY_nosensorsinstalled"); // "no sensors installed"
 		public static string TELEMETRY_HABITAT = GetLoc("TELEMETRY_HABITAT"); // "HABITAT"
 		public static string TELEMETRY_co2level = GetLoc("TELEMETRY_co2level"); // "co2 level"
@@ -777,6 +779,8 @@ namespace KERBALISM
 		public static ParamString Module_Experiment_MultipleRunsMessage = new ParamString("Module_Experiment_MultipleRunsMessage"); // "Can't start <<1>> a second time on vessel <<2>>"
 		public static string Module_Experiment_Prepare = GetLoc("Module_Experiment_Prepare"); // "Prepare"
 		public static string Module_Experiment_Reset = GetLoc("Module_Experiment_Reset"); // "Reset"
+		public static string Module_Experiment_ViewImage = GetLoc("Module_Experiment_ViewImage"); // "View Image"
+		public static string Module_Experiment_ViewImageUnavailable = GetLoc("Module_Experiment_ViewImageUnavailable"); // "Observation image unavailable"
 		public static string Module_Experiment_issue_title = GetLoc("Module_Experiment_issue_title"); // "issue"
 		public static string Module_Experiment_issue1 = GetLoc("Module_Experiment_issue1"); // "invalid situation"
 		public static string Module_Experiment_issue2 = GetLoc("Module_Experiment_issue2"); // "shrouded"
@@ -1373,6 +1377,7 @@ namespace KERBALISM
 		public static string Experiment_issue = GetLoc("Experiment_issue"); // "issue :"
 		public static string Experiment_sciencevalue = GetLoc("Experiment_sciencevalue"); // "science value :"
 		public static string Experiment_completion = GetLoc("Experiment_completion"); // "completion :"
+		public static string Process_capacity = GetLoc("Process_capacity"); // "Process capacity :"
 		public static string SolarPanel_deployable = GetLoc("SolarPanel_deployable"); // "solar panel (deployable)"
 		public static string SolarPanel_nonretractable = GetLoc("SolarPanel_nonretractable"); // "solar panel (non retractable)"
 
@@ -1515,6 +1520,10 @@ namespace KERBALISM
 		public static string ExperimentReq_VolumePerCrewMax = GetLoc("ExperimentReq_VolumePerCrewMax"); // "Max. vol./crew "
 		public static string ExperimentReq_SunAngleMin = GetLoc("ExperimentReq_SunAngleMin"); // "Min. sun-surface angle"
 		public static string ExperimentReq_SunAngleMax = GetLoc("ExperimentReq_SunAngleMax"); // "Max. sun-surface angle"
+		public static string ExperimentReq_AngularVelocityMax = GetLoc("ExperimentReq_AngularVelocityMax"); // "Max. angular velocity"
+		public static string ExperimentReq_SunPointingMax = GetLoc("ExperimentReq_SunPointingMax"); // "Max. sun pointing angle"
+		public static string ExperimentReq_HomeStarDistanceMin = GetLoc("ExperimentReq_HomeStarDistanceMin"); // "Min. home-star distance"
+		public static string ExperimentReq_HomeStarDistanceMax = GetLoc("ExperimentReq_HomeStarDistanceMax"); // "Max. home-star distance"
 		public static string ExperimentReq_SurfaceSpeedMin = GetLoc("ExperimentReq_SurfaceSpeedMin"); // "Min. surface speed "
 		public static string ExperimentReq_SurfaceSpeedMax = GetLoc("ExperimentReq_SurfaceSpeedMax"); // "Max. surface speed "
 		public static string ExperimentReq_VerticalSpeedMin = GetLoc("ExperimentReq_VerticalSpeedMin"); // "Min. vertical speed "
@@ -1548,6 +1557,15 @@ namespace KERBALISM
 		public static string ExperimentReq_AdministrationLevelMax = GetLoc("ExperimentReq_AdministrationLevelMax"); // "Administration max level "
 		public static string ExperimentReq_Part = GetLoc("ExperimentReq_Part"); // "Need part "
 		public static string ExperimentReq_Module = GetLoc("ExperimentReq_Module"); // "Need module "
+		public static string ExperimentReq_AbsoluteZero = GetLoc("ExperimentReq_AbsoluteZero"); // "Absolute zero"
+		public static string ExperimentReq_InnerBelt = GetLoc("ExperimentReq_InnerBelt"); // "Inner belt"
+		public static string ExperimentReq_OuterBelt = GetLoc("ExperimentReq_OuterBelt"); // "Outer belt"
+		public static string ExperimentReq_MagneticBelt = GetLoc("ExperimentReq_MagneticBelt"); // "Magnetic belt"
+		public static string ExperimentReq_Magnetosphere = GetLoc("ExperimentReq_Magnetosphere"); // "Magnetosphere"
+		public static string ExperimentReq_InterStellar = GetLoc("ExperimentReq_InterStellar"); // "Interstellar"
+		public static string ExperimentReq_Shadow = GetLoc("ExperimentReq_Shadow"); // "Shadow"
+		public static string ExperimentReq_Sunlight = GetLoc("ExperimentReq_Sunlight"); // "Sunlight"
+		public static string ExperimentReq_Greenhouse = GetLoc("ExperimentReq_Greenhouse"); // "Greenhouse"
 
 		//Vessel Recovery Window
 		public static string VesselRecovery_title = GetLoc("VesselRecovery_title"); // "recovery "

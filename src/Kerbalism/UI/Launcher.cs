@@ -153,8 +153,9 @@ namespace KERBALISM
 				// end window area
 				GUILayout.EndArea();
 
-				// draw tooltip
-				tooltip.Draw(new Rect(0.0f, 0.0f, Screen.width, Screen.height));
+				// Capture after the controls and draw in screen space.
+				tooltip.Capture();
+				tooltip.Draw();
 			}
 			else
 			{

@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using Experience;
 using UnityEngine;
-using KSP.Localization;
-using System.Collections;
 using static KERBALISM.ExperimentRequirements;
 using System.Linq;
 
@@ -29,6 +27,8 @@ namespace KERBALISM
 		[KSPField] public string retractedDragCube = "Retracted";
 		[KSPField] public string deployedDragCube = "Deployed";
 		[KSPField] public bool use_animation_group = false;   // if true, deploy/retract animations will managed by the first found ModuleAnimationGroup
+		// Part-local axis used by SunPointingMax: Forward, NegForward, Right, NegRight, Up, NegUp
+		[KSPField] public string pointing_axis = "Forward";
 
 		// animations
 		[KSPField] public string anim_deploy = string.Empty; // deploy animation
@@ -372,7 +372,8 @@ namespace KERBALISM
 				ref situationId,
 				ref remainingSampleMass,
 				out subject,
-				out issue);
+				out issue,
+				null);
 			Profiler.EndSample();
 
 			var newStatus = GetStatus(expState, subject, issue);
@@ -383,7 +384,7 @@ namespace KERBALISM
 		}
 
 		// note : we use a non-static method so it can be overriden
-		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartModuleSnapshot m, ResourceInfo ec, VesselResources resources, double elapsed_s)
+		public virtual void BackgroundUpdate(Vessel v, VesselData vd, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ResourceInfo ec, VesselResources resources, double elapsed_s)
 		{
 			Profiler.BeginSample("Experiment.BackgroundUpdate");
 
@@ -438,7 +439,8 @@ namespace KERBALISM
 					ref situationId,
 					ref remainingSampleMass,
 					out subjectData,
-					out issue);
+					out issue,
+					p);
 			}
 			catch
 			{
@@ -465,7 +467,8 @@ namespace KERBALISM
 			Vessel v, VesselData vd, Situation vs, Experiment prefab, uint hdId, bool didPrepare, bool isShrouded,
 			ResourceInfo ec, VesselResources resources, List<ObjectPair<string, double>> resourceDefs,
 			ExperimentInfo expInfo, RunningState expState, double elapsed_s,
-			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue)
+			ref int lastSituationId, ref double remainingSampleMass, out SubjectData subjectData, out string mainIssue,
+			ProtoPartSnapshot protoPart = null)
 		{
 			mainIssue = string.Empty;
 
@@ -547,7 +550,9 @@ namespace KERBALISM
 				return 0.0;
 			}
 
-			double reqScalar = prefab.Requirements.TestRequirements(v);
+			// Loaded instance: use Part. Unloaded background: use ProtoPartSnapshot for SunPointingMax.
+			Part reqPart = (prefab.part != null && prefab.part.vessel == v) ? prefab.part : null;
+			double reqScalar = prefab.Requirements.TestRequirements(v, reqPart, prefab.pointing_axis, protoPart);
 			if (reqScalar == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"

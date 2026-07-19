@@ -10,7 +10,9 @@ namespace KERBALISM
 	{
 		public LightDevice(ModuleLight module) : base(module) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "light";
+		public override string DisplayName => Local.Brokers_Light;
 
 		public override string Status => Lib.Color(module.isOn, Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 
@@ -32,7 +34,9 @@ namespace KERBALISM
 		public ProtoLightDevice(ModuleLight prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule)
 			: base(prefab, protoPart, protoModule) { }
 
+		// keep Name English for stable device Id hashing across languages
 		public override string Name => "light";
+		public override string DisplayName => Local.Brokers_Light;
 
 		public override string Status => Lib.Color(Lib.Proto.GetBool(protoModule, "isOn"), Local.Generic_ON, Lib.Kolor.Green, Local.Generic_OFF, Lib.Kolor.Yellow);
 
