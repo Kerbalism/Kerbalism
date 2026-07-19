@@ -77,6 +77,13 @@ namespace KERBALISM
 
 			p.AddSection(Local.TELEMETRY_ENVIRONMENT);//"ENVIRONMENT"
 
+			if (vd.SolarPanelsAverageExposure >= 0.0)
+			{
+				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
+				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.Kolor.Orange);
+				p.AddContent(Local.TELEMETRY_SolarPanelsAverageExposure, exposureString, Local.TELEMETRY_SolarPanelsAverageExposure_desc);//"solar panels average exposure""Realtime: average panel exposure\nAnalytic/unloaded: modeled power versus unobscured maximum"
+			}
+
 			foreach (string type in readings)
 			{
 				p.AddContent(Sensor.DisplayName(type), Sensor.Telemetry_content(v, vd, type), Sensor.Telemetry_tooltip(v, vd, type));

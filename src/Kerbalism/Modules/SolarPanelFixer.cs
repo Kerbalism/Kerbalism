@@ -98,6 +98,9 @@ namespace KERBALISM
 		[KSPField]
 		public double currentOutput;
 
+		/// <summary>Current tracked-star exposure shown in the PAW.</summary>
+		public double ExposureFactor => exposureFactor;
+
 		// The following fields are local to FixedUpdate() but are shared for status string updates in Update()
 		// Their value can be inconsistent, don't rely on them for anything else
 		private double exposureFactor;
@@ -550,7 +553,9 @@ namespace KERBALISM
 			if (vd.EnvIsAnalytic)
 			{
 				analyticSunlight = true;
-				powerFactor = CalculateMultiStarPowerAnalytic(vessel, vd.EnvSunsInfo, trackedSunInfo, SolarPanel.Type, SolarPanel.IsTracking);
+				double theoreticalMaxPower;
+				powerFactor = CalculateMultiStarPowerAnalytic(vessel, vd.EnvSunsInfo, trackedSunInfo, SolarPanel.Type, SolarPanel.IsTracking, out theoreticalMaxPower);
+				vd.SaveSolarPanelAnalyticExposure(powerFactor, theoreticalMaxPower, nominalRate);
 			}
 			else
 			{
@@ -612,7 +617,7 @@ namespace KERBALISM
 
 					if (sunInfo == trackedSunInfo)
 					{
-						exposureFactor = sunCosineFactor * sunOccludedFactor;
+						exposureFactor = sunCosineFactor * sunOccludedFactor * sunInfo.SunlightFactor;
 					}
 				}
 			}
@@ -767,7 +772,8 @@ namespace KERBALISM
 				return;
 			}
 
-			double powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking);
+			double theoreticalMaxPower;
+			double powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower);
 			efficiencyFactor = powerFactor;
 
 			// get wear factor (output degradation with time)
@@ -781,6 +787,7 @@ namespace KERBALISM
 			// get nominal panel charge rate at 1 AU
 			// don't use the prefab value as some modules that does dynamic switching (SSTU) may have changed it
 			double nominalRate = Lib.Proto.GetDouble(m, "nominalRate");
+			vd.SaveSolarPanelAnalyticExposure(powerFactor, theoreticalMaxPower, nominalRate);
 
 			// calculate output
 			double output = nominalRate * efficiencyFactor;
@@ -926,19 +933,28 @@ namespace KERBALISM
 		/// </summary>
 		public static double CalculateMultiStarPowerAnalytic(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking)
 		{
+			double theoreticalMaxPower;
+			return CalculateMultiStarPowerAnalytic(v, suns, mainSun, panelType, isTracking, out theoreticalMaxPower);
+		}
+
+		/// <summary>
+		/// Analytic power factor and theoretical power factor with body shadowing removed.
+		/// Distance, atmosphere, panel type and multi-star tracking geometry are retained.
+		/// </summary>
+		public static double CalculateMultiStarPowerAnalytic(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower)
+		{
 			// Landing/Splashdown Status Handling
 			if (Lib.Landed(v))
 			{
-				return CalculateLandedMultiStarPower(v, suns, mainSun, panelType, isTracking);
+				return CalculateLandedMultiStarPower(v, suns, mainSun, panelType, isTracking, out theoreticalMaxPower);
 			}
-			double orbitPeriod = v.orbit.period;
-			double ut0 = Planetarium.GetUniversalTime();
 
 			double totalPowerExpectation = 0.0;
-			bool isAnalytic = v.KerbalismData().EnvIsAnalytic;
+			theoreticalMaxPower = 0.0;
 			foreach (var sun in suns)
 			{
-				if (sun.SolarFlux < 1e-6) continue;
+				double unshadowedFlux = sun.SunData.SolarFlux(sun.Distance) * sun.AtmoFactor;
+				if (unshadowedFlux < 1e-6) continue;
 
 				// Calculate effective incidence angle for this star relative to the panel
 				double effectiveCos = 0.0;
@@ -977,6 +993,7 @@ namespace KERBALISM
 				// Accumulate Energy Expectation
 				// sun.SolarFlux is fully pre-calculated with occlusion and atmosphere logic.
 				totalPowerExpectation += (sun.SolarFlux / Sim.SolarFluxAtHome) * effectiveCos;
+				theoreticalMaxPower += (unshadowedFlux / Sim.SolarFluxAtHome) * effectiveCos;
 			}
 
 			return totalPowerExpectation;
@@ -987,7 +1004,14 @@ namespace KERBALISM
 		/// </summary>
 		public static double CalculateLandedMultiStarPower(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking)
 		{
+			double theoreticalMaxPower;
+			return CalculateLandedMultiStarPower(v, suns, mainSun, panelType, isTracking, out theoreticalMaxPower);
+		}
+
+		public static double CalculateLandedMultiStarPower(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower)
+		{
 			double totalPower = 0.0;
+			theoreticalMaxPower = 0.0;
 
 			// --------- Surface normal (works for loaded & unloaded) ----------
 			Vector3d vesselPos = Lib.VesselPosition(v);
@@ -997,24 +1021,17 @@ namespace KERBALISM
 			bool isAnalytic = v.KerbalismData().EnvIsAnalytic;
 			foreach (var sun in suns)
 			{
-				double duty = 1.0;
-				if (isAnalytic)
-				{
-					if (sun.SunData.SolarFlux(sun.Distance) < 1e-6) continue;
-				}
-				else
-				{
-					if (sun.SolarFlux < 1e-6) continue;
-				}
+				double rawFlux = sun.SunData.SolarFlux(sun.Distance);
+				double unshadowedFlux = rawFlux * sun.AtmoFactor;
+				if (unshadowedFlux < 1e-6) continue;
 
 				Vector3d sunDir = sun.Direction.normalized;
+				double duty = 1.0;
 				if (isAnalytic)
 				{
 					// --------- 1. Daylight Duty Cycle ----------
 					duty = CalculateSurfaceDaylightDuty(v, v.mainBody, latitude, sunDir, sun.SunData.body);
 				}
-				if (duty <= 0.0)
-					continue;
 
 				// --------- 2. Effective incidence (analytic expectation) ----------
 				double effectiveCos;
@@ -1058,15 +1075,9 @@ namespace KERBALISM
 						}
 					}
 				}
-				if (isAnalytic)
-				{
-					double rawFlux = sun.SunData.SolarFlux(sun.Distance);
-					totalPower += duty * effectiveCos * (rawFlux * sun.AtmoFactor / Sim.SolarFluxAtHome);
-				}
-				else
-				{
-					totalPower += effectiveCos * (sun.SolarFlux / Sim.SolarFluxAtHome);
-				}
+				double actualFlux = isAnalytic ? duty * unshadowedFlux : sun.SolarFlux;
+				totalPower += effectiveCos * (actualFlux / Sim.SolarFluxAtHome);
+				theoreticalMaxPower += effectiveCos * (unshadowedFlux / Sim.SolarFluxAtHome);
 			}
 			return totalPower;
 		}
@@ -1096,6 +1107,11 @@ namespace KERBALISM
 			double H0 = Math.Acos(cosH0);
 			return H0 / Math.PI;
 		}
+
+		public static bool IsDeployedState(PanelState panelState)
+			=> panelState == PanelState.Extended
+				|| panelState == PanelState.ExtendedFixed
+				|| panelState == PanelState.Static;
 		#endregion
 
 		#region Abstract class for common interaction with supported PartModules

@@ -397,6 +397,35 @@ namespace KERBALISM
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 
 		/// <summary>
+		/// Average of the PAW exposure shown by all deployed panels on loaded realtime
+		/// vessels. Analytic and unloaded vessels use the ratio between modeled power and
+		/// theoretical unobscured power, weighted by panel nominal output.
+		/// </summary>
+		public double SolarPanelsAverageExposure
+		{
+			get
+			{
+				if (Vessel.loaded && !EnvIsAnalytic && solarPanelsAverageLiveExposure >= 0.0)
+					return solarPanelsAverageLiveExposure;
+				return solarPanelsAverageAnalyticExposure;
+			}
+		}
+		private double solarPanelsAverageLiveExposure = -1.0;
+		private double solarPanelsAverageAnalyticExposure = -1.0;
+		private double solarPanelsAnalyticActualPower;
+		private double solarPanelsAnalyticMaxPower;
+		private int solarPanelsAnalyticReportCount;
+
+		/// <summary>Called by SolarPanelFixer for loaded analytic and background panels.</summary>
+		public void SaveSolarPanelAnalyticExposure(double actualPowerFactor, double theoreticalMaxPowerFactor, double nominalRate)
+		{
+			if (nominalRate <= 0.0) return;
+			solarPanelsAnalyticActualPower += actualPowerFactor * nominalRate;
+			solarPanelsAnalyticMaxPower += theoreticalMaxPowerFactor * nominalRate;
+			solarPanelsAnalyticReportCount++;
+		}
+
+		/// <summary>
 		/// Vessel equilibrium temperature calculated with actual vessel geometry (surface area,
 		/// solar cross-section, emissivity) cached from the last time the vessel was loaded.
 		/// Falls back to EnvTemperature if no geometry data is available yet.
@@ -818,6 +847,7 @@ namespace KERBALISM
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
+			solarPanelsAverageAnalyticExposure = Lib.ConfigValue(node, "solarPanelsAverageAnalyticExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
@@ -898,6 +928,7 @@ namespace KERBALISM
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 
+			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageAnalyticExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
@@ -1003,8 +1034,64 @@ namespace KERBALISM
 			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 			Profiler.EndSample();
 
+			// Solar panel telemetry. Realtime mode directly averages the PAW values.
+			// Analytic/background mode uses modeled power divided by unobscured power.
+			double liveExposure;
+			if (!TryGetDeployedSolarPanelsAverageExposure(out liveExposure))
+			{
+				solarPanelsAverageLiveExposure = -1.0;
+				solarPanelsAverageAnalyticExposure = -1.0;
+			}
+			else
+			{
+				solarPanelsAverageLiveExposure = Vessel.loaded && !EnvIsAnalytic ? liveExposure : -1.0;
+				if (solarPanelsAnalyticReportCount > 0)
+				{
+					solarPanelsAverageAnalyticExposure = solarPanelsAnalyticMaxPower > double.Epsilon
+						? Lib.Clamp(solarPanelsAnalyticActualPower / solarPanelsAnalyticMaxPower, 0.0, 1.0)
+						: -1.0;
+				}
+			}
+
+			solarPanelsAnalyticActualPower = 0.0;
+			solarPanelsAnalyticMaxPower = 0.0;
+			solarPanelsAnalyticReportCount = 0;
+
             Profiler.EndSample();
         }
+
+		private bool TryGetDeployedSolarPanelsAverageExposure(out double averageExposure)
+		{
+			averageExposure = -1.0;
+			if (Vessel.loaded)
+			{
+				double exposureSum = 0.0;
+				int panelCount = 0;
+				foreach (SolarPanelFixer panel in PartModuleCache.GetModules<SolarPanelFixer>(Vessel))
+				{
+					if (panel.isEnabled && panel.nominalRate > 0.0 && SolarPanelFixer.IsDeployedState(panel.state))
+					{
+						exposureSum += panel.ExposureFactor;
+						panelCount++;
+					}
+				}
+
+				if (panelCount == 0) return false;
+				averageExposure = exposureSum / panelCount;
+				return true;
+			}
+
+			foreach (ProtoPartModuleSnapshot panel in ProtoPartModuleCache.GetModules(Vessel.protoVessel, "SolarPanelFixer"))
+			{
+				if (!Lib.Proto.GetBool(panel, "isEnabled") || Lib.Proto.GetDouble(panel, "nominalRate") <= 0.0)
+					continue;
+
+				SolarPanelFixer.PanelState state;
+				if (Enum.TryParse(Lib.Proto.GetString(panel, "state"), out state) && SolarPanelFixer.IsDeployedState(state))
+					return true;
+			}
+			return false;
+		}
 		#endregion
 
 		#region environment evaluation
