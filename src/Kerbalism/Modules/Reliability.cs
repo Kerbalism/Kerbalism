@@ -38,6 +38,8 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public double operation_duration = 0.0; // failure rate increases dramatically if this is exceeded
 		[KSPField(isPersistant = true)] public double fail_duration = 0.0;  // fail when operation_duration exceeds this
 		[KSPField(isPersistant = true)] public int ignitions = 0;           // accumulated ignitions
+		[KSPField(isPersistant = true)] public bool radiator_state_stored;  // true after caching a switch radiator's pre-failure state
+		[KSPField(isPersistant = true)] public bool radiator_was_cooling;   // switch radiator state restored after repair
 
 		// status ui
 		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "_", groupName = "Reliability", groupDisplayName = "#KERBALISM_Group_Reliability")]//Reliability
@@ -62,6 +64,14 @@ namespace KERBALISM
 			if (!Lib.IsFlight()) return;
 
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
+
+			if (part.FindModuleImplementing<SystemHeatRadiatorKerbalism>() != null
+				&& (type == "USRadiatorSwitch" || type == "ModuleActiveRadiator" || type == "ModuleSystemHeatRadiator"))
+			{
+				// Migrate persistent Reliability fields on vessels saved before the
+				// SystemHeat sidecar remap.
+				type = "SystemHeatRadiatorKerbalism";
+			}
 
 			// cache list of modules
 			if(type.StartsWith("ModuleEngines", StringComparison.Ordinal))
@@ -210,6 +220,7 @@ namespace KERBALISM
 						m.enabled = false;
 						m.isEnabled = false;
 					}
+					EnforceBrokenRadiatorState();
 				}
 
 				// update ui
@@ -728,7 +739,17 @@ namespace KERBALISM
 			// get reliability module prefab
 			string type = Lib.Proto.GetString(m, "type", string.Empty);
 			Reliability reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == type);
+			if (reliability == null && (type == "USRadiatorSwitch"
+				|| type == "ModuleActiveRadiator"
+				|| type == "ModuleSystemHeatRadiator"))
+			{
+				// Existing vessels keep persistent Reliability fields from before the
+				// SystemHeat MM remap. Accept legacy radiator types as sidecar aliases.
+				reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == "SystemHeatRadiatorKerbalism");
+			}
 			if (reliability == null) return;
+			if (reliability.type != type)
+				Lib.Proto.Set(m, "type", reliability.type);
 
 			bool enforce_breakdown = Lib.Proto.GetBool(m, "enforce_breakdown", false);
 
@@ -741,6 +762,8 @@ namespace KERBALISM
 				// determine if this is a critical failure
 				bool critical = Lib.RandomDouble() < PreferencesReliability.Instance.criticalChance;
 				Lib.Proto.Set(m, "critical", critical);
+
+				ProtoStoreRadiatorState(p, m, reliability.type);
 
 				// for each associated module
 				foreach (var proto_module in p.modules.FindAll(k => k.moduleName == reliability.type))
@@ -764,6 +787,22 @@ namespace KERBALISM
 							if (res != null) res.flowState = false;
 						}
 						break;
+
+					case "SystemHeatRadiatorKerbalism":
+						ProtoDisableSystemHeatNativeRadiators(p);
+						break;
+
+					case "USRadiatorSwitch":
+						foreach (var proto_module in p.modules.FindAll(k => k.moduleName == "USRadiatorSwitch"
+							|| k.moduleName == "SystemHeatRadiatorKerbalism"
+							|| k.moduleName == "ModuleSystemHeatRadiator"))
+						{
+							Lib.Proto.Set(proto_module, "isEnabled", false);
+							Lib.Proto.Set(proto_module, "IsCooling", false);
+							if (proto_module.moduleName == "USRadiatorSwitch")
+								Lib.Proto.Set(proto_module, "ActiveCooling", false);
+						}
+						break;
 				}
 
 				// show message
@@ -785,6 +824,36 @@ namespace KERBALISM
 			{
 				Incentive_redundancy(v, reliability.redundancy);
 			}
+		}
+
+		static void ProtoStoreRadiatorState(ProtoPartSnapshot part, ProtoPartModuleSnapshot reliability, string reliabilityType)
+		{
+			if (reliabilityType != "SystemHeatRadiatorKerbalism" && reliabilityType != "USRadiatorSwitch")
+				return;
+
+			string nativeModuleName = reliabilityType;
+			if (reliabilityType == "SystemHeatRadiatorKerbalism" && part.partPrefab != null)
+			{
+				SystemHeatRadiatorKerbalism wrapper = part.partPrefab.FindModuleImplementing<SystemHeatRadiatorKerbalism>();
+				if (wrapper != null && !string.IsNullOrEmpty(wrapper.radiatorModuleName))
+					nativeModuleName = wrapper.radiatorModuleName;
+			}
+
+			bool wasCooling = true;
+			ProtoPartModuleSnapshot wrapperSnapshot = IntegrationUtils.TryFindPartModuleSnapshot(part, "SystemHeatRadiatorKerbalism");
+			if (wrapperSnapshot != null)
+				wasCooling = Lib.Proto.GetBool(wrapperSnapshot, "IsCooling", wasCooling);
+
+			ProtoPartModuleSnapshot nativeSnapshot = IntegrationUtils.TryFindPartModuleSnapshot(part, nativeModuleName);
+			if (nativeSnapshot != null)
+			{
+				wasCooling = nativeModuleName == "USRadiatorSwitch"
+					? Lib.Proto.GetBool(nativeSnapshot, "ActiveCooling", Lib.Proto.GetBool(nativeSnapshot, "IsCooling", wasCooling))
+					: Lib.Proto.GetBool(nativeSnapshot, "IsCooling", wasCooling);
+			}
+
+			Lib.Proto.Set(reliability, nameof(radiator_was_cooling), wasCooling);
+			Lib.Proto.Set(reliability, nameof(radiator_state_stored), true);
 		}
 
 		// part tooltip
@@ -894,6 +963,27 @@ namespace KERBALISM
 			return false;
 		}
 
+		static bool GetRadiatorCoolingState(PartModule radiator, bool fallback)
+		{
+			if (radiator == null)
+				return fallback;
+
+			bool isCooling = IntegrationReflection.GetBool(radiator, "IsCooling", fallback);
+			return radiator.moduleName == "USRadiatorSwitch"
+				? IntegrationReflection.GetBool(radiator, "ActiveCooling", isCooling)
+				: isCooling;
+		}
+
+		static void SetRadiatorCoolingState(PartModule radiator, bool isCooling)
+		{
+			if (radiator == null)
+				return;
+
+			IntegrationReflection.SetField(radiator, "IsCooling", isCooling);
+			if (radiator.moduleName == "USRadiatorSwitch")
+				IntegrationReflection.SetField(radiator, "ActiveCooling", isCooling);
+		}
+
 		// apply type-specific hacks to enable/disable the module
 		protected void Apply(bool b)
 		{
@@ -930,6 +1020,75 @@ namespace KERBALISM
 					{
 						part.FindModelComponents<Animation>().ForEach(k => k.Stop());
 					}
+					break;
+
+				case "USRadiatorSwitch":
+					foreach (PartModule m in modules)
+					{
+						if (b && !radiator_state_stored)
+						{
+							radiator_was_cooling = GetRadiatorCoolingState(m, false);
+							radiator_state_stored = true;
+						}
+						SetRadiatorCoolingState(m, b ? false : radiator_was_cooling);
+					}
+					foreach (SystemHeatRadiatorKerbalism wrapper in part.FindModulesImplementing<SystemHeatRadiatorKerbalism>())
+					{
+						if (wrapper.radiatorModuleName != "USRadiatorSwitch")
+							continue;
+
+						if (b && !radiator_state_stored)
+						{
+							radiator_was_cooling = wrapper.IsCooling;
+							radiator_state_stored = true;
+						}
+						wrapper.isEnabled = !b;
+						wrapper.enabled = !b;
+						wrapper.IsCooling = b ? false : radiator_was_cooling;
+						foreach (PartModule nativeRadiator in wrapper.FindNativeRadiatorsForReliability())
+						{
+							if (b)
+								wrapper.ClearRadiatorFluxForReliability(nativeRadiator);
+							nativeRadiator.isEnabled = !b;
+							nativeRadiator.enabled = !b;
+							SetRadiatorCoolingState(nativeRadiator, b ? false : radiator_was_cooling);
+						}
+					}
+					if (!b)
+						radiator_state_stored = false;
+					break;
+
+				case "SystemHeatRadiatorKerbalism":
+					// Reliability type is remapped to the Kerbalism sidecar; also shut down the
+					// native SystemHeat / stock radiator so loaded vessels stop rejecting heat.
+					foreach (PartModule m in modules)
+					{
+						SystemHeatRadiatorKerbalism wrapper = m as SystemHeatRadiatorKerbalism;
+						if (wrapper == null)
+							continue;
+
+						List<PartModule> nativeRadiators = wrapper.FindNativeRadiatorsForReliability();
+						PartModule nativeRadiator = nativeRadiators.Count > 0 ? nativeRadiators[0] : null;
+						if (b && !radiator_state_stored)
+						{
+							radiator_was_cooling = nativeRadiator != null
+								? GetRadiatorCoolingState(nativeRadiator, wrapper.IsCooling)
+								: wrapper.IsCooling;
+							radiator_state_stored = true;
+						}
+
+						foreach (PartModule radiator in nativeRadiators)
+						{
+							if (b)
+								wrapper.ClearRadiatorFluxForReliability(radiator);
+							radiator.isEnabled = !b;
+							radiator.enabled = !b;
+							SetRadiatorCoolingState(radiator, b ? false : radiator_was_cooling);
+						}
+						wrapper.IsCooling = b ? false : radiator_was_cooling;
+					}
+					if (!b)
+						radiator_state_stored = false;
 					break;
 
 				case "ModuleLight":
@@ -991,6 +1150,83 @@ namespace KERBALISM
 			}
 
 			API.Failure.Notify(part, type, b);
+		}
+
+		/// <summary>
+		/// When SystemHeatRadiatorKerbalism fails unloaded, also disable its native radiator snapshot
+		/// so packed vessels do not keep IsCooling / rejection state armed until reload.
+		/// </summary>
+		static void ProtoDisableSystemHeatNativeRadiators(ProtoPartSnapshot part)
+		{
+			// radiatorModuleName is not persistent on the wrapper; read from the part prefab.
+			string radiatorModuleName = "ModuleSystemHeatRadiator";
+			if (part.partPrefab != null)
+			{
+				SystemHeatRadiatorKerbalism prefabWrapper = part.partPrefab.FindModuleImplementing<SystemHeatRadiatorKerbalism>();
+				if (prefabWrapper != null && !string.IsNullOrEmpty(prefabWrapper.radiatorModuleName))
+					radiatorModuleName = prefabWrapper.radiatorModuleName;
+			}
+
+			foreach (ProtoPartModuleSnapshot wrapper in part.modules)
+			{
+				if (wrapper.moduleName == "SystemHeatRadiatorKerbalism")
+					Lib.Proto.Set(wrapper, "IsCooling", false);
+			}
+
+			foreach (ProtoPartModuleSnapshot native in part.modules)
+			{
+				if (native.moduleName != radiatorModuleName
+					&& !(radiatorModuleName == "ModuleSystemHeatRadiator" && native.moduleName == "ModuleActiveRadiator")
+					&& !(radiatorModuleName == "ModuleActiveRadiator" && native.moduleName == "ModuleSystemHeatRadiator")
+					&& !(radiatorModuleName == "USRadiatorSwitch" && native.moduleName == "ModuleSystemHeatRadiator"))
+					continue;
+
+				Lib.Proto.Set(native, "isEnabled", false);
+				Lib.Proto.Set(native, "IsCooling", false);
+				if (native.moduleName == "USRadiatorSwitch")
+					Lib.Proto.Set(native, "ActiveCooling", false);
+			}
+		}
+
+		void EnforceBrokenRadiatorState()
+		{
+			if (type == "USRadiatorSwitch")
+			{
+				foreach (SystemHeatRadiatorKerbalism wrapper in part.FindModulesImplementing<SystemHeatRadiatorKerbalism>())
+				{
+					if (wrapper.radiatorModuleName != "USRadiatorSwitch")
+						continue;
+
+					wrapper.enabled = false;
+					wrapper.isEnabled = false;
+					wrapper.IsCooling = false;
+					foreach (PartModule radiator in wrapper.FindNativeRadiatorsForReliability())
+					{
+						wrapper.ClearRadiatorFluxForReliability(radiator);
+						radiator.enabled = false;
+						radiator.isEnabled = false;
+						SetRadiatorCoolingState(radiator, false);
+					}
+				}
+			}
+			else if (type == "SystemHeatRadiatorKerbalism")
+			{
+				foreach (PartModule module in modules)
+				{
+					SystemHeatRadiatorKerbalism wrapper = module as SystemHeatRadiatorKerbalism;
+					if (wrapper == null)
+						continue;
+
+					wrapper.IsCooling = false;
+					foreach (PartModule radiator in wrapper.FindNativeRadiatorsForReliability())
+					{
+						wrapper.ClearRadiatorFluxForReliability(radiator);
+						radiator.enabled = false;
+						radiator.isEnabled = false;
+						SetRadiatorCoolingState(radiator, false);
+					}
+				}
+			}
 		}
 
 

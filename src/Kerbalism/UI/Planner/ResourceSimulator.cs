@@ -165,6 +165,11 @@ namespace KERBALISM.Planner
 							case "ModuleActiveRadiator":
 								Process_radiator(m as ModuleActiveRadiator);
 								break;
+							case "USRadiatorSwitch":
+								// SystemHeatRadiatorKerbalism owns resource accounting when present.
+								if (p.FindModuleImplementing<SystemHeatRadiatorKerbalism>() == null)
+									Process_usRadiatorSwitch(m);
+								break;
 							case "ModuleWheelMotor":
 								Process_wheel_motor(m as ModuleWheelMotor);
 								break;
@@ -578,6 +583,50 @@ namespace KERBALISM.Planner
 			foreach (ModuleResource res in radiator.resHandler.inputResources)
 			{
 				Resource(res.name).Consume(res.rate, Local.Planner_source_radiator);
+			}
+		}
+
+		/// <summary>
+		/// Universal Storage 2 mesh-switch radiator. EC rate follows RadiatorEnergy[CurrentSelection]
+		/// (structural variants are 0). Falls back to ModuleActiveRadiator / resHandler.
+		/// </summary>
+		void Process_usRadiatorSwitch(PartModule module)
+		{
+			try
+			{
+				int selection = Lib.ReflectionValue<int>(module, "CurrentSelection");
+				string energyStr = Lib.ReflectionValue<string>(module, "RadiatorEnergy");
+				if (!string.IsNullOrEmpty(energyStr))
+				{
+					string[] energies = energyStr.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+					if (selection >= 0 && selection < energies.Length
+						&& double.TryParse(energies[selection].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double rate)
+						&& !double.IsNaN(rate) && !double.IsInfinity(rate))
+					{
+						if (rate > 0.0)
+							Resource("ElectricCharge").Consume(rate, Local.Planner_source_radiator);
+						return;
+					}
+				}
+			}
+			catch (Exception)
+			{
+				// fall through to resHandler
+			}
+
+			ModuleActiveRadiator stock = module as ModuleActiveRadiator;
+			if (stock != null)
+			{
+				Process_radiator(stock);
+				return;
+			}
+
+			if (module.resHandler != null)
+			{
+				foreach (ModuleResource res in module.resHandler.inputResources)
+				{
+					Resource(res.name).Consume(res.rate, Local.Planner_source_radiator);
+				}
 			}
 		}
 
