@@ -1,0 +1,35 @@
+{
+    "identifier":   "KerbalismSystemHeatCore",
+    "name":         "Kerbalism - SystemHeat Core",
+    "abstract":     "Optional Kerbalism SystemHeat bridge for converters, harvesters, radiators, drills, and chemical plants.",
+    "author":       "Kerbalism Contributors",
+    "$kref":        "#/ckan/github/Kerbalism/Kerbalism",
+    "$vref":        "#/ckan/ksp-avc",
+    "license":      "Unlicense",
+    "tags": [
+        "config"
+    ],
+    "depends": [
+        { "name": "ModuleManager" },
+        { "name": "Kerbalism-Config" },
+        { "name": "SystemHeat" }
+    ],
+    "suggests": [
+        { "name": "KerbalismSystemHeatCompat" }
+    ],
+    "conflicts": [
+        { "name": "Kerbalism-SystemHeat" },
+        { "name": "Kerbalism-FarFutureTechnologies" },
+        { "name": "SterlingSystemsKerbalism" },
+        { "name": "SystemHeat-CryoTanks" },
+        { "name": "SystemHeat-Converters" },
+        { "name": "SystemHeat-FissionEngines" },
+        { "name": "SystemHeat-FissionReactors" },
+        { "name": "SystemHeat-Harvesters" },
+        { "name": "SystemHeat-IonEngines" }
+    ],
+    "install": [ {
+        "find":       "KerbalismSystemHeatCore",
+        "install_to": "GameData"
+    } ]
+}

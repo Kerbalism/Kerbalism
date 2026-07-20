@@ -1,9 +1,9 @@
 {
     "identifier":   "Kerbalism-Config-Default",
     "name":         "Kerbalism - Default Config",
-    "abstract":     "Default configuration for Kerbalism, including bundled SystemHeat Core and Compat extras.",
+    "abstract":     "Default configuration for Kerbalism",
     "author":       "Kerbalism Contributors",
-    "$kref":        "#/ckan/github/Kerbalism/Kerbalism",
+    "$kref":        "#/ckan/github/Kerbalism/Kerbalism/asset_match/Kerbalism-Config*",
     "$vref":        "#/ckan/ksp-avc",
     "license":      "Unlicense",
     "tags": [
@@ -21,7 +21,9 @@
         { "name": "Kerbalism" }
     ],
     "suggests": [
-        { "name": "SystemHeat" }
+        { "name": "SystemHeat" },
+        { "name": "KerbalismSystemHeatCore" },
+        { "name": "KerbalismSystemHeatCompat" }
     ],
     "conflicts": [
         { "name": "Kerbalism-Config" },
@@ -30,28 +32,18 @@
         { "name": "Snacks" },
         { "name": "USI-LS" },
         { "name": "BackgroundProcessing" },
+        { "name": "Kerbalism-FarFutureTechnologies" },
+        { "name": "SterlingSystemsKerbalism" },
+        { "name": "Kerbalism-SystemHeat" },
         { "name": "SystemHeat-CryoTanks" },
         { "name": "SystemHeat-Converters" },
         { "name": "SystemHeat-FissionEngines" },
         { "name": "SystemHeat-FissionReactors" },
         { "name": "SystemHeat-Harvesters" },
-        { "name": "SystemHeat-IonEngines" },
-        { "name": "Kerbalism-SystemHeat" },
-        { "name": "Kerbalism-FarFutureTechnologies" },
-        { "name": "SterlingSystemsKerbalism" }
+        { "name": "SystemHeat-IonEngines" }
     ],
-    "install": [
-        {
-            "find":       "KerbalismConfig",
-            "install_to": "GameData"
-        },
-        {
-            "find":       "KerbalismSystemHeatCore",
-            "install_to": "GameData"
-        },
-        {
-            "find":       "KerbalismSystemHeatCompat",
-            "install_to": "GameData"
-        }
-    ]
+    "install": [ {
+        "find":       "KerbalismConfig",
+        "install_to": "GameData"
+    } ]
 }
