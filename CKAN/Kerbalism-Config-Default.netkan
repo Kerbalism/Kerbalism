@@ -1,0 +1,57 @@
+{
+    "identifier":   "Kerbalism-Config-Default",
+    "name":         "Kerbalism - Default Config",
+    "abstract":     "Default configuration for Kerbalism, including bundled SystemHeat Core and Compat extras.",
+    "author":       "Kerbalism Contributors",
+    "$kref":        "#/ckan/github/Kerbalism/Kerbalism",
+    "$vref":        "#/ckan/ksp-avc",
+    "license":      "Unlicense",
+    "tags": [
+        "config",
+        "physics",
+        "crewed",
+        "science"
+    ],
+    "provides": [
+        "Kerbalism-Config"
+    ],
+    "depends": [
+        { "name": "ModuleManager" },
+        { "name": "CommunityResourcePack" },
+        { "name": "Kerbalism" }
+    ],
+    "suggests": [
+        { "name": "SystemHeat" }
+    ],
+    "conflicts": [
+        { "name": "Kerbalism-Config" },
+        { "name": "UKS" },
+        { "name": "TACLS" },
+        { "name": "Snacks" },
+        { "name": "USI-LS" },
+        { "name": "BackgroundProcessing" },
+        { "name": "SystemHeat-CryoTanks" },
+        { "name": "SystemHeat-Converters" },
+        { "name": "SystemHeat-FissionEngines" },
+        { "name": "SystemHeat-FissionReactors" },
+        { "name": "SystemHeat-Harvesters" },
+        { "name": "SystemHeat-IonEngines" },
+        { "name": "Kerbalism-SystemHeat" },
+        { "name": "Kerbalism-FarFutureTechnologies" },
+        { "name": "SterlingSystemsKerbalism" }
+    ],
+    "install": [
+        {
+            "find":       "KerbalismConfig",
+            "install_to": "GameData"
+        },
+        {
+            "find":       "KerbalismSystemHeatCore",
+            "install_to": "GameData"
+        },
+        {
+            "find":       "KerbalismSystemHeatCompat",
+            "install_to": "GameData"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "identifier":   "Kerbalism",
+    "abstract":     "Add life support, quality-of-life, radiation, malfunctions, signals and space weather mechanics.",
+    "author":       "Kerbalism Contributors",
+    "$kref":        "#/ckan/github/Kerbalism/Kerbalism/asset_match/Kerbalism-Core*",
+    "$vref":        "#/ckan/ksp-avc",
+    "license":      "Unlicense",
+    "resources": {
+        "manual": "https://kerbalism.github.io/Kerbalism",
+        "homepage": "https://github.com/Kerbalism/Kerbalism"
+    },
+    "tags": [
+        "plugin",
+        "parts",
+        "crewed",
+        "science",
+        "resources"
+    ],
+    "depends": [
+        { "name": "Kerbalism-Config" },
+        { "name": "KSPCommunityFixes" },
+        { "name": "Harmony2" }
+    ],
+    "recommends": [
+        { "name": "KerbalChangelog" }
+    ],
+    "install": [ {
+        "find":       "Kerbalism",
+        "install_to": "GameData"
+    } ]
+}
