@@ -12,7 +12,19 @@ Copy a chosen Extra folder into the KSP `GameData` directory. Example: `Extras/K
 
 Inside Compat, patches are grouped by the target mod's usual GameData folder name. `Squad` covers stock parts.
 
-Bundled SystemHeat conversion patches skip themselves when the matching upstream SystemHeat Extra is already installed (`SystemHeatFissionEngines`, `SystemHeatIonEngines`, CryoTanks Boiloff Extra, etc.).
+## Compatibility
+
+Kerbalism's SystemHeat packages are **exclusive**. Do **not** install upstream SystemHeat Extras alongside them:
+
+- `SystemHeatFissionEngines`
+- `SystemHeatFissionReactors`
+- `SystemHeatIonEngines`
+- `SystemHeatConverters`
+- `SystemHeatHarvesters`
+- `SystemHeatCryoTanks` / `SystemHeatBoiloff`
+- Legacy `Kerbalism-SystemHeat`
+
+CKAN marks these as conflicts. Manual installs that mix both will double-patch parts.
 
 ## Packages
 
@@ -22,19 +34,19 @@ Bundled SystemHeat conversion patches skip themselves when the matching upstream
   | Path | Purpose |
   |------|---------|
   | `DynamicRadiation.cfg` | power-scaled radiation for SH fission reactors/engines |
-  | `Squad/LV-N.cfg` | stock LV-N → SH fission engine (skips if `SystemHeatFissionEngines` present) |
-  | `Squad/Dawn.cfg` | stock Dawn → SH ion loop (skips if `SystemHeatIonEngines` present) |
+  | `Squad/LV-N.cfg` | stock LV-N → SH fission engine |
+  | `Squad/Dawn.cfg` | stock Dawn → SH ion loop |
   | `AtomicAge` | SH radiators + fission NTR bridge |
   | `Buffalo` | SAFER reactor SH / Kerbalism bridge |
   | `CryoTanks` | EC cooling → `ModuleSystemHeatCryoTank` + Kerbalism updater |
   | `FelineUtilityRover` | FUR converter/harvester SH bridge |
   | `HeatControl` | Heat Control radiators SH bridge |
-  | `KerbalAtomics` | KA NTR SH conversion (skips if `SystemHeatFissionEngines` present) |
+  | `KerbalAtomics` | KA NTR SH conversion |
   | `MissingHistory` | MissingHistory NTR SH / Kerbalism bridge |
   | `NearFutureAeronautics` | NFA atomic jet SH / Kerbalism bridge |
-  | `NearFuturePropulsion` | NFP ion SH conversion (skips if `SystemHeatIonEngines` present) |
+  | `NearFuturePropulsion` | NFP ion SH conversion |
   | `PlanetaryBaseInc` | KPBS nuclear reactor SH bridge |
-  | `RestockPlus` | Cherenkov SH fission engine (skips if `SystemHeatFissionEngines` present) |
+  | `RestockPlus` | Cherenkov SH fission engine |
   | `SpaceDust` | SpaceDust harvester SH bridge |
   | `USI` | USI reactor / FTT / Kontainer SH bridge |
 

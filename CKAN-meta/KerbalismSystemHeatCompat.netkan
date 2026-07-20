@@ -3,9 +3,8 @@
     "name":         "Kerbalism - SystemHeat Compat",
     "abstract":     "Optional Kerbalism SystemHeat support for stock and third-party parts. Requires KerbalismSystemHeatCore.",
     "author":       "Kerbalism Contributors",
-    "$kref":        "#/ckan/github/Kerbalism/Kerbalism",
-    "$vref":        "#/ckan/ksp-avc",
-    "license":      "Unlicense",
+    "$kref":        "#/ckan/github/Kerbalism/Kerbalism/asset_match/Kerbalism-SystemHeatCompat*",
+    "license":      "MIT",
     "tags": [
         "config"
     ],
