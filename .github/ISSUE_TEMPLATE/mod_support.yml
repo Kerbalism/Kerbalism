@@ -1,0 +1,75 @@
+name: Mod support / compatibility
+description: Request or report support for another mod (configs, patches, or integration).
+title: "[Mod support]: "
+labels: ["mod support", "cfg"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for compatibility patches, missing part support, or integration issues with another mod.
+
+        Check the [Mod Support wiki](https://github.com/Kerbalism/Kerbalism/wiki/Home-~-Mod-Support) first.
+        Config PRs are especially welcome.
+
+  - type: input
+    id: other-mod
+    attributes:
+      label: Other mod name and version
+      placeholder: e.g. Bluedog Design Bureau 1.14
+    validations:
+      required: true
+
+  - type: input
+    id: other-mod-link
+    attributes:
+      label: Other mod link
+      description: Forum thread, GitHub, or SpaceDock page.
+      placeholder: https://...
+    validations:
+      required: true
+
+  - type: input
+    id: kerbalism-version
+    attributes:
+      label: Kerbalism version
+      placeholder: e.g. 3.40
+    validations:
+      required: true
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: What kind of support?
+      options:
+        - Missing / incomplete part configs
+        - Incorrect resource / process values
+        - Code / Harmony integration needed
+        - Conflict / wrong behavior with both installed
+        - Documentation only
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What is missing or wrong? Which parts/modules are affected?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / examples (optional)
+      description: Attach logs, screenshots, or example craft if this is a conflict or runtime bug.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked the Mod Support wiki / existing issues
+          required: true
+        - label: I am willing to help test (or contribute a config PR if I can)
+          required: false

@@ -1,0 +1,73 @@
+name: Feature request
+description: Suggest an enhancement or change in behavior.
+title: "[Feature]: "
+labels: ["enhancement", "Discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read [How to Suggest Features](https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md#how-to-suggest-features).
+
+        Maintainers work on this mod for fun and are unpaid. Be respectful, and consider workload and trade-offs.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What problem does this solve? Is there a current workaround?
+      placeholder: I want to … because …
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the feature as clearly as you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, existing tools, or config-only solutions.
+      placeholder: Optional, but helpful.
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact and drawbacks
+      description: |
+        Consider performance, gameplay changes, save compatibility, config complexity, and maintenance cost.
+        See CONTRIBUTING.md — “Consider the Impact”.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Main area
+      options:
+        - Life support / habitat
+        - Science
+        - Reliability
+        - Radiation / space weather
+        - UI / planner / telemetry
+        - Performance
+        - Config / profile
+        - Mod support / compatibility
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues / discussions for similar requests
+          required: true
+        - label: I considered whether this could be done with config or another mod
+          required: true
