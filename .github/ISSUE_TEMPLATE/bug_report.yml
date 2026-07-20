@@ -63,3 +63,13 @@ body:
         It is recommended to attach quicksave files that describe the situation.
         Make sure that we can load them and remove all non-stock crafts (unless they are crucial for the reproduction).
       placeholder: Attach the quicksave to this issue, and note the save name / situation if needed.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked CONTRIBUTING.md / existing issues
+          required: true
+        - label: I am willing to help test (or contribute a fix if I can)
+          required: false

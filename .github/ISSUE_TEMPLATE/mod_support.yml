@@ -1,7 +1,7 @@
 name: Mod support / compatibility
 description: Request or report support for another mod (configs, patches, or integration).
-title: "[Mod support]: "
-labels: ["mod support", "cfg"]
+title: "[Mod Support]: "
+labels: ["mod support"]
 body:
   - type: markdown
     attributes:
@@ -25,14 +25,6 @@ body:
       label: Other mod link
       description: Forum thread, GitHub, or SpaceDock page.
       placeholder: https://...
-    validations:
-      required: true
-
-  - type: input
-    id: kerbalism-version
-    attributes:
-      label: Kerbalism version
-      placeholder: e.g. 3.40
     validations:
       required: true
 

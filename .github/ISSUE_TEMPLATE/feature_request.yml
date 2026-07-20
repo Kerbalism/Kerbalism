@@ -37,3 +37,13 @@ body:
         See CONTRIBUTING.md — “Consider the Impact”.
     validations:
       required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked CONTRIBUTING.md / existing issues
+          required: true
+        - label: I am willing to help test (or contribute an implementation if I can)
+          required: false
