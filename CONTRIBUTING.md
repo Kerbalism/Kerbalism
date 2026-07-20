@@ -52,7 +52,10 @@ You are free to mention any issues on the forum thread, but in the end, all issu
  - Which version of Kerbalism are you using? If in doubt, check out the `Kerbalism.version` file in `GameData\Kerbalism`
  - Which version of KSP are you using? 
  - Which mods are you running, and which versions do they have? Please note that when reporting a bug, you should only ever have the minimal amount of mods installed that are necessary to reproduce the bug (see [below](removing-mods-for-debugging) for tips on removing mods).
- - The `output_log.txt` file, from the `KSP_x64_Data`or `KSP_Data` directory. You can either zip it and directly attach it to the bug report or upload to a pastebin service.
+ - Relevant log files. Prefer attaching (or linking via pastebin) one or more of:
+   - `KSP.log` in the KSP install root (next to the game executable)
+   - `Player.log` — the Unity player log, especially useful after a crash. On Windows it is usually under `%USERPROFILE%\AppData\LocalLow\Squad\Kerbal Space Program\`
+   - The `Logs` folder in the KSP install root (zip the folder and upload it)
 
 If you encounter problems with specific vessels, please attach the craft file and short instructions on how to use it. Remove parts from Mods so we can load them, unless the parts from Mods are crucial for reproducing the problem.
 
@@ -407,7 +410,7 @@ You can enable/disable the display of any calls not called in the last frame wit
   - Build the Project in release mode
   - Clean out the `GameData` folder of your KSP install, only the ´Squad` folder should remain.
   - Extract the `Kerbalism-<version>.zip` that was created during the Release build into your GameData folder
-  - Launch KSP in the non-Developer mode and verify the functionality. Check the `output_log.txt` for errors.
+  - Launch KSP in the non-Developer mode and verify the functionality. Check `KSP.log` (and `Player.log` / the `Logs` folder if needed) for errors.
   - Create a Tag with Git, push all commits and the tag to GitHub.
   - On GitHub, draft a new release selecting the newly created tag
   - Upload the `Kerbalism-<version>.zip` file to GitHub, paste the changelog there

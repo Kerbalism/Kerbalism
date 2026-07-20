@@ -11,53 +11,13 @@ body:
         Please read [How to Report Bugs](https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md#how-to-report-bugs) first.
         Reproduce with the **minimal** mod set whenever possible (ideally Kerbalism + ModuleManager only).
 
-  - type: input
-    id: kerbalism-version
-    attributes:
-      label: Kerbalism version
-      description: From `GameData/Kerbalism/Kerbalism.version`, or the CKAN / release version.
-      placeholder: e.g. 3.40
-    validations:
-      required: true
-
-  - type: input
-    id: ksp-version
-    attributes:
-      label: KSP version
-      placeholder: e.g. 1.12.5
-    validations:
-      required: true
-
-  - type: dropdown
-    id: install-method
-    attributes:
-      label: How did you install Kerbalism?
-      options:
-        - CKAN
-        - Manual / GitHub release
-        - Built from source
-        - Other
-    validations:
-      required: true
-
-  - type: textarea
-    id: mods
-    attributes:
-      label: Mods required to reproduce
-      description: List every mod (and version) still installed when the bug occurs. Prefer a minimal set.
-      placeholder: |
-        - Kerbalism 3.40
-        - ModuleManager 4.2.3
-        - (only mods needed to reproduce)
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: What went wrong?
+      description: What went wrong? Include Kerbalism / KSP versions and relevant mods if you know them; otherwise please make sure to upload `KSP.log`.
       placeholder: Clear and concise description of the bug.
+
     validations:
       required: true
 
@@ -74,48 +34,32 @@ body:
       required: true
 
   - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      placeholder: What should have happened instead?
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual behavior
-      placeholder: What happened instead? Include screenshots if useful.
-    validations:
-      required: true
-
-  - type: textarea
     id: logs
     attributes:
       label: Logs
       description: |
-        Attach or link `KSP.log` / `output_log.txt` (from `KSP_x64_Data` or `KSP_Data`).
-        Zip attachments are fine. Pastebin / similar links also work.
-      placeholder: Attach the log file to this issue, or paste a link here.
+        Attach or link one or more of the following (zip is fine; pastebin / similar links also work):
+        - `KSP.log` — in the KSP install root (next to the game executable)
+        - `Player.log` — Unity player log (useful especially after a crash). On Windows: `%USERPROFILE%\AppData\LocalLow\Squad\Kerbal Space Program\`
+        - The `Logs` folder in the KSP install root — zip and upload the whole folder if useful
+      placeholder: Attach KSP.log, Player.log, and/or a zip of the Logs folder, or paste links here.
     validations:
       required: true
 
   - type: textarea
-    id: craft-save
+    id: craft
     attributes:
-      label: Craft / quicksave (optional)
+      label: Craft file (optional)
       description: |
-        If the bug needs a specific vessel or situation, attach a craft file and/or quicksave.
-        Prefer stock parts so maintainers can load it. Include short load/use instructions.
+        If you encounter problems with specific vessels, please attach the craft file and short instructions on how to use it.
+        Remove parts from mods so we can load them, unless the parts from mods are crucial for reproducing the problem.
+      placeholder: Attach the craft file to this issue, and describe how to load / reproduce with it.
 
-  - type: checkboxes
-    id: checklist
+  - type: textarea
+    id: quicksave
     attributes:
-      label: Checklist
-      options:
-        - label: I searched existing issues for duplicates
-          required: true
-        - label: I tried to reproduce with a minimal mod list (see CONTRIBUTING.md)
-          required: true
-        - label: I attached or linked a relevant log file
-          required: true
+      label: Quicksave (optional)
+      description: |
+        It is recommended to attach quicksave files that describe the situation.
+        Make sure that we can load them and remove all non-stock crafts (unless they are crucial for the reproduction).
+      placeholder: Attach the quicksave to this issue, and note the save name / situation if needed.
