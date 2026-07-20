@@ -6,6 +6,6 @@ contact_links:
   - name: Discord
     url: https://discord.gg/3JAE2JE
     about: Ask questions and get quick help from the community.
-  - name: GitHub Issues
+  - name: Existing issues
     url: https://github.com/Kerbalism/Kerbalism/issues
-    about: Browse existing issues before opening a new one.
+    about: Search open and closed issues to avoid duplicates.
