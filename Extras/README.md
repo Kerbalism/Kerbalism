@@ -1,20 +1,21 @@
 # Kerbalism SystemHeat Extras
 
-These optional CFG packages are not part of the default `GameData` tree.
+These optional CFG packages are not part of the default `GameData` tree. Each Extra is a standalone GameData folder so any Kerbalism configuration pack can use them.
 
 ## Installation
 
-Choose an Extra and copy its **contents** into the KSP `GameData` directory. Merge the included `KerbalismConfig` folder with `GameData/KerbalismConfig`.
+Copy a chosen Extra folder into the KSP `GameData` directory. Example: `Extras/KerbalismSystemHeat` → `GameData/KerbalismSystemHeat`.
 
 `KerbalismSystemHeatCompat` and `KerbalismSystemHeatFission` require `KerbalismSystemHeat` to be installed alongside them.
+
+Inside each Extra, patches are grouped by the target mod's usual GameData folder name. The `Squad` directory contains patches for both the stock game and Squad DLCs such as Making History.
 
 ## Packages
 
 - `KerbalismSystemHeat`: generic SystemHeat bridge for native converters, harvesters, radiators, Kerbalism drills/chemical plants, planner support, and legacy module migration.
-- `KerbalismSystemHeatCryoTanks`: converts CryoTanks EC cooling to `ModuleSystemHeatCryoTank` and adds its Kerbalism updater. The separate SystemHeat Boiloff/CryoTanks Extra is not required.
 - `KerbalismSystemHeatFission`: fission integration for stock, ReStock+, Atomic Age, Kerbal Atomics, Near Future Aeronautics, Missing History, USI reactors, and related dynamic-radiation patches. It includes the SystemHeat fission-engine conversions needed by those parts.
 - `KerbalismSystemHeatIonEngines`: makes stock and Near Future Propulsion ion engines participate in SystemHeat loops. Engine propellants remain managed by their existing `ModuleEngines` modules, so no resource updater is required.
-- `KerbalismSystemHeatCompat`: SystemHeat integration for Buffalo, Feline Utility Rover, Heat Control, KPBS, SpaceDust, Sterling Systems, and related compatibility patches.
+- `KerbalismSystemHeatCompat`: SystemHeat integration for CryoTanks, Buffalo, Feline Utility Rover, Heat Control, KPBS, SpaceDust, Sterling Systems, and related compatibility patches. The CryoTanks section converts EC cooling to `ModuleSystemHeatCryoTank` and adds its Kerbalism updater; the separate SystemHeat Boiloff/CryoTanks Extra is not required.
 
 The bundled CryoTanks, fission-engine, and ion-engine conversions automatically skip themselves when the matching upstream SystemHeat Extra is detected, so existing installations do not receive duplicate modules.
 
