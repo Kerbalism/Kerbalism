@@ -6,6 +6,6 @@ contact_links:
   - name: Discord
     url: https://discord.gg/3JAE2JE
     about: Ask questions and get quick help from the community.
-  - name: KSP Forum thread
-    url: https://forum.kerbalspaceprogram.com/index.php?/topic/201171-kerbalism
-    about: General discussion. Bugs and feature requests should still be filed on GitHub.
+  - name: GitHub Issues
+    url: https://github.com/Kerbalism/Kerbalism/issues
+    about: Browse existing issues before opening a new one.
