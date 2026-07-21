@@ -59,7 +59,6 @@
  - 2026-07-13
 
  ### Changes since the last release
- * Added: Whole-vessel spin can grant firm-ground comfort when every occupied crew part reaches the configured artificial gravity (default 0.25 g) and spin rate stays within the configured RPM limit (default 3 RPM); packed/unloaded vessels reuse the last loaded sample; VAB/SPH planner estimates whether a design can meet those thresholds (#1091, @Aebestach)
  * Added: SystemHeat native integration with automation devices, background thermal simulation, DynamicRadiation support for Sterling Systems power-dependent emitters, and expanded optional-mod configs for CryoTanks, Far Future Technologies, Near Future Electrical, Sterling Systems, KPBS, Buffalo SAFER, and SpaceDust harvesters (#1052, @Aebestach)
  * Added: VABOrganizer part categories (#983, @LouisB3)
  * Added: HabTech2 part upgrade dependency (#979, @LouisB3)
