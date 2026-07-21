@@ -316,6 +316,8 @@ namespace KERBALISM
 					if (HighLogic.CurrentGame != null)
 					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesComfort>(); }
 				}
+				if (instance != null)
+					instance.SanitizeSpinParameters();
 				return instance;
 			}
 		}
@@ -323,7 +325,20 @@ namespace KERBALISM
 		public override void OnLoad(ConfigNode node)
 		{
 			base.OnLoad(node);
+			SanitizeSpinParameters();
 			instance = null;
+		}
+
+		private void SanitizeSpinParameters()
+		{
+			if (float.IsNaN(spinMinArtificialG)
+				|| float.IsInfinity(spinMinArtificialG)
+				|| spinMinArtificialG <= 0.0f)
+				spinMinArtificialG = Settings.ComfortSpinMinArtificialG;
+			if (float.IsNaN(spinMaxRpm)
+				|| float.IsInfinity(spinMaxRpm)
+				|| spinMaxRpm <= 0.0f)
+				spinMaxRpm = Settings.ComfortSpinMaxRpm;
 		}
 	}
 

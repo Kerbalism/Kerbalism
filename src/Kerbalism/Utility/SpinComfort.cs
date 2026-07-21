@@ -13,11 +13,25 @@ namespace KERBALISM
 	public static class SpinComfort
 	{
 		public const double StandardGravity = 9.80665;
+		public const double RequiredStableSeconds = 2.0;
+		public const double MaxStableAxisRateDegrees = 5.0;
+		public const double MaxStableRelativeRpmRate = 0.1;
+		public const double MaxStableAbsoluteRpmRate = 0.05;
+
+		private const double AngularVelocityEpsilon = 1e-8;
+		private const double MaxRelativeAngularVelocityDifference = 0.05;
+		private const double MaxAbsoluteAngularVelocityDifference = 0.005;
 
 		public struct Sample
 		{
 			/// <summary>True when physics state was readable and a snapshot can be stored.</summary>
 			public bool available;
+			/// <summary>True when the root and every occupied part share the same angular velocity.</summary>
+			public bool coherent;
+			/// <summary>True when at least one occupied crew part was evaluated.</summary>
+			public bool hasOccupiedParts;
+			/// <summary>World-space spin axis used for stability checks.</summary>
+			public Vector3 axisWorld;
 			/// <summary>Minimum artificial gravity (g) among occupied crew parts; 0 if none/spinless.</summary>
 			public double minGee;
 			/// <summary>Vessel spin rate in revolutions per minute.</summary>
@@ -40,6 +54,7 @@ namespace KERBALISM
 			public double rpmRequired;
 			public float requiredGee;
 			public float maxRpm;
+			public bool usesAssignedCrew;
 		}
 
 		/// <summary>
@@ -57,30 +72,30 @@ namespace KERBALISM
 			if (root == null)
 				return sample;
 
-			Rigidbody rb = root.Rigidbody;
-			if (rb == null)
+			Rigidbody rootRb = GetPhysicalRigidbody(root);
+			if (rootRb == null)
 				return sample;
 
-			Vector3 omegaWorld = rb.angularVelocity; // rad/s, world space
-			double omega = omegaWorld.magnitude;
-			double rpm = omega * 60.0 / (2.0 * Math.PI);
-
-			if (omega < 1e-8)
-			{
-				sample.available = true;
-				sample.minGee = 0.0;
-				sample.rpm = 0.0;
-				sample.worstRadius = 0.0;
-				return sample;
-			}
-
-			Vector3 omegaHat = omegaWorld / (float)omega;
+			sample.available = true;
+			Vector3 rootOmegaWorld = rootRb.angularVelocity; // rad/s, world space
 			Vector3 com = v.CurrentCoM;
-			double omegaSq = omega * omega;
+			if (!IsFinite(rootOmegaWorld) || !IsFinite(com))
+				return sample;
+
+			double rootOmega = rootOmegaWorld.magnitude;
+			if (!IsFinite(rootOmega))
+				return sample;
+
+			sample.coherent = true;
+			sample.rpm = OmegaToRpm(rootOmega);
+			sample.axisWorld = rootOmega > AngularVelocityEpsilon
+				? rootOmegaWorld / (float)rootOmega
+				: Vector3.zero;
 
 			bool anyOccupied = false;
 			double minGee = double.PositiveInfinity;
 			double worstRadius = double.PositiveInfinity;
+			double maxRpm = sample.rpm;
 
 			foreach (Part p in v.parts)
 			{
@@ -88,9 +103,52 @@ namespace KERBALISM
 					continue;
 
 				anyOccupied = true;
+				Rigidbody partRb = GetPhysicalRigidbody(p);
+				if (partRb == null)
+				{
+					sample.available = false;
+					return sample;
+				}
+				if (!IsFinite(partRb.angularVelocity) || !IsFinite(p.transform.position))
+				{
+					sample.coherent = false;
+					return sample;
+				}
+
+				Vector3 partOmegaWorld = partRb.angularVelocity;
+				double partOmega = partOmegaWorld.magnitude;
+				if (!IsFinite(partOmega))
+				{
+					sample.coherent = false;
+					return sample;
+				}
+				double allowedDifference = Math.Max(
+					MaxAbsoluteAngularVelocityDifference,
+					Math.Max(rootOmega, partOmega) * MaxRelativeAngularVelocityDifference);
+				if ((partOmegaWorld - rootOmegaWorld).magnitude > allowedDifference)
+				{
+					sample.coherent = false;
+					sample.hasOccupiedParts = true;
+					sample.minGee = 0.0;
+					sample.worstRadius = 0.0;
+					sample.rpm = Math.Max(maxRpm, OmegaToRpm(partOmega));
+					return sample;
+				}
+
+				if (partOmega <= AngularVelocityEpsilon)
+				continue;
+
+				Vector3 partOmegaHat = partOmegaWorld / (float)partOmega;
 				Vector3 r = p.transform.position - com;
-				double radius = Vector3.Cross(r, omegaHat).magnitude;
-				double gee = omegaSq * radius / StandardGravity;
+				double radius = Vector3.Cross(r, partOmegaHat).magnitude;
+				double gee = partOmega * partOmega * radius / StandardGravity;
+				double partRpm = OmegaToRpm(partOmega);
+				maxRpm = Math.Max(maxRpm, partRpm);
+				if (!IsFinite(radius) || !IsFinite(gee) || !IsFinite(partRpm))
+				{
+					sample.coherent = false;
+					return sample;
+				}
 				if (gee < minGee)
 				{
 					minGee = gee;
@@ -98,8 +156,8 @@ namespace KERBALISM
 				}
 			}
 
-			sample.available = true;
-			sample.rpm = rpm;
+			sample.hasOccupiedParts = anyOccupied;
+			sample.rpm = maxRpm;
 			if (!anyOccupied)
 			{
 				sample.minGee = 0.0;
@@ -107,8 +165,8 @@ namespace KERBALISM
 			}
 			else
 			{
-				sample.minGee = minGee;
-				sample.worstRadius = worstRadius;
+				sample.minGee = double.IsPositiveInfinity(minGee) ? 0.0 : minGee;
+				sample.worstRadius = double.IsPositiveInfinity(worstRadius) ? 0.0 : worstRadius;
 			}
 			return sample;
 		}
@@ -121,17 +179,23 @@ namespace KERBALISM
 		{
 			if (!enabled || !snapshotValid)
 				return false;
-			if (requiredGee <= 0.0f || maxRpm < 0.0f)
+			if (!IsFinite(minGee) || !IsFinite(rpm) || !IsFinite(requiredGee) || !IsFinite(maxRpm))
+				return false;
+			if (requiredGee <= 0.0f || maxRpm < 0.0f || minGee < 0.0 || rpm < 0.0)
 				return false;
 			return minGee >= requiredGee && rpm <= maxRpm;
 		}
 
 		/// <summary>
 		/// Pre-compute whether an editor ship can meet spin firm-ground thresholds.
-		/// Uses prefab crew capacity so disabled Habitats still count as design seats.
+		/// Uses assigned crew parts when available, otherwise falls back to all prefab seats.
 		/// Spin axis is chosen as the root-part axis that maximizes the worst-case crew radius.
 		/// </summary>
-		public static EditorEstimate EvaluateEditor(List<Part> parts, float requiredGee, float maxRpm)
+		public static EditorEstimate EvaluateEditor(
+			List<Part> parts,
+			VesselCrewManifest crewManifest,
+			float requiredGee,
+			float maxRpm)
 		{
 			EditorEstimate estimate = new EditorEstimate
 			{
@@ -139,7 +203,12 @@ namespace KERBALISM
 				maxRpm = maxRpm
 			};
 
-			if (parts == null || parts.Count == 0 || requiredGee <= 0.0f || maxRpm <= 0.0f)
+			if (parts == null
+				|| parts.Count == 0
+				|| !IsFinite(requiredGee)
+				|| !IsFinite(maxRpm)
+				|| requiredGee <= 0.0f
+				|| maxRpm <= 0.0f)
 				return estimate;
 
 			Part root = EditorLogic.RootPart;
@@ -152,15 +221,22 @@ namespace KERBALISM
 			if (!TryGetEditorCoM(parts, out com))
 				return estimate;
 
-			List<Part> crewParts = new List<Part>();
+			List<Part> assignedCrewParts = new List<Part>();
+			List<Part> crewableParts = new List<Part>();
 			foreach (Part p in parts)
 			{
 				if (p == null || p.partInfo == null || p.partInfo.partPrefab == null)
 					continue;
 				if (p.partInfo.partPrefab.CrewCapacity > 0)
-					crewParts.Add(p);
+				{
+					crewableParts.Add(p);
+					if (GetAssignedCrewCount(p, crewManifest) > 0)
+						assignedCrewParts.Add(p);
+				}
 			}
 
+			List<Part> crewParts = assignedCrewParts.Count > 0 ? assignedCrewParts : crewableParts;
+			estimate.usesAssignedCrew = assignedCrewParts.Count > 0;
 			estimate.crewPartCount = crewParts.Count;
 			if (crewParts.Count == 0)
 			{
@@ -191,7 +267,7 @@ namespace KERBALISM
 						minRadius = radius;
 				}
 
-				if (minRadius > bestMinRadius && !double.IsInfinity(minRadius))
+				if (minRadius > bestMinRadius && IsFinite(minRadius))
 					bestMinRadius = minRadius;
 			}
 
@@ -203,6 +279,8 @@ namespace KERBALISM
 
 			double omegaMax = maxRpm * (2.0 * Math.PI) / 60.0;
 			estimate.geeAtMaxRpm = omegaMax * omegaMax * bestMinRadius / StandardGravity;
+			if (!IsFinite(estimate.geeAtMaxRpm))
+				return new EditorEstimate();
 
 			if (bestMinRadius > 1e-6)
 			{
@@ -218,6 +296,34 @@ namespace KERBALISM
 			return estimate;
 		}
 
+		/// <summary>
+		/// Hash only the occupied editor parts and their crew counts. Moving crew between
+		/// parts changes the hash; swapping seats within one part does not affect geometry.
+		/// </summary>
+		public static int EditorCrewAssignmentHash(List<Part> parts, VesselCrewManifest crewManifest)
+		{
+			if (parts == null || crewManifest == null)
+				return 0;
+
+			unchecked
+			{
+				int hash = 17;
+				foreach (Part p in parts)
+				{
+					if (p == null)
+						continue;
+
+					int assignedCrew = GetAssignedCrewCount(p, crewManifest);
+					if (assignedCrew == 0)
+						continue;
+
+					hash = hash * 31 + (int)p.craftID;
+					hash = hash * 31 + assignedCrew;
+				}
+				return hash;
+			}
+		}
+
 		private static bool TryGetEditorCoM(List<Part> parts, out Vector3 com)
 		{
 			com = Vector3.zero;
@@ -226,10 +332,24 @@ namespace KERBALISM
 			{
 				if (p == null)
 					continue;
-				float partMass = p.mass + p.GetResourceMass();
+
+				float partMass = p.mass
+					+ p.GetResourceMass()
+					+ p.GetModuleMass(p.mass, ModifierStagingSituation.CURRENT);
+				if (!IsFinite(partMass))
+					return false;
 				if (partMass <= 0.0f)
-					partMass = 0.001f;
-				com += p.transform.position * partMass;
+					continue;
+
+				Part physicalPart = p;
+				while (physicalPart.PhysicsSignificance == 1 && physicalPart.parent != null)
+					physicalPart = physicalPart.parent;
+
+				Vector3 partCom = physicalPart.transform.TransformPoint(physicalPart.CoMOffset);
+				if (!IsFinite(partCom))
+					return false;
+
+				com += partCom * partMass;
 				mass += partMass;
 			}
 
@@ -237,7 +357,56 @@ namespace KERBALISM
 				return false;
 
 			com /= mass;
-			return true;
+			return IsFinite(com);
+		}
+
+		private static int GetAssignedCrewCount(Part p, VesselCrewManifest crewManifest)
+		{
+			if (p == null || crewManifest == null)
+				return 0;
+
+			PartCrewManifest partManifest = crewManifest.GetPartCrewManifest(p.craftID);
+			if (partManifest == null || partManifest.partCrew == null)
+				return 0;
+
+			int count = 0;
+			foreach (string crewName in partManifest.partCrew)
+			{
+				if (!string.IsNullOrEmpty(crewName))
+					count++;
+			}
+			return count;
+		}
+
+		public static bool IsFinite(double value)
+		{
+			return !double.IsNaN(value) && !double.IsInfinity(value);
+		}
+
+		public static bool IsFinite(float value)
+		{
+			return !float.IsNaN(value) && !float.IsInfinity(value);
+		}
+
+		public static bool IsFinite(Vector3 value)
+		{
+			return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+		}
+
+		private static double OmegaToRpm(double omega)
+		{
+			return omega * 60.0 / (2.0 * Math.PI);
+		}
+
+		private static Rigidbody GetPhysicalRigidbody(Part p)
+		{
+			while (p != null)
+			{
+				if (p.Rigidbody != null)
+					return p.Rigidbody;
+				p = p.parent;
+			}
+			return null;
 		}
 	}
 }

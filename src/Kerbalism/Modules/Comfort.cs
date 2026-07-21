@@ -194,6 +194,11 @@ namespace KERBALISM
 
 		public string Tooltip()
 		{
+			return Tooltip(true);
+		}
+
+		public string Tooltip(bool includeSpin)
+		{
 			string yes = Lib.BuildString("<b><color=#00ff00>", Local.Generic_YES, " </color></b>");
 			string no = Lib.BuildString("<b><color=#ffaa00>", Local.Generic_NO, " </color></b>");
 
@@ -218,7 +223,7 @@ namespace KERBALISM
 			(
 				"<align=left />",
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_firmground, firm_ground ? yes : no),
-				String.Format("{0,-14}\t{1}\n", Local.Comfort_spin, spinStatus),
+				includeSpin ? String.Format("{0,-14}\t{1}\n", Local.Comfort_spin, spinStatus) : string.Empty,
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_exercise, exercise ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_notalone, not_alone ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_callhome, call_home ? yes : no),

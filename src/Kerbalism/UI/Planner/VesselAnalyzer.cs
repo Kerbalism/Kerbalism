@@ -30,8 +30,10 @@ namespace KERBALISM.Planner
 			// get number of kerbals assigned to the vessel in the editor
 			// note: crew manifest is not reset after root part is deleted
 			// Prefer ShipConstruction.ShipManifest over CrewAssignmentDialog.GetManifest() (#864)
+			crew_manifest = Lib.EditorShipManifest;
 			crew = Lib.GetEditorCrew();
 			crew_count = (uint)crew.Count;
+			crew_assignment_hash = SpinComfort.EditorCrewAssignmentHash(parts, crew_manifest);
 			crew_engineer = crew.Find(k => k.trait == "Engineer") != null;
 			crew_scientist = crew.Find(k => k.trait == "Scientist") != null;
 			crew_pilot = crew.Find(k => k.trait == "Pilot") != null;
@@ -221,6 +223,7 @@ namespace KERBALISM.Planner
 			{
 				spinEstimate = SpinComfort.EvaluateEditor(
 					parts,
+					crew_manifest,
 					PreferencesComfort.Instance.spinMinArtificialG,
 					PreferencesComfort.Instance.spinMaxRpm);
 			}
@@ -233,6 +236,8 @@ namespace KERBALISM.Planner
 
 		// general
 		public List<ProtoCrewMember> crew;                  // full information on all crew
+		public VesselCrewManifest crew_manifest;            // cached editor ShipManifest (#864)
+		public int crew_assignment_hash;                    // occupied editor parts and counts
 		public uint crew_count;                             // crew member on board
 		public uint crew_capacity;                          // crew member capacity
 		public bool crew_engineer;                          // true if an engineer is among the crew

@@ -95,6 +95,14 @@ namespace KERBALISM
 			ComfortSpinFirmGround = Lib.ConfigValue(cfg, "ComfortSpinFirmGround", true);
 			ComfortSpinMinArtificialG = Lib.ConfigValue(cfg, "ComfortSpinMinArtificialG", 0.25f);
 			ComfortSpinMaxRpm = Lib.ConfigValue(cfg, "ComfortSpinMaxRpm", 3.0f);
+			if (float.IsNaN(ComfortSpinMinArtificialG)
+				|| float.IsInfinity(ComfortSpinMinArtificialG)
+				|| ComfortSpinMinArtificialG <= 0.0f)
+				ComfortSpinMinArtificialG = 0.25f;
+			if (float.IsNaN(ComfortSpinMaxRpm)
+				|| float.IsInfinity(ComfortSpinMaxRpm)
+				|| ComfortSpinMaxRpm <= 0.0f)
+				ComfortSpinMaxRpm = 3.0f;
 
 			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);

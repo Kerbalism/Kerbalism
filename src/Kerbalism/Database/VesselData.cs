@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 
 namespace KERBALISM
@@ -104,6 +105,13 @@ namespace KERBALISM
 		public bool EnvSpinSnapshotValid => spinSnapshotValid; bool spinSnapshotValid;
 		public double EnvSpinMinGee => spinMinGee; double spinMinGee;
 		public double EnvSpinRpm => spinRpm; double spinRpm;
+
+		// Loaded-only spin stability tracking. Never persisted: a vessel must demonstrate
+		// stable rotation again after being unpacked before a new snapshot is accepted.
+		private bool spinStabilityInitialized;
+		private Vector3 spinPreviousAxis;
+		private double spinPreviousRpm;
+		private double spinStableSeconds;
 		#endregion
 
 		#region evaluated environment properties
@@ -920,6 +928,7 @@ namespace KERBALISM
 			spinSnapshotValid = Lib.ConfigValue(node, "spinSnapshotValid", false);
 			spinMinGee = Lib.ConfigValue(node, "spinMinGee", 0.0);
 			spinRpm = Lib.ConfigValue(node, "spinRpm", 0.0);
+			ValidateSpinComfortSnapshot();
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
 			vesselSolarCrossSection = Lib.ConfigValue(node, "vesselSolarCrossSection", -1.0);
@@ -1057,6 +1066,7 @@ namespace KERBALISM
 			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageHighWarpExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
+			ValidateSpinComfortSnapshot();
 			node.AddValue("spinSnapshotValid", spinSnapshotValid);
 			node.AddValue("spinMinGee", spinMinGee);
 			node.AddValue("spinRpm", spinRpm);
@@ -1147,18 +1157,95 @@ namespace KERBALISM
 		/// Refresh the persisted spin sample only when loaded physics is readable.
 		/// Packed / unloaded vessels keep the last valid sample for background comfort.
 		/// </summary>
-		private void UpdateSpinComfortSnapshot()
+		private void UpdateSpinComfortSnapshot(double elapsedSeconds)
 		{
-			if (Vessel == null || !Vessel.loaded || Vessel.packed)
+			if (Vessel == null)
 				return;
+			if (!Vessel.loaded || Vessel.packed)
+			{
+				// Keep the last accepted snapshot for background simulation, but require
+				// a fresh two-second stability window the next time physics is unpacked.
+				ResetSpinStability();
+				return;
+			}
 
 			SpinComfort.Sample sample = SpinComfort.Evaluate(Vessel);
 			if (!sample.available)
 				return;
 
-			spinSnapshotValid = true;
+			if (!sample.coherent
+				|| !SpinComfort.IsFinite(sample.minGee)
+				|| !SpinComfort.IsFinite(sample.rpm)
+				|| !SpinComfort.IsFinite(sample.axisWorld))
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+				return;
+			}
+
 			spinMinGee = sample.minGee;
 			spinRpm = sample.rpm;
+
+			// A stationary/no-crew vessel has a valid negative sample and needs no axis check.
+			if (!sample.hasOccupiedParts || sample.rpm <= double.Epsilon)
+			{
+				spinSnapshotValid = true;
+				ResetSpinStability();
+				return;
+			}
+
+			double stabilityStep = Lib.Clamp(elapsedSeconds, 0.0, 0.25);
+			if (!spinStabilityInitialized)
+			{
+				spinStabilityInitialized = true;
+				spinPreviousAxis = sample.axisWorld;
+				spinPreviousRpm = sample.rpm;
+				spinStableSeconds = 0.0;
+				spinSnapshotValid = false;
+				return;
+			}
+
+			double axisDelta = Vector3.Angle(spinPreviousAxis, sample.axisWorld);
+			double rpmDelta = Math.Abs(sample.rpm - spinPreviousRpm);
+			double allowedAxisDelta = SpinComfort.MaxStableAxisRateDegrees * stabilityStep;
+			double allowedRpmDelta = Math.Max(
+				SpinComfort.MaxStableAbsoluteRpmRate,
+				spinPreviousRpm * SpinComfort.MaxStableRelativeRpmRate) * stabilityStep;
+
+			if (axisDelta <= allowedAxisDelta && rpmDelta <= allowedRpmDelta)
+				spinStableSeconds += stabilityStep;
+			else
+				spinStableSeconds = 0.0;
+
+			spinPreviousAxis = sample.axisWorld;
+			spinPreviousRpm = sample.rpm;
+			spinSnapshotValid = spinStableSeconds >= SpinComfort.RequiredStableSeconds;
+		}
+
+		private void ValidateSpinComfortSnapshot()
+		{
+			if (!SpinComfort.IsFinite(spinMinGee)
+				|| !SpinComfort.IsFinite(spinRpm)
+				|| spinMinGee < 0.0
+				|| spinRpm < 0.0)
+			{
+				InvalidateSpinComfortSnapshot();
+			}
+		}
+
+		private void InvalidateSpinComfortSnapshot()
+		{
+			spinSnapshotValid = false;
+			spinMinGee = 0.0;
+			spinRpm = 0.0;
+		}
+
+		private void ResetSpinStability()
+		{
+			spinStabilityInitialized = false;
+			spinPreviousAxis = Vector3.zero;
+			spinPreviousRpm = 0.0;
+			spinStableSeconds = 0.0;
 		}
 
 		private void EvaluateStatus(double elapsedSeconds)
@@ -1194,7 +1281,7 @@ namespace KERBALISM
 			evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
 
 			Profiler.BeginSample("SpinComfort");
-			UpdateSpinComfortSnapshot();
+			UpdateSpinComfortSnapshot(elapsedSeconds);
 			bool spinFirmGround = SpinComfort.Qualifies(
 				spinSnapshotValid,
 				spinMinGee,
