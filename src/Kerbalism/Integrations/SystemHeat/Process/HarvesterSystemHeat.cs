@@ -79,7 +79,7 @@ namespace KERBALISM
 
 			resourceChangeRequest.Add(new KeyValuePair<string, double>(
 				resource,
-				Harvester.AdjustedRate(this, engineerSpecs, GetEditorCrew(), simulated_abundance) * thermalEff));
+				Harvester.AdjustedRate(this, engineerSpecs, Lib.GetEditorCrew(), simulated_abundance) * thermalEff));
 
 			return title;
 		}
@@ -133,14 +133,6 @@ namespace KERBALISM
 				return;
 			lastPlannerThermalEff = thermalEff;
 			Lib.RefreshPlanner();
-		}
-
-		private static List<ProtoCrewMember> GetEditorCrew()
-		{
-			if (KSP.UI.CrewAssignmentDialog.Instance == null)
-				return new List<ProtoCrewMember>();
-			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			return manifest != null ? manifest.GetAllCrew(false).FindAll(k => k != null) : new List<ProtoCrewMember>();
 		}
 	}
 }

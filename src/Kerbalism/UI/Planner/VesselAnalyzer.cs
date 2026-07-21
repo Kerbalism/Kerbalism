@@ -29,8 +29,8 @@ namespace KERBALISM.Planner
 		{
 			// get number of kerbals assigned to the vessel in the editor
 			// note: crew manifest is not reset after root part is deleted
-			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
-			crew = manifest.GetAllCrew(false).FindAll(k => k != null);
+			// Prefer ShipConstruction.ShipManifest over CrewAssignmentDialog.GetManifest() (#864)
+			crew = Lib.GetEditorCrew();
 			crew_count = (uint)crew.Count;
 			crew_engineer = crew.Find(k => k.trait == "Engineer") != null;
 			crew_scientist = crew.Find(k => k.trait == "Scientist") != null;

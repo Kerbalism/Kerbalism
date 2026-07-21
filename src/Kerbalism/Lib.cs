@@ -1786,6 +1786,38 @@ namespace KERBALISM
 			return 0;
 		}
 
+		/// <summary>
+		/// Cached editor crew manifest. Prefer this over <c>CrewAssignmentDialog.GetManifest()</c>,
+		/// which is extremely expensive since KSP 1.11 (inventories) and can dirty PAWs every call.
+		/// See https://github.com/Kerbalism/Kerbalism/issues/864
+		/// </summary>
+		public static VesselCrewManifest EditorShipManifest => ShipConstruction.ShipManifest;
+
+		private static int editorCrewCacheFrame = -1;
+		private static List<ProtoCrewMember> editorCrewCache = new List<ProtoCrewMember>();
+
+		/// <summary>
+		/// Assigned editor crew members (non-null seats only), or an empty list.
+		/// The result is cached for the current Unity frame and must not be modified by callers.
+		/// </summary>
+		public static List<ProtoCrewMember> GetEditorCrew()
+		{
+			int frame = Time.frameCount;
+			if (editorCrewCacheFrame == frame)
+				return editorCrewCache;
+
+			editorCrewCacheFrame = frame;
+			VesselCrewManifest manifest = ShipConstruction.ShipManifest;
+			if (manifest == null)
+			{
+				editorCrewCache = new List<ProtoCrewMember>();
+				return editorCrewCache;
+			}
+
+			editorCrewCache = manifest.GetAllCrew(false).FindAll(k => k != null);
+			return editorCrewCache;
+		}
+
 		///<summary>return true if a part is manned, even in the editor</summary>
 		public static bool IsCrewed(Part p)
 		{
