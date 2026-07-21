@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine;
 using CommNet;
 using KSP.Localization;
+using KSP.UI;
 using KSP.UI.Screens;
 
 namespace KERBALISM
@@ -1792,6 +1793,81 @@ namespace KERBALISM
 		/// See https://github.com/Kerbalism/Kerbalism/issues/864
 		/// </summary>
 		public static VesselCrewManifest EditorShipManifest => ShipConstruction.ShipManifest;
+
+		/// <summary>
+		/// Rebuild <see cref="ShipConstruction.ShipManifest"/> from live <see cref="Part.CrewCapacity"/>
+		/// and refresh the crew assignment UI. Stock only does this on attach/detach; Habitat changes
+		/// capacity when enabled/disabled without that, so seats would not appear until re-attached.
+		/// </summary>
+		public static void RefreshEditorCrewAssignment()
+		{
+			if (!IsEditor())
+				return;
+			if (EditorLogic.fetch == null || EditorLogic.fetch.ship == null)
+				return;
+			if (CrewAssignmentDialog.Instance == null)
+				return;
+
+			VesselCrewManifest oldManifest = ShipConstruction.ShipManifest;
+			VesselCrewManifest newManifest = new VesselCrewManifest();
+
+			List<Part> shipParts = EditorLogic.fetch.ship.parts;
+			for (int i = 0; i < shipParts.Count; i++)
+			{
+				Part p = shipParts[i];
+				if (p.partInfo == null)
+					continue;
+
+				PartCrewManifest pcm = new PartCrewManifest(newManifest);
+				// Publicized references expose PartInfo/PartID as get-only; set backing fields.
+				ReflectionValue(pcm, "partInfo", p.partInfo);
+				ReflectionValue(pcm, "partID", p.craftID);
+
+				// Live capacity — Habitat zeros this while disabled / deploying / inflating
+				int crewCapacity = Math.Max(0, p.CrewCapacity);
+				pcm.partCrew = new string[crewCapacity];
+				for (int j = 0; j < crewCapacity; j++)
+					pcm.partCrew[j] = string.Empty;
+
+				newManifest.SetPartManifest(pcm.PartID, pcm);
+			}
+
+			if (oldManifest != null)
+			{
+				HashSet<uint> allPartIds = null;
+				int oldCount = oldManifest.PartManifests.Count;
+				for (int i = 0; i < oldCount; i++)
+				{
+					PartCrewManifest oldPcm = oldManifest.PartManifests[i];
+					if (oldPcm.partCrew == null || oldPcm.partCrew.Length == 0)
+						continue;
+
+					uint oldPartId = oldPcm.PartID;
+
+					if (allPartIds == null)
+					{
+						List<Part> allParts = Part.allParts;
+						allPartIds = new HashSet<uint>(allParts.Count);
+						for (int j = allParts.Count; j-- > 0;)
+							allPartIds.Add(allParts[j].craftID);
+					}
+
+					if (!allPartIds.Contains(oldPartId))
+						continue;
+
+					PartCrewManifest newPcm = newManifest.GetPartCrewManifest(oldPartId);
+					if (newPcm == null || newPcm.partCrew == null || newPcm.partCrew.Length == 0)
+						continue;
+
+					newManifest.UpdatePartManifest(oldPartId, oldPcm);
+				}
+			}
+
+			ShipConstruction.ShipManifest = newManifest;
+			editorCrewCacheFrame = -1;
+			CrewAssignmentDialog.Instance.RefreshCrewLists(newManifest, false, true);
+			GameEvents.onEditorShipCrewModified.Fire(newManifest);
+		}
 
 		private static int editorCrewCacheFrame = -1;
 		private static List<ProtoCrewMember> editorCrewCache = new List<ProtoCrewMember>();
