@@ -241,24 +241,6 @@ namespace KERBALISM
 			rateFormat = "F3";
 		}
 
-		public override void OnSave(ConfigNode node)
-		{
-			// vessel can be null in OnSave (ex : on vessel creation)
-			if (!Lib.IsFlight()
-				|| vessel == null
-				|| !isInitialized
-				|| SolarPanel == null
-				|| !Lib.Landed(vessel)
-				|| exposureState == ExposureState.Disabled) // don't to broken panels ! (issue #492)
-				return;
-
-			// get vessel data
-			VesselData vd = vessel.KerbalismData();
-
-			// do nothing if vessel is invalid
-			if (!vd.IsSimulated) return;
-		}
-
 		public void Update()
 		{
 			// sanity check
