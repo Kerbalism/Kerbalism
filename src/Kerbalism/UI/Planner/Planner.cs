@@ -485,6 +485,7 @@ namespace KERBALISM.Planner
 			if (rule.modifiers.Contains("comfort"))
 			{
 				p.AddContent(Local.Planner_comfort, vessel_analyzer.comforts.Summary(), vessel_analyzer.comforts.Tooltip());//"comfort"
+				AddSpinEstimateContent(p);
 			}
 			else
 			{
@@ -507,6 +508,48 @@ namespace KERBALISM.Planner
 			// render life estimate
 			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, rule.modifiers);
 			p.AddContent(Local.Planner_lifeestimate, Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));//"duration"
+		}
+
+		///<summary> Show whether the editor ship can meet spin firm-ground thresholds at max RPM.</summary>
+		private static void AddSpinEstimateContent(Panel p)
+		{
+			if (!PreferencesComfort.Instance.spinFirmGround)
+				return;
+
+			SpinComfort.EditorEstimate spin = vessel_analyzer.spinEstimate;
+			string value;
+			string tooltip;
+
+			if (!spin.available)
+			{
+				value = Local.Comfort_spin_na;
+				tooltip = Local.Planner_spin_unavailable;
+			}
+			else if (spin.crewPartCount == 0)
+			{
+				value = Local.Comfort_spin_na;
+				tooltip = Local.Planner_spin_nocrewparts;
+			}
+			else
+			{
+				string yes = Lib.BuildString("<b><color=#00ff00>", Local.Generic_YES, "</color></b>");
+				string no = Lib.BuildString("<b><color=#ffaa00>", Local.Generic_NO, "</color></b>");
+				value = spin.qualifies ? yes : no;
+				tooltip = Lib.BuildString
+				(
+					"<align=left />",
+					Local.Planner_spin_tip_intro, "\n",
+					Local.Planner_spin_worst_radius, "\t<b>", spin.worstRadius.ToString("F1"), " m</b>\n",
+					Local.Planner_spin_gee_at_max, "\t<b>", spin.geeAtMaxRpm.ToString("F2"), " g</b>\n",
+					Local.Planner_spin_rpm_needed, "\t<b>",
+					double.IsInfinity(spin.rpmRequired) ? "∞" : spin.rpmRequired.ToString("F2"),
+					" rpm</b>\n",
+					Local.Planner_spin_thresholds, "\t<b>",
+					spin.requiredGee.ToString("F2"), " g / ≤ ", spin.maxRpm.ToString("F1"), " rpm</b>"
+				);
+			}
+
+			p.AddContent(Local.Comfort_spin, value, tooltip);
 		}
 
 		///<summary> Add radiation sub-panel, including tooltips </summary>

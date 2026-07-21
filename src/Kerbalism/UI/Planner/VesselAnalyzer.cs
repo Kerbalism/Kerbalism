@@ -216,7 +216,18 @@ namespace KERBALISM.Planner
 			// calculate comfort factor
 			comforts = new Comforts(parts, env.landed, crew_count > 1, has_comms);
 
-
+			// editor-only spin firm-ground estimate (no live angular velocity in VAB/SPH)
+			if (PreferencesComfort.Instance.spinFirmGround)
+			{
+				spinEstimate = SpinComfort.EvaluateEditor(
+					parts,
+					PreferencesComfort.Instance.spinMinArtificialG,
+					PreferencesComfort.Instance.spinMaxRpm);
+			}
+			else
+			{
+				spinEstimate = new SpinComfort.EditorEstimate();
+			}
 		}
 
 
@@ -245,6 +256,7 @@ namespace KERBALISM.Planner
 		// quality-of-life related
 		public double living_space;                         // living space factor
 		public Comforts comforts;                           // comfort info
+		public SpinComfort.EditorEstimate spinEstimate;     // VAB/SPH spin firm-ground precompute
 
 		// reliability-related
 		public uint components;                             // number of components that can fail

@@ -96,6 +96,14 @@ namespace KERBALISM
 
 		// persist that so we don't have to do an expensive check every time
 		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
+
+		/// <summary>
+		/// Last readable loaded/unpacked spin sample. Kept across packing/unloading so background
+		/// comfort evaluation can reuse min g / rpm without reconstructing vessel physics.
+		/// </summary>
+		public bool EnvSpinSnapshotValid => spinSnapshotValid; bool spinSnapshotValid;
+		public double EnvSpinMinGee => spinMinGee; double spinMinGee;
+		public double EnvSpinRpm => spinRpm; double spinRpm;
 		#endregion
 
 		#region evaluated environment properties
@@ -840,6 +848,10 @@ namespace KERBALISM
 			cfg_show = true;
 			deviceTransmit = true;
 
+			spinSnapshotValid = false;
+			spinMinGee = 0.0;
+			spinRpm = 0.0;
+
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
 			isSerenityGroundController = pv != null && pv.vesselType == VesselType.DeployedScienceController;
 
@@ -904,6 +916,10 @@ namespace KERBALISM
 			// the high-warp/full-period exposure metric.
 			solarPanelsAverageHighWarpExposure = Lib.ConfigValue(node, "solarPanelsAverageAnalyticExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
+
+			spinSnapshotValid = Lib.ConfigValue(node, "spinSnapshotValid", false);
+			spinMinGee = Lib.ConfigValue(node, "spinMinGee", 0.0);
+			spinRpm = Lib.ConfigValue(node, "spinRpm", 0.0);
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
 			vesselSolarCrossSection = Lib.ConfigValue(node, "vesselSolarCrossSection", -1.0);
@@ -1041,6 +1057,10 @@ namespace KERBALISM
 			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageHighWarpExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
+			node.AddValue("spinSnapshotValid", spinSnapshotValid);
+			node.AddValue("spinMinGee", spinMinGee);
+			node.AddValue("spinRpm", spinRpm);
+
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
 			node.AddValue("vesselSolarCrossSection", vesselSolarCrossSection);
 			node.AddValue("vesselBodyCrossSection", vesselBodyCrossSection);
@@ -1123,6 +1143,24 @@ namespace KERBALISM
 		}
 
 		#region vessel state evaluation
+		/// <summary>
+		/// Refresh the persisted spin sample only when loaded physics is readable.
+		/// Packed / unloaded vessels keep the last valid sample for background comfort.
+		/// </summary>
+		private void UpdateSpinComfortSnapshot()
+		{
+			if (Vessel == null || !Vessel.loaded || Vessel.packed)
+				return;
+
+			SpinComfort.Sample sample = SpinComfort.Evaluate(Vessel);
+			if (!sample.available)
+				return;
+
+			spinSnapshotValid = true;
+			spinMinGee = sample.minGee;
+			spinRpm = sample.rpm;
+		}
+
 		private void EvaluateStatus(double elapsedSeconds)
 		{
 			Profiler.BeginSample("EvaluateStatus");
@@ -1154,8 +1192,28 @@ namespace KERBALISM
 			habitatInfo.Update(Vessel, this, elapsedSeconds);
 			Profiler.EndSample();
 			evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
+
+			Profiler.BeginSample("SpinComfort");
+			UpdateSpinComfortSnapshot();
+			bool spinFirmGround = SpinComfort.Qualifies(
+				spinSnapshotValid,
+				spinMinGee,
+				spinRpm,
+				PreferencesComfort.Instance.spinFirmGround,
+				PreferencesComfort.Instance.spinMinArtificialG,
+				PreferencesComfort.Instance.spinMaxRpm);
+			Profiler.EndSample();
+
 			Profiler.BeginSample("Comforts");
-			comforts = new Comforts(Vessel, EnvLanded, crewCount > 1, connection.linked && connection.rate > double.Epsilon);
+			comforts = new Comforts(
+				Vessel,
+				EnvLanded,
+				spinFirmGround,
+				spinSnapshotValid,
+				spinMinGee,
+				spinRpm,
+				crewCount > 1,
+				connection.linked && connection.rate > double.Epsilon);
 			Profiler.EndSample();
 
 			// data about greenhouses

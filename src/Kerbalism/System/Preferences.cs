@@ -244,6 +244,15 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_FirmGroundFactor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FirmGroundFactor_desc")]//Firm Ground Factor--Having something to walk on
 		public float firmGround = Settings.ComfortFirmGround;
 
+		[GameParameters.CustomParameterUI("#KERBALISM_SpinFirmGround", toolTip = "#KERBALISM_SpinFirmGround_desc")]//Vessel Spin Firm Ground--Grant firm ground when the whole vessel spins with enough artificial gravity
+		public bool spinFirmGround = Settings.ComfortSpinFirmGround;
+
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMinArtificialG", minValue = 0.05f, maxValue = 1f, displayFormat = "F2", toolTip = "#KERBALISM_SpinMinArtificialG_desc")]//Minimum Spin Gravity--Minimum artificial gravity in g at every occupied crew part
+		public float spinMinArtificialG = Settings.ComfortSpinMinArtificialG;
+
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMaxRpm", minValue = 0.5f, maxValue = 10f, displayFormat = "F1", toolTip = "#KERBALISM_SpinMaxRpm_desc")]//Maximum Spin Rate--Maximum vessel spin rate in RPM (limits Coriolis discomfort)
+		public float spinMaxRpm = Settings.ComfortSpinMaxRpm;
+
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_ExerciseFactor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_ExerciseFactor_desc")]//Exercise Factor--Having a treadmill
 		public float exercise = Settings.ComfortExercise;
 

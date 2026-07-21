@@ -57,10 +57,28 @@ namespace KERBALISM
 
 	public class Comforts
 	{
+		/// <summary>Compatibility ctor used by planner and external callers without spin metrics.</summary>
 		public Comforts(Vessel v, bool env_firm_ground, bool env_not_alone, bool env_call_home)
+			: this(v, env_firm_ground, false, false, 0.0, 0.0, env_not_alone, env_call_home)
+		{
+		}
+
+		public Comforts(
+			Vessel v,
+			bool env_firm_ground,
+			bool env_spin_firm_ground,
+			bool env_spin_snapshot_valid,
+			double env_spin_min_gee,
+			double env_spin_rpm,
+			bool env_not_alone,
+			bool env_call_home)
 		{
 			// environment factors
-			firm_ground = env_firm_ground;
+			firm_ground = env_firm_ground || env_spin_firm_ground;
+			spin_firm_ground = env_spin_firm_ground;
+			spin_snapshot_valid = env_spin_snapshot_valid;
+			spin_min_gee = env_spin_min_gee;
+			spin_rpm = env_spin_rpm;
 			call_home = env_call_home;
 
 			if (v.loaded)
@@ -178,10 +196,29 @@ namespace KERBALISM
 		{
 			string yes = Lib.BuildString("<b><color=#00ff00>", Local.Generic_YES, " </color></b>");
 			string no = Lib.BuildString("<b><color=#ffaa00>", Local.Generic_NO, " </color></b>");
+
+			string spinStatus;
+			if (!PreferencesComfort.Instance.spinFirmGround)
+			{
+				spinStatus = no;
+			}
+			else if (!spin_snapshot_valid)
+			{
+				spinStatus = Lib.BuildString("<b><color=#ffaa00>", Local.Comfort_spin_na, " </color></b>");
+			}
+			else
+			{
+				string metrics = Local.Comfort_spin_metrics.Format(
+					spin_min_gee.ToString("F2"),
+					spin_rpm.ToString("F1"));
+				spinStatus = Lib.BuildString(spin_firm_ground ? yes : no, " ", metrics);
+			}
+
 			return Lib.BuildString
 			(
 				"<align=left />",
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_firmground, firm_ground ? yes : no),
+				String.Format("{0,-14}\t{1}\n", Local.Comfort_spin, spinStatus),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_exercise, exercise ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_notalone, not_alone ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_callhome, call_home ? yes : no),
@@ -201,6 +238,10 @@ namespace KERBALISM
 		}
 
 		public bool firm_ground;
+		public bool spin_firm_ground;
+		public bool spin_snapshot_valid;
+		public double spin_min_gee;
+		public double spin_rpm;
 		public bool exercise;
 		public bool not_alone;
 		public bool call_home;
