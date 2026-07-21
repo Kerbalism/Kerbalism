@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using KSP.Localization;
 
 namespace KERBALISM.Planner
 {
@@ -34,7 +33,6 @@ namespace KERBALISM.Planner
 		{
 			consumers = new Dictionary<string, Wrapper>();
 			producers = new Dictionary<string, Wrapper>();
-			harvests = new List<string>();
 			consumed = 0.0;
 			produced = 0.0;
 		}
@@ -235,17 +233,6 @@ namespace KERBALISM.Planner
 				sb.Append("\t");
 				sb.Append(pair.Key);
 			}
-			if (harvests.Count > 0)
-			{
-				sb.Append("\n\n<b>");
-				sb.Append(Local.Harvests);//Harvests
-				sb.Append("</b>");
-				foreach (string s in harvests)
-				{
-					sb.Append("\n");
-					sb.Append(s);
-				}
-			}
 			return Lib.BuildString("<align=left />", sb.ToString());
 		}
 
@@ -261,17 +248,6 @@ namespace KERBALISM.Planner
 			private set
 			{
 				_resource_name = value;
-			}
-		}
-		public List<string> harvests
-		{
-			get
-			{
-				return _harvests;
-			}
-			private set
-			{
-				_harvests = value;
 			}
 		}
 		public double consumed
@@ -321,7 +297,6 @@ namespace KERBALISM.Planner
 		}
 
 		private string _resource_name;  // associated resource name
-		private List<string> _harvests; // some extra data about harvests
 		private double _consumed;       // total consumption rate
 		private double _produced;       // total production rate
 

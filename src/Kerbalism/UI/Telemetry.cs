@@ -300,19 +300,15 @@ namespace KERBALISM
 				// state string
 				string state = greenhouse.issue.Length > 0
 				  ? Lib.Color(greenhouse.issue, Lib.Kolor.Yellow)
-				  : greenhouse.growth >= 0.99
-				  ? Lib.Color(Local.TELEMETRY_readytoharvest, Lib.Kolor.Green)//"ready to harvest"
-				  : Local.TELEMETRY_growing;//"growing"
+				  : Lib.Color(Local.Greenhouse_producing, Lib.Kolor.Green);
 
 				// tooltip with summary
-				string tooltip = greenhouse.growth < 0.99 ? Lib.BuildString
+				string tooltip = Lib.BuildString
 				(
 				  "<align=left />",
-				  Local.TELEMETRY_timetoharvest, "\t<b>", Lib.HumanReadableDuration(greenhouse.tta), "</b>\n",//"time to harvest"
-				  Local.TELEMETRY_growth, "\t\t<b>", Lib.HumanReadablePerc(greenhouse.growth), "</b>\n",//"growth"
 				  Local.TELEMETRY_naturallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.natural), "</b>\n",//"natural lighting"
 				  Local.TELEMETRY_artificiallighting, "\t<b>", Lib.HumanReadableFlux(greenhouse.artificial), "</b>"//"artificial lighting"
-				) : string.Empty;
+				);
 
 				// render it
 				p.AddContent(Lib.BuildString(Local.TELEMETRY_crop, " #", (i + 1).ToString()), state, tooltip);//"crop"

@@ -33,7 +33,7 @@ namespace KERBALISM
 
 		public bool belt_crossing;        // record first belt crossing
 		public bool manned_orbit;         // record first 30 days manned orbit
-		public bool space_harvest;        // record first greenhouse harvest in space
+		public bool space_harvest;        // record first greenhouse Food production in space
 		public bool space_analysis;       // record first lab sample analysis in space
 		public bool heliopause_crossing;  // record first heliopause crossing
 	}

@@ -1029,6 +1029,7 @@ namespace KERBALISM
 		public List<Entry> outputs;  // set of output resources
 		public List<Entry> cures;    // set of cures
 		public double left;     // what proportion of the recipe is left to execute
+		public Action<double> onExecuted; // invoked with each executed fraction
 
 		private ResourceBroker broker;
 
@@ -1217,6 +1218,9 @@ namespace KERBALISM
 
 			// update amount left to execute
 			left -= worst_io;
+
+			if (worst_io > double.Epsilon)
+				onExecuted?.Invoke(worst_io);
 
 			// the recipe was executed, at least partially
 			return worst_io > double.Epsilon;

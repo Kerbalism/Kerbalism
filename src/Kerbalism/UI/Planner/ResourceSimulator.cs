@@ -389,36 +389,47 @@ namespace KERBALISM.Planner
 			if (!g.active)
 				return;
 
+			// calculate natural and artificial lighting
+			double natural = env.solar_flux;
+			double artificial = Math.Max(g.light_tolerance - natural, 0.0);
+			double lamp_ec_rate = g.ec_rate * g.ec_rate_mult;
+			bool lighting = natural >= g.light_tolerance
+				|| (artificial > double.Epsilon && lamp_ec_rate > double.Epsilon);
+			bool pressure = va.pressurized || g.pressure_tolerance <= double.Epsilon;
+			bool radiation = g.radiation_tolerance <= double.Epsilon
+				|| (env.landed ? env.surface_rad : env.magnetopause_rad) * (1.0 - va.shielding) < g.radiation_tolerance;
+
+			// Runtime pauses the whole process when an environmental constraint fails.
+			if (!lighting || !pressure || !radiation)
+				return;
+
 			// shortcut to resources
 			SimulatedResource ec = Resource("ElectricCharge");
 			SimulatedResource res = Resource(g.crop_resource);
 
-			// calculate natural and artificial lighting
-			double natural = env.solar_flux;
-			double artificial = Math.Max(g.light_tolerance - natural, 0.0);
-
 			// if lamps are on and artificial lighting is required
-			if (artificial > 0.0)
+			if (artificial > double.Epsilon)
 			{
 				// consume ec for the lamps
-				ec.Consume(g.ec_rate * (artificial / g.light_tolerance), Local.Planner_source_greenhouse);
+				ec.Consume(lamp_ec_rate * (artificial / g.light_tolerance), Local.Planner_source_greenhouse);
 			}
 
 			// execute recipe
 			SimulatedRecipe recipe = new SimulatedRecipe(g.part, Local.Planner_source_greenhouse);
 			foreach (ModuleResource input in g.resHandler.inputResources)
 			{
+				double rate = input.rate * g.input_rate_mult;
 				// WasteAtmosphere is primary combined input
 				if (g.WACO2 && input.name == Habitat.WasteAtmoResName)
-					recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "CarbonDioxide");
+					recipe.Input(input.name, env.breathable ? 0.0 : rate, "CarbonDioxide");
 				// CarbonDioxide is secondary combined input
 				else if (g.WACO2 && input.name == "CarbonDioxide")
-					recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "");
+					recipe.Input(input.name, env.breathable ? 0.0 : rate, "");
 				// if atmosphere is breathable disable WasteAtmosphere / CO2
 				else if (!g.WACO2 && (input.name == "CarbonDioxide" || input.name == Habitat.WasteAtmoResName))
-					recipe.Input(input.name, env.breathable ? 0.0 : input.rate, "");
+					recipe.Input(input.name, env.breathable ? 0.0 : rate, "");
 				else
-					recipe.Input(input.name, input.rate);
+					recipe.Input(input.name, rate);
 			}
 			foreach (ModuleResource output in g.resHandler.outputResources)
 			{
@@ -430,21 +441,8 @@ namespace KERBALISM.Planner
 			}
 			recipes.Add(recipe);
 
-			// determine environment conditions
-			bool lighting = natural + artificial >= g.light_tolerance;
-			bool pressure = va.pressurized || g.pressure_tolerance <= double.Epsilon;
-			bool radiation = (env.landed ? env.surface_rad : env.magnetopause_rad) * (1.0 - va.shielding) < g.radiation_tolerance;
-
-			// if all conditions apply
 			// note: we are assuming the inputs are satisfied, we can't really do otherwise here
-			if (lighting && pressure && radiation)
-			{
-				// produce food
-				res.Produce(g.crop_size * g.crop_rate, Local.Planner_source_greenhouse);
-
-				// add harvest info
-				res.harvests.Add(Lib.BuildString(g.crop_size.ToString("F0"), " in ", Lib.HumanReadableDuration(1.0 / g.crop_rate)));
-			}
+			res.Produce(g.FoodRate, Local.Planner_source_greenhouse);
 		}
 
 
