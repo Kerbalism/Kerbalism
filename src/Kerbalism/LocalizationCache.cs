@@ -925,6 +925,7 @@ namespace KERBALISM
 		// Module : Harvester
 		////////////////////////////////////////////////////////////////////
 		public static ParamString Harvester_generatedescription = new ParamString("Harvester_generatedescription"); // "Extract <<1>> from <<2>>"
+		public static ParamString Harvester_abundance = new ParamString("Harvester_abundance"); // "<<1>> abundance"
 		public static string Harvester_Action = GetLoc("Harvester_Action"); // "Start/Stop Harvester"
 		public static string Harvester_running = GetLoc("Harvester_running"); // "running"
 		public static string Harvester_stopped = GetLoc("Harvester_stopped"); // "stopped"
@@ -933,6 +934,7 @@ namespace KERBALISM
 		public static string Harvester_ocean_valid = GetLoc("Harvester_ocean_valid"); // "not in ocean"
 		public static string Harvester_atmo_valid = GetLoc("Harvester_atmo_valid"); // "not in atmosphere"
 		public static string Harvester_space_valid = GetLoc("Harvester_space_valid"); // "not in space"
+		public static string Harvester_spaceobject_valid = GetLoc("Harvester_spaceobject_valid"); // "no asteroid or comet attached"
 		public static string Harvester_pressurebelow = GetLoc("Harvester_pressurebelow"); // "pressure below threshold"
 		public static string Harvester_abundancebelow = GetLoc("Harvester_abundancebelow"); // "abundance below threshold"																				
 		public static string Harvester_simulatedabundance = GetLoc("Harvester_simulatedabundance"); // "Simulate at abundance"
@@ -940,10 +942,12 @@ namespace KERBALISM
 		public static string Harvester_source2 = GetLoc("Harvester_source2"); // "the ocean"
 		public static string Harvester_source3 = GetLoc("Harvester_source3"); // "the atmosphere"
 		public static string Harvester_source4 = GetLoc("Harvester_source4"); // "space"
+		public static string Harvester_source5 = GetLoc("Harvester_source5"); // "asteroids and comets"
 		public static string Harvester_type0 = GetLoc("Harvester_type0"); // "Planetary"
 		public static string Harvester_type1 = GetLoc("Harvester_type1"); // "Oceanic"
 		public static string Harvester_type2 = GetLoc("Harvester_type2"); // "Atmospheric"
 		public static string Harvester_type3 = GetLoc("Harvester_type3"); // "Exospheric"
+		public static string Harvester_type4 = GetLoc("Harvester_type4"); // "Asteroid / Comet"
 		public static string Harvester_info1 = GetLoc("Harvester_info1"); // "type"
 		public static string Harvester_info2 = GetLoc("Harvester_info2"); // "resource"
 		public static string Harvester_info3 = GetLoc("Harvester_info3"); // "min abundance"
