@@ -203,15 +203,16 @@ namespace KERBALISM
 			g.Set_WACO2();
 
 			natural = vd.EnvSolarFluxTotal;
+			ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 			double lamp_ec_rate = g.ec_rate * g.ec_rate_mult;
 			// ec_rate == 0 disables lamps: no artificial light fill-in.
 			artificial = lamp_ec_rate > double.Epsilon
 				? Math.Max(g.light_tolerance - natural, 0.0)
 				: 0.0;
 			bool lamps_needed = artificial > double.Epsilon;
+			if (lamps_needed && Available(ec) <= double.Epsilon)
+				artificial = 0.0;
 
-			// Do not pre-check current EC. Lamp power is a recipe input, so same-step
-			// producers can supply it during ExecuteRecipes.
 			bool lighting = natural + artificial >= g.light_tolerance;
 			bool pressure = g.pressure_tolerance <= double.Epsilon || vd.Pressure >= g.pressure_tolerance;
 			bool radiation = g.radiation_tolerance <= double.Epsilon
