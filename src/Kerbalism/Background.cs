@@ -198,9 +198,6 @@ namespace KERBALISM
 				// for each module
 				foreach (ProtoPartModuleSnapshot m in p.modules)
 				{
-					// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
-					if (m.moduleName == "WarpFixer") MigrateWarpFixer(v, part_prefab, p, m);
-
 					// get the module prefab
 					// if the prefab doesn't contain this module, skip it
 					PartModule module_prefab = Lib.ModulePrefab(part_prefab.Modules, m.moduleName, PD);
@@ -593,53 +590,6 @@ namespace KERBALISM
 
 			// apply EC consumption
 			ec.Consume(total_cost * elapsed_s, ResourceBroker.Cryotank);
-		}
-
-		// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
-		static void MigrateWarpFixer(Vessel v, Part prefab, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
-		{
-			ModuleDeployableSolarPanel panelModule = prefab.FindModuleImplementing<ModuleDeployableSolarPanel>();
-			ProtoPartModuleSnapshot protoPanelModule = p.modules.Find(pm => pm.moduleName == "ModuleDeployableSolarPanel");
-
-			if (panelModule == null || protoPanelModule == null)
-			{
-				Lib.Log("Vessel " + v.name + " has solar panels that can't be converted automatically following Kerbalism 3.1 update. Load it to fix the issue.");
-				return;
-			}
-
-			SolarPanelFixer.PanelState state = SolarPanelFixer.PanelState.Unknown;
-			string panelStateStr = Lib.Proto.GetString(protoPanelModule, "deployState");
-
-			if (!Enum.IsDefined(typeof(ModuleDeployablePart.DeployState), panelStateStr)) return;
-			ModuleDeployablePart.DeployState panelState = (ModuleDeployablePart.DeployState)Enum.Parse(typeof(ModuleDeployablePart.DeployState), panelStateStr);
-
-			if (panelState == ModuleDeployablePart.DeployState.BROKEN)
-				state = SolarPanelFixer.PanelState.Broken;
-			else if (!panelModule.isTracking)
-			{
-				state = SolarPanelFixer.PanelState.Static;
-			}
-			else
-			{
-				switch (panelState)
-				{
-					case ModuleDeployablePart.DeployState.EXTENDED:
-						if (!panelModule.retractable)
-							state = SolarPanelFixer.PanelState.ExtendedFixed;
-						else
-							state = SolarPanelFixer.PanelState.Extended;
-						break;
-					case ModuleDeployablePart.DeployState.RETRACTED: state = SolarPanelFixer.PanelState.Retracted; break;
-					case ModuleDeployablePart.DeployState.RETRACTING: state = SolarPanelFixer.PanelState.Retracting; break;
-					case ModuleDeployablePart.DeployState.EXTENDING: state = SolarPanelFixer.PanelState.Extending; break;
-					default: state = SolarPanelFixer.PanelState.Unknown; break;
-				}
-			}
-
-			m.moduleName = "SolarPanelFixer";
-			Lib.Proto.Set(m, "state", state);
-			Lib.Proto.Set(m, "launchUT", Planetarium.GetUniversalTime());
-			Lib.Proto.Set(m, "nominalRate", panelModule.chargeRate);
 		}
 	}
 } // KERBALISM
