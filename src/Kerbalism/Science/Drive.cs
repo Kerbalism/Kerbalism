@@ -41,23 +41,6 @@ namespace KERBALISM
 							file.subjectData.AddDataCollectedInFlight(file.size);
 						}
 					}
-					else
-					{
-						file = File.LoadOldFormat(subject_id, file_node);
-						if (file != null)
-						{
-							Lib.Log("Drive file load : converted '" + subject_id + "' to new format");
-							if(files.ContainsKey(file.subjectData))
-							{
-								Lib.Log("discarding duplicate converted subject " + file.subjectData, Lib.LogLevel.Warning);
-							}
-							else
-							{
-								files.Add(file.subjectData, file);
-								file.subjectData.AddDataCollectedInFlight(file.size);
-							}
-						}
-					}
 				}
 			}
 
@@ -74,17 +57,6 @@ namespace KERBALISM
 						samples.Add(sample.subjectData, sample);
 						sample.subjectData.AddDataCollectedInFlight(sample.size);
 					}
-					else
-					{
-						sample = Sample.LoadOldFormat(subject_id, sample_node);
-						if (sample != null)
-						{
-							Lib.Log("Drive sample load : converted '" + subject_id + "' to new format");
-							samples.Add(sample.subjectData, sample);
-							sample.subjectData.AddDataCollectedInFlight(sample.size);
-						}
-					}
-
 				}
 			}
 

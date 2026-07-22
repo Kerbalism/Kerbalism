@@ -11,12 +11,7 @@ namespace KERBALISM
         {
             // get version (or use current one for new savegames)
             string versionStr = Lib.ConfigValue(node, "version", Lib.KerbalismVersion.ToString());
-            // sanitize old saves (pre 3.1) format (X.X.X.X) to new format (X.X)
-            if (versionStr.Split('.').Length > 2) versionStr = versionStr.Split('.')[0] + "." + versionStr.Split('.')[1];
             version = new Version(versionStr);
-
-            // if this is an unsupported version, print warning
-            if (version <= new Version(1, 2)) Lib.Log("loading save from unsupported version " + version);
 
             // get unique id (or generate one for new savegames)
             uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
@@ -59,33 +54,6 @@ namespace KERBALISM
 				}
 			}
 			Profiler.EndSample();
-
-			// for compatibility with old saves, convert drives data (it's now saved in PartData)
-			if (node.HasNode("drives"))
-			{
-				Dictionary<uint, PartData> allParts = new Dictionary<uint, PartData>();
-				foreach (VesselData vesselData in vessels.Values)
-				{
-					foreach (PartData partData in vesselData.PartDatas)
-					{
-						// we had a case of someone having a save with multiple parts having the same flightID
-						// 5 duplicates, all were asteroids.
-						if (!allParts.ContainsKey(partData.FlightId))
-						{
-							allParts.Add(partData.FlightId, partData);
-						}
-					}
-				}
-
-				foreach (var drive_node in node.GetNode("drives").GetNodes())
-				{
-					uint driveId = Lib.Parse.ToUInt(drive_node.name);
-					if (allParts.ContainsKey(driveId))
-					{
-						allParts[driveId].Drive = new Drive(drive_node);
-					}
-				}
-			}
 
 			// load bodies data
 			storms = new Dictionary<string, StormData>();

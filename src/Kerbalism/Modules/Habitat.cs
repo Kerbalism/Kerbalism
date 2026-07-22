@@ -37,11 +37,7 @@ namespace KERBALISM
 			/// <summary> deployable is being pressurized by equalizing its pressure with all enabled habitats</summary>
 			waitingForPressureAndEqualizing,
 			/// <summary> special unescapable state for EVA kerbals</summary>
-			evaKerbal,
-			/// <summary> depreciated, kept around for backward compat</summary>
-			pressurizing = 2,
-			/// <summary> depreciated, kept around for backward compat</summary>
-			depressurizing = 0
+			evaKerbal
 		}
 
 		// volume / surface cache
