@@ -370,6 +370,8 @@ namespace KERBALISM.Planner
 		{
 			// evaluate modifiers
 			double k = Modifiers.Evaluate(env, va, this, pr.modifiers);
+			if (pr.specialist_bonus)
+				k *= Process.SpecialistEfficiencyBonus(va.crew);
 			Process_process_inner_body(k, null, pr, env, va);
 		}
 

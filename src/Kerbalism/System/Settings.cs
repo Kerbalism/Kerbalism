@@ -68,6 +68,8 @@ namespace KERBALISM
 			MaxLaborartoryBonus = Lib.ConfigValue(cfg, "MaxLaborartoryBonus", 2.0);
 			HarvesterCrewLevelBonus = Lib.ConfigValue(cfg, "HarvesterCrewLevelBonus", 0.1);
 			MaxHarvesterBonus = Lib.ConfigValue(cfg, "MaxHarvesterBonus", 2.0);
+			ProcessCrewLevelBonus = Lib.ConfigValue(cfg, "ProcessCrewLevelBonus", 0.1);
+			MaxProcessBonus = Lib.ConfigValue(cfg, "MaxProcessBonus", 2.0);
 
 			// misc
 			EnforceCoherency = Lib.ConfigValue(cfg, "EnforceCoherency", true);
@@ -173,6 +175,8 @@ namespace KERBALISM
 		public static double MaxLaborartoryBonus;               // max bonus to be gained by having skilled crew on a laboratory
 		public static double HarvesterCrewLevelBonus;           // factor for harvester speed gain per engineer level above minimum
 		public static double MaxHarvesterBonus;                 // max bonus to be gained by having skilled engineers on a mining rig
+		public static double ProcessCrewLevelBonus;             // factor for process speed gain per engineer level (when specialist_bonus is enabled)
+		public static double MaxProcessBonus;                   // max bonus to be gained by having skilled engineers on specialist processes
 
 		// misc
 		public static bool EnforceCoherency;                    // detect and avoid issues at high timewarp in external modules
