@@ -100,6 +100,17 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public double panelNormalPartLocalY;
 		[KSPField(isPersistant = true)] public double panelNormalPartLocalZ;
 
+		/// <summary>
+		/// Flux-weighted average cosine/occlusion factor from the last loaded realtime update.
+		/// Used when Settings.FreezeUnloadedSolarPanelOrientation is enabled so unloaded
+		/// in-space flat panels keep their unload-time orientation instead of orbiting with the sun.
+		/// </summary>
+		[KSPField(isPersistant = true)]
+		public bool hasFrozenOrientationScale = false;
+
+		[KSPField(isPersistant = true)]
+		public double frozenOrientationScale = 0.0;
+
 		/// <summary>internal object for handling the various hacks depending on the target solar panel module</summary>
 		public SupportedPanel SolarPanel { get; private set; }
 
@@ -650,7 +661,11 @@ namespace KERBALISM
 			// PAW remains tracked-star exposure. Vessel telemetry reports the flux-weighted
 			// multi-star actual/ideal ratio (consumed by the next VesselData.Evaluate).
 			if (!analyticSunlight)
+			{
 				vd.SaveSolarPanelLiveExposure(powerFactor, theoreticalMaxPower, nominalRate);
+				// Snapshot orientation for optional freeze-while-unloaded mode (flat panels only).
+				TrySaveFrozenOrientationScale(SolarPanel.Type, vd.EnvSunsInfo, powerFactor);
+			}
 
 			wearFactor = 1.0;
 			if (timeEfficCurve?.Curve.length > 1)
@@ -807,8 +822,11 @@ namespace KERBALISM
 
 			bool hasOrientation = TryGetProtoPanelOrientation(v, p, m, isTracking, out Vector3d panelPivotWorld, out Vector3d panelNormalWorld);
 
+			// Optional freeze: reuse last loaded flat/tracking cosine; flux/sunlight still update.
 			double theoreticalMaxPower;
-			double powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
+			double powerFactor;
+			if (!TryGetFrozenUnloadedPowerFactor(v, m, vd.EnvSunsInfo, prefab.SolarPanel.Type, out powerFactor, out theoreticalMaxPower))
+				powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
 			efficiencyFactor = powerFactor;
 
 			// get wear factor (output degradation with time)
@@ -1150,6 +1168,65 @@ namespace KERBALISM
 			}
 
 			return cosineDutySum / LandedOrientationSampleCount;
+		}
+
+		/// <summary>
+		/// Sum of every star's current (shadow-aware) flux weight used to normalize
+		/// the frozen orientation scale: powerFactor / fluxWeight ≈ flux-weighted cosine.
+		/// </summary>
+		static double GetSolarFluxWeight(List<VesselData.SunInfo> suns)
+		{
+			if (suns == null || Sim.SolarFluxAtHome <= double.Epsilon)
+				return 0.0;
+
+			double fluxWeight = 0.0;
+			foreach (VesselData.SunInfo sun in suns)
+			{
+				if (sun.SolarFlux > 0.0)
+					fluxWeight += sun.SolarFlux / Sim.SolarFluxAtHome;
+			}
+			return fluxWeight;
+		}
+
+		/// <summary>
+		/// Persist the last loaded realtime orientation scale for flat panels so unloaded
+		/// vessels can optionally freeze cosine at unload time.
+		/// </summary>
+		void TrySaveFrozenOrientationScale(ModuleDeployableSolarPanel.PanelType panelType, List<VesselData.SunInfo> suns, double powerFactor)
+		{
+			if (panelType != ModuleDeployableSolarPanel.PanelType.FLAT)
+				return;
+
+			double fluxWeight = GetSolarFluxWeight(suns);
+			if (fluxWeight <= 1e-9)
+				return;
+
+			hasFrozenOrientationScale = true;
+			frozenOrientationScale = powerFactor / fluxWeight;
+		}
+
+		/// <summary>
+		/// When enabled, unloaded in-space flat panels reuse the last loaded orientation
+		/// scale with the current star fluxes. Returns false to use the dynamic path.
+		/// </summary>
+		static bool TryGetFrozenUnloadedPowerFactor(Vessel v, ProtoPartModuleSnapshot m, List<VesselData.SunInfo> suns, ModuleDeployableSolarPanel.PanelType panelType, out double powerFactor, out double theoreticalMaxPower)
+		{
+			powerFactor = 0.0;
+			theoreticalMaxPower = 0.0;
+
+			if (!Settings.FreezeUnloadedSolarPanelOrientation
+				|| panelType != ModuleDeployableSolarPanel.PanelType.FLAT
+				|| Lib.Landed(v)
+				|| !Lib.Proto.GetBool(m, "hasFrozenOrientationScale"))
+				return false;
+
+			double frozenScale = Lib.Proto.GetDouble(m, "frozenOrientationScale");
+			if (frozenScale < 0.0 || double.IsNaN(frozenScale) || double.IsInfinity(frozenScale))
+				return false;
+
+			theoreticalMaxPower = CalculateTheoreticalMaxPower(suns, panelType);
+			powerFactor = frozenScale * GetSolarFluxWeight(suns);
+			return true;
 		}
 
 		/// <summary>
