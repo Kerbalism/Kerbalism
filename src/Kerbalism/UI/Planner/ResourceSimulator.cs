@@ -391,12 +391,13 @@ namespace KERBALISM.Planner
 			if (!g.active)
 				return;
 
-			// calculate natural and artificial lighting
+			// Natural lighting, plus artificial only when lamps exist (ec_rate > 0).
 			double natural = env.solar_flux;
-			double artificial = Math.Max(g.light_tolerance - natural, 0.0);
 			double lamp_ec_rate = g.ec_rate * g.ec_rate_mult;
-			bool lighting = natural >= g.light_tolerance
-				|| (artificial > double.Epsilon && lamp_ec_rate > double.Epsilon);
+			double artificial = lamp_ec_rate > double.Epsilon
+				? Math.Max(g.light_tolerance - natural, 0.0)
+				: 0.0;
+			bool lighting = natural + artificial >= g.light_tolerance;
 			bool pressure = va.pressurized || g.pressure_tolerance <= double.Epsilon;
 			bool radiation = g.radiation_tolerance <= double.Epsilon
 				|| (env.landed ? env.surface_rad : env.magnetopause_rad) * (1.0 - va.shielding) < g.radiation_tolerance;
