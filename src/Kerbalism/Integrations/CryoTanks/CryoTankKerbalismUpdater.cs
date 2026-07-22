@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 
 namespace KERBALISM
@@ -62,32 +61,15 @@ namespace KERBALISM
 			if (cryoSnapshot == null)
 				return CryoTankResourceSim.BrokerTitle;
 
-			double ecRate = 0.0;
 			string title = CryoTankResourceSim.BackgroundUpdate(v, part_snapshot, cryoSnapshot, cryoPrefab, elapsed_s);
 
 			bool coolingEnabled = Lib.Proto.GetBool(cryoSnapshot, "CoolingEnabled");
 			if (coolingEnabled)
 			{
-				IList fuels = CryoTankAccess.GetFuels(cryoPrefab);
-				float coolingCost = CryoTanks.GetCoolingCost(cryoPrefab);
-				if (fuels != null && coolingCost > 0f)
-				{
-					foreach (object fuel in fuels)
-					{
-						string fuelName = CryoTankAccess.GetFuelName(fuel);
-						if (string.IsNullOrEmpty(fuelName))
-							continue;
-
-						ProtoPartResourceSnapshot protoFuel = CryoUtils.FindPartResource(part_snapshot, fuelName);
-						if (protoFuel == null || protoFuel.amount <= double.Epsilon)
-							continue;
-						ecRate += coolingCost * protoFuel.amount * 0.001;
-					}
-				}
+				double ecRate = CryoTankResourceSim.EstimateCoolingEcRate(cryoPrefab, part_snapshot);
+				if (ecRate > 0.0)
+					resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ecRate));
 			}
-
-			if (ecRate > 0.0)
-				resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -ecRate));
 
 			return title;
 		}

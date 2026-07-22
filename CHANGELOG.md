@@ -12,6 +12,8 @@
  * Added: Restock chemical plant and ECLSS models (#998, @LouisB3)
  * Added: SupplementaryElectricEngines support (#1000, @LouisB3)
  * Added: Stock, ReStock+, and NF Exploration antenna configs (#1003, @LouisB3)
+ * Fixed: CryoTanks planner/monitor EC and boiloff when CoolingCost is per-fuel in BOILOFFCONFIG (#534, @Aebestach)
+ * Added: CryoTanks cooling toggle as an Automation device (#264, @Aebestach)
  * Fixed: Planner power consumption for electric engines and RCS (#1036, @Aebestach)
  * Fixed: Multi-star solar panel energy output; added Universal Storage 2 configs (#986, @Aebestach)
  * Fixed: Radiation archives issue (#987, @Aebestach)

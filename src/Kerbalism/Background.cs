@@ -535,64 +535,62 @@ namespace KERBALISM
 			// Note. Currently background simulation of Cryotanks has an irregularity in that boiloff of a fuel type in a tank removes resources from all tanks
 			// but at least some simulation is better than none ;)
 
-			// get list of fuels, do nothing if no fuels
+			// Fallback when CryoTankKerbalismUpdater is absent.
+			// CoolingCost may be module-level and/or per BOILOFFCONFIG fuel entry.
 			IList fuels = Lib.ReflectionValue<IList>(cryotank, "fuels");
 			if (fuels == null) return;
 
-			// is cooling available, note: comparing against amount in previous simulation step
-			bool available = (Lib.Proto.GetBool(m, "CoolingEnabled") && ec.Amount > double.Epsilon);
-
-			// get cooling cost
-			double cooling_cost = Lib.ReflectionValue<float>(cryotank, "CoolingCost");
-
-			string fuel_name = "";
-			double amount = 0.0;
+			bool cooling_enabled = Lib.Proto.GetBool(m, "CoolingEnabled");
+			float module_cooling_cost = Lib.ReflectionValue<float>(cryotank, "CoolingCost");
+			float present_fuel_cooling_cost = 0f;
+			double total_amount = 0.0;
 			double total_cost = 0.0;
-			double boiloff_rate = 0.0;
 
 			foreach (var item in fuels)
 			{
-				fuel_name = Lib.ReflectionValue<string>(item, "fuelName");
-				// if fuel_name is null, don't do anything
+				string fuel_name = Lib.ReflectionValue<string>(item, "fuelName");
 				if (fuel_name == null)
 					continue;
 
-				//get fuel resource
 				ResourceInfo fuel = resources.GetResource(v, fuel_name);
+				if (fuel.Amount <= double.Epsilon)
+					continue;
 
-				// if there is some fuel
-				// note: comparing against amount in previous simulation step
-				if (fuel.Amount > double.Epsilon)
-				{
-					// Try to find resource "fuel_name" in PartResources
-					ProtoPartResourceSnapshot proto_fuel = p.resources.Find(k => k.resourceName == fuel_name);
+				ProtoPartResourceSnapshot proto_fuel = p.resources.Find(k => k.resourceName == fuel_name);
+				if (proto_fuel == null) continue;
 
-					// If part doesn't have the fuel, don't do anything.
-					if (proto_fuel == null) continue;
+				double amount = proto_fuel.amount;
+				if (amount <= double.Epsilon)
+					continue;
 
-					// get amount in the part
-					amount = proto_fuel.amount;
-
-					// if cooling is enabled and there is enough EC
-					if (available)
-					{
-						// calculate ec consumption
-						total_cost += cooling_cost * amount * 0.001;
-					}
-					// if cooling is disabled or there wasn't any EC
-					else
-					{
-						// get boiloff rate per-second
-						boiloff_rate = Lib.ReflectionValue<float>(item, "boiloffRate") / 360000.0f;
-
-						// let it boil off
-						fuel.Consume(amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), ResourceBroker.Boiloff);
-					}
-				}
+				present_fuel_cooling_cost += Lib.ReflectionValue<float>(item, "coolingCost");
+				total_amount += amount;
 			}
 
-			// apply EC consumption
-			ec.Consume(total_cost * elapsed_s, ResourceBroker.Cryotank);
+			bool available = cooling_enabled && ec.Amount > double.Epsilon;
+			if (available && total_amount > double.Epsilon)
+				total_cost = (module_cooling_cost + present_fuel_cooling_cost) * total_amount * 0.001;
+
+			if (available && total_cost > 0.0)
+			{
+				ec.Consume(total_cost * elapsed_s, ResourceBroker.Cryotank);
+				return;
+			}
+
+			foreach (var item in fuels)
+			{
+				string fuel_name = Lib.ReflectionValue<string>(item, "fuelName");
+				if (fuel_name == null)
+					continue;
+
+				ProtoPartResourceSnapshot proto_fuel = p.resources.Find(k => k.resourceName == fuel_name);
+				if (proto_fuel == null || proto_fuel.amount <= double.Epsilon)
+					continue;
+
+				double boiloff_rate = Lib.ReflectionValue<float>(item, "boiloffRate") / 360000.0f;
+				ResourceInfo fuel = resources.GetResource(v, fuel_name);
+				fuel.Consume(proto_fuel.amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), ResourceBroker.Boiloff);
+			}
 		}
 
 		// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.

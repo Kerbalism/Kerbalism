@@ -23,10 +23,14 @@ namespace KERBALISM
 
 		public static float GetBoiloffRate(object fuelEntry) => IntegrationReflection.GetFloat(fuelEntry, "boiloffRate");
 
+		/// <summary>Per-fuel CoolingCost from BOILOFFCONFIG (modern CryoTanks).</summary>
+		public static float GetFuelCoolingCost(object fuelEntry) => IntegrationReflection.GetFloat(fuelEntry, "coolingCost");
+
 		public static bool GetCoolingEnabled(PartModule tank) => Get(tank, "CoolingEnabled", false);
 
 		public static void SetCoolingEnabled(PartModule tank, bool value) => Set(tank, "CoolingEnabled", value);
 
+		/// <summary>Module-level CoolingCost. Often 0 when cost is defined per BOILOFFCONFIG.</summary>
 		public static float GetCoolingCost(PartModule tank) => Get(tank, "CoolingCost", 0f);
 
 		public static PartModule FindCryoTankModule(Part part)

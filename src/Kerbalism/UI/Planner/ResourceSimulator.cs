@@ -193,7 +193,9 @@ namespace KERBALISM.Planner
 								Process_radioisotope_generator(p, m);
 								break;
 							case "ModuleCryoTank":
-								Process_cryotank(p, m);
+								// CryoTankKerbalismUpdater owns planner rates when present (per-fuel CoolingCost).
+								if (p.FindModuleImplementing<CryoTankKerbalismUpdater>() == null)
+									Process_cryotank(p, m);
 								break;
 							case "ModuleRTAntennaPassive":
 								Process_rtantenna(m);
@@ -686,56 +688,43 @@ namespace KERBALISM.Planner
 
 		void Process_cryotank(Part p, PartModule m)
 		{
-			// is cooling available
+			// Fallback when CryoTankKerbalismUpdater is absent.
+			// CoolingCost may be module-level and/or per BOILOFFCONFIG fuel entry.
 			bool available = Lib.ReflectionValue<bool>(m, "CoolingEnabled");
-
-			// get list of fuels, do nothing if no fuels
 			IList fuels = Lib.ReflectionValue<IList>(m, "fuels");
 			if (fuels == null)
 				return;
 
-			// get cooling cost
-			double cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
+			float module_cooling_cost = Lib.ReflectionValue<float>(m, "CoolingCost");
+			float present_fuel_cooling_cost = 0f;
+			double total_amount = 0.0;
 
-			string fuel_name = "";
-			double amount = 0.0;
-			double total_cost = 0.0;
-			double boiloff_rate = 0.0;
-
-			// calculate EC cost of cooling
 			foreach (object fuel in fuels)
 			{
-				fuel_name = Lib.ReflectionValue<string>(fuel, "fuelName");
-				// if fuel_name is null, don't do anything
+				string fuel_name = Lib.ReflectionValue<string>(fuel, "fuelName");
 				if (fuel_name == null)
 					continue;
 
-				// get amount in the part
-				amount = Lib.Amount(p, fuel_name);
+				double amount = Lib.Amount(p, fuel_name);
+				if (amount <= double.Epsilon)
+					continue;
 
-				// if there is some fuel
-				if (amount > double.Epsilon)
+				present_fuel_cooling_cost += Lib.ReflectionValue<float>(fuel, "coolingCost");
+				total_amount += amount;
+
+				if (!available)
 				{
-					// if cooling is enabled
-					if (available)
-					{
-						// calculate ec consumption
-						total_cost += cooling_cost * amount * 0.001;
-					}
-					// if cooling is disabled
-					else
-					{
-						// get boiloff rate per-second
-						boiloff_rate = Lib.ReflectionValue<float>(fuel, "boiloffRate") / 360000.0f;
-
-						// let it boil off
-						Resource(fuel_name).Consume(amount * boiloff_rate, Local.Planner_source_cryotank);
-					}
+					double boiloff_rate = Lib.ReflectionValue<float>(fuel, "boiloffRate") / 360000.0f;
+					Resource(fuel_name).Consume(amount * boiloff_rate, Local.Planner_source_cryotank);
 				}
 			}
 
-			// apply EC consumption
-			Resource("ElectricCharge").Consume(total_cost, Local.Planner_source_cryotank);
+			if (available && total_amount > double.Epsilon)
+			{
+				double total_cost = (module_cooling_cost + present_fuel_cooling_cost) * total_amount * 0.001;
+				if (total_cost > 0.0)
+					Resource("ElectricCharge").Consume(total_cost, Local.Planner_source_cryotank);
+			}
 		}
 
 		void Process_rtantenna(PartModule m)
