@@ -397,32 +397,61 @@ namespace KERBALISM
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 
 		/// <summary>
-		/// Average of the PAW exposure shown by all deployed panels on loaded realtime
-		/// vessels. Analytic and unloaded vessels use the ratio between modeled power and
-		/// theoretical unobscured power, weighted by panel nominal output.
+		/// Nominal-weighted solar-panel exposure. Loaded realtime and unloaded low-speed
+		/// modes report current exposure; high-warp analytic mode reports full-period
+		/// modeled power versus unobscured ideal-alignment power.
 		/// </summary>
 		public double SolarPanelsAverageExposure
 		{
 			get
 			{
-				if (Vessel.loaded && !EnvIsAnalytic && solarPanelsAverageLiveExposure >= 0.0)
-					return solarPanelsAverageLiveExposure;
-				return solarPanelsAverageAnalyticExposure;
+				if (!EnvIsAnalytic)
+					return Vessel.loaded ? solarPanelsAverageLiveExposure : solarPanelsAverageBackgroundExposure;
+				return solarPanelsAverageHighWarpExposure;
 			}
 		}
 		private double solarPanelsAverageLiveExposure = -1.0;
-		private double solarPanelsAverageAnalyticExposure = -1.0;
-		private double solarPanelsAnalyticActualPower;
-		private double solarPanelsAnalyticMaxPower;
-		private int solarPanelsAnalyticReportCount;
+		private double solarPanelsAverageBackgroundExposure = -1.0;
+		private double solarPanelsAverageHighWarpExposure = -1.0;
+		private double solarPanelsBackgroundActualPower;
+		private double solarPanelsBackgroundMaxPower;
+		private int solarPanelsBackgroundReportCount;
+		private double solarPanelsHighWarpActualPower;
+		private double solarPanelsHighWarpMaxPower;
+		private int solarPanelsHighWarpReportCount;
+		private double solarPanelsLiveExposureWeighted;
+		private double solarPanelsLiveNominalSum;
+		private int solarPanelsLiveReportCount;
 
-		/// <summary>Called by SolarPanelFixer for loaded analytic and background panels.</summary>
-		public void SaveSolarPanelAnalyticExposure(double actualPowerFactor, double theoreticalMaxPowerFactor, double nominalRate)
+		/// <summary>
+		/// Called by SolarPanelFixer for unloaded panels and loaded high-warp analytic panels.
+		/// Low-speed background and high-warp averages are accumulated separately because
+		/// they represent instantaneous and full-period exposure respectively.
+		/// </summary>
+		public void SaveSolarPanelBackgroundExposure(double actualPowerFactor, double theoreticalMaxPowerFactor, double nominalRate, bool highWarpAnalytic)
 		{
 			if (nominalRate <= 0.0) return;
-			solarPanelsAnalyticActualPower += actualPowerFactor * nominalRate;
-			solarPanelsAnalyticMaxPower += theoreticalMaxPowerFactor * nominalRate;
-			solarPanelsAnalyticReportCount++;
+			if (highWarpAnalytic)
+			{
+				solarPanelsHighWarpActualPower += actualPowerFactor * nominalRate;
+				solarPanelsHighWarpMaxPower += theoreticalMaxPowerFactor * nominalRate;
+				solarPanelsHighWarpReportCount++;
+			}
+			else
+			{
+				solarPanelsBackgroundActualPower += actualPowerFactor * nominalRate;
+				solarPanelsBackgroundMaxPower += theoreticalMaxPowerFactor * nominalRate;
+				solarPanelsBackgroundReportCount++;
+			}
+		}
+
+		/// <summary>Called by SolarPanelFixer after a completed realtime exposure update.</summary>
+		public void SaveSolarPanelLiveExposure(double exposureFactor, double nominalRate)
+		{
+			if (nominalRate <= 0.0) return;
+			solarPanelsLiveExposureWeighted += exposureFactor * nominalRate;
+			solarPanelsLiveNominalSum += nominalRate;
+			solarPanelsLiveReportCount++;
 		}
 
 		/// <summary>
@@ -847,7 +876,9 @@ namespace KERBALISM
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
 
-			solarPanelsAverageAnalyticExposure = Lib.ConfigValue(node, "solarPanelsAverageAnalyticExposure", -1.0);
+			// Keep the existing key for save compatibility. It now specifically stores
+			// the high-warp/full-period exposure metric.
+			solarPanelsAverageHighWarpExposure = Lib.ConfigValue(node, "solarPanelsAverageAnalyticExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
@@ -928,7 +959,7 @@ namespace KERBALISM
 
 			node.AddValue("deviceTransmit", deviceTransmit);
 
-			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageAnalyticExposure);
+			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageHighWarpExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
@@ -1034,51 +1065,62 @@ namespace KERBALISM
 			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 			Profiler.EndSample();
 
-			// Solar panel telemetry. Realtime mode directly averages the PAW values.
-			// Analytic/background mode uses modeled power divided by unobscured power.
-			double liveExposure;
-			if (!TryGetDeployedSolarPanelsAverageExposure(out liveExposure))
+			// Solar panel telemetry:
+			// - loaded realtime: PAW exposure reported after each completed FixedUpdate
+			// - unloaded low-speed: current-position/current-orientation background result
+			// - high-warp analytic: full-period averaged result
+			bool hasDeployedPanels = HasDeployedSolarPanels();
+			if (!hasDeployedPanels)
 			{
 				solarPanelsAverageLiveExposure = -1.0;
-				solarPanelsAverageAnalyticExposure = -1.0;
+				solarPanelsAverageBackgroundExposure = -1.0;
+				solarPanelsAverageHighWarpExposure = -1.0;
 			}
 			else
 			{
-				solarPanelsAverageLiveExposure = Vessel.loaded && !EnvIsAnalytic ? liveExposure : -1.0;
-				if (solarPanelsAnalyticReportCount > 0)
+				if (Vessel.loaded && !EnvIsAnalytic && solarPanelsLiveReportCount > 0 && solarPanelsLiveNominalSum > double.Epsilon)
+					solarPanelsAverageLiveExposure = Lib.Clamp(solarPanelsLiveExposureWeighted / solarPanelsLiveNominalSum, 0.0, 1.0);
+				else if (!(Vessel.loaded && !EnvIsAnalytic))
+					solarPanelsAverageLiveExposure = -1.0;
+
+				if (solarPanelsBackgroundReportCount > 0)
 				{
-					solarPanelsAverageAnalyticExposure = solarPanelsAnalyticMaxPower > double.Epsilon
-						? Lib.Clamp(solarPanelsAnalyticActualPower / solarPanelsAnalyticMaxPower, 0.0, 1.0)
+					solarPanelsAverageBackgroundExposure = solarPanelsBackgroundMaxPower > double.Epsilon
+						? Lib.Clamp(solarPanelsBackgroundActualPower / solarPanelsBackgroundMaxPower, 0.0, 1.0)
+						: -1.0;
+				}
+
+				if (solarPanelsHighWarpReportCount > 0)
+				{
+					solarPanelsAverageHighWarpExposure = solarPanelsHighWarpMaxPower > double.Epsilon
+						? Lib.Clamp(solarPanelsHighWarpActualPower / solarPanelsHighWarpMaxPower, 0.0, 1.0)
 						: -1.0;
 				}
 			}
 
-			solarPanelsAnalyticActualPower = 0.0;
-			solarPanelsAnalyticMaxPower = 0.0;
-			solarPanelsAnalyticReportCount = 0;
+			solarPanelsBackgroundActualPower = 0.0;
+			solarPanelsBackgroundMaxPower = 0.0;
+			solarPanelsBackgroundReportCount = 0;
+			solarPanelsHighWarpActualPower = 0.0;
+			solarPanelsHighWarpMaxPower = 0.0;
+			solarPanelsHighWarpReportCount = 0;
+			solarPanelsLiveExposureWeighted = 0.0;
+			solarPanelsLiveNominalSum = 0.0;
+			solarPanelsLiveReportCount = 0;
 
             Profiler.EndSample();
         }
 
-		private bool TryGetDeployedSolarPanelsAverageExposure(out double averageExposure)
+		private bool HasDeployedSolarPanels()
 		{
-			averageExposure = -1.0;
 			if (Vessel.loaded)
 			{
-				double exposureSum = 0.0;
-				int panelCount = 0;
 				foreach (SolarPanelFixer panel in PartModuleCache.GetModules<SolarPanelFixer>(Vessel))
 				{
 					if (panel.isEnabled && panel.nominalRate > 0.0 && SolarPanelFixer.IsDeployedState(panel.state))
-					{
-						exposureSum += panel.ExposureFactor;
-						panelCount++;
-					}
+						return true;
 				}
-
-				if (panelCount == 0) return false;
-				averageExposure = exposureSum / panelCount;
-				return true;
+				return false;
 			}
 
 			foreach (ProtoPartModuleSnapshot panel in ProtoPartModuleCache.GetModules(Vessel.protoVessel, "SolarPanelFixer"))
@@ -1099,7 +1141,17 @@ namespace KERBALISM
 		{
 			Profiler.BeginSample("EvaluateEnvironment");
 			// we use analytic mode if more than 2 minutes of game time has passed since last evaluation (~ x6000 timewarp speed)
-			isAnalytic = elapsedSeconds > 120.0;
+			bool newAnalytic = elapsedSeconds > 120.0;
+			if (newAnalytic != isAnalytic)
+			{
+				// Do not display a value computed with the other mode's semantics while
+				// waiting for SolarPanelFixer to report the first result in this mode.
+				if (newAnalytic)
+					solarPanelsAverageHighWarpExposure = -1.0;
+				else
+					solarPanelsAverageBackgroundExposure = -1.0;
+			}
+			isAnalytic = newAnalytic;
 
 			// get vessel position
 			Vector3d position = Lib.VesselPosition(Vessel);

@@ -85,6 +85,21 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)]
 		public double launchUT = -1.0;
 
+		/// <summary>
+		/// True after a loaded update has cached panel orientation for background/analytic use.
+		/// Tracking uses the panelPivotPartLocal* axis; static panels use panelNormalPartLocal*.
+		/// Stored as scalar components so ProtoPartModuleSnapshot can round-trip them reliably.
+		/// </summary>
+		[KSPField(isPersistant = true)]
+		public bool hasPanelOrientation = false;
+
+		[KSPField(isPersistant = true)] public double panelPivotPartLocalX;
+		[KSPField(isPersistant = true)] public double panelPivotPartLocalY;
+		[KSPField(isPersistant = true)] public double panelPivotPartLocalZ;
+		[KSPField(isPersistant = true)] public double panelNormalPartLocalX;
+		[KSPField(isPersistant = true)] public double panelNormalPartLocalY;
+		[KSPField(isPersistant = true)] public double panelNormalPartLocalZ;
+
 		/// <summary>internal object for handling the various hacks depending on the target solar panel module</summary>
 		public SupportedPanel SolarPanel { get; private set; }
 
@@ -132,6 +147,22 @@ namespace KERBALISM
 			OccludedTerrain,
 			OccludedPart,
 			BadOrientation
+		}
+
+		private void SetPanelOrientationCache(Vector3 pivotLocal, Vector3 normalLocal)
+		{
+			panelPivotPartLocalX = pivotLocal.x;
+			panelPivotPartLocalY = pivotLocal.y;
+			panelPivotPartLocalZ = pivotLocal.z;
+			panelNormalPartLocalX = normalLocal.x;
+			panelNormalPartLocalY = normalLocal.y;
+			panelNormalPartLocalZ = normalLocal.z;
+			hasPanelOrientation = pivotLocal.sqrMagnitude > 1e-8f || normalLocal.sqrMagnitude > 1e-8f;
+		}
+
+		private void ClearPanelOrientationCache()
+		{
+			SetPanelOrientationCache(Vector3.zero, Vector3.zero);
 		}
 		#endregion
 
@@ -530,20 +561,25 @@ namespace KERBALISM
 			else
 				exposureState = ExposureState.Exposed;
 
+			// Cache part-local orientation while loaded so unloaded/analytic simulation
+			// can respect single-axis tracking limits and static panel facing.
+			bool hasOrientation = SolarPanel.UpdateOrientationCache(out Vector3d panelPivotWorld, out Vector3d panelNormalWorld);
+
 			// --- A factor specifically designed to calculate actual electricity generation ---
 			double powerFactor = 0.0;
 			if (vd.EnvIsAnalytic)
 			{
 				analyticSunlight = true;
 				double theoreticalMaxPower;
-				powerFactor = CalculateMultiStarPowerAnalytic(vessel, vd.EnvSunsInfo, trackedSunInfo, SolarPanel.Type, SolarPanel.IsTracking, out theoreticalMaxPower);
-				vd.SaveSolarPanelAnalyticExposure(powerFactor, theoreticalMaxPower, nominalRate);
+				powerFactor = CalculateMultiStarPowerAnalytic(vessel, vd.EnvSunsInfo, trackedSunInfo, SolarPanel.Type, SolarPanel.IsTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
+				vd.SaveSolarPanelBackgroundExposure(powerFactor, theoreticalMaxPower, nominalRate, true);
 			}
 			else
 			{
 				analyticSunlight = false;
-				// reset factors
-				exposureFactor = 0.0;
+				// Compute into locals first, then publish. Avoids VesselData.Evaluate reading a
+				// mid-update exposureFactor = 0 while other panels still hold last frame's value.
+				double newExposureFactor = 0.0;
 				powerFactor = 0.0;
 
 				// iterate over all stars, compute the exposure factor
@@ -599,10 +635,16 @@ namespace KERBALISM
 
 					if (sunInfo == trackedSunInfo)
 					{
-						exposureFactor = sunCosineFactor * sunOccludedFactor * sunInfo.SunlightFactor;
+						newExposureFactor = sunCosineFactor * sunOccludedFactor * sunInfo.SunlightFactor;
 					}
 				}
+
+				exposureFactor = newExposureFactor;
 			}
+
+			// Report completed PAW exposure for Monitor averaging (consumed next VesselData.Evaluate).
+			if (!analyticSunlight)
+				vd.SaveSolarPanelLiveExposure(exposureFactor, nominalRate);
 
 			wearFactor = 1.0;
 			if (timeEfficCurve?.Curve.length > 1)
@@ -754,8 +796,10 @@ namespace KERBALISM
 				return;
 			}
 
+			bool hasOrientation = TryGetProtoPanelOrientation(v, p, m, isTracking, out Vector3d panelPivotWorld, out Vector3d panelNormalWorld);
+
 			double theoreticalMaxPower;
-			double powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower);
+			double powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
 			efficiencyFactor = powerFactor;
 
 			// get wear factor (output degradation with time)
@@ -769,7 +813,7 @@ namespace KERBALISM
 			// get nominal panel charge rate at 1 AU
 			// don't use the prefab value as some modules that does dynamic switching (SSTU) may have changed it
 			double nominalRate = Lib.Proto.GetDouble(m, "nominalRate");
-			vd.SaveSolarPanelAnalyticExposure(powerFactor, theoreticalMaxPower, nominalRate);
+			vd.SaveSolarPanelBackgroundExposure(powerFactor, theoreticalMaxPower, nominalRate, vd.EnvIsAnalytic);
 
 			// calculate output
 			double output = nominalRate * efficiencyFactor;
@@ -910,6 +954,222 @@ namespace KERBALISM
 		}
 
 		/// <summary>
+		/// Best cosine a single-axis tracking panel can achieve for <paramref name="sunDir"/>.
+		/// Equals √(1 − (sun·pivot)²); zero when the sun lies along the pivot axis.
+		/// </summary>
+		public static double TrackingCosineFactor(Vector3d sunDir, Vector3d pivotAxis)
+		{
+			double dot = Lib.Clamp(Vector3d.Dot(sunDir.normalized, pivotAxis.normalized), -1.0, 1.0);
+			return Math.Sqrt(Math.Max(0.0, 1.0 - dot * dot));
+		}
+
+		/// <summary>
+		/// Panel face normal a single-axis tracker would use to face <paramref name="mainSunDir"/> as closely as possible.
+		/// </summary>
+		public static bool TryGetTrackingFaceNormal(Vector3d mainSunDir, Vector3d pivotAxis, out Vector3d faceNormal)
+		{
+			Vector3d sun = mainSunDir.normalized;
+			Vector3d pivot = pivotAxis.normalized;
+			faceNormal = sun - pivot * Vector3d.Dot(sun, pivot);
+			double sqr = faceNormal.sqrMagnitude;
+			if (sqr < 1e-12)
+			{
+				faceNormal = Vector3d.zero;
+				return false;
+			}
+			faceNormal /= Math.Sqrt(sqr);
+			return true;
+		}
+
+		/// <summary>Reconstruct a part-local direction in world space for loaded or unloaded vessels.</summary>
+		public static Vector3d PartLocalToWorldDirection(Vessel v, ProtoPartSnapshot protoPart, Vector3 partLocalDir)
+		{
+			if (v == null)
+				return ((Vector3d)partLocalDir).normalized;
+
+			if (v.loaded && protoPart?.partRef != null && protoPart.partRef.transform != null)
+				return protoPart.partRef.transform.TransformDirection(partLocalDir).normalized;
+
+			Transform vesselTransform = v.vesselTransform != null ? v.vesselTransform : v.transform;
+			if (vesselTransform == null || protoPart == null)
+				return ((Vector3d)partLocalDir).normalized;
+
+			Quaternion worldRot = vesselTransform.rotation * protoPart.rotation;
+			return ((Vector3d)(worldRot * partLocalDir)).normalized;
+		}
+
+		static bool TryGetProtoVector3Components(ProtoPartModuleSnapshot m, string prefix, out Vector3 value)
+		{
+			value = Vector3.zero;
+			if (m?.moduleValues == null
+				|| !m.moduleValues.HasValue(prefix + "X")
+				|| !m.moduleValues.HasValue(prefix + "Y")
+				|| !m.moduleValues.HasValue(prefix + "Z"))
+				return false;
+
+			value = new Vector3(
+				(float)Lib.Proto.GetDouble(m, prefix + "X"),
+				(float)Lib.Proto.GetDouble(m, prefix + "Y"),
+				(float)Lib.Proto.GetDouble(m, prefix + "Z"));
+			return value.sqrMagnitude > 1e-8f;
+		}
+
+		static bool TryGetProtoPanelOrientation(Vessel v, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot m, bool isTracking, out Vector3d pivotWorld, out Vector3d normalWorld)
+		{
+			pivotWorld = Vector3d.zero;
+			normalWorld = Vector3d.zero;
+
+			if (!Lib.Proto.GetBool(m, "hasPanelOrientation"))
+				return false;
+
+			bool hasPivot = TryGetProtoVector3Components(m, "panelPivotPartLocal", out Vector3 pivotLocal);
+			bool hasNormal = TryGetProtoVector3Components(m, "panelNormalPartLocal", out Vector3 normalLocal);
+			if (isTracking)
+			{
+				if (!hasPivot)
+					return false;
+				pivotWorld = PartLocalToWorldDirection(v, protoPart, pivotLocal);
+				if (hasNormal)
+					normalWorld = PartLocalToWorldDirection(v, protoPart, normalLocal);
+				return pivotWorld.sqrMagnitude > 1e-12;
+			}
+
+			if (!hasNormal)
+				return false;
+			normalWorld = PartLocalToWorldDirection(v, protoPart, normalLocal);
+			return normalWorld.sqrMagnitude > 1e-12;
+		}
+
+		static double GetAnalyticFlatCosineFactor(Vector3d sunDir, Vector3d mainSunDir, bool isMainSun, bool isTracking, bool hasOrientation, Vector3d trackingPivotWorld, Vector3d panelNormalWorld, Vector3d surfaceNormal, bool isLockedToSun)
+		{
+			sunDir.Normalize();
+			mainSunDir.Normalize();
+
+			if (isTracking)
+			{
+				if (hasOrientation && trackingPivotWorld.sqrMagnitude > 1e-12)
+				{
+					if (isMainSun)
+						return TrackingCosineFactor(sunDir, trackingPivotWorld);
+
+					if (TryGetTrackingFaceNormal(mainSunDir, trackingPivotWorld, out Vector3d faceNormal))
+						return Math.Max(0.0, Vector3d.Dot(sunDir, faceNormal));
+
+					return 0.0;
+				}
+
+				// Fallback when orientation was never cached: assume ideal alignment.
+				if (isMainSun)
+					return 1.0;
+				return Math.Max(0.0, Vector3d.Dot(mainSunDir, sunDir));
+			}
+
+			if (hasOrientation && panelNormalWorld.sqrMagnitude > 1e-12)
+				return Math.Max(0.0, Vector3d.Dot(sunDir, panelNormalWorld.normalized));
+
+			if (isLockedToSun)
+				return Math.Max(0.0, Vector3d.Dot(surfaceNormal, sunDir));
+
+			// Day-average cosine for a horizontal static panel.
+			return 1.5 / Math.PI;
+		}
+
+		static double GetAnalyticFlatCosineFactor(VesselData.SunInfo sun, VesselData.SunInfo mainSun, bool isTracking, bool hasOrientation, Vector3d trackingPivotWorld, Vector3d panelNormalWorld, Vector3d surfaceNormal, bool isLockedToSun)
+		{
+			return GetAnalyticFlatCosineFactor(sun.Direction, mainSun.Direction, sun == mainSun, isTracking, hasOrientation, trackingPivotWorld, panelNormalWorld, surfaceNormal, isLockedToSun);
+		}
+
+		// Midpoint samples over one body rotation. This is only used for landed flat
+		// panels with a known part-relative orientation.
+		private const int LandedOrientationSampleCount = 48;
+
+		static Vector3d GetSunDirectionAtBodyRotationSample(CelestialBody body, CelestialBody sunBody, Vector3d currentSunDir, QuaternionD bodyFrameRotation)
+		{
+			// A star the body is tidally locked to stays fixed in the body frame.
+			if (body.tidallyLocked && body.referenceBody == sunBody)
+				return currentSunDir.normalized;
+
+			return (bodyFrameRotation * currentSunDir).normalized;
+		}
+
+		/// <summary>
+		/// Full-rotation average of daylight × panel cosine for a landed flat panel.
+		/// Body-fixed panel directions remain constant while non-locked star directions
+		/// rotate through the body frame. Secondary stars use the face selected for the
+		/// tracked star at the same sample.
+		/// </summary>
+		static double CalculateLandedAnalyticFlatCosineDuty(Vessel v, VesselData.SunInfo sun, VesselData.SunInfo mainSun, double latitude, Vector3d surfaceNormal, bool isTracking, bool hasOrientation, Vector3d trackingPivotWorld, Vector3d panelNormalWorld)
+		{
+			bool hasUsableOrientation = isTracking
+				? hasOrientation && trackingPivotWorld.sqrMagnitude > 1e-12
+				: hasOrientation && panelNormalWorld.sqrMagnitude > 1e-12;
+
+			// Old saves and unsupported panel implementations retain the previous
+			// ideal/day-average fallback until a loaded vessel can cache orientation.
+			if (!hasUsableOrientation)
+			{
+				double duty = CalculateSurfaceDaylightDuty(v, v.mainBody, latitude, sun.Direction, sun.SunData.body);
+				bool isLockedToSun = v.mainBody.tidallyLocked && v.mainBody.referenceBody == sun.SunData.body;
+				return duty * GetAnalyticFlatCosineFactor(sun, mainSun, isTracking, false, Vector3d.zero, Vector3d.zero, surfaceNormal, isLockedToSun);
+			}
+
+			Vector3d rotationAxis = v.mainBody.transform.up;
+			double cosineDutySum = 0.0;
+			bool isMainSun = sun == mainSun;
+
+			for (int i = 0; i < LandedOrientationSampleCount; i++)
+			{
+				double angle = -360.0 * (i + 0.5) / LandedOrientationSampleCount;
+				QuaternionD bodyFrameRotation = QuaternionD.AngleAxis(angle, rotationAxis);
+				Vector3d sampledSunDir = GetSunDirectionAtBodyRotationSample(v.mainBody, sun.SunData.body, sun.Direction, bodyFrameRotation);
+
+				// Spherical-body horizon test for this star at this rotation phase.
+				if (Vector3d.Dot(surfaceNormal, sampledSunDir) <= 0.0)
+					continue;
+
+				Vector3d sampledMainSunDir = isMainSun
+					? sampledSunDir
+					: GetSunDirectionAtBodyRotationSample(v.mainBody, mainSun.SunData.body, mainSun.Direction, bodyFrameRotation);
+
+				cosineDutySum += GetAnalyticFlatCosineFactor(
+					sampledSunDir,
+					sampledMainSunDir,
+					isMainSun,
+					isTracking,
+					true,
+					trackingPivotWorld,
+					panelNormalWorld,
+					surfaceNormal,
+					false);
+			}
+
+			return cosineDutySum / LandedOrientationSampleCount;
+		}
+
+		/// <summary>
+		/// Ideal cosine used as the analytic exposure denominator (unobscured / best-case alignment).
+		/// Must not include the current bad-orientation factor, or exposure collapses to ~100% in sunlight.
+		/// </summary>
+		static double GetTheoreticalMaxCosineFactor(VesselData.SunInfo sun, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking)
+		{
+			switch (panelType)
+			{
+				case ModuleDeployableSolarPanel.PanelType.SPHERICAL:
+					return 0.25;
+				case ModuleDeployableSolarPanel.PanelType.CYLINDRICAL:
+					return 1.0 / Math.PI;
+				default:
+					if (isTracking)
+					{
+						if (sun == mainSun)
+							return 1.0;
+						return Math.Max(0.0, Vector3d.Dot(mainSun.Direction.normalized, sun.Direction.normalized));
+					}
+					return 1.0;
+			}
+		}
+
+		/// <summary>
 		/// Final implementation: Semi-analytical approach with low-sample expectation accumulation.
 		/// Guarantees energy conservation and computational efficiency for both single and multi-star systems.
 		/// </summary>
@@ -923,12 +1183,12 @@ namespace KERBALISM
 		/// Analytic power factor and theoretical power factor with body shadowing removed.
 		/// Distance, atmosphere, panel type and multi-star tracking geometry are retained.
 		/// </summary>
-		public static double CalculateMultiStarPowerAnalytic(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower)
+		public static double CalculateMultiStarPowerAnalytic(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower, bool hasOrientation = false, Vector3d trackingPivotWorld = default, Vector3d panelNormalWorld = default)
 		{
 			// Landing/Splashdown Status Handling
 			if (Lib.Landed(v))
 			{
-				return CalculateLandedMultiStarPower(v, suns, mainSun, panelType, isTracking, out theoreticalMaxPower);
+				return CalculateLandedMultiStarPower(v, suns, mainSun, panelType, isTracking, out theoreticalMaxPower, hasOrientation, trackingPivotWorld, panelNormalWorld);
 			}
 
 			double totalPowerExpectation = 0.0;
@@ -951,31 +1211,14 @@ namespace KERBALISM
 				}
 				else // FLAT
 				{
-					if (isTracking)
-					{
-						if (Lib.IsFlight()) { }
-						// If tracking, the panel aligns perfectly with the 'mainSun'
-						if (sun == mainSun)
-						{
-							effectiveCos = 1.0; // Primary star, maximum efficiency
-						}
-						else
-						{
-							// Efficiency for secondary stars = cosine of the angle between them and the primary star
-							// Only contributes if the secondary star is on the "front" side of the panel (angle < 90 deg)
-							double cosBetween = Vector3d.Dot(mainSun.Direction.normalized, sun.Direction.normalized);
-							effectiveCos = Math.Max(0.0, cosBetween);
-						}
-					}
-					else
-					{
-						effectiveCos = 1.5 / Math.PI;
-					}
+					effectiveCos = GetAnalyticFlatCosineFactor(sun, mainSun, isTracking, hasOrientation, trackingPivotWorld, panelNormalWorld, Vector3d.zero, false);
 				}
+				double theoCos = GetTheoreticalMaxCosineFactor(sun, mainSun, panelType, isTracking);
 				// Accumulate Energy Expectation
 				// sun.SolarFlux is fully pre-calculated with occlusion and atmosphere logic.
 				totalPowerExpectation += (sun.SolarFlux / Sim.SolarFluxAtHome) * effectiveCos;
-				theoreticalMaxPower += (unshadowedFlux / Sim.SolarFluxAtHome) * effectiveCos;
+				// Denominator: unobscured flux at ideal alignment (orientation must not cancel out).
+				theoreticalMaxPower += (unshadowedFlux / Sim.SolarFluxAtHome) * theoCos;
 			}
 
 			return totalPowerExpectation;
@@ -990,7 +1233,7 @@ namespace KERBALISM
 			return CalculateLandedMultiStarPower(v, suns, mainSun, panelType, isTracking, out theoreticalMaxPower);
 		}
 
-		public static double CalculateLandedMultiStarPower(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower)
+		public static double CalculateLandedMultiStarPower(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower, bool hasOrientation = false, Vector3d trackingPivotWorld = default, Vector3d panelNormalWorld = default)
 		{
 			double totalPower = 0.0;
 			theoreticalMaxPower = 0.0;
@@ -1008,58 +1251,48 @@ namespace KERBALISM
 				if (unshadowedFlux < 1e-6) continue;
 
 				Vector3d sunDir = sun.Direction.normalized;
-				double duty = 1.0;
-				if (isAnalytic)
-				{
-					// --------- 1. Daylight Duty Cycle ----------
-					duty = CalculateSurfaceDaylightDuty(v, v.mainBody, latitude, sunDir, sun.SunData.body);
-				}
-
-				// --------- 2. Effective incidence (analytic expectation) ----------
-				double effectiveCos;
+				double effectiveCosineDuty;
 				bool isLockedToSun = v.mainBody.tidallyLocked && v.mainBody.referenceBody == sun.SunData.body;
 
-				if (panelType == ModuleDeployableSolarPanel.PanelType.SPHERICAL)
+				if (isAnalytic)
 				{
-					effectiveCos = 0.25;
-				}
-				else if (panelType == ModuleDeployableSolarPanel.PanelType.CYLINDRICAL)
-				{
-					effectiveCos = 1.0 / Math.PI;
-				}
-				else // FLAT
-				{
-					if (isTracking)
+					// Full-rotation expectation. For flat panels with known orientation,
+					// daylight and incidence are correlated and must be integrated together.
+					double duty = CalculateSurfaceDaylightDuty(v, v.mainBody, latitude, sunDir, sun.SunData.body);
+					if (panelType == ModuleDeployableSolarPanel.PanelType.SPHERICAL)
 					{
-						if (sun == mainSun)
-						{
-							// Tracking panel: expected cosine on surface
-							effectiveCos = 1.0;
-						}
-						else
-						{
-							double cosBetween = Vector3d.Dot(mainSun.Direction.normalized, sunDir);
-							effectiveCos = Math.Max(0.0, cosBetween);
-						}
+						effectiveCosineDuty = duty * 0.25;
 					}
-					else
+					else if (panelType == ModuleDeployableSolarPanel.PanelType.CYLINDRICAL)
 					{
-						if (isLockedToSun)
-						{
-							// Static panel on locked body: Use actual surface incidence
-							// This assumes horizontal placement, which is the standard analytic assumption
-							double dot = Vector3d.Dot(surfaceNormal, sunDir);
-							effectiveCos = Math.Max(0.0, dot);
-						}
-						else
-						{
-							effectiveCos = 1.5 / Math.PI;
-						}
+						effectiveCosineDuty = duty * (1.0 / Math.PI);
+					}
+					else // FLAT
+					{
+						effectiveCosineDuty = CalculateLandedAnalyticFlatCosineDuty(v, sun, mainSun, latitude, surfaceNormal, isTracking, hasOrientation, trackingPivotWorld, panelNormalWorld);
 					}
 				}
-				double actualFlux = isAnalytic ? duty * unshadowedFlux : sun.SolarFlux;
-				totalPower += effectiveCos * (actualFlux / Sim.SolarFluxAtHome);
-				theoreticalMaxPower += effectiveCos * (unshadowedFlux / Sim.SolarFluxAtHome);
+				else
+				{
+					// Realtime/background discrete evaluation at the current rotation phase.
+					if (panelType == ModuleDeployableSolarPanel.PanelType.SPHERICAL)
+					{
+						effectiveCosineDuty = 0.25;
+					}
+					else if (panelType == ModuleDeployableSolarPanel.PanelType.CYLINDRICAL)
+					{
+						effectiveCosineDuty = 1.0 / Math.PI;
+					}
+					else // FLAT
+					{
+						effectiveCosineDuty = GetAnalyticFlatCosineFactor(sun, mainSun, isTracking, hasOrientation, trackingPivotWorld, panelNormalWorld, surfaceNormal, isLockedToSun);
+					}
+				}
+				double theoCos = GetTheoreticalMaxCosineFactor(sun, mainSun, panelType, isTracking);
+				double availableFlux = isAnalytic ? unshadowedFlux : sun.SolarFlux;
+				totalPower += effectiveCosineDuty * (availableFlux / Sim.SolarFluxAtHome);
+				// Denominator: unobscured flux at ideal alignment (orientation must not cancel out).
+				theoreticalMaxPower += theoCos * (unshadowedFlux / Sim.SolarFluxAtHome);
 			}
 			return totalPower;
 		}
@@ -1140,6 +1373,27 @@ namespace KERBALISM
 
 			/// <summary>Type of the panel</summary>
 			public virtual ModuleDeployableSolarPanel.PanelType Type => ModuleDeployableSolarPanel.PanelType.FLAT;
+
+			/// <summary>
+			/// Cache panel pivot/normal in part-local space for unloaded analytic simulation.
+			/// Returns world-space directions when available.
+			/// </summary>
+			public virtual bool UpdateOrientationCache(out Vector3d pivotWorld, out Vector3d normalWorld)
+			{
+				pivotWorld = Vector3d.zero;
+				normalWorld = Vector3d.zero;
+				return false;
+			}
+
+			/// <summary>
+			/// Part-local pivot/normal from the currently loaded model transforms.
+			/// </summary>
+			public virtual bool TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal)
+			{
+				pivotLocal = Vector3.zero;
+				normalLocal = Vector3.zero;
+				return false;
+			}
 
 			/// <summary>
 			/// Peak cosine/exposure factor for planner nominal estimates.
@@ -1431,6 +1685,41 @@ namespace KERBALISM
 
 			public override bool IsTracking => panelModule.isTracking;
 
+			public override bool TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal)
+			{
+				pivotLocal = Vector3.zero;
+				normalLocal = Vector3.zero;
+
+				if (sunCatcherPivot == null)
+					sunCatcherPivot = panelModule.part.FindModelComponent<Transform>(panelModule.pivotName);
+
+				if (sunCatcherPivot == null || panelModule.part?.transform == null)
+					return false;
+
+				Transform partT = panelModule.part.transform;
+				pivotLocal = partT.InverseTransformDirection(sunCatcherPivot.up).normalized;
+				normalLocal = partT.InverseTransformDirection(sunCatcherPivot.forward).normalized;
+				return pivotLocal.sqrMagnitude > 1e-8f || normalLocal.sqrMagnitude > 1e-8f;
+			}
+
+			public override bool UpdateOrientationCache(out Vector3d pivotWorld, out Vector3d normalWorld)
+			{
+				pivotWorld = Vector3d.zero;
+				normalWorld = Vector3d.zero;
+
+				if (!TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal))
+				{
+					return false;
+				}
+
+				fixerModule.SetPanelOrientationCache(pivotLocal, normalLocal);
+
+				Transform partT = panelModule.part.transform;
+				pivotWorld = partT.TransformDirection(pivotLocal).normalized;
+				normalWorld = partT.TransformDirection(normalLocal).normalized;
+				return true;
+			}
+
 			public override void SetTrackedBody(CelestialBody body)
 			{
 				panelModule.trackingBody = body;
@@ -1541,6 +1830,44 @@ namespace KERBALISM
 				}
 
 				return cosineFactor / sunCatchers.Length;
+			}
+
+			public override bool TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal)
+			{
+				pivotLocal = Vector3.zero;
+				normalLocal = Vector3.zero;
+
+				if (sunCatchers == null || sunCatchers.Length == 0 || panelModule.part?.transform == null)
+					return false;
+
+				Vector3d avgNormal = Vector3d.zero;
+				int count = 0;
+				foreach (Transform panel in sunCatchers)
+				{
+					if (panel == null) continue;
+					avgNormal += (Vector3d)panel.forward;
+					count++;
+				}
+				if (count == 0 || avgNormal.sqrMagnitude < 1e-12)
+					return false;
+
+				normalLocal = panelModule.part.transform.InverseTransformDirection((Vector3)avgNormal.normalized).normalized;
+				return normalLocal.sqrMagnitude > 1e-8f;
+			}
+
+			public override bool UpdateOrientationCache(out Vector3d pivotWorld, out Vector3d normalWorld)
+			{
+				pivotWorld = Vector3d.zero;
+				normalWorld = Vector3d.zero;
+
+				if (!TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal))
+				{
+					return false;
+				}
+
+				fixerModule.SetPanelOrientationCache(pivotLocal, normalLocal);
+				normalWorld = panelModule.part.transform.TransformDirection(normalLocal).normalized;
+				return true;
 			}
 
 			public override void OnUpdate()
@@ -1975,6 +2302,57 @@ namespace KERBALISM
 
 			public override bool IsTracking => trackingType == TrackingType.SinglePivot || trackingType == TrackingType.DoublePivot;
 
+			public override bool UpdateOrientationCache(out Vector3d pivotWorld, out Vector3d normalWorld)
+			{
+				pivotWorld = Vector3d.zero;
+				normalWorld = Vector3d.zero;
+
+				// Double-pivot panels can align freely and should retain the ideal
+				// tracking fallback. Fixed SSTU panels don't expose one representative
+				// normal for their potentially heterogeneous panel set.
+				if (trackingType == TrackingType.DoublePivot || trackingType == TrackingType.Fixed)
+				{
+					fixerModule.ClearPanelOrientationCache();
+					return false;
+				}
+
+				// Unknown/null data can be transient during load: preserve any valid
+				// persisted cache and try again on the next FixedUpdate.
+				if (trackingType != TrackingType.SinglePivot || panels == null || panelModule.part?.transform == null)
+					return false;
+
+				Vector3d averageAxis = Vector3d.zero;
+				Vector3d referenceAxis = Vector3d.zero;
+				int totalWeight = 0;
+				foreach (SSTUPanelData panel in panels)
+				{
+					if (panel?.pivot == null)
+						continue;
+
+					Vector3d axis = panel.PivotAxisVector;
+					if (axis.sqrMagnitude < 1e-12)
+						continue;
+					axis.Normalize();
+
+					if (referenceAxis.sqrMagnitude < 1e-12)
+						referenceAxis = axis;
+					else if (Vector3d.Dot(referenceAxis, axis) < 0.0)
+						axis = -axis; // ±axis describes the same tracking pivot.
+
+					int weight = Math.Max(panel.SuncatcherCount, 1);
+					averageAxis += axis * weight;
+					totalWeight += weight;
+				}
+
+				if (totalWeight == 0 || averageAxis.sqrMagnitude < 1e-12)
+					return false;
+
+				pivotWorld = averageAxis.normalized;
+				Vector3 pivotLocal = panelModule.part.transform.InverseTransformDirection((Vector3)pivotWorld).normalized;
+				fixerModule.SetPanelOrientationCache(pivotLocal, Vector3.zero);
+				return fixerModule.hasPanelOrientation;
+			}
+
 			public override void SetTrackedBody(CelestialBody body)
 			{
 				Lib.ReflectionValue(solarModuleSSTU, "trackedBodyIndex", body.flightGlobalsIndex);
@@ -2194,6 +2572,44 @@ namespace KERBALISM
 				}
 				if (count == 0) return 0.0;
 				return totalCos / count;
+			}
+
+			public override bool TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal)
+			{
+				pivotLocal = Vector3.zero;
+				normalLocal = Vector3.zero;
+
+				if (sunCatchers == null || sunCatchers.Count == 0 || panelModule.part?.transform == null)
+					return false;
+
+				Vector3d avgNormal = Vector3d.zero;
+				int count = 0;
+				foreach (Transform t in sunCatchers)
+				{
+					if (t == null) continue;
+					avgNormal += (Vector3d)t.forward;
+					count++;
+				}
+				if (count == 0 || avgNormal.sqrMagnitude < 1e-12)
+					return false;
+
+				normalLocal = panelModule.part.transform.InverseTransformDirection((Vector3)avgNormal.normalized).normalized;
+				return normalLocal.sqrMagnitude > 1e-8f;
+			}
+
+			public override bool UpdateOrientationCache(out Vector3d pivotWorld, out Vector3d normalWorld)
+			{
+				pivotWorld = Vector3d.zero;
+				normalWorld = Vector3d.zero;
+
+				if (!TryGetPartLocalOrientation(out Vector3 pivotLocal, out Vector3 normalLocal))
+				{
+					return false;
+				}
+
+				fixerModule.SetPanelOrientationCache(pivotLocal, normalLocal);
+				normalWorld = panelModule.part.transform.TransformDirection(normalLocal).normalized;
+				return true;
 			}
 
 			public override PanelState GetState()

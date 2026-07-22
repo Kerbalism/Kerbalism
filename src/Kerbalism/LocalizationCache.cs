@@ -610,7 +610,7 @@ namespace KERBALISM
 		public static string TELEMETRY_EVASUIT = GetLoc("TELEMETRY_EVASUIT"); // "EVA SUIT"
 		public static string TELEMETRY_ENVIRONMENT = GetLoc("TELEMETRY_ENVIRONMENT"); // "ENVIRONMENT"
 		public static string TELEMETRY_SolarPanelsAverageExposure = GetLoc("TELEMETRY_SolarPanelsAverageExposure"); // "solar panels average exposure"
-		public static string TELEMETRY_SolarPanelsAverageExposure_desc = GetLoc("TELEMETRY_SolarPanelsAverageExposure_desc"); // "Realtime: average panel exposure\nAnalytic/unloaded: modeled power versus unobscured maximum"
+		public static string TELEMETRY_SolarPanelsAverageExposure_desc = GetLoc("TELEMETRY_SolarPanelsAverageExposure_desc"); // "Realtime/low-speed background: current panel exposure\nHigh-warp analytic: full-period modeled power versus unobscured ideal-alignment maximum"
 		public static string TELEMETRY_nosensorsinstalled = GetLoc("TELEMETRY_nosensorsinstalled"); // "no sensors installed"
 		public static string TELEMETRY_HABITAT = GetLoc("TELEMETRY_HABITAT"); // "HABITAT"
 		public static string TELEMETRY_co2level = GetLoc("TELEMETRY_co2level"); // "co2 level"
