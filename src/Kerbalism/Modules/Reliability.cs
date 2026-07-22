@@ -653,6 +653,8 @@ namespace KERBALISM
 				// then repairing will enable all of them, messing up with the configuration
 				part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
 
+				vessel.KerbalismData().RefreshReliabilityState();
+
 				// notify user
 				Message.Post
 				(
@@ -715,6 +717,8 @@ namespace KERBALISM
 
 				// type-specific hacks
 				Apply(true);
+
+				vessel.KerbalismData().RefreshReliabilityState();
 
 				// notify user
 				Broken_msg(vessel, title, critical);
@@ -818,6 +822,8 @@ namespace KERBALISM
 						}
 						break;
 				}
+
+				v.KerbalismData().RefreshReliabilityState();
 
 				// show message
 				Broken_msg(v, reliability.title, critical);
@@ -1409,11 +1415,10 @@ namespace KERBALISM
 		///<summary>evaluate the malfunction and critical failure state of a vessel in a single pass</summary>
 		public static void GetVesselState(Vessel v, out bool malfunction, out bool critical)
 		{
-			malfunction = false;
-			critical = false;
-
 			if (v.loaded)
 			{
+				malfunction = false;
+				critical = false;
 				foreach (Reliability m in PartModuleCache.GetModules<Reliability>(v))
 				{
 					malfunction |= m.broken;
@@ -1422,11 +1427,21 @@ namespace KERBALISM
 			}
 			else
 			{
-				foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(v.protoVessel, "Reliability"))
-				{
-					malfunction |= Lib.Proto.GetBool(m, "broken");
-					critical |= Lib.Proto.GetBool(m, "critical");
-				}
+				GetVesselState(v.protoVessel, out malfunction, out critical);
+			}
+		}
+
+		///<summary>evaluate malfunction/critical from a ProtoVessel (used on load / scene change before Vessel is available)</summary>
+		public static void GetVesselState(ProtoVessel pv, out bool malfunction, out bool critical)
+		{
+			malfunction = false;
+			critical = false;
+			if (pv == null) return;
+
+			foreach (ProtoPartModuleSnapshot m in ProtoPartModuleCache.GetModules(pv, "Reliability"))
+			{
+				malfunction |= Lib.Proto.GetBool(m, "broken");
+				critical |= Lib.Proto.GetBool(m, "critical");
 			}
 		}
 

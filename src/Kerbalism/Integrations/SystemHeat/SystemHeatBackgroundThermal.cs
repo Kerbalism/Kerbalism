@@ -1457,6 +1457,8 @@ namespace KERBALISM
 				Lib.Proto.Set(reliability, "broken", true);
 				Lib.Proto.Set(reliability, "critical", true);
 			}
+
+			v.KerbalismData().RefreshReliabilityState();
 		}
 
 		private static void BreakNativeFissionReactor(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module)
@@ -1482,6 +1484,8 @@ namespace KERBALISM
 				Lib.Proto.Set(reliability, "broken", true);
 				Lib.Proto.Set(reliability, "critical", true);
 			}
+
+			v.KerbalismData().RefreshReliabilityState();
 		}
 
 		private static PartModule FindMatchingPrefabModule(Part prefab, ProtoPartModuleSnapshot module, string moduleName)

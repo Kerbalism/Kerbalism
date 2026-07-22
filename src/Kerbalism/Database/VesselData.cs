@@ -518,6 +518,36 @@ namespace KERBALISM
 			reliabilityStatus = null;
 		}
 
+		/// <summary>
+		/// Recompute Malfunction/Critical from current module state so Monitor icons stay correct
+		/// without waiting for the next Evaluate pass (important after scene changes / repairs).
+		/// </summary>
+		public void RefreshReliabilityState()
+		{
+			if (!Features.Reliability)
+			{
+				malfunction = false;
+				critical = false;
+				return;
+			}
+
+			if (Vessel != null)
+				Reliability.GetVesselState(Vessel, out malfunction, out critical);
+		}
+
+		/// <summary>Same as RefreshReliabilityState, but usable during OnLoad when Vessel is still null.</summary>
+		public void RefreshReliabilityState(ProtoVessel pv)
+		{
+			if (!Features.Reliability)
+			{
+				malfunction = false;
+				critical = false;
+				return;
+			}
+
+			Reliability.GetVesselState(pv, out malfunction, out critical);
+		}
+
 		#endregion
 
 		#region core update handling
@@ -815,6 +845,10 @@ namespace KERBALISM
 				Load(node);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
+
+			// Malfunction/Critical are not persisted; evaluate from proto immediately so Monitor
+			// reliability icons are correct after OnLoad / scene changes (issue #714).
+			RefreshReliabilityState(protoVessel);
 
 			InitializeCommHandler();
 
