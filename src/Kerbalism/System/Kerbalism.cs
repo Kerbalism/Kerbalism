@@ -487,6 +487,10 @@ namespace KERBALISM
 			// prepare gui content
 			Profiler.BeginSample("UI.Update");
 			UI.Update(Callbacks.visible);
+			// KsmGui (Science Archive, etc.) ignores the IMGUI visible flag; sync its canvas
+			// so facility overlays (R&D, Admin, …) hide and restore open windows (#556).
+			if (KsmGui.KsmGuiMasterController.Instance != null)
+				KsmGui.KsmGuiMasterController.Instance.SetVisible(Callbacks.visible);
 			Profiler.EndSample();
 		}
 
@@ -883,7 +887,7 @@ namespace KERBALISM
 			}
 
 			// toggle body info window with keyboard
-			if (MapView.MapIsEnabled && Input.GetKeyDown(KeyCode.B))
+			if (MapView.MapIsEnabled && !IsTextInputFocused() && Input.GetKeyDown(KeyCode.B))
 			{
 				UI.Open(BodyInfo.Body_info);
 			}
@@ -906,6 +910,26 @@ namespace KERBALISM
 			{ vd.computer.Execute(v, ScriptType.action4); }
 			if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
 			{ vd.computer.Execute(v, ScriptType.action5); }
+		}
+
+		/// <summary>true when an IMGUI or uGUI text field has keyboard focus</summary>
+		private static bool IsTextInputFocused()
+		{
+			if (global::InputLockManager.IsLocked(ControlTypes.KEYBOARDINPUT))
+				return true;
+
+			// uGUI / TMP input fields used by some mods
+			UnityEngine.EventSystems.EventSystem es = UnityEngine.EventSystems.EventSystem.current;
+			if (es == null || es.currentSelectedGameObject == null)
+				return false;
+
+			GameObject selected = es.currentSelectedGameObject;
+			UnityEngine.UI.InputField inputField = selected.GetComponent<UnityEngine.UI.InputField>();
+			if (inputField != null && inputField.isFocused)
+				return true;
+
+			TMPro.TMP_InputField tmpInputField = selected.GetComponent<TMPro.TMP_InputField>();
+			return tmpInputField != null && tmpInputField.isFocused;
 		}
 
 		// return true if the vessel is a rescue mission

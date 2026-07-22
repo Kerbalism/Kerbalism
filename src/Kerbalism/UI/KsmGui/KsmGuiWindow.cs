@@ -56,6 +56,7 @@ namespace KERBALISM.KsmGui
 			void OnDisable()
 			{
 				global::InputLockManager.RemoveControlLock(inputLockId);
+				isLocked = false;
 			}
 		}
 

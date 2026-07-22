@@ -77,6 +77,16 @@ namespace KERBALISM.KsmGui
 			CanvasScaler.scaleFactor = Settings.UIScale * GameSettings.UI_SCALE;
 		}
 
+		public void SetVisible(bool visible)
+		{
+			if (KsmGuiCanvas == null || KsmGuiCanvas.activeSelf == visible)
+				return;
+
+			if (!visible && KsmGuiTooltipController.Instance != null)
+				KsmGuiTooltipController.Instance.HideTooltip();
+
+			KsmGuiCanvas.SetActive(visible);
+		}
 
 	}
 }
