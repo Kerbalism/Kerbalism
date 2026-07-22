@@ -397,9 +397,9 @@ namespace KERBALISM
 		public double DrivesCapacity => drivesCapacity; double drivesCapacity = 0.0;
 
 		/// <summary>
-		/// Nominal-weighted solar-panel exposure. Loaded realtime and unloaded low-speed
-		/// modes report current exposure; high-warp analytic mode reports full-period
-		/// modeled power versus unobscured ideal-alignment power.
+		/// Flux- and nominal-rate-weighted captured solar power versus the sum of every
+		/// star's unobscured ideal panel response. Loaded realtime and unloaded low-speed
+		/// modes report the current value; high-warp analytic reports a full-period average.
 		/// </summary>
 		public double SolarPanelsAverageExposure
 		{
@@ -419,8 +419,8 @@ namespace KERBALISM
 		private double solarPanelsHighWarpActualPower;
 		private double solarPanelsHighWarpMaxPower;
 		private int solarPanelsHighWarpReportCount;
-		private double solarPanelsLiveExposureWeighted;
-		private double solarPanelsLiveNominalSum;
+		private double solarPanelsLiveActualPower;
+		private double solarPanelsLiveMaxPower;
 		private int solarPanelsLiveReportCount;
 
 		/// <summary>
@@ -445,12 +445,12 @@ namespace KERBALISM
 			}
 		}
 
-		/// <summary>Called by SolarPanelFixer after a completed realtime exposure update.</summary>
-		public void SaveSolarPanelLiveExposure(double exposureFactor, double nominalRate)
+		/// <summary>Called by SolarPanelFixer after a completed realtime multi-star power update.</summary>
+		public void SaveSolarPanelLiveExposure(double actualPowerFactor, double theoreticalMaxPowerFactor, double nominalRate)
 		{
 			if (nominalRate <= 0.0) return;
-			solarPanelsLiveExposureWeighted += exposureFactor * nominalRate;
-			solarPanelsLiveNominalSum += nominalRate;
+			solarPanelsLiveActualPower += actualPowerFactor * nominalRate;
+			solarPanelsLiveMaxPower += theoreticalMaxPowerFactor * nominalRate;
 			solarPanelsLiveReportCount++;
 		}
 
@@ -1066,7 +1066,7 @@ namespace KERBALISM
 			Profiler.EndSample();
 
 			// Solar panel telemetry:
-			// - loaded realtime: PAW exposure reported after each completed FixedUpdate
+			// - loaded realtime: current multi-star actual/ideal power
 			// - unloaded low-speed: current-position/current-orientation background result
 			// - high-warp analytic: full-period averaged result
 			bool hasDeployedPanels = HasDeployedSolarPanels();
@@ -1078,8 +1078,10 @@ namespace KERBALISM
 			}
 			else
 			{
-				if (Vessel.loaded && !EnvIsAnalytic && solarPanelsLiveReportCount > 0 && solarPanelsLiveNominalSum > double.Epsilon)
-					solarPanelsAverageLiveExposure = Lib.Clamp(solarPanelsLiveExposureWeighted / solarPanelsLiveNominalSum, 0.0, 1.0);
+				if (Vessel.loaded && !EnvIsAnalytic && solarPanelsLiveReportCount > 0)
+					solarPanelsAverageLiveExposure = solarPanelsLiveMaxPower > double.Epsilon
+						? Lib.Clamp(solarPanelsLiveActualPower / solarPanelsLiveMaxPower, 0.0, 1.0)
+						: -1.0;
 				else if (!(Vessel.loaded && !EnvIsAnalytic))
 					solarPanelsAverageLiveExposure = -1.0;
 
@@ -1104,8 +1106,8 @@ namespace KERBALISM
 			solarPanelsHighWarpActualPower = 0.0;
 			solarPanelsHighWarpMaxPower = 0.0;
 			solarPanelsHighWarpReportCount = 0;
-			solarPanelsLiveExposureWeighted = 0.0;
-			solarPanelsLiveNominalSum = 0.0;
+			solarPanelsLiveActualPower = 0.0;
+			solarPanelsLiveMaxPower = 0.0;
 			solarPanelsLiveReportCount = 0;
 
             Profiler.EndSample();
