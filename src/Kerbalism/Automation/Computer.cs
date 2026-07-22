@@ -270,6 +270,7 @@ namespace KERBALISM
 						}
 						case "Sickbay":                      device = new SickbayDevice(m as Sickbay);                           break;
 						case "Greenhouse":                   device = new GreenhouseDevice(m as Greenhouse);                     break;
+						case "Habitat":                      device = new HabitatDevice(m as Habitat);                           break;
 						case "GravityRing":                  device = new RingDevice(m as GravityRing);                          break;
 						case "Emitter":                      device = new EmitterDevice(m as Emitter);                           break;
 						case "Harvester":                    device = new HarvesterDevice(m as Harvester);                         break;
@@ -345,6 +346,7 @@ namespace KERBALISM
 								break;
 							case "Sickbay":                      device = new ProtoSickbayDevice(module_prefab as Sickbay, p, m);                  break;
 							case "Greenhouse":                   device = new ProtoGreenhouseDevice(module_prefab as Greenhouse, p, m);            break;
+							case "Habitat":                      device = new ProtoHabitatDevice(module_prefab as Habitat, p, m);                  break;
 							case "GravityRing":                  device = new ProtoRingDevice(module_prefab as GravityRing, p, m);                 break;
 							case "Emitter":                      device = new ProtoEmitterDevice(module_prefab as Emitter, p, m);                  break;
 							case "Harvester":                    device = new ProtoHarvesterDevice(module_prefab as Harvester, p, m);              break;

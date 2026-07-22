@@ -120,8 +120,9 @@ namespace KERBALISM.Planner
 		///<summary> Run simulators and update the planner UI sub-panels </summary>
 		internal static void Update()
 		{
-			// get vessel crew manifest
-			VesselCrewManifest manifest = KSP.UI.CrewAssignmentDialog.Instance.GetManifest();
+			// Use the cached editor manifest. CrewAssignmentDialog.GetManifest() is extremely
+			// expensive since KSP 1.11 and was forcing PAW rebuilds every frame while Planner is open.
+			VesselCrewManifest manifest = Lib.EditorShipManifest;
 			if (manifest == null)
 				return;
 

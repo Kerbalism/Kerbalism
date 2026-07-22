@@ -8,6 +8,8 @@ namespace KERBALISM
 
 	public sealed class Process
 	{
+		private static readonly CrewSpecs engineer_cs = new CrewSpecs("Engineer@0");
+
 		public Process(ConfigNode node)
 		{
 			name = Lib.ConfigValue(node, "name", string.Empty);
@@ -15,6 +17,7 @@ namespace KERBALISM
 			broker = ResourceBroker.GetOrCreate(name, ResourceBroker.BrokerCategory.Converter, title);
 			modifiers = Lib.Tokenize(Lib.ConfigValue(node, "modifier", string.Empty), ',');
 			isAtmoLeaks = Lib.ConfigValue(node, "isAtmoLeaks", name == "atmo leaks");
+			specialist_bonus = Lib.ConfigValue(node, "specialist_bonus", false);
 
 			// check that name is specified
 			if (name.Length == 0) throw new Exception("skipping unnamed process");
@@ -85,6 +88,17 @@ namespace KERBALISM
 			defaultDumpValve = new DumpSpecs.ActiveValve(dump);
 		}
 
+		/// <summary>
+		/// Engineer efficiency multiplier matching Harvester.AdjustedRate:
+		/// any engineer gives a base bump; higher levels scale further, clamped by settings.
+		/// </summary>
+		public static double SpecialistEfficiencyBonus(List<ProtoCrewMember> crew)
+		{
+			int bonus = engineer_cs.Bonus(crew, -2);
+			double crew_gain = 1.0 + bonus * Settings.ProcessCrewLevelBonus;
+			return Lib.Clamp(crew_gain, 1.0, Settings.MaxProcessBonus);
+		}
+
 		private void ExecuteRecipe(double k, VesselData vd, VesselResources resources, double elapsed_s)
 		{
 			// only execute processes if necessary
@@ -122,6 +136,8 @@ namespace KERBALISM
 			// if a given PartModule has a larger than 1 capacity for a process, then the multiplication happens here
 			// remember that when a process is enabled the units of process are stored in the PartModule as a pseudo-resource
 			double k = Modifiers.Evaluate(v, vd, resources, modifiers);
+			if (specialist_bonus)
+				k *= SpecialistEfficiencyBonus(Lib.CrewList(v));
 
 			ExecuteRecipe(k, vd, resources, elapsed_s);
 		}
@@ -137,9 +153,9 @@ namespace KERBALISM
 		public int defaultDumpValveIndex;
 		public ResourceBroker broker;
 		public bool isAtmoLeaks;
+		public bool specialist_bonus;                 // if true, engineers on the vessel improve process rate (ISRU-style)
 	}
 
 
 
 } // KERBALISM
-

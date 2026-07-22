@@ -66,7 +66,6 @@ namespace KERBALISM
 			Generator,
 			Converter,
 			Drill,
-			AsteroidDrill,
 			StockLab,
 			Light,
 			Scanner,
@@ -103,7 +102,6 @@ namespace KERBALISM
 				// Kerbalism default profile uses the Harvester module (both for air and ground harvesting)
 				// Other profiles use the stock ModuleResourceHarvester (only for ground harvesting)
 				case "ModuleResourceHarvester": return Module_type.Drill;
-				case "ModuleAsteroidDrill": return Module_type.AsteroidDrill;
 				case "ModuleScienceConverter": return Module_type.StockLab;
 				case "ModuleLight":
 				case "ModuleColoredLensLight":
@@ -162,7 +160,6 @@ namespace KERBALISM
 					case Module_type.Generator: ProcessGenerator(v, e.p, e.m, e.module_prefab as ModuleGenerator, resources, elapsed_s); break;
 					case Module_type.Converter: ProcessConverter(v, e.p, e.m, e.module_prefab as ModuleResourceConverter, resources, elapsed_s); break;
 					case Module_type.Drill: ProcessDrill(v, e.p, e.m, e.module_prefab as ModuleResourceHarvester, resources, elapsed_s); break; // Stock ground harvester module
-					// case Module_type.AsteroidDrill: ProcessAsteroidDrill(v, e.p, e.m, e.module_prefab as ModuleAsteroidDrill, resources, elapsed_s); break; // Stock asteroid harvester module
 					case Module_type.StockLab: ProcessStockLab(v, e.p, e.m, e.module_prefab as ModuleScienceConverter, ec, elapsed_s); break;
 					case Module_type.Light: ProcessLight(v, e.p, e.m, e.module_prefab as ModuleLight, ec, elapsed_s); break;
 					case Module_type.Scanner: KerbalismScansat.BackgroundUpdate(v, e.p, e.m, e.module_prefab as KerbalismScansat, e.part_prefab, vd, ec, elapsed_s); break;
@@ -432,80 +429,6 @@ namespace KERBALISM
 				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
 			}
 		}
-
-		// Doesn't work since squad refactored the ModuleAsteroidInfo / ModuleAsteroidResource for Comets (in 1.10 ?), and was probably not working even before that.
-		static void ProcessAsteroidDrill(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleAsteroidDrill asteroid_drill, VesselResources resources, double elapsed_s)
-		{
-			// note: untested
-			// note: ignore stock temperature mechanic of asteroid drills
-			// note: ignore auto shutdown
-			// note: 'undo' stock behavior by forcing lastUpdateTime to now (to minimize overlapping calculations from this and stock post-facto simulation)
-
-			// if active
-			if (Lib.Proto.GetBool(m, "IsActivated"))
-			{
-				// get asteroid data
-				ProtoPartModuleSnapshot asteroid_info = null;
-				ProtoPartModuleSnapshot asteroid_resource = null;
-				foreach (ProtoPartSnapshot pp in v.protoVessel.protoPartSnapshots)
-				{
-					if (asteroid_info == null) asteroid_info = pp.modules.Find(k => k.moduleName == "ModuleAsteroidInfo");
-					if (asteroid_resource == null) asteroid_resource = pp.modules.Find(k => k.moduleName == "ModuleAsteroidResource");
-				}
-
-				// if there is actually an asteroid attached to this active asteroid drill (it should)
-				if (asteroid_info != null && asteroid_resource != null)
-				{
-					// get some data
-					double mass_threshold = Lib.Proto.GetDouble(asteroid_info, "massThresholdVal");
-					double mass = Lib.Proto.GetDouble(asteroid_info, "currentMassVal");
-					double abundance = Lib.Proto.GetDouble(asteroid_resource, "abundance");
-					string res_name = Lib.Proto.GetString(asteroid_resource, "resourceName");
-					double res_density = PartResourceLibrary.Instance.GetDefinition(res_name).density;
-
-					// if asteroid isn't depleted
-					if (mass > mass_threshold && abundance > double.Epsilon)
-					{
-						// deduce crew bonus
-						int exp_level = -1;
-						if (asteroid_drill.UseSpecialistBonus)
-						{
-							foreach (ProtoCrewMember c in Lib.CrewList(v))
-							{
-								if (c.experienceTrait.Effects.Find(k => k.Name == asteroid_drill.ExperienceEffect) != null)
-								{
-									exp_level = Math.Max(exp_level, c.experienceLevel);
-								}
-							}
-						}
-						double exp_bonus = exp_level < 0
-						? asteroid_drill.EfficiencyBonus * asteroid_drill.SpecialistBonusBase
-						: asteroid_drill.EfficiencyBonus * (asteroid_drill.SpecialistBonusBase + (asteroid_drill.SpecialistEfficiencyFactor * (exp_level + 1)));
-
-						// determine resource extracted
-						double res_amount = abundance * asteroid_drill.Efficiency * exp_bonus * elapsed_s;
-
-						// transform EC into mined resource
-						ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockDrill);
-						recipe.AddInput("ElectricCharge", asteroid_drill.PowerConsumption * elapsed_s);
-						recipe.AddOutput(res_name, res_amount, true);
-						resources.AddRecipe(recipe);
-
-						// if there was ec
-						// note: comparing against amount in previous simulation step
-						if (resources.GetResource(v, "ElectricCharge").Amount > double.Epsilon)
-						{
-							// consume asteroid mass
-							Lib.Proto.Set(asteroid_info, "currentMassVal", (mass - res_density * res_amount));
-						}
-					}
-				}
-
-				// undo stock behavior by forcing last_update_time to now
-				Lib.Proto.Set(m, "lastUpdateTime", Planetarium.GetUniversalTime());
-			}
-		}
-
 
 		static void ProcessStockLab(Vessel v, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, ModuleScienceConverter lab, ResourceInfo ec, double elapsed_s)
 		{

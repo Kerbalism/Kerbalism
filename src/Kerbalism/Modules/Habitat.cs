@@ -110,6 +110,9 @@ namespace KERBALISM
 			{
 				if (!(state == State.inflating || state == State.waitingForPressure))
 					return false;
+				// Equalize is flight-only; editor parts have no Vessel / ResourceCache entry
+				if (!Lib.IsFlight() || vessel == null)
+					return false;
 				ResourceInfo vesselAtmoRes = ResourceCache.GetResource(vessel, AtmoResName);
 				// don't allow unless decent pressurization capacity is active, or we are in a breathable atmo
 				if (vesselAtmoRes.Rate < 1.0 && !vessel.KerbalismData().EnvBreathable)
@@ -766,12 +769,128 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary>True when habitat is enabled or transitioning toward enabled.</summary>
+		internal static bool IsEnabledOrEnabling(State state)
+		{
+			switch (state)
+			{
+				case State.enabled:
+				case State.inflating:
+				case State.deploying:
+				case State.waitingForPressure:
+				case State.inflatingAndEqualizing:
+				case State.waitingForPressureAndEqualizing:
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		internal static string AutomationStatus(State state)
+		{
+			switch (state)
+			{
+				case State.enabled:
+					return Lib.Color(Local.Generic_ENABLED, Lib.Kolor.Green);
+				case State.inflating:
+				case State.inflatingAndEqualizing:
+					return Lib.Color(Local.Habitat_inflating, Lib.Kolor.Yellow);
+				case State.deploying:
+					return Lib.Color(Local.Habitat_deploying, Lib.Kolor.Yellow);
+				case State.waitingForPressure:
+				case State.waitingForPressureAndEqualizing:
+					return Lib.Color(Local.Habitat_pressurizing, Lib.Kolor.Yellow);
+				case State.retracting:
+					return Lib.Color(Local.Habitat_retracting, Lib.Kolor.Yellow);
+				case State.waitingForGravityRing:
+					return Lib.Color(Local.Habitat_stopRotation, Lib.Kolor.Yellow);
+				default:
+					return Lib.Color(Local.Generic_DISABLED, Lib.Kolor.Yellow);
+			}
+		}
+
+		/// <summary>Auto / script control for unloaded habitats. Goes through inflate/enable flow.</summary>
+		internal static void ProtoCtrl(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, Habitat prefab, bool value)
+		{
+			if (!prefab.toggle) return;
+			State state = Lib.Proto.GetEnum(protoModule, nameof(Habitat.state), State.disabled);
+			if (state == State.evaKerbal) return;
+			if (IsEnabledOrEnabling(state) == value) return;
+			ProtoToggle(protoPart, protoModule, prefab);
+		}
+
+		/// <summary>Auto / script toggle for unloaded habitats. Mirrors <see cref="Toggle"/>.</summary>
+		internal static void ProtoToggle(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, Habitat prefab)
+		{
+			if (!prefab.toggle) return;
+
+			UnloadedHabitat hab = new UnloadedHabitat(protoPart, protoModule, prefab);
+			if (hab.AtmoResource == null || hab.WasteAtmoResource == null || hab.ShieldingResource == null)
+				return;
+
+			State state = hab.State;
+			bool deployable = PrefabIsDeployable(prefab);
+			bool crewed = protoPart.protoModuleCrew != null && protoPart.protoModuleCrew.Count > 0;
+
+			switch (state)
+			{
+				case State.enabled:
+					if (crewed) return;
+					if (deployable && prefab.canRetract)
+						BackgroundSetStateRetracting(hab);
+					else
+						BackgroundSetStateDisabled(hab);
+					break;
+				case State.disabled:
+					if (deployable && hab.PerctDeployed < 1.0)
+					{
+						if (prefab.inflateRequiresPressure)
+							BackgroundSetStateInflating(hab);
+						else
+							BackgroundSetStateDeploying(hab);
+					}
+					else
+					{
+						BackgroundSetStateEnabled(hab);
+					}
+					break;
+				case State.inflating:
+				case State.deploying:
+				case State.waitingForPressure:
+				case State.inflatingAndEqualizing:
+				case State.waitingForPressureAndEqualizing:
+					if (crewed) return;
+					if (prefab.canRetract)
+						BackgroundSetStateRetracting(hab);
+					else
+						BackgroundSetStateDisabled(hab);
+					break;
+				case State.retracting:
+				case State.waitingForGravityRing:
+					if (prefab.inflateRequiresPressure)
+						BackgroundSetStateInflating(hab);
+					else
+						BackgroundSetStateDeploying(hab);
+					break;
+			}
+		}
+
+		private static bool PrefabIsDeployable(Habitat prefab)
+		{
+			if (!string.IsNullOrEmpty(prefab.inflate))
+				return true;
+
+			GravityRing ring = prefab.part.FindModuleImplementing<GravityRing>();
+			return ring != null && !string.IsNullOrEmpty(ring.deploy);
+		}
+
 		private static void BackgroundSetStateEnabled(HabitatWrapper hab)
 		{
 			hab.State = State.enabled;
 			hab.AtmoResource.FlowState = !hab.NonPressurizable;
 			hab.WasteAtmoResource.FlowState = true;
 			hab.ShieldingResource.FlowState = true;
+			hab.SetGravityRingDeployed(true);
 		}
 
 		private static void BackgroundSetStateWaitingForPressure(HabitatWrapper hab)
@@ -780,6 +899,7 @@ namespace KERBALISM
 			hab.AtmoResource.FlowState = !hab.NonPressurizable;
 			hab.WasteAtmoResource.FlowState = false;
 			hab.ShieldingResource.FlowState = false;
+			hab.SetGravityRingDeployed(false);
 		}
 
 		private static void BackgroundSetStateDisabled(HabitatWrapper hab)
@@ -788,6 +908,25 @@ namespace KERBALISM
 			hab.AtmoResource.FlowState = false;
 			hab.WasteAtmoResource.FlowState = false;
 			hab.ShieldingResource.FlowState = false;
+			hab.SetGravityRingDeployed(false);
+		}
+
+		private static void BackgroundSetStateInflating(HabitatWrapper hab)
+		{
+			hab.State = State.inflating;
+			hab.AtmoResource.FlowState = true;
+			hab.WasteAtmoResource.FlowState = false;
+			hab.ShieldingResource.FlowState = false;
+			hab.SetGravityRingDeployed(false);
+		}
+
+		private static void BackgroundSetStateDeploying(HabitatWrapper hab)
+		{
+			hab.State = State.deploying;
+			hab.AtmoResource.FlowState = false;
+			hab.WasteAtmoResource.FlowState = false;
+			hab.ShieldingResource.FlowState = false;
+			hab.SetGravityRingDeployed(false);
 		}
 
 		private static void BackgroundSetStateRetracting(HabitatWrapper hab)
@@ -944,7 +1083,14 @@ namespace KERBALISM
 			}
 			else
 			{
+				// PartTweaked alone does not refresh Kerbalism Planner / crew UI.
+				// Deploy/inflate finish in FixedUpdate after Toggle(), so notify the ship when
+				// habitat resource flowState changes, and rebuild the crew manifest for the
+				// live CrewCapacity (stock only refreshes seats on attach/detach).
 				GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
+				if (EditorLogic.fetch != null && EditorLogic.fetch.ship != null)
+					GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+				Lib.RefreshEditorCrewAssignment();
 			}
 
 			UIPartActionWindow paw = part.GetVisiblePAW();
@@ -1020,7 +1166,7 @@ namespace KERBALISM
 					prefab.Resources.dict.Remove(Lib.GetDefinition(AtmoResName).id);
 					prefab.Resources.dict.Remove(Lib.GetDefinition(WasteAtmoResName).id);
 
-					habitat.surface = 1.5; // human spacesuit surface ~ 4 m²
+					habitat.surface = 1.5; // human spacesuit surface ~ 4 m?
 				}
 
 				habitat.state = State.evaKerbal;

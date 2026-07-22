@@ -81,7 +81,7 @@ namespace KERBALISM
 			{
 				var exposureString = vd.SolarPanelsAverageExposure.ToString("P1");
 				if (vd.SolarPanelsAverageExposure < 0.2) exposureString = Lib.Color(exposureString, Lib.Kolor.Orange);
-				p.AddContent(Local.TELEMETRY_SolarPanelsAverageExposure, exposureString, Local.TELEMETRY_SolarPanelsAverageExposure_desc);//"solar panels average exposure""Realtime: average panel exposure\nAnalytic/unloaded: modeled power versus unobscured maximum"
+				p.AddContent(Local.TELEMETRY_SolarPanelsAverageExposure, exposureString, Local.TELEMETRY_SolarPanelsAverageExposure_desc);//"solar panels average exposure""Flux-weighted captured solar power versus unobscured per-star ideal response\nRealtime/low-speed: current; high-warp: full-period average"
 			}
 
 			foreach (string type in readings)

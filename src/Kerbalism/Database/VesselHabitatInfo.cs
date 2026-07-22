@@ -459,6 +459,7 @@ namespace KERBALISM
 		public abstract bool NonPressurizable { get; }
 		public abstract bool InflateRequiresPressure { get; }
 		public abstract double Surface { get; }
+		public abstract void SetGravityRingDeployed(bool deployed);
 	}
 
 	public sealed class LoadedHabitat : HabitatWrapper
@@ -470,6 +471,13 @@ namespace KERBALISM
 		public override bool NonPressurizable => hab.nonPressurizable;
 		public override bool InflateRequiresPressure => hab.inflateRequiresPressure;
 		public override double Surface => hab.surface;
+
+		public override void SetGravityRingDeployed(bool deployed)
+		{
+			GravityRing ring = hab.part.FindModuleImplementing<GravityRing>();
+			if (ring != null)
+				ring.deployed = deployed;
+		}
 
 		public static bool TryCreate(Habitat hab, out LoadedHabitat wrapper)
 		{
@@ -495,6 +503,7 @@ namespace KERBALISM
 
 	public sealed class UnloadedHabitat : HabitatWrapper
 	{
+		private ProtoPartSnapshot protoPart;
 		private ProtoPartModuleSnapshot hab;
 		private Habitat habPrefab;
 		private State _cachedState;
@@ -523,12 +532,20 @@ namespace KERBALISM
 		public override bool InflateRequiresPressure => habPrefab.inflateRequiresPressure;
 		public override double Surface => habPrefab.surface;
 
+		public override void SetGravityRingDeployed(bool deployed)
+		{
+			ProtoPartModuleSnapshot ring = protoPart.FindModule("GravityRing");
+			if (ring != null)
+				Lib.Proto.Set(ring, "deployed", deployed);
+		}
+
 		public UnloadedHabitat(ProtoPartSnapshot habPart, ProtoPartModuleSnapshot hab, Habitat habPrefab)
 		{
+			this.protoPart = habPart;
 			this.hab = hab;
 			this.habPrefab = habPrefab;
-			_cachedState = Lib.Proto.GetEnum<State>(hab, nameof(Habitat.state));
-			_cachedPerctDeployed = Lib.Proto.GetDouble(hab, nameof(Habitat.state));
+			_cachedState = Lib.Proto.GetEnum(hab, nameof(Habitat.state), State.disabled);
+			_cachedPerctDeployed = Lib.Proto.GetDouble(hab, nameof(Habitat.perctDeployed));
 			for (int i = habPart.resources.Count; i-- > 0;)
 			{
 				ProtoPartResourceSnapshot res = habPart.resources[i];
