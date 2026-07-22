@@ -133,6 +133,50 @@ namespace KERBALISM
 			return size;
 		}
 
+		/// <summary>
+		/// Store SCANsat coverage only on persisted vessel drives. Payload cells are split
+		/// across drives as needed; the returned grid contains cells that couldn't be stored.
+		/// </summary>
+		public static Int16[,] StoreScanFile(VesselData vesselData, SubjectData subjectData, double size,
+			Int16[,] scanPayload, int bodyIndex, short sensorMask, bool includePrivate = false)
+		{
+			if (size < double.Epsilon || ScanGrid.IsEmpty(scanPayload))
+				return null;
+
+			Int16[,] remaining = ScanGrid.Clone(scanPayload);
+			var drives = GetDrives(vesselData, includePrivate);
+
+			foreach (Drive drive in drives)
+			{
+				double available = drive.FileCapacityAvailable();
+				if (available <= double.Epsilon)
+					continue;
+
+				Int16[,] chunk = ScanGrid.TakeBudget(
+					remaining,
+					sensorMask,
+					subjectData.ExpInfo.DataSize,
+					available,
+					out double chunkSize);
+				if (ScanGrid.IsEmpty(chunk) || chunkSize <= double.Epsilon)
+					continue;
+
+				if (!drive.Record_file(subjectData, chunkSize, true))
+				{
+					ScanGrid.Or(remaining, chunk);
+					continue;
+				}
+
+				if (drive.files.TryGetValue(subjectData, out File file))
+					file.MergeScanCoverage(chunk, bodyIndex);
+
+				if (ScanGrid.IsEmpty(remaining))
+					return null;
+			}
+
+			return remaining;
+		}
+
 		// add science data, creating new file or incrementing existing one
 		public bool Record_file(SubjectData subjectData, double amount, bool allowImmediateTransmission = true, bool useStockCrediting = false)
 		{
@@ -290,6 +334,11 @@ namespace KERBALISM
 					file.subjectData.RemoveDataCollectedInFlight(size);
 					if (file.size < double.Epsilon)
 					{
+						if (file.HasScanPayload && destination.files.TryGetValue(file.subjectData, out File destinationFile))
+						{
+							destinationFile.MergeScanCoverage(file.ScanCoverage, file.scanBodyIndex);
+							file.ClearScanPayload();
+						}
 						filesList.Add(file.subjectData);
 					}
 					else

@@ -7,6 +7,10 @@ namespace KERBALISM
 
 	public static class SCANsat
 	{
+		private static readonly OptionalAssembly assembly = new OptionalAssembly("SCANsat");
+
+		public static bool Installed => assembly.Installed;
+
 		static SCANsat()
 		{
 			foreach (var a in AssemblyLoader.loadedAssemblies)

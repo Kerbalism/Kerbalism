@@ -28,6 +28,7 @@ namespace KERBALISM
 
 			// load the science database, has to be before vessels are loaded
 			ScienceDB.Load(node);
+			ScanCoverageStore.LoadGlobal(node);
 
 			Profiler.BeginSample("DB.Load.Vessels");
 			vessels.Clear();
@@ -128,6 +129,7 @@ namespace KERBALISM
 
 			// save the science database
 			ScienceDB.Save(node);
+			ScanCoverageStore.SaveGlobal(node);
 
             // save bodies data
             var bodies_node = node.AddNode("bodies");
