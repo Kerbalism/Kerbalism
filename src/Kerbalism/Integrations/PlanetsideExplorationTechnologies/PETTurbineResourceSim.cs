@@ -16,9 +16,6 @@ namespace KERBALISM
 
 		private static bool expectedWindCached;
 		private static double expectedWind = 0.8;
-		private static bool loadedRateDiagLogged;
-		private static bool loadedPositiveRateLogged;
-		private static float nextBackgroundTraceTime;
 
 		/// <summary>Broker id for ResourceUpdate / Background (must match ResourceBroker.WindTurbine.Id).</summary>
 		public static string BrokerId => ResourceBroker.WindTurbine.Id;
@@ -30,49 +27,13 @@ namespace KERBALISM
 			if (turbine == null || vessel == null)
 				return 0.0;
 
-			bool envOk = CanProduceEnvironment(vessel, turbine.part);
-			bool genOk = IsGeneratingState(turbine);
+			if (!CanProduceEnvironment(vessel, turbine.part) || !IsGeneratingState(turbine))
+				return 0.0;
+
 			float chargeRate = PlanetsideExplorationTechnologies.Get(turbine, "chargeRate", 0f);
 			float efficiencyCurve = PlanetsideExplorationTechnologies.Get(turbine, "efficiencyCurve", 0f);
-			float trueEfficiencyAngle = GetAngleEfficiency(turbine);
-			object deployState = PlanetsideExplorationTechnologies.Get<object>(turbine, "deployState", null);
-			bool isActive = PlanetsideExplorationTechnologies.Get(turbine, "isActive", false);
-			double rate = (envOk && genOk) ? chargeRate * efficiencyCurve * trueEfficiencyAngle : 0.0;
-			if (rate < 0.0)
-				rate = 0.0;
-
-			// One-shot Release log so StockChinese KSP.log shows why Monitor gets (or misses) EC.
-			if (!loadedRateDiagLogged)
-			{
-				loadedRateDiagLogged = true;
-				Lib.Log(string.Format(
-					"PET turbine ResourceUpdate: vessel={0} landed={1} splashed={2} atm={3:F4} waterContact={4} deployState={5} isActive={6} envOk={7} genOk={8} chargeRate={9:F3} efficiencyCurve={10:F4} trueEfficiencyAngle={11:F4} rate={12:F3} EC/s",
-					vessel.vesselName,
-					vessel.Landed,
-					vessel.Splashed,
-					vessel.atmDensity,
-					turbine.part != null && turbine.part.WaterContact,
-					deployState != null ? deployState.ToString() : "null",
-					isActive,
-					envOk,
-					genOk,
-					chargeRate,
-					efficiencyCurve,
-					trueEfficiencyAngle,
-					rate));
-			}
-
-			if (rate > 0.0 && !loadedPositiveRateLogged)
-			{
-				loadedPositiveRateLogged = true;
-				Lib.Log(string.Format(
-					"PET turbine production active: vessel={0} rate={1:F3} EC/s broker={2}",
-					vessel.vesselName,
-					rate,
-					BrokerId));
-			}
-
-			return rate;
+			double rate = chargeRate * efficiencyCurve * GetAngleEfficiency(turbine);
+			return rate > 0.0 ? rate : 0.0;
 		}
 
 		public static float GetAngleEfficiency(PartModule turbine)
@@ -109,26 +70,6 @@ namespace KERBALISM
 				rate = chargeRate * wind * atmFactor * alignment;
 				if (rate < 0.0)
 					rate = 0.0;
-			}
-
-			if (Time.realtimeSinceStartup >= nextBackgroundTraceTime)
-			{
-				nextBackgroundTraceTime = Time.realtimeSinceStartup + 2.0f;
-				Lib.Log(string.Format(
-					"PET_TRACE BACKGROUND vessel={0} altitude={1:R} vesselAtmDensity={2:R} calculatedAtmDensity={3:R} deploy={4} active={5} envOk={6} genOk={7} expectedWind={8:R} alignment={9:R} localWind={10:R} minWind={11:R} rate={12:R}",
-					v.vesselName,
-					v.altitude,
-					v.atmDensity,
-					atmDensity,
-					GetDeployState(turbineProto),
-					Lib.Proto.GetBool(turbineProto, "isActive"),
-					envOk,
-					genOk,
-					wind,
-					alignment,
-					localWindSpeed,
-					minWindSpeed,
-					rate));
 			}
 
 			return rate;

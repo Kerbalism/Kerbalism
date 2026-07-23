@@ -865,10 +865,6 @@ namespace KERBALISM
 
 			// remember vessel-wide amount currently known, to calculate rate and detect non-Kerbalism brokers
 			double oldAmount = Amount;
-			double windTurbineQuantity = 0.0;
-			bool traceWindTurbine = ResourceName == "ElectricCharge"
-				&& brokersResourceAmounts.TryGetValue(ResourceBroker.WindTurbine, out windTurbineQuantity);
-			double deferredBeforeClamp = Deferred;
 
 			// remember vessel-wide capacity currently known, to detect flow state changes
 			double oldCapacity = Capacity;
@@ -878,7 +874,6 @@ namespace KERBALISM
 			//   that by-pass the resource cache, and flow state changes in general
 			Amount = pts.amount;
 			Capacity = pts.maxAmount;
-			double physicalAmountBefore = Amount;
 
 			// As we haven't yet synchronized anything, changes to amount can only come from non-Kerbalism producers or consumers
 			double unsupportedBrokersRate = Amount - oldAmount;
@@ -894,7 +889,6 @@ namespace KERBALISM
 			// - if deferred is negative, then amount is guaranteed to be greater than zero
 			// - if deferred is positive, then capacity - amount is guaranteed to be greater than zero
 			Deferred = Lib.Clamp(Deferred, -Amount, Capacity - Amount);
-			double deferredAfterClamp = Deferred;
 
 			// apply deferred consumption/production to all parts
 			// If the resource has a flowmode that respects priority, we'll be doing this in
@@ -905,20 +899,6 @@ namespace KERBALISM
 
 			// update amount, to get correct rate and levels at all times
 			Amount = pts.amount;
-
-			if (traceWindTurbine)
-			{
-				PETTurbineHarmony.TraceResourceSync(
-					v,
-					windTurbineQuantity,
-					deferredBeforeClamp,
-					deferredAfterClamp,
-					oldAmount,
-					physicalAmountBefore,
-					Amount,
-					Capacity,
-					elapsed_s);
-			}
 
 			// reset deferred production/consumption
 			Deferred = 0.0;
