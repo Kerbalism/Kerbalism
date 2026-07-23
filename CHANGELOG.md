@@ -3,6 +3,7 @@
  - 2026-07-13
 
  ### Changes since the last release
+ * Added: Planetside Exploration Technologies (Benjee10_MMSEV) support — habitat volumes, comfort, greenhouse, logistics supply containers, and expandable HDU attic inflate Habitat (@Aebestach)
  * Added: SystemHeat native integration with automation devices, background thermal simulation, DynamicRadiation support for Sterling Systems power-dependent emitters, and expanded optional-mod configs for CryoTanks, Far Future Technologies, Near Future Electrical, Sterling Systems, KPBS, Buffalo SAFER, and SpaceDust harvesters (#1052, @Aebestach)
  * Added: VABOrganizer part categories (#983, @LouisB3)
  * Added: HabTech2 part upgrade dependency (#979, @LouisB3)
