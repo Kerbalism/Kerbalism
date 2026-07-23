@@ -111,7 +111,7 @@ namespace KERBALISM
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
-			FreezeUnloadedSolarPanelOrientation = Lib.ConfigValue(cfg, "FreezeUnloadedSolarPanelOrientation", false);
+			FreezeUnloadedSolarPanelOrientation = Lib.ConfigValue(cfg, "FreezeUnloadedSolarPanelOrientation", true);
 			UseResourcePriority = Lib.ConfigValue(cfg, "UseResourcePriority", false);
 
 			// debug / logging
