@@ -331,7 +331,8 @@ namespace KERBALISM.Planner
 			// prepare recipe
 			if (r.output.Length == 0)
 			{
-				Resource(r.input).Consume(rate * k, r.name);
+				// Use localized title, not internal rule name
+				Resource(r.input).Consume(rate * k, r.title);
 			}
 			else if (rate > double.Epsilon)
 			{

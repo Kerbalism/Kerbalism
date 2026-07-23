@@ -18,6 +18,7 @@ namespace KERBALISM
 			Apply("NearFutureElectrical", NearFutureElectrical.Installed, () => NearFutureElectricalIntegration.ApplyHarmonyPatches(harmony));
 			Apply("FarFutureTechnologies", FarFutureTechnologies.Installed, () => FarFutureTechnologiesIntegration.ApplyHarmonyPatches(harmony));
 			Apply("SpaceDust", SpaceDust.Installed, () => SpaceDustIntegration.ApplyHarmonyPatches(harmony));
+			Apply("PlanetsideExplorationTechnologies", PlanetsideExplorationTechnologies.Installed, () => PlanetsideExplorationTechnologiesIntegration.ApplyHarmonyPatches(harmony));
 			Apply("DynamicRadiation", true, () => DynamicRadiationIntegration.ApplyHarmonyPatches(harmony));
 
 			TryApplySystemHeatHarmony(harmony);

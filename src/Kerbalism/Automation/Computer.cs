@@ -277,6 +277,7 @@ namespace KERBALISM
 						case "Laboratory":                   device = new LaboratoryDevice(m as Laboratory);                     break;
 						case "Experiment":                   device = new ExperimentDevice(m as Experiment);                     break;
 						case "SolarPanelFixer":				 device = new PanelDevice(m as SolarPanelFixer);					  break;
+						case "PETTurbineFixer":               device = new WindTurbineDevice(m as PETTurbineFixer);               break;
 						case "ModuleGenerator":              device = new GeneratorDevice(m as ModuleGenerator);                 break;
 						case "ModuleResourceConverter":      device = new ConverterDevice(m as ModuleResourceConverter);         break;
 						case "ModuleKPBSConverter":          device = new ConverterDevice(m as ModuleResourceConverter);         break;
@@ -353,6 +354,7 @@ namespace KERBALISM
 							case "Laboratory":                   device = new ProtoLaboratoryDevice(module_prefab as Laboratory, p, m);            break;
 							case "Experiment":					 device = new ProtoExperimentDevice(module_prefab as Experiment, p, m, v);         break;
 							case "SolarPanelFixer":              device = new ProtoPanelDevice(module_prefab as SolarPanelFixer, p, m);            break;
+							case "PETTurbineFixer":              device = new ProtoWindTurbineDevice(module_prefab as PETTurbineFixer, p, m);     break;
 							case "ModuleGenerator":              device = new ProtoGeneratorDevice(module_prefab as ModuleGenerator, p, m);        break;
 							case "ModuleResourceConverter":
 							case "ModuleKPBSConverter":
