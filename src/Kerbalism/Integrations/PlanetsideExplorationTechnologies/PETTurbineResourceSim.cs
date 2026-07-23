@@ -14,8 +14,11 @@ namespace KERBALISM
 	{
 		private const string ResourceEc = "ElectricCharge";
 
-		private static bool expectedWindCached;
-		private static double expectedWind = 0.8;
+		private static bool windProbabilitiesCached;
+		private static double probabilityHighWinds = 0.10;
+		private static double probabilityMidWinds = 0.55;
+		private static double probabilityLowWinds = 0.25;
+		private static double probabilityNoWinds = 0.15;
 
 		/// <summary>Broker id for ResourceUpdate / Background (must match ResourceBroker.WindTurbine.Id).</summary>
 		public static string BrokerId => ResourceBroker.WindTurbine.Id;
@@ -57,17 +60,16 @@ namespace KERBALISM
 			float chargeRate = PlanetsideExplorationTechnologies.Get(turbinePrefab, "chargeRate", 0f);
 			float minWindSpeed = PlanetsideExplorationTechnologies.Get(turbinePrefab, "minWindSpeed", 0.25f);
 			FloatCurve atmCurve = PlanetsideExplorationTechnologies.Get<FloatCurve>(turbinePrefab, "atmEfficiencyCurve", null);
-			double alignment = GetAlignmentFactor(turbinePrefab);
-			double wind = GetExpectedWindMultiplier();
 			double atmDensity = GetAtmosphericDensity(v);
-			double localWindSpeed = atmDensity * wind * alignment;
 			double rate = 0.0;
 
-			if (envOk && genOk && localWindSpeed >= minWindSpeed && atmDensity > double.Epsilon)
+			if (envOk && genOk && atmDensity > double.Epsilon)
 			{
 				double atmFactor = atmCurve != null ? atmCurve.Evaluate((float)atmDensity) : 1.0;
-				// Steady-state tracking approximation of PET's loaded formula
-				rate = chargeRate * wind * atmFactor * alignment;
+				bool tracking = IsTracking(turbinePrefab);
+				double effectiveWind = GetExpectedEffectiveWind(atmDensity, minWindSpeed, tracking);
+				// PET's steady-state output is chargeRate * wind * atmFactor * angleEfficiency².
+				rate = chargeRate * atmFactor * effectiveWind;
 				if (rate < 0.0)
 					rate = 0.0;
 			}
@@ -235,32 +237,60 @@ namespace KERBALISM
 			return PlanetsideExplorationTechnologies.FindTurbineModule(partPrefab);
 		}
 
-		private static double GetAlignmentFactor(PartModule turbinePrefab)
+		private static bool IsTracking(PartModule turbinePrefab)
 		{
 			string turbineType = PlanetsideExplorationTechnologies.Get(turbinePrefab, "turbineType", string.Empty);
 			string rotationPivotName = PlanetsideExplorationTechnologies.Get(turbinePrefab, "rotationPivotName", string.Empty);
-			bool tracking = string.Equals(turbineType, "Tracking", StringComparison.OrdinalIgnoreCase)
+			return string.Equals(turbineType, "Tracking", StringComparison.OrdinalIgnoreCase)
 				|| !string.IsNullOrEmpty(rotationPivotName);
-			return tracking ? 1.0 : 0.75;
 		}
 
-		private static double GetExpectedWindMultiplier()
+		private static double GetExpectedEffectiveWind(double atmDensity, double minWindSpeed, bool tracking)
 		{
-			if (expectedWindCached)
-				return expectedWind;
+			CacheWindProbabilities();
 
-			expectedWindCached = true;
-			expectedWind = ComputeExpectedWindFromDifficulty();
-			return expectedWind;
+			double totalProbability = probabilityHighWinds + probabilityMidWinds + probabilityLowWinds + probabilityNoWinds;
+			if (totalProbability <= double.Epsilon)
+				return 0.0;
+
+			// PET samples uniformly inside each non-zero wind band. Midpoints preserve the
+			// existing approximation while evaluating the non-linear minimum-wind threshold
+			// separately for each band.
+			double weightedWind =
+				probabilityHighWinds * GetWindContribution(1.45, atmDensity, minWindSpeed, tracking)
+				+ probabilityMidWinds * GetWindContribution(0.975, atmDensity, minWindSpeed, tracking)
+				+ probabilityLowWinds * GetWindContribution(0.65, atmDensity, minWindSpeed, tracking);
+
+			return weightedWind / totalProbability;
 		}
 
-		private static double ComputeExpectedWindFromDifficulty()
+		private static double GetWindContribution(double wind, double atmDensity, double minWindSpeed, bool tracking)
 		{
-			// Defaults match PET DifficultyWindProbability field initializers
-			double pHigh = 0.10;
-			double pMid = 0.55;
-			double pLow = 0.25;
-			double pNone = 0.15;
+			if (wind <= double.Epsilon || atmDensity <= double.Epsilon)
+				return 0.0;
+
+			double minimumAlignment = minWindSpeed / (atmDensity * wind);
+			if (tracking)
+				return minimumAlignment <= 1.0 ? wind : 0.0;
+
+			if (minimumAlignment >= 1.0)
+				return 0.0;
+
+			minimumAlignment = Math.Max(0.0, minimumAlignment);
+
+			// For a fixed turbine and a uniformly random heading, angle efficiency is uniform
+			// on [0, 1]. PET applies it twice, so E[a² * I(a >= minimumAlignment)] is
+			// integral(a², minimumAlignment..1).
+			double expectedSquaredAlignment = (1.0 - minimumAlignment * minimumAlignment * minimumAlignment) / 3.0;
+			return wind * expectedSquaredAlignment;
+		}
+
+		private static void CacheWindProbabilities()
+		{
+			if (windProbabilitiesCached)
+				return;
+
+			windProbabilitiesCached = true;
 
 			try
 			{
@@ -276,10 +306,10 @@ namespace KERBALISM
 							object node = generic.MakeGenericMethod(difficultyType).Invoke(HighLogic.CurrentGame.Parameters, null);
 							if (node != null)
 							{
-								pHigh = IntegrationReflection.GetFloat(node, "probabilityHighWinds", (float)pHigh);
-								pMid = IntegrationReflection.GetFloat(node, "probabilityMidWinds", (float)pMid);
-								pLow = IntegrationReflection.GetFloat(node, "probabilityLowWinds", (float)pLow);
-								pNone = IntegrationReflection.GetFloat(node, "probabilityNoWinds", (float)pNone);
+								probabilityHighWinds = IntegrationReflection.GetFloat(node, "probabilityHighWinds", (float)probabilityHighWinds);
+								probabilityMidWinds = IntegrationReflection.GetFloat(node, "probabilityMidWinds", (float)probabilityMidWinds);
+								probabilityLowWinds = IntegrationReflection.GetFloat(node, "probabilityLowWinds", (float)probabilityLowWinds);
+								probabilityNoWinds = IntegrationReflection.GetFloat(node, "probabilityNoWinds", (float)probabilityNoWinds);
 							}
 						}
 					}
@@ -289,16 +319,6 @@ namespace KERBALISM
 			{
 				Lib.LogDebug("PET wind difficulty read failed: " + e.Message);
 			}
-
-			double total = pHigh + pMid + pLow + pNone;
-			if (total <= double.Epsilon)
-				return 0.8;
-
-			// Midpoints of PET GenerateWindSpeed ranges
-			double highMid = (1.1 + 1.8) * 0.5;
-			double midMid = (0.9 + 1.05) * 0.5;
-			double lowMid = (0.5 + 0.8) * 0.5;
-			return (pHigh * highMid + pMid * midMid + pLow * lowMid) / total;
 		}
 	}
 }
