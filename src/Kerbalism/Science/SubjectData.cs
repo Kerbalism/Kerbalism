@@ -44,7 +44,7 @@ namespace KERBALISM
 		public double ScienceCollectedInFlight { get; protected set; }
 
 		/// <summary> total science value of the subject.  </summary>
-		public double ScienceMaxValue => ExpInfo.ScienceCap * Situation.SituationMultiplier; 
+		public virtual double ScienceMaxValue => ExpInfo.ScienceCap * Situation.SituationMultiplier; 
 
 		public double SciencePerMB => ScienceMaxValue / ExpInfo.DataSize;
 
@@ -297,7 +297,7 @@ namespace KERBALISM
 			else
 				GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
 
-			if (ExpInfo.UnlockResourceSurvey)
+			if (ExpInfo.UnlockResourceSurvey && Situation.Body != null)
 			{
 				ResourceMap.Instance.UnlockPlanet(Situation.Body.flightGlobalsIndex);
 				Message.Post(Localizer.Format("#autoLOC_259361", Situation.BodyTitle) + "</color>");
@@ -358,6 +358,15 @@ namespace KERBALISM
 		}
 
 		public override string Id => StockSubjectId;
+
+		/// <summary>
+		/// Prefer the stock/RnD scienceCap when present (DMOS asteroid subjects set subjectValue/scienceCap
+		/// themselves; UnknownSituation has no real body multiplier).
+		/// </summary>
+		public override double ScienceMaxValue =>
+			ExistsInRnD && RnDSubject.scienceCap > 0f
+				? RnDSubject.scienceCap
+				: ExpInfo.ScienceCap * Situation.SituationMultiplier;
 
 		/// <summary>
 		/// Kerbalism truth for recovered/transmitted science. Do not read RnDSubject.science here:

@@ -48,6 +48,14 @@ namespace KERBALISM
 			Id = FieldsToId(bodyIndex, situation, biomeIndex);
 		}
 
+		/// <summary> Constructor for derived situations that do not map to a FlightGlobals body (DMOS asteroids). </summary>
+		protected Situation(ScienceSituation situation, int id, CelestialBody body)
+		{
+			ScienceSituation = situation;
+			Body = body;
+			Id = id;
+		}
+
 		/// <summary> garanteed to be unique for each body/situation/biome combination</summary>
 		public override int GetHashCode() => Id;
 
@@ -106,16 +114,16 @@ namespace KERBALISM
 		}
 
 		public string Title =>
-			Biome != null
+			!string.IsNullOrEmpty(BiomeTitle)
 			? Lib.BuildString(BodyTitle, " ", ScienceSituationTitle, " ", BiomeTitle)
 			: Lib.BuildString(BodyTitle, " ", ScienceSituationTitle);
 
-		public string BodyTitle => Lib.BodyDisplayName(Body);
-		public string BiomeTitle => Biome != null ? Biome.displayname : VirtualBiome != VirtualBiome.None ? VirtualBiome.Title() : string.Empty;
+		public virtual string BodyTitle => Body != null ? Lib.BodyDisplayName(Body) : string.Empty;
+		public virtual string BiomeTitle => Biome != null ? Biome.displayname : VirtualBiome != VirtualBiome.None ? VirtualBiome.Title() : string.Empty;
 		public string ScienceSituationTitle => ScienceSituation.Title();
 
-		public string BodyName => Body.name;
-		public string BiomeName => Biome != null ? Biome.name.Replace(" ", string.Empty) : VirtualBiome != VirtualBiome.None ? VirtualBiome.Serialize() : string.Empty;
+		public virtual string BodyName => Body != null ? Body.name : string.Empty;
+		public virtual string BiomeName => Biome != null ? Biome.name.Replace(" ", string.Empty) : VirtualBiome != VirtualBiome.None ? VirtualBiome.Serialize() : string.Empty;
 		public string ScienceSituationName => ScienceSituation.Serialize();
 		public string StockScienceSituationName => ScienceSituation.ToValidStockSituation().Serialize();
 
@@ -124,9 +132,9 @@ namespace KERBALISM
 			return Lib.BuildString(BodyName, ScienceSituationName, BiomeName);
 		}
 
-		public double SituationMultiplier => ScienceSituation.BodyMultiplier(Body);
+		public virtual double SituationMultiplier => Body != null ? ScienceSituation.BodyMultiplier(Body) : 1.0;
 
-		public string GetTitleForExperiment(ExperimentInfo expInfo)
+		public virtual string GetTitleForExperiment(ExperimentInfo expInfo)
 		{
 			if (ScienceSituation.IsBiomesRelevantForExperiment(expInfo))
 				return Lib.BuildString(BodyTitle, " ", ScienceSituationTitle, " ", BiomeTitle);
@@ -134,7 +142,7 @@ namespace KERBALISM
 				return Lib.BuildString(BodyTitle, " ", ScienceSituationTitle);
 		}
 
-		public string GetStockIdForExperiment(ExperimentInfo expInfo)
+		public virtual string GetStockIdForExperiment(ExperimentInfo expInfo)
 		{
 			if (ScienceSituation.IsBiomesRelevantForExperiment(expInfo))
 				return Lib.BuildString(BodyName, StockScienceSituationName, BiomeName);
