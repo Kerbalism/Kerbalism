@@ -128,8 +128,25 @@ namespace KERBALISM
 			GameEvents.onGamePause.Add(this.OnGamePauseCapture);
 			GameEvents.onGUIApplicationLauncherReady.Add(() => visible = true);
 
+			// UnknownSubjectData may put in-flight science on the stock subject for mod gating (#880).
+			// Persist retrieved-only values, then restore the runtime committed total after save.
+			// Must be instance callbacks: KSP EventData NRE's on static method groups.
+			GameEvents.onGameStateSave.Add(this.OnGameStateSave);
+			GameEvents.onGameStateSaved.Add(this.OnGameStateSaved);
+
 			// add editor events
 			GameEvents.onEditorShipModified.Add((sc) => Planner.Planner.EditorShipModifiedEvent(sc));
+		}
+
+		void OnGameStateSave(ConfigNode node)
+		{
+			ScienceDB.PrepareUnknownSubjectsForSave();
+		}
+
+		void OnGameStateSaved(Game game)
+		{
+			if (HighLogic.CurrentGame == game)
+				ScienceDB.SyncUnknownSubjectsCommittedScience();
 		}
 
         // this require special handling as EVA construction doesn't trigger the other events

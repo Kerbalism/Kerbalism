@@ -455,8 +455,36 @@ namespace KERBALISM
 					GetSubjectDataFromStockId(stockSubject.id, stockSubject);
 		}
 
+		/// <summary>
+		/// UnknownSubjectData may mirror in-flight science onto the stock subject at runtime (#880).
+		/// Strip that before the game persists RnD subjects so only recovered/transmitted science is saved.
+		/// </summary>
+		public static void PrepareUnknownSubjectsForSave()
+		{
+			foreach (SubjectData subjectData in unknownSubjectDatas.Values)
+			{
+				if (subjectData is UnknownSubjectData unknown)
+					unknown.PrepareStockSubjectForSave();
+			}
+		}
+
+		/// <summary>
+		/// Re-apply retrieved + in-flight science onto stock subjects after a save.
+		/// </summary>
+		public static void SyncUnknownSubjectsCommittedScience()
+		{
+			foreach (SubjectData subjectData in unknownSubjectDatas.Values)
+			{
+				if (subjectData is UnknownSubjectData unknown)
+					unknown.SyncStockSubjectCommittedScience();
+			}
+		}
+
 		public static void Save(ConfigNode node)
 		{
+			// Belt-and-suspenders with onGameStateSave: never persist in-flight commit as retrieved.
+			PrepareUnknownSubjectsForSave();
+
 			// RnD subjects don't exists in sandbox, so we have our own subject persistence
 			if (!Science.GameHasRnD)
 			{
@@ -770,6 +798,13 @@ namespace KERBALISM
 			// if the subject is a "doable" subject, we should have it in the DB.
 			if (extraSituationInfo == null)
 				subjectData = GetSubjectData(expInfo, vesselSituation);
+
+			// Never credit a different stock subject than the one carried by the ScienceData.
+			// Some mods build subjects whose id is not Kerbalism's canonical body+situation id
+			// (CactEye #880: ...InSpaceHighVisualObservation<body>). Collapsing those onto the
+			// generic subject leaves the mod's own RnD entry at science=0 forever.
+			if (subjectData != null && subjectData.StockSubjectId != stockSubjectId)
+				subjectData = null;
 
 			// else create the subjectdata. this can happen either because :
 			// - it's a subject using the stock "extra id" system (asteroid samples)
