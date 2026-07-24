@@ -336,6 +336,7 @@ namespace KERBALISM
 		////////////////////////////////////////////////////////////////////
 		public static string Brokers_Others = GetLoc("Brokers_Others"); // "others"
 		public static string Brokers_SolarPanel = GetLoc("Brokers_SolarPanel"); // "solar panel"
+		public static string Brokers_WindTurbine = GetLoc("Brokers_WindTurbine"); // "wind turbine"
 		public static string Brokers_KSPIEGenerator = GetLoc("Brokers_KSPIEGenerator"); // "KSPIE generator"
 		public static string Brokers_FissionReactor = GetLoc("Brokers_FissionReactor"); // "fission generator"
 		public static string Brokers_RTG = GetLoc("Brokers_RTG"); // "radioisotope generator"
