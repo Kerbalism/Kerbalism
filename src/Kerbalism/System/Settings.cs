@@ -111,7 +111,6 @@ namespace KERBALISM
 			CheckForCRP = Lib.ConfigValue(cfg, "CheckForCRP", true);
 
 			UseSamplingSunFactor = Lib.ConfigValue(cfg, "UseSamplingSunFactor", false);
-			FreezeUnloadedSolarPanelOrientation = Lib.ConfigValue(cfg, "FreezeUnloadedSolarPanelOrientation", true);
 			UseResourcePriority = Lib.ConfigValue(cfg, "UseResourcePriority", false);
 
 			// debug / logging
@@ -221,13 +220,6 @@ namespace KERBALISM
 		public static bool CheckForCRP;
 
 		public static bool UseSamplingSunFactor;
-		/// <summary>
-		/// When true, unloaded in-space flat / single-axis tracking panels keep the
-		/// orientation (cosine) factor from the last loaded update instead of letting
-		/// it change as the vessel orbits. Spherical/cylindrical panels and landed
-		/// vessels are unaffected. Default false keeps the dynamic orbit-relative model.
-		/// </summary>
-		public static bool FreezeUnloadedSolarPanelOrientation;
 		public static bool UseResourcePriority;
 
 		// debug / logging

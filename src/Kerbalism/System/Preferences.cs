@@ -425,4 +425,50 @@ namespace KERBALISM
 			instance = null;
 		}
 	}
+
+	public class PreferencesGeneral : GameParameters.CustomParameterNode
+	{
+		[GameParameters.CustomParameterUI("#KERBALISM_FreezeUnloadedSolarPanelExposure", toolTip = "#KERBALISM_FreezeUnloadedSolarPanelExposure_desc")]//Freeze Unloaded Solar Exposure--Unloaded in-space vessels at low timewarp keep sunlit solar-panel exposure from the loaded→unloaded transition; shadow still zeros output. High-warp analytic is unchanged.
+		public bool freezeUnloadedSolarPanelExposure = true;
+
+		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
+
+		public override bool HasPresets { get { return true; } }
+
+		public override void SetDifficultyPreset(GameParameters.Preset preset)
+		{
+			switch (preset)
+			{
+				case GameParameters.Preset.Easy:
+				case GameParameters.Preset.Normal:
+					freezeUnloadedSolarPanelExposure = true;
+					break;
+				case GameParameters.Preset.Moderate:
+				case GameParameters.Preset.Hard:
+					freezeUnloadedSolarPanelExposure = false;
+					break;
+				default:
+					break;
+			}
+		}
+
+		public override string DisplaySection { get { return Local.Preferences_Section2; } }
+
+		public override string Section { get { return Local.Preferences_Section2; } }
+
+		public override int SectionOrder { get { return 2; } }
+
+		public override string Title { get { return Local.Preferences_General; } }//"General"
+
+		// Do not cache across difficulty-dialog Accept: KSP may replace the parameter node.
+		public static PreferencesGeneral Instance
+		{
+			get
+			{
+				if (HighLogic.CurrentGame == null)
+					return null;
+				return HighLogic.CurrentGame.Parameters.CustomParams<PreferencesGeneral>();
+			}
+		}
+	}
 }

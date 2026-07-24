@@ -101,15 +101,15 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] public double panelNormalPartLocalZ;
 
 		/// <summary>
-		/// Flux-weighted average cosine/occlusion factor from the last loaded realtime update.
-		/// Used when Settings.FreezeUnloadedSolarPanelOrientation is enabled so unloaded
-		/// in-space flat panels keep their unload-time orientation instead of orbiting with the sun.
+		/// Last loaded realtime sunlit exposure ratio (actual/ideal) cached for unload.
+		/// Used only when PreferencesGeneral.freezeUnloadedSolarPanelExposure is enabled in
+		/// unloaded low-warp background simulation; does not affect loaded output.
 		/// </summary>
 		[KSPField(isPersistant = true)]
-		public bool hasFrozenOrientationScale = false;
+		public bool hasFrozenExposure = false;
 
 		[KSPField(isPersistant = true)]
-		public double frozenOrientationScale = 0.0;
+		public double frozenExposure = 0.0;
 
 		/// <summary>internal object for handling the various hacks depending on the target solar panel module</summary>
 		public SupportedPanel SolarPanel { get; private set; }
@@ -663,8 +663,8 @@ namespace KERBALISM
 			if (!analyticSunlight)
 			{
 				vd.SaveSolarPanelLiveExposure(powerFactor, theoreticalMaxPower, nominalRate);
-				// Snapshot orientation for optional freeze-while-unloaded mode (flat panels only).
-				TrySaveFrozenOrientationScale(SolarPanel.Type, vd.EnvSunsInfo, powerFactor);
+				// Cache sunlit exposure for optional freeze at loaded→unloaded (does not affect loaded output).
+				TryCacheSunlitExposure(vd.EnvSunsInfo, powerFactor, theoreticalMaxPower);
 			}
 
 			wearFactor = 1.0;
@@ -822,10 +822,10 @@ namespace KERBALISM
 
 			bool hasOrientation = TryGetProtoPanelOrientation(v, p, m, isTracking, out Vector3d panelPivotWorld, out Vector3d panelNormalWorld);
 
-			// Optional freeze: reuse last loaded flat/tracking cosine; flux/sunlight still update.
+			// Optional freeze: reuse unload-time sunlit exposure at low warp; high-warp stays analytic.
 			double theoreticalMaxPower;
 			double powerFactor;
-			if (!TryGetFrozenUnloadedPowerFactor(v, m, vd.EnvSunsInfo, prefab.SolarPanel.Type, out powerFactor, out theoreticalMaxPower))
+			if (!TryGetFrozenUnloadedPowerFactor(v, m, vd, prefab.SolarPanel.Type, out powerFactor, out theoreticalMaxPower))
 				powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
 			efficiencyFactor = powerFactor;
 
@@ -1171,8 +1171,8 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Sum of every star's current (shadow-aware) flux weight used to normalize
-		/// the frozen orientation scale: powerFactor / fluxWeight ≈ flux-weighted cosine.
+		/// Sum of every star's current (shadow-aware) flux weight. Near-zero means body shadow
+		/// at low warp (used to decide whether sunlit exposure can be cached / applied).
 		/// </summary>
 		static double GetSolarFluxWeight(List<VesselData.SunInfo> suns)
 		{
@@ -1189,43 +1189,48 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Persist the last loaded realtime orientation scale for flat panels so unloaded
-		/// vessels can optionally freeze cosine at unload time.
+		/// Cache the current loaded realtime sunlit exposure ratio so unloaded low-warp
+		/// simulation can optionally freeze it at the loaded→unloaded transition.
+		/// Does not change loaded power or telemetry.
 		/// </summary>
-		void TrySaveFrozenOrientationScale(ModuleDeployableSolarPanel.PanelType panelType, List<VesselData.SunInfo> suns, double powerFactor)
+		void TryCacheSunlitExposure(List<VesselData.SunInfo> suns, double powerFactor, double theoreticalMaxPower)
 		{
-			if (panelType != ModuleDeployableSolarPanel.PanelType.FLAT)
+			if (theoreticalMaxPower <= 1e-9 || GetSolarFluxWeight(suns) <= 1e-9)
 				return;
 
-			double fluxWeight = GetSolarFluxWeight(suns);
-			if (fluxWeight <= 1e-9)
-				return;
-
-			hasFrozenOrientationScale = true;
-			frozenOrientationScale = powerFactor / fluxWeight;
+			hasFrozenExposure = true;
+			frozenExposure = Lib.Clamp(powerFactor / theoreticalMaxPower, 0.0, 1.0);
 		}
 
 		/// <summary>
-		/// When enabled, unloaded in-space flat panels reuse the last loaded orientation
-		/// scale with the current star fluxes. Returns false to use the dynamic path.
+		/// When enabled, unloaded in-space vessels at low timewarp reuse the unload-time
+		/// sunlit exposure ratio. Shadow zeros output; high-warp analytic returns false.
 		/// </summary>
-		static bool TryGetFrozenUnloadedPowerFactor(Vessel v, ProtoPartModuleSnapshot m, List<VesselData.SunInfo> suns, ModuleDeployableSolarPanel.PanelType panelType, out double powerFactor, out double theoreticalMaxPower)
+		static bool TryGetFrozenUnloadedPowerFactor(Vessel v, ProtoPartModuleSnapshot m, VesselData vd, ModuleDeployableSolarPanel.PanelType panelType, out double powerFactor, out double theoreticalMaxPower)
 		{
 			powerFactor = 0.0;
 			theoreticalMaxPower = 0.0;
 
-			if (!Settings.FreezeUnloadedSolarPanelOrientation
-				|| panelType != ModuleDeployableSolarPanel.PanelType.FLAT
+			PreferencesGeneral prefs = PreferencesGeneral.Instance;
+			if (prefs == null
+				|| !prefs.freezeUnloadedSolarPanelExposure
+				|| vd.EnvIsAnalytic
 				|| Lib.Landed(v)
-				|| !Lib.Proto.GetBool(m, "hasFrozenOrientationScale"))
+				|| !Lib.Proto.GetBool(m, "hasFrozenExposure"))
 				return false;
 
-			double frozenScale = Lib.Proto.GetDouble(m, "frozenOrientationScale");
-			if (frozenScale < 0.0 || double.IsNaN(frozenScale) || double.IsInfinity(frozenScale))
+			double frozen = Lib.Proto.GetDouble(m, "frozenExposure");
+			if (frozen < 0.0 || double.IsNaN(frozen) || double.IsInfinity(frozen))
 				return false;
 
-			theoreticalMaxPower = CalculateTheoreticalMaxPower(suns, panelType);
-			powerFactor = frozenScale * GetSolarFluxWeight(suns);
+			theoreticalMaxPower = CalculateTheoreticalMaxPower(vd.EnvSunsInfo, panelType);
+			if (GetSolarFluxWeight(vd.EnvSunsInfo) <= 1e-9)
+			{
+				powerFactor = 0.0;
+				return true;
+			}
+
+			powerFactor = Lib.Clamp(frozen, 0.0, 1.0) * theoreticalMaxPower;
 			return true;
 		}
 

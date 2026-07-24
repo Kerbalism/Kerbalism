@@ -1188,6 +1188,11 @@ namespace KERBALISM
 		public static string EngineBurnFailureChance_desc = GetLoc("EngineBurnFailureChance_desc"); // "Adjust the probability of an engine failure caused by excessive burn time"
 
 		//
+		public static string Preferences_General = GetLoc("Preferences_General"); // "General"
+		public static string FreezeUnloadedSolarPanelExposure = GetLoc("FreezeUnloadedSolarPanelExposure"); // "Freeze Unloaded Solar Exposure"
+		public static string FreezeUnloadedSolarPanelExposure_desc = GetLoc("FreezeUnloadedSolarPanelExposure_desc"); // "Unloaded in-space vessels at low timewarp keep sunlit solar-panel exposure from the loaded→unloaded transition; shadow still zeros output. High-warp analytic is unchanged."
+
+		//
 		public static string Preferences_Science = GetLoc("Preferences_Science"); // "Science"
 		public static string TransmitScienceImmediately = GetLoc("TransmitScienceImmediately"); // "Transmit Science Immediately"
 		public static string TransmitScienceImmediately_desc = GetLoc("TransmitScienceImmediately_desc"); // "Automatically flag science files for transmission"
