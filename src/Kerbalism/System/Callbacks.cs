@@ -73,9 +73,24 @@ namespace KERBALISM
 		}
 	}
 
+	// Create an OnAttemptBoard event that allows preventing boarding a vessel from EVA
+	// Called before anything (experiments/inventory...) has been transferred to the boarded vessel
+	[HarmonyPatch(typeof(KerbalEVA))]
+	[HarmonyPatch("BoardPart")]
+	class KerbalEVA_BoardPart
+	{
+		static bool Prefix(KerbalEVA __instance, Part p)
+		{
+			// continue to BoardPart() if AttemptBoard returns true
+			return Kerbalism.Callbacks.AttemptBoard(__instance, p);
+		}
+	}
+
 	public sealed class Callbacks
 	{
 		public static EventData<Part, Configure> onConfigure = new EventData<Part, Configure>("onConfigure");
+
+		private static bool ignoreNextBoardAttemptDriveCheck = false;
 
 		public Callbacks()
 		{
@@ -417,6 +432,86 @@ namespace KERBALISM
             }
         }
 
+
+		/// <summary>
+		/// Stock-alike confirmation before boarding when the target vessel cannot store all EVA science.
+		/// Backported from Kerbalism 4 (#673).
+		/// </summary>
+		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
+		{
+			if (!Features.Science || instance == null || targetPart == null || instance.vessel == null || targetPart.vessel == null)
+			{
+				ignoreNextBoardAttemptDriveCheck = false;
+				return true;
+			}
+
+			if (!ignoreNextBoardAttemptDriveCheck)
+			{
+				double filesSize = 0.0;
+				double fileCapacity = 0.0;
+				int samplesSize = 0;
+				int samplesCapacity = 0;
+				bool unlimitedFileCapacity = false;
+				bool unlimitedSampleCapacity = false;
+
+				foreach (Drive drive in Drive.GetDrives(instance.vessel, true))
+				{
+					filesSize += drive.FilesSize();
+					samplesSize += drive.SamplesSize();
+				}
+
+				if (filesSize <= double.Epsilon && samplesSize <= 0)
+				{
+					ignoreNextBoardAttemptDriveCheck = false;
+					return true;
+				}
+
+				foreach (Drive drive in Drive.GetDrives(targetPart.vessel))
+				{
+					double availableFiles = drive.FileCapacityAvailable();
+					if (availableFiles >= double.MaxValue / 2.0)
+						unlimitedFileCapacity = true;
+					else
+						fileCapacity += availableFiles;
+
+					double availableSamples = drive.SampleCapacityAvailable();
+					if (availableSamples >= double.MaxValue / 2.0)
+						unlimitedSampleCapacity = true;
+					else
+						samplesCapacity += Lib.SampleSizeToSlots(availableSamples);
+				}
+
+				bool filesDontFit = !unlimitedFileCapacity && filesSize > fileCapacity;
+				bool samplesDontFit = !unlimitedSampleCapacity && samplesSize > samplesCapacity;
+
+				if (filesDontFit || samplesDontFit)
+				{
+					string message = Lib.BuildString(
+						Local.CallBackMsg_EvaBoardNoSpace.Format(targetPart.vessel.vesselName, instance.vessel.vesselName),
+						"\n\n",
+						Local.CallBackMsg_EvaBoardFiles, " : ", Lib.HumanReadableDataSize(filesSize),
+						" - ", Local.CallBackMsg_EvaBoardStorageCapacity, " : ", Lib.HumanReadableDataSize(fileCapacity), "\n",
+						Local.CallBackMsg_EvaBoardSamples, " : ", Lib.HumanReadableSampleSize(samplesSize),
+						" - ", Local.CallBackMsg_EvaBoardStorageCapacity, " : ", Lib.HumanReadableSampleSize(samplesCapacity), "\n\n",
+						Local.CallBackMsg_EvaBoardDataLoss);
+
+					Lib.Popup(
+						Localizer.Format("#autoLOC_116007"), // Cannot store Experiments
+						message,
+						new DialogGUIButton(Localizer.Format("#autoLOC_116008"), () => // Board Anyway\n(Dump Experiments)
+						{
+							ignoreNextBoardAttemptDriveCheck = true;
+							instance.BoardPart(targetPart);
+						}),
+						new DialogGUIButton(Localizer.Format("#autoLOC_116009"), () => { })); // Cancel
+
+					return false;
+				}
+			}
+
+			ignoreNextBoardAttemptDriveCheck = false;
+			return true;
+		}
 
 		void FromEVA(GameEvents.FromToAction<Part, Part> data)
 		{
