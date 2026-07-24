@@ -1161,6 +1161,11 @@ namespace KERBALISM
 		////////////////////////////////////////////////////////////////////
 		public static ParamString CallBackMsg_EvaNoMP = new ParamString("CallBackMsg_EvaNoMP"); // "There isn't any <<1>> in the EVA suit"
 		public static string CallBackMsg_EvaNoMP2 = GetLoc("CallBackMsg_EvaNoMP2"); // "Don't let the ladder go!"
+		public static ParamString CallBackMsg_EvaBoardNoSpace = new ParamString("CallBackMsg_EvaBoardNoSpace"); // "The vessel <<1>> doesn't have enough space to store all the experiments carried by <<2>>"
+		public static string CallBackMsg_EvaBoardFiles = GetLoc("CallBackMsg_EvaBoardFiles"); // "Files on EVA"
+		public static string CallBackMsg_EvaBoardSamples = GetLoc("CallBackMsg_EvaBoardSamples"); // "Samples on EVA"
+		public static string CallBackMsg_EvaBoardStorageCapacity = GetLoc("CallBackMsg_EvaBoardStorageCapacity"); // "Storage capacity"
+		public static string CallBackMsg_EvaBoardDataLoss = GetLoc("CallBackMsg_EvaBoardDataLoss"); // "If you proceed, some experiment results will be lost"
 		public static string CallBackMsg_PROGRESS = GetLoc("CallBackMsg_PROGRESS"); // "PROGRESS"
 		public static string CallBackMsg_PROGRESS2 = GetLoc("CallBackMsg_PROGRESS2"); // "Our scientists just made a breakthrough"
 		public static ParamString CallBackMsg_configureUnlock = new ParamString("CallBackMsg_configureUnlock"); // "We now have access to \n<<1>>"

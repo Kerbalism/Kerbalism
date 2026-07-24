@@ -130,6 +130,7 @@ namespace KERBALISM
 					result = body.scienceValues.FlyingHighDataValue; break;
 				case ScienceSituation.BodyGlobal:
 				case ScienceSituation.Space:
+					result = Lib.IsSun(body) ? body.scienceValues.InSpaceHighDataValue : body.scienceValues.InSpaceLowDataValue; break;
 				case ScienceSituation.InSpaceLow:
 					result = body.scienceValues.InSpaceLowDataValue; break;
 				case ScienceSituation.InSpaceHigh:
