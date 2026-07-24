@@ -749,16 +749,28 @@ namespace KERBALISM
 				}
 			}
 
+			ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(situation);
+
+			// DMOS asteroid subjects use a fake body name ("Asteroid") that is not in FlightGlobals.Bodies
+			// (e.g. "dmlaserblastscan@AsteroidSrfLandedCarbonaceous14393197"). Handle via UnknownSituation (#885).
 			if (subjectBody == null)
 			{
-				// TODO : DMOS asteroid experiments are doing : "magScan@AsteroidInSpaceLowCarbonaceous7051371", those subjects will be discarded entirely here
-				// because the body "Asteroid" doesn't exists, consequently it's impossible to create the Situation object.
-				// To handle that, maybe we could implement a derived class "UnknownSituation" from Situation that can handle a completely random subject format
-				Lib.Log("Could not parse the SubjectData from subjectId '" + stockSubjectId + "' : the body '" + bodyAndBiome[0] + "' doesn't exist");
-				return null;
+				if (scienceSituation == ScienceSituation.None)
+				{
+					Lib.Log("Could not parse the SubjectData from subjectId '" + stockSubjectId + "' : the body '" + bodyAndBiome[0] + "' doesn't exist and situation is invalid");
+					return null;
+				}
+
+				string unknownBiomeName = bodyAndBiome.Length == 2 ? bodyAndBiome[1] : string.Empty;
+				UnknownSituation unknownSituation = new UnknownSituation(bodyAndBiome[0], scienceSituation, unknownBiomeName);
+				// The custom biome is already represented by UnknownSituation. Passing it again as
+				// extraSituationInfo would duplicate it in SituationTitle and BiomeTitle.
+				UnknownSubjectData unknownAsteroidSubject = new UnknownSubjectData(expInfo, unknownSituation, stockSubjectId, RnDSubject);
+				unknownSubjectDatas.Add(stockSubjectId, unknownAsteroidSubject);
+				expBodiesSituationsBiomesSubject.AddSubject(expInfo, UnknownSituation.UnknownBodyIndex, scienceSituation, -1, unknownAsteroidSubject);
+				return unknownAsteroidSubject;
 			}
 
-			ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(situation);
 
 			int biomeIndex = -1;
 			if (bodyAndBiome.Length == 2 && ScienceSituationUtils.IsBodyBiomesRelevantForExperiment(scienceSituation, expInfo) && subjectBody.BiomeMap != null)
