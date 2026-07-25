@@ -256,6 +256,9 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_StressBreakdownProbability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_StressBreakdownProbability_desc")]//Stress Breakdown Probability--Probability of one stress induced mistake per year
 		public float stressBreakdownRate = 0.25f;
 
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_StressExperienceBonus", asPercentage = true, minValue = 0, maxValue = 0.5f, displayFormat = "F2", toolTip = "#KERBALISM_StressExperienceBonus_desc")]//Stress Experience Bonus--Stress resistance gained per experience level
+		public float stressExperienceBonus = 0.1f;
+
 		[GameParameters.CustomIntParameterUI("#KERBALISM_IdealLivingSpace", minValue = 5, maxValue = 200, toolTip = "#KERBALISM_IdealLivingSpace_desc")]//Ideal Living Space--Ideal living space per-capita in m^3
 		public int livingSpace = Settings.ComfortLivingSpace;
 
