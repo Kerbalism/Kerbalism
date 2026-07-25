@@ -97,11 +97,18 @@ namespace KERBALISM
 				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+ Local.FILEMANAGER_SAMPLESAvailable;//available
 				p.AddSection(title);
 
+				Sample activeAnalysisSample;
+				double activeAnalysisEta;
+				bool hasAnalysisEta = Laboratory.TryGetAnalysisETA(v, out activeAnalysisSample, out activeAnalysisEta);
+
 				foreach (var drive in drives)
 				{
 					foreach (Sample sample in drive.Value.samples.Values)
 					{
-						Render_sample(p, drive.Key, sample, drive.Value, short_strings && Lib.IsFlight(), v);
+						double analysisEta = hasAnalysisEta && ReferenceEquals(sample, activeAnalysisSample)
+							? activeAnalysisEta
+							: double.NaN;
+						Render_sample(p, drive.Key, sample, drive.Value, short_strings && Lib.IsFlight(), analysisEta);
 					}
 				}
 
@@ -168,7 +175,7 @@ namespace KERBALISM
 			);
 		}
 
-		static void Render_sample(Panel p, uint partId, Sample sample, Drive drive, bool short_strings, Vessel v)
+		static void Render_sample(Panel p, uint partId, Sample sample, Drive drive, bool short_strings, double analysis_eta)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -189,7 +196,6 @@ namespace KERBALISM
 			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value, false), "</b>");
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
 
-			double analysis_eta = sample.analyze ? Laboratory.AnalysisETA(v, sample) : double.NaN;
 			string analysis_eta_txt = !double.IsNaN(analysis_eta) ? Lib.HumanReadableCountdown(analysis_eta) : string.Empty;
 			if (!string.IsNullOrEmpty(analysis_eta_txt))
 				exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_AnalysisETA.Format(analysis_eta_txt)), Lib.Kolor.Cyan);

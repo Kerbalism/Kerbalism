@@ -236,7 +236,7 @@ namespace KERBALISM
 		/// <summary>
 		/// Combined analysis rate of all powered, staffed labs currently running on the vessel.
 		/// </summary>
-		public static double GetVesselAnalysisRate(Vessel v)
+		private static double GetVesselAnalysisRate(Vessel v)
 		{
 			if (v == null) return 0.0;
 
@@ -248,6 +248,7 @@ namespace KERBALISM
 			{
 				foreach (Laboratory lab in v.FindPartModulesImplementing<Laboratory>())
 				{
+					if (!lab.isEnabled) continue;
 					if (!lab.running) continue;
 					if (lab.researcher_cs && !lab.researcher_cs.Check(lab.part.protoModuleCrew)) continue;
 					rate += lab.EffectiveRate(lab.researcher_cs, lab.part.protoModuleCrew);
@@ -255,69 +256,55 @@ namespace KERBALISM
 			}
 			else if (v.protoVessel != null)
 			{
-				var PD = new Dictionary<string, Lib.Module_prefab_data>();
-				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
+				foreach (var module in Background.Background_PMs(v))
 				{
-					AvailablePart ap = PartLoader.getPartInfoByName(p.partName);
-					if (ap == null) continue;
+					if (module.type != Background.Module_type.Laboratory) continue;
+					if (!Lib.Proto.GetBool(module.m, "running")) continue;
 
-					PD.Clear();
-					foreach (ProtoPartModuleSnapshot m in p.modules)
-					{
-						PartModule module_prefab = Lib.ModulePrefab(ap.partPrefab.Modules, m.moduleName, PD);
-						if (!module_prefab) continue;
-						if (!Lib.Proto.GetBool(m, "isEnabled")) continue;
-						if (m.moduleName != "Laboratory") continue;
-						if (!Lib.Proto.GetBool(m, "running")) continue;
+					Laboratory lab = module.module_prefab as Laboratory;
+					if (lab == null) continue;
 
-						Laboratory lab = module_prefab as Laboratory;
-						if (lab == null) continue;
-
-						CrewSpecs specs = new CrewSpecs(lab.researcher);
-						if (specs && !specs.Check(p.protoModuleCrew)) continue;
-						rate += lab.EffectiveRate(specs, p.protoModuleCrew);
-					}
+					CrewSpecs specs = new CrewSpecs(lab.researcher);
+					if (specs && !specs.Check(module.p.protoModuleCrew)) continue;
+					rate += lab.EffectiveRate(specs, module.p.protoModuleCrew);
 				}
 			}
 			return rate;
 		}
 
 		/// <summary>
-		/// Seconds until the given flagged sample finishes analysis, including samples ahead in the queue.
-		/// Returns NaN when labs are not actively analyzing.
+		/// Get the sample currently being analyzed and its estimated completion time.
 		/// </summary>
-		public static double AnalysisETA(Vessel v, Sample target)
+		public static bool TryGetAnalysisETA(Vessel v, out Sample sample, out double eta)
 		{
-			if (v == null || target == null || !target.analyze) return double.NaN;
+			sample = v == null ? null : NextAnalyzableSample(v);
+			eta = double.NaN;
+			if (sample == null) return false;
 
 			double rate = GetVesselAnalysisRate(v);
-			if (rate <= double.Epsilon) return double.NaN;
+			if (rate <= double.Epsilon) return false;
 
-			double work = 0.0;
+			eta = sample.size / rate;
+			return !double.IsNaN(eta) && !double.IsInfinity(eta);
+		}
+
+		private static Sample NextAnalyzableSample(Vessel v)
+		{
 			foreach (var drive in Drive.GetDrives(v, true))
 			{
 				foreach (Sample sample in drive.samples.Values)
 				{
-					if (!sample.analyze) continue;
-					work += sample.size;
-					if (sample.subjectData == target.subjectData)
-						return work / rate;
+					if (sample.analyze) return sample;
 				}
 			}
-			return double.NaN;
+			return null;
 		}
 
 		// get next sample to analyze, return null if there isn't a sample
 		private static SubjectData NextSample(Vessel v)
 		{
-			foreach (var drive in Drive.GetDrives(v, true))
-			{
-				foreach (Sample sample in drive.samples.Values)
-				{
-					if (sample.analyze) return sample.subjectData;
-				}
-			}
-			return null;
+			Sample sample = NextAnalyzableSample(v);
+			return sample == null ? null : sample.subjectData;
 		}
 
 		// analyze a sample
