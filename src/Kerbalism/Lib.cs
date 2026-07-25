@@ -302,50 +302,112 @@ namespace KERBALISM
 
 		#region TIME
 
-		private static double hoursInDay = -1.0;
+		private static bool IsPositiveFinite(double value)
+		{
+			return value > 0.0 && !double.IsNaN(value) && !double.IsInfinity(value);
+		}
+
+		///<summary>Return the current in-game calendar unit lengths in seconds.</summary>
+		private static void CalendarLengths(out double minute, out double hour, out double day, out double year)
+		{
+			minute = 60.0;
+			hour = 3600.0;
+			double stockDaysInYear = GameSettings.KERBIN_TIME ? 426.0 : 365.0;
+			day = hour * (GameSettings.KERBIN_TIME ? 6.0 : 24.0);
+			year = day * stockDaysInYear;
+
+			// Kronometer and other calendar mods expose their calendar through this KSP API.
+			// Don't cache these values: the formatter can be replaced during main-menu startup.
+			IDateTimeFormatter formatter = KSPUtil.dateTimeFormatter;
+			if (formatter != null
+				&& IsPositiveFinite(formatter.Minute)
+				&& IsPositiveFinite(formatter.Hour)
+				&& IsPositiveFinite(formatter.Day)
+				&& IsPositiveFinite(formatter.Year))
+			{
+				minute = formatter.Minute;
+				hour = formatter.Hour;
+				day = formatter.Day;
+				year = formatter.Year;
+				return;
+			}
+
+			// This is only an initialization fallback. Once KSP has a formatter, its calendar is
+			// authoritative even when it intentionally differs from the home body's physical periods.
+			if (FlightGlobals.ready || IsEditor())
+			{
+				CelestialBody homeBody = FlightGlobals.GetHomeBody();
+				if (homeBody != null)
+				{
+					double homeDay = Math.Abs(homeBody.solarDayLength);
+					if (!IsPositiveFinite(homeDay))
+						homeDay = Math.Abs(homeBody.rotationPeriod);
+					if (IsPositiveFinite(homeDay) && homeDay > hour)
+					{
+						day = homeDay;
+						year = day * stockDaysInYear;
+					}
+
+					double homeYear = homeBody.orbit == null ? 0.0 : Math.Abs(homeBody.orbit.period);
+					if (IsPositiveFinite(homeYear) && homeYear > day)
+						year = homeYear;
+				}
+			}
+		}
+
+		public static double MinuteSeconds
+		{
+			get
+			{
+				CalendarLengths(out double minute, out _, out _, out _);
+				return minute;
+			}
+		}
+
+		public static double HourSeconds
+		{
+			get
+			{
+				CalendarLengths(out _, out double hour, out _, out _);
+				return hour;
+			}
+		}
+
+		public static double DaySeconds
+		{
+			get
+			{
+				CalendarLengths(out _, out _, out double day, out _);
+				return day;
+			}
+		}
+
+		public static double YearSeconds
+		{
+			get
+			{
+				CalendarLengths(out _, out _, out _, out double year);
+				return year;
+			}
+		}
+
 		///<summary>return hours in a day</summary>
 		public static double HoursInDay
 		{
 			get
 			{
-				if (hoursInDay == -1.0)
-				{
-					if (FlightGlobals.ready || IsEditor())
-					{
-						var homeBody = FlightGlobals.GetHomeBody();
-						hoursInDay = Math.Round(homeBody.rotationPeriod / 3600, 0);
-					}
-					else
-					{
-						return GameSettings.KERBIN_TIME ? 6.0 : 24.0;
-					}
-				}
-				return hoursInDay;
+				CalendarLengths(out _, out double hour, out double day, out _);
+				return day / hour;
 			}
 		}
 
-		private static double daysInYear = -1.0;
 		///<summary>return year length</summary>
 		public static double DaysInYear
 		{
 			get
 			{
-				if (!GameSettings.KERBIN_TIME)
-					return 365.0;
-
-				if (daysInYear == -1.0)
-				{
-					if (FlightGlobals.ready || IsEditor())
-					{
-						var homeBody = FlightGlobals.GetHomeBody();
-						daysInYear = Math.Floor(homeBody.orbit.period / (HoursInDay * 60.0 * 60.0));
-					}
-					else
-					{
-						return 426.0;
-					}
-				}
-				return daysInYear;
+				CalendarLengths(out _, out _, out double day, out double year);
+				return year / day;
 			}
 		}
 
@@ -401,10 +463,17 @@ namespace KERBALISM
 		public static string PlanetariumTimestamp()
 		{
 			double t = Planetarium.GetUniversalTime();
-			const double len_min = 60.0;
-			const double len_hour = len_min * 60.0;
-			double len_day = len_hour * Lib.HoursInDay;
-			double len_year = len_day * Lib.DaysInYear;
+			IDateTimeFormatter formatter = KSPUtil.dateTimeFormatter;
+			if (formatter != null
+				&& formatter.Minute > 0
+				&& formatter.Hour > 0
+				&& formatter.Day > 0
+				&& formatter.Year > 0)
+			{
+				return BuildString("[", formatter.PrintDateCompact(t, true, false), "]");
+			}
+
+			CalendarLengths(out double len_min, out double len_hour, out double len_day, out double len_year);
 
 			double year = Math.Floor(t / len_year);
 			t -= year * len_year;
@@ -1020,57 +1089,66 @@ namespace KERBALISM
 			if (rate == 0.0) return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perSecond);//"/s"
-			rate *= 60.0; // per-minute
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
-			rate *= 60.0; // per-hour
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perHour);//"/h"
-			rate *= HoursInDay;  // per-day
-			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perDay);//"/d"
-			return BuildString((rate * DaysInYear).ToString(precision), unit, Local.Generic_perYear);//"/y"
+			CalendarLengths(out double minuteSeconds, out double hourSeconds, out double daySeconds, out double yearSeconds);
+			double minuteRate = rate * minuteSeconds;
+			if (minuteRate >= 0.01) return BuildString(minuteRate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
+			if (hourSeconds <= minuteSeconds) return BuildString(minuteRate.ToString(precision), unit, Local.Generic_perMinute);
+
+			double hourRate = rate * hourSeconds;
+			if (hourRate >= 0.01) return BuildString(hourRate.ToString(precision), unit, Local.Generic_perHour);//"/h"
+			if (daySeconds <= hourSeconds) return BuildString(hourRate.ToString(precision), unit, Local.Generic_perHour);
+
+			double dayRate = rate * daySeconds;
+			if (dayRate >= 0.01) return BuildString(dayRate.ToString(precision), unit, Local.Generic_perDay);//"/d"
+			if (yearSeconds <= daySeconds) return BuildString(dayRate.ToString(precision), unit, Local.Generic_perDay);
+
+			return BuildString((rate * yearSeconds).ToString(precision), unit, Local.Generic_perYear);//"/y"
 		}
 
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
 		public static string HumanReadableDuration(double d, bool fullprecison = false)
 		{
+			CalendarLengths(out double minuteSeconds, out double hourSeconds, out double daySeconds, out double yearSeconds);
+			bool useHours = hourSeconds > minuteSeconds;
+			bool useDays = useHours && daySeconds > hourSeconds;
+			bool useYears = useDays && yearSeconds > daySeconds;
+
 			if (!fullprecison)
 			{
 				if (double.IsInfinity(d) || double.IsNaN(d)) return Local.Generic_PERPETUAL;//"perpetual"
 				d = Math.Round(d);
 				if (d <= 0.0) return Local.Generic_NONE;//"none"
 
-				ulong hours_in_day = (ulong)HoursInDay;
-				ulong days_in_year = (ulong)DaysInYear;
-				ulong duration_seconds = (ulong)d;
-
 				// seconds
-				if (d < 60.0)
+				if (d < minuteSeconds)
 				{
-					ulong seconds = duration_seconds % 60ul;
+					long seconds = (long)Math.Floor(d);
 					return BuildString(seconds.ToString(), Local.Generic_Seconds);
 				}
 				// minutes + seconds
-				if (d < 3600.0)
+				if (!useHours || d < hourSeconds)
 				{
-					ulong seconds = duration_seconds % 60ul;
-					ulong minutes = (duration_seconds / 60ul) % 60ul;
+					long minutes = (long)Math.Floor(d / minuteSeconds);
+					long seconds = (long)Math.Floor(d - minutes * minuteSeconds);
 					return BuildString(minutes.ToString(), Local.Generic_Minutes, " ", seconds.ToString("00"), Local.Generic_Seconds);
 				}
 				// hours + minutes
-				if (d < 3600.0 * HoursInDay)
+				if (!useDays || d < daySeconds)
 				{
-					ulong minutes = (duration_seconds / 60ul) % 60ul;
-					ulong hours = (duration_seconds / 3600ul) % hours_in_day;
+					long hours = (long)Math.Floor(d / hourSeconds);
+					long minutes = (long)Math.Floor((d - hours * hourSeconds) / minuteSeconds);
 					return BuildString(hours.ToString(), Local.Generic_Hours, " ", minutes.ToString("00"), Local.Generic_Minutes);
 				}
-				ulong days = (duration_seconds / (3600ul * hours_in_day)) % days_in_year;
 				// days + hours
-				if (d < 3600.0 * HoursInDay * DaysInYear)
+				if (!useYears || d < yearSeconds)
 				{
-					ulong hours = (duration_seconds / 3600ul) % hours_in_day;
-					return BuildString(days.ToString(), Local.Generic_Days, " ", hours.ToString(), Local.Generic_Hours);
+					long wholeDays = (long)Math.Floor(d / daySeconds);
+					long hours = (long)Math.Floor((d - wholeDays * daySeconds) / hourSeconds);
+					return BuildString(wholeDays.ToString(), Local.Generic_Days, " ", hours.ToString(), Local.Generic_Hours);
 				}
 				// years + days
-				ulong years = duration_seconds / (3600ul * hours_in_day * days_in_year);
+				long years = (long)Math.Floor(d / yearSeconds);
+				long days = (long)Math.Floor((d - years * yearSeconds) / daySeconds);
 				return BuildString(years.ToString(), Local.Generic_Years, " ", days.ToString(), Local.Generic_Days);
 			}
 			else
@@ -1079,23 +1157,34 @@ namespace KERBALISM
 				d = Math.Round(d);
 				if (d <= 0.0) return Local.Generic_NONE;//"none"
 
-				double hours_in_day = HoursInDay;
-				double days_in_year = DaysInYear;
+				double remaining = d;
+				long years = 0;
+				long days = 0;
+				long hours = 0;
 
-				long duration = (long)d;
-				long seconds = duration % 60;
-				duration /= 60;
-				long minutes = duration % 60;
-				duration /= 60;
-				long hours = duration % (long)hours_in_day;
-				duration /= (long)hours_in_day;
-				long days = duration % (long)days_in_year;
-				long years = duration / (long)days_in_year;
+				if (useYears)
+				{
+					years = (long)Math.Floor(remaining / yearSeconds);
+					remaining -= years * yearSeconds;
+				}
+				if (useDays)
+				{
+					days = (long)Math.Floor(remaining / daySeconds);
+					remaining -= days * daySeconds;
+				}
+				if (useHours)
+				{
+					hours = (long)Math.Floor(remaining / hourSeconds);
+					remaining -= hours * hourSeconds;
+				}
+				long minutes = (long)Math.Floor(remaining / minuteSeconds);
+				remaining -= minutes * minuteSeconds;
+				long seconds = (long)Math.Floor(remaining);
 
 				string result = string.Empty;
 				if (years > 0) result += years + Local.Generic_Years + " ";
-				if (years > 0 || days > 0) result += days + Local.Generic_Days + " ";
-				if (years > 0 || days > 0 || hours > 0) result += hours.ToString("D2") + ":";
+				if (useDays && (years > 0 || days > 0)) result += days + Local.Generic_Days + " ";
+				if (useHours && (years > 0 || days > 0 || hours > 0)) result += hours.ToString("D2") + ":";
 				if (years > 0 || days > 0 || hours > 0 || minutes > 0) result += minutes.ToString("D2") + ":";
 				result += seconds.ToString("D2");
 
