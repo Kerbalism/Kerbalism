@@ -2,12 +2,15 @@
 using KSP.Localization;
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 
 namespace KERBALISM
 {
 	public class CommHandlerCommNetBase : CommHandler
 	{
+		private static readonly ConditionalWeakTable<CommNetVessel, object> powerDisabledVessels = new ConditionalWeakTable<CommNetVessel, object>();
+
 		/// <summary> base data rate set in derived classes from UpdateTransmitters()</summary>
 		protected double baseRate = 0.0;
 
@@ -100,6 +103,8 @@ namespace KERBALISM
 			return node?.transform?.gameObject.GetComponent<Vessel>();
 		}
 
+		private static bool UseStockCommNet => API.Comm.handlers.Count == 0 && !RemoteTech.Installed;
+
 		public static void ApplyHarmonyPatches()
 		{
 			MethodInfo CommNetVessel_OnNetworkPreUpdate_Info = AccessTools.Method(typeof(CommNetVessel), nameof(CommNetVessel.OnNetworkPreUpdate));
@@ -124,23 +129,53 @@ namespace KERBALISM
 		// ensure unloadedDoOnce is true for unloaded vessels
 		private static void CommNetVessel_OnNetworkPreUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
 		{
-			if (!__instance.Vessel.loaded && __instance.CanComm)
+			if (!UseStockCommNet || __instance.Vessel.loaded)
+				return;
+
+			// Stock doesn't update unloaded vessels after canComm becomes false. Force an update
+			// only when a vessel disabled by Kerbalism has power again, so it can rejoin CommNet.
+			if (__instance.CanComm
+				|| (powerDisabledVessels.TryGetValue(__instance, out _)
+					&& __instance.Vessel.TryGetVesselData(out VesselData vd)
+					&& vd.IsSimulated
+					&& Lib.IsPowered(__instance.Vessel)))
+			{
 				___unloadedDoOnce = true;
+			}
 		}
 
 
 		// ensure unloadedDoOnce is true for unloaded vessels
 		private static void CommNetVessel_OnNetworkPostUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
 		{
-			if (!__instance.Vessel.loaded && __instance.CanComm)
+			if (UseStockCommNet && !__instance.Vessel.loaded && __instance.CanComm)
 				___unloadedDoOnce = true;
 		}
 
 
-		// apply storm radiation factor to the comm strength multiplier used by stock for plasma blackout
-		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance, ref bool ___inPlasma, ref double ___plasmaMult)
+		// prevent unpowered vessels from remaining in CommNet, and apply storm radiation
+		// factor to the comm strength multiplier used by stock for plasma blackout
+		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance, ref bool ___canComm, ref bool ___inPlasma, ref double ___plasmaMult)
 		{
-			if (!__instance.CanComm || !__instance.Vessel.TryGetVesselData(out VesselData vd))
+			if (!UseStockCommNet)
+				return;
+
+			if (!__instance.Vessel.TryGetVesselData(out VesselData vd))
+				return;
+
+			// Stock doesn't consume resources for unloaded vessels, so it never notices when
+			// Kerbalism background simulation drains their EC. Keep the CommNet node in sync
+			// with Kerbalism's resource cache so an unpowered vessel can't act as a relay.
+			if (vd.IsSimulated && !Lib.IsPowered(__instance.Vessel))
+			{
+				___canComm = false;
+				powerDisabledVessels.GetOrCreateValue(__instance);
+				return;
+			}
+
+			powerDisabledVessels.Remove(__instance);
+
+			if (!___canComm)
 				return;
 
 			if (vd.EnvStormRadiation > 0.0)
@@ -154,6 +189,12 @@ namespace KERBALISM
 		// apply storm radiation factor to the comm strength multiplier used by stock for plasma blackout
 		private static bool CommNetVessel_GetSignalStrengthModifier_Prefix(CommNetVessel __instance, bool ___canComm, bool ___inPlasma, double ___plasmaMult, out double __result)
 		{
+			if (!UseStockCommNet)
+			{
+				__result = 0.0;
+				return true;
+			}
+
 			if (!___canComm)
 			{
 				__result = 0.0;
