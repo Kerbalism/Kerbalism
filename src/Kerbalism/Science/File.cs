@@ -1,5 +1,3 @@
-using System;
-
 namespace KERBALISM
 {
 	public sealed class File
@@ -13,21 +11,9 @@ namespace KERBALISM
 		/// <summary> will be true if the file was created by the hijacker. Force the stock crediting formula to be applied on recovery</summary>
 		public bool useStockCrediting;
 
-		//public double scienceValueRatio;
-		//public double ScienceMaxValue => Math.Max((subjectData.ScienceMaxValue * scienceValueRatio) - subjectData.ScienceRetrievedInKSC, 0.0);
-		//public double SciencePerMB => subjectData.SciencePerMB * scienceValueRatio;
-
 		public SubjectData subjectData;
 
 		public double transmitRate = 0.0;
-
-		/// <summary>Optional SCANsat coverage delta applied to the map when this file is fully transmitted or recovered.</summary>
-		public Int16[,] ScanCoverage { get; private set; }
-
-		/// <summary>Body flightGlobalsIndex for ScanCoverage when subject body is unavailable.</summary>
-		public int scanBodyIndex = -1;
-
-		public bool HasScanPayload => !ScanGrid.IsEmpty(ScanCoverage);
 
 		public File(SubjectData subjectData, double size = 0.0, bool useStockCrediting = false, string resultText = "")
 		{
@@ -44,34 +30,6 @@ namespace KERBALISM
 				this.resultText = ResearchAndDevelopment.GetResults(subjectData.StockSubjectId);
 			else
 				this.resultText = resultText;
-		}
-
-		public void MergeScanCoverage(Int16[,] payload, int bodyIndex = -1)
-		{
-			if (ScanGrid.IsEmpty(payload))
-				return;
-
-			if (ScanCoverage == null)
-				ScanCoverage = ScanGrid.Create();
-
-			ScanGrid.Or(ScanCoverage, payload);
-			if (bodyIndex >= 0)
-				scanBodyIndex = bodyIndex;
-			else if (scanBodyIndex < 0 && subjectData?.Situation?.Body != null)
-				scanBodyIndex = subjectData.Situation.Body.flightGlobalsIndex;
-		}
-
-		public void ClearScanPayload()
-		{
-			ScanCoverage = null;
-			scanBodyIndex = -1;
-		}
-
-		private void LoadScanPayload(ConfigNode node)
-		{
-			scanBodyIndex = Lib.ConfigValue(node, "scanBodyIndex", -1);
-			string blob = Lib.ConfigValue(node, "scanCoverage", string.Empty);
-			ScanCoverage = ScanGrid.Decode(blob);
 		}
 
 		public static File Load(string integerSubjectId, ConfigNode node)
@@ -97,9 +55,8 @@ namespace KERBALISM
 			string resultText = Lib.ConfigValue(node, "resultText", "");
 			bool useStockCrediting = Lib.ConfigValue(node, "useStockCrediting", false);
 
-			File file = new File(subjectData, size, useStockCrediting, resultText);
-			file.LoadScanPayload(node);
-			return file;
+			// Legacy deferred-map scan_chunks / scanCoverage blobs are ignored; size is enough.
+			return new File(subjectData, size, useStockCrediting, resultText);
 		}
 
 		public void Save(ConfigNode node)
@@ -110,12 +67,6 @@ namespace KERBALISM
 
 			if (subjectData is UnknownSubjectData)
 				node.AddValue("stockSubjectId", subjectData.StockSubjectId);
-
-			if (HasScanPayload)
-			{
-				node.AddValue("scanBodyIndex", scanBodyIndex);
-				node.AddValue("scanCoverage", ScanGrid.Encode(ScanCoverage));
-			}
 		}
 
 		public ScienceData ConvertToStockData()

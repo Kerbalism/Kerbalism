@@ -12,7 +12,9 @@ namespace KERBALISM
 				return;
 			}
 
-			SCANsatHarmony.Apply(harmony);
+			// SCANsat keeps native map production. KerbalismScansat only converts coverage
+			// percent growth into science Files — no Harmony paint divert.
+			IntegrationUtils.Log("SCANsat science sidecar ready (native map).");
 		}
 	}
 }

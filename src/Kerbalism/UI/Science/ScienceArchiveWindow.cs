@@ -384,7 +384,8 @@ namespace KERBALISM
 					}
 					else if (partModule is KerbalismScansat scansatModule)
 					{
-						ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(scansatModule.experimentType);
+						ExperimentInfo expInfo = scansatModule.ExpInfo
+							?? ScienceDB.GetExperimentInfo(scansatModule.experimentType);
 						if (expInfo != null)
 							researchedExpInfos.Add(expInfo);
 					}

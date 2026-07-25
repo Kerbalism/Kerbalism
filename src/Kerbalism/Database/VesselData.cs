@@ -690,10 +690,6 @@ namespace KERBALISM
 				}
 			}
 
-			// Pending SCANsat cells are vessel data. Move sensor bits that only exist on
-			// the newly separated vessel, and keep ambiguous/shared sensor bits on the old vessel.
-			ScanCoverageStore.RepartitionAfterUndock(oldVessel, newVessel);
-
 			newVD.UpdateOnVesselModified();
 			oldVD.UpdateOnVesselModified();
 
@@ -726,10 +722,6 @@ namespace KERBALISM
 				return;
 			}
 
-			// The source vessel GUID disappears after docking, so merge its pending
-			// SCANsat cells before its VesselData becomes unreachable.
-			ScanCoverageStore.MergeVessel(fromVessel.id, toVessel.id);
-
 			// add all partdata of the docking vessel to the docked to vessel
 			foreach (PartData partData in fromVD.parts.Values)
 			{
@@ -754,7 +746,6 @@ namespace KERBALISM
 		internal static void OnPartWillDie(Vessel v, uint partFlightId)
 		{
             VesselData vd = v.KerbalismData();
-            ScanCoverageStore.RemoveCaptureState(v.id, partFlightId);
             vd.parts[partFlightId].OnPartWillDie();
             vd.parts.Remove(partFlightId);
             vd.UpdateOnVesselModified();
@@ -935,8 +926,6 @@ namespace KERBALISM
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
 
-			ScanCoverageStore.LoadVessel(VesselId, node);
-
 			ConfigNode partsNode = new ConfigNode();
 			if (node.TryGetNode("parts", ref partsNode))
 			{
@@ -999,8 +988,6 @@ namespace KERBALISM
 			{
 				node.AddValue("scansat_id", id.ToString());
 			}
-
-			ScanCoverageStore.SaveVessel(VesselId, node);
 
 			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
 

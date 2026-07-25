@@ -78,8 +78,6 @@ namespace KERBALISM
 			// do nothing if science system is disabled
 			if (!Features.Science) return;
 
-			ScanCoverageStore.RetryDeferredApplications();
-
 			// consume ec for transmitters
 			ec.Consume(vd.Connection.ec_idle * elapsed_s, ResourceBroker.CommsIdle);
 
@@ -168,10 +166,6 @@ namespace KERBALISM
 					// add science to the subject (and eventually included subjects), trigger completion events, credit the science, return how much has been credited.
 					vd.scienceTransmitted += xmitFile.file.subjectData.RetrieveScience(xmitScienceValue, true, v.protoVessel, xmitFile.file);
 				}
-
-				// SCANsat map cells are applied only after the science file is fully transmitted.
-				if (xmitFile.file.size <= double.Epsilon && xmitFile.file.HasScanPayload)
-					ScanCoverageStore.ApplyFilePayload(xmitFile.file);
 			}
 
 			Profiler.EndSample();
@@ -189,21 +183,6 @@ namespace KERBALISM
 
 			xmitFiles.Clear();
 			List<SubjectData> filesToRemove = new List<SubjectData>();
-			List<SubjectData> warpFilesToRemove = new List<SubjectData>();
-
-			// A transient SCANsat reflection/body-data failure must not discard coverage.
-			// Retry empty transmitted payloads until the map accepts them.
-			foreach (File warpFile in warpCache.files.Values)
-			{
-				if (warpFile.size <= double.Epsilon
-					&& warpFile.HasScanPayload
-					&& ScanCoverageStore.ApplyFilePayload(warpFile))
-				{
-					warpFilesToRemove.Add(warpFile.subjectData);
-				}
-			}
-			foreach (SubjectData subject in warpFilesToRemove)
-				warpCache.files.Remove(subject);
 
 			foreach (Drive drive in Drive.GetDrives(vd, true))
 			{
@@ -212,13 +191,9 @@ namespace KERBALISM
 					// always reset transmit rate
 					f.transmitRate = 0.0;
 
-					if (f.size <= double.Epsilon && f.HasScanPayload)
-						ScanCoverageStore.ApplyFilePayload(f);
-
 					// delete empty files that aren't being transmitted
 					// note : this won't work in case the same subject is split over multiple files (on different drives)
 					if (f.size <= 0.0
-						&& !f.HasScanPayload
 						&& (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
 					{
 						filesToRemove.Add(f.subjectData);

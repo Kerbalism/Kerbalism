@@ -13,9 +13,7 @@ namespace KERBALISM
 			ExperimentInfo expInfo = module.ExpInfo ?? ScienceDB.GetExperimentInfo(module.experimentType);
 			Texture2D tex = expInfo != null && expInfo.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor;
 			icon = new DeviceIcon(tex, Local.SCIENCEARCHIVE_showexperimentinfo, () =>
-			{
-				Message.Post(Lib.Color(expInfo != null ? expInfo.Title : module.experimentType, Lib.Kolor.Cyan, true), BuildDetail(module));
-			});
+				new ScanExperimentPopup(module.vessel, module, PartId, PartName));
 		}
 
 		public override string Name => module.experimentType;
@@ -28,8 +26,8 @@ namespace KERBALISM
 				sb.Length = 0;
 				sb.Append(Lib.EllipsisMiddle(expInfo != null ? expInfo.Title : module.experimentType, 28));
 				sb.Append(": ");
-				sb.Append(module.PendingCoveragePercent.ToString("F1"));
-				sb.Append("% pending");
+				sb.Append(module.BodyCoveragePercent.ToString("F1"));
+				sb.Append("%");
 				return sb.ToString();
 			}
 		}
@@ -93,8 +91,10 @@ namespace KERBALISM
 				sb.Append(" ");
 				sb.Append(Lib.Color(module.Issue, Lib.Kolor.Orange));
 			}
-			sb.Append("\nPending map data: ");
-			sb.Append(module.PendingCoveragePercent.ToString("F2"));
+			sb.Append("\n");
+			sb.Append(Local.SCIENCEARCHIVE_bodycoverage);
+			sb.Append(": ");
+			sb.Append(module.BodyCoveragePercent.ToString("F2"));
 			sb.Append("%");
 			if (module.CurrentSubject != null)
 			{
@@ -110,12 +110,17 @@ namespace KERBALISM
 	public sealed class ProtoKerbalismScansatDevice : ProtoDevice<KerbalismScansat>
 	{
 		private readonly Vessel vessel;
+		private readonly DeviceIcon icon;
 		private readonly StringBuilder sb = new StringBuilder();
 
 		public ProtoKerbalismScansatDevice(KerbalismScansat prefab, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, Vessel vessel)
 			: base(prefab, protoPart, protoModule)
 		{
 			this.vessel = vessel;
+			ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(prefab.experimentType);
+			Texture2D tex = expInfo != null && expInfo.SampleMass > 0.0 ? Textures.sample_scicolor : Textures.file_scicolor;
+			icon = new DeviceIcon(tex, Local.SCIENCEARCHIVE_showexperimentinfo, () =>
+				new ScanExperimentPopup(vessel, prefab, protoPart.flightID, protoPart.partInfo.title, protoModule));
 		}
 
 		public override string Name => prefab.experimentType;
@@ -125,16 +130,23 @@ namespace KERBALISM
 			get
 			{
 				ExperimentInfo expInfo = ScienceDB.GetExperimentInfo(prefab.experimentType);
-				int sensorType = (int)Lib.Proto.GetUInt(protoModule, "sensorType");
-				double pending = 0.0;
-				if (vessel != null && vessel.mainBody != null)
-					pending = ScanCoverageStore.PendingCoveragePercent(vessel.id, vessel.mainBody.flightGlobalsIndex, (short)sensorType);
+				ProtoPartModuleSnapshot scanner = GetScanner();
+				int sensorType = SCANsat.ScienceSensorType(prefab.experimentType);
+				if (sensorType == 0)
+					sensorType = scanner != null
+						? (int)Lib.Proto.GetUInt(scanner, "sensorType")
+						: (int)Lib.Proto.GetUInt(protoModule, "sensorType");
+				if (sensorType == 0)
+					sensorType = prefab.sensorType;
+				double coverage = 0.0;
+				if (vessel != null && vessel.mainBody != null && sensorType != 0)
+					coverage = SCANsat.Coverage(sensorType, vessel.mainBody);
 
 				sb.Length = 0;
 				sb.Append(Lib.EllipsisMiddle(expInfo != null ? expInfo.Title : prefab.experimentType, 28));
 				sb.Append(": ");
-				sb.Append(pending.ToString("F1"));
-				sb.Append("% pending");
+				sb.Append(coverage.ToString("F1"));
+				sb.Append("%");
 				return sb.ToString();
 			}
 		}
@@ -143,46 +155,41 @@ namespace KERBALISM
 		{
 			get
 			{
-				bool scanning = false;
-				foreach (ProtoPartModuleSnapshot module in protoPart.modules)
-				{
-					if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
-					{
-						scanning = Lib.Proto.GetBool(module, "scanning");
-						break;
-					}
-				}
+				ProtoPartModuleSnapshot scanner = GetScanner();
+				bool scanning = scanner != null && Lib.Proto.GetBool(scanner, "scanning");
 				return Lib.Color(scanning, Local.Generic_ENABLED, Lib.Kolor.Green, Local.Generic_DISABLED, Lib.Kolor.Yellow);
 			}
 		}
 
+		public override DeviceIcon Icon => icon;
+
 		public override void Ctrl(bool value)
 		{
-			foreach (ProtoPartModuleSnapshot module in protoPart.modules)
-			{
-				if (module.moduleName != "SCANsat" && module.moduleName != "ModuleSCANresourceScanner")
-					continue;
+			ProtoPartModuleSnapshot scanner = GetScanner();
+			if (scanner == null)
+				return;
 
-				if (value) SCANsat.ResumeScanner(vessel, module, prefab.part);
-				else SCANsat.StopScanner(vessel, module, prefab.part);
-				break;
-			}
+			Lib.Proto.Set(protoModule, "power_disabled", false);
+			vessel.KerbalismData().scansat_id.Remove(protoPart.flightID);
+			if (value) SCANsat.ResumeScanner(vessel, scanner, prefab.part);
+			else SCANsat.StopScanner(vessel, scanner, prefab.part);
 		}
 
 		public override void Toggle()
 		{
-			bool scanning = false;
-			foreach (ProtoPartModuleSnapshot module in protoPart.modules)
-			{
-				if (module.moduleName == "SCANsat" || module.moduleName == "ModuleSCANresourceScanner")
-				{
-					scanning = Lib.Proto.GetBool(module, "scanning");
-					break;
-				}
-			}
+			ProtoPartModuleSnapshot scanner = GetScanner();
+			bool scanning = scanner != null && Lib.Proto.GetBool(scanner, "scanning");
 			Ctrl(!scanning);
 		}
 
 		public override string PartName => protoPart.partInfo.title;
+
+		private ProtoPartModuleSnapshot GetScanner()
+		{
+			int sensorType = (int)Lib.Proto.GetUInt(protoModule, "sensorType");
+			if (sensorType == 0)
+				sensorType = prefab.sensorType;
+			return SCANsat.FindScanner(protoPart, prefab.experimentType, sensorType);
+		}
 	}
 }

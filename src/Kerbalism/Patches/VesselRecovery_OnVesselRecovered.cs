@@ -135,10 +135,6 @@ namespace KERBALISM
 					RecoverScienceData(new KsmScienceData(sample), protoHardDrive, pv, quick, ref scienceToCredit);
 			}
 
-			// Cells intercepted after the last drive flush still represent paid scan work.
-			// Convert them to temporary files so recovery credits science and updates SCANsat.
-			foreach (File file in KerbalismScansat.TakePendingRecoveryFiles(pv))
-				RecoverScienceData(new KsmScienceData(file), protoHardDrive, pv, quick, ref scienceToCredit);
 		}
 
 		private static void RecoverScienceData(KsmScienceData data, ProtoPartModuleSnapshot protoHardDrive, ProtoVessel pv, bool quick, ref double scienceToCredit)
@@ -156,17 +152,11 @@ namespace KERBALISM
 
 				data.SubjectData.SetAsPersistent();
 				data.SubjectData.UpdateSubjectCompletion(subjectValue);
-
-				if (data.File != null && data.File.HasScanPayload)
-					ScanCoverageStore.ApplyOrQueueRecoveredFilePayload(data.File);
 			}
 			else
 			{
 				double scienceCredited = subject.RetrieveScience(subjectValue, false, pv, data.File);
 				scienceToCredit += scienceCredited;
-
-				if (data.File != null && data.File.HasScanPayload)
-					ScanCoverageStore.ApplyOrQueueRecoveredFilePayload(data.File);
 
 				// stock recovery dialog is shown only if quick is false
 				if (!quick)
