@@ -591,6 +591,7 @@ namespace KERBALISM
 		public static string FILEMANAGER_DeleteConfirm_button1 = GetLoc("FILEMANAGER_DeleteConfirm_button1"); // "Delete it"
 		public static string FILEMANAGER_DeleteConfirm_button2 = GetLoc("FILEMANAGER_DeleteConfirm_button2"); // "Keep it"
 		public static string FILEMANAGER_analysis = GetLoc("FILEMANAGER_analysis"); // "Flag the file for analysis in a <b>laboratory</b>"
+		public static ParamString FILEMANAGER_AnalysisETA = new ParamString("FILEMANAGER_AnalysisETA"); // "Analysis ETA: <<1>>"
 		public static string FILEMANAGER_Dumpsample = GetLoc("FILEMANAGER_Dumpsample"); // "Dump the sample"																
 		public static string FILEMANAGER_DumpConfirm_button1 = GetLoc("FILEMANAGER_DumpConfirm_button1"); // "Dump it"
 		public static string FILEMANAGER_DumpConfirm_button2 = GetLoc("FILEMANAGER_DumpConfirm_button2"); // "Keep it"
