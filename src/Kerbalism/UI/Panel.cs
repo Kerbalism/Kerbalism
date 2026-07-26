@@ -26,7 +26,7 @@ namespace KERBALISM
 			callbacks = new List<Action>();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
-			expand_without_scrollbar = false;
+			scroll_only_on_overflow = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -36,7 +36,7 @@ namespace KERBALISM
 			sections.Clear();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
-			expand_without_scrollbar = false;
+			scroll_only_on_overflow = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -369,18 +369,18 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Grow the window to fit all panel content instead of hosting it in a
-		/// vertical ScrollView. Used by Configure so every option is visible.
+		/// Grow the window to fit all panel content and only use a vertical
+		/// ScrollView when the content exceeds the screen-height limit.
 		/// </summary>
-		public void ExpandWithoutScrollbar()
+		public void ScrollOnlyOnOverflow()
 		{
-			expand_without_scrollbar = true;
+			scroll_only_on_overflow = true;
 		}
 
 		// get medata
 		public string Title() { return win_title; }
 		public float Width() { return min_width; }
-		public bool ExpandsWithoutScrollbar() { return expand_without_scrollbar; }
+		public bool UsesOverflowOnlyScrollbar() { return scroll_only_on_overflow; }
 
 		sealed class Header
 		{
@@ -428,7 +428,7 @@ namespace KERBALISM
 		List<Action> callbacks;  // functions to call on input events
 		string win_title;        // metadata stored in panel
 		float min_width;         // metadata stored in panel
-		bool expand_without_scrollbar; // opt-in: grow window, no vertical ScrollView
+		bool scroll_only_on_overflow; // opt-in: scroll only when screen height is exceeded
 		public PanelType paneltype;
 	}
 } // KERBALISM

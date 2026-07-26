@@ -79,7 +79,10 @@ namespace KERBALISM
 			// adapt window size to panel
 			// - clamp to screen height
 			win_rect.width = Math.Min(panel.Width(), Screen.width * 0.8f);
-			win_rect.height = Math.Min(Styles.ScaleFloat(20.0f) + panel.Height(), Screen.height * 0.8f);
+			float desiredHeight = Styles.ScaleFloat(20.0f) + panel.Height();
+			float maxHeight = Screen.height * 0.8f;
+			content_overflows = panel.UsesOverflowOnlyScrollbar() && desiredHeight > maxHeight;
+			win_rect.height = Math.Min(desiredHeight, maxHeight);
 
 			// clamp the window to the screen, so it can't be dragged outside
 			float offset_x = Math.Max(0.0f, -win_rect.xMin) + Math.Min(0.0f, Screen.width - win_rect.xMax);
@@ -136,18 +139,21 @@ namespace KERBALISM
 			// Keep explicitly pinned section titles outside the scrolling viewport.
 			panel.RenderPinned();
 
-			if (panel.ExpandsWithoutScrollbar())
+			if (panel.UsesOverflowOnlyScrollbar() && !content_overflows)
 			{
-				// Configure lists show every option; grow the window instead of scrolling.
+				// Configure content fits: render directly so no scrollbar is created.
 				scroll_pos = Vector2.zero;
 				panel.Render();
 			}
 			else
 			{
+				GUIStyle verticalScrollbar = panel.UsesOverflowOnlyScrollbar()
+					? Styles.vertical_scrollbar
+					: HighLogic.Skin.verticalScrollbar;
 				scroll_pos = GUILayout.BeginScrollView(
 					scroll_pos,
 					HighLogic.Skin.horizontalScrollbar,
-					HighLogic.Skin.verticalScrollbar);
+					verticalScrollbar);
 				panel.Render();
 				GUILayout.EndScrollView();
 			}
@@ -214,6 +220,7 @@ namespace KERBALISM
 
 		// used by scroll window mechanics
 		private Vector2 scroll_pos;
+		private bool content_overflows;
 
 		// tooltip utility
 		private Tooltip tooltip;

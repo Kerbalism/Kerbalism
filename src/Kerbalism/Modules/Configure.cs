@@ -602,9 +602,9 @@ namespace KERBALISM
 			// set metadata
 			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(Localizer.Format(title), Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
-			// Show every configure option without a vertical scrollbar; the window grows
-			// to fit the full list (including "None").
-			p.ExpandWithoutScrollbar();
+			// Grow to show every configure option (including "None") when possible;
+			// only use a vertical scrollbar if the full panel exceeds screen height.
+			p.ScrollOnlyOnOverflow();
 		}
 
 		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
@@ -630,10 +630,8 @@ namespace KERBALISM
 			}
 
 			int capturedSlot = selected_i;
-			// Do not pin the expanded title: with ExpandWithoutScrollbar the list is not
-			// in a ScrollView, and a pinned title makes Height() disagree with layout
-			// (bottom-row flicker while dragging). Keep the same non-pinned flow as the
-			// collapsed details view.
+			// Keep the same non-pinned flow as the collapsed details view so Height()
+			// agrees with layout (avoids bottom-row flicker while dragging).
 			p.AddSection(
 				titleText,
 				isExpanded ? string.Empty : setupDesc,
