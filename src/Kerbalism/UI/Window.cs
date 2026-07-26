@@ -136,17 +136,21 @@ namespace KERBALISM
 			// Keep explicitly pinned section titles outside the scrolling viewport.
 			panel.RenderPinned();
 
-			// start scrolling view
-			GUIStyle verticalScrollbar = panel.UsesCompactScrollbar()
-				? Styles.vertical_scrollbar
-				: HighLogic.Skin.verticalScrollbar;
-			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, verticalScrollbar);
-
-			// render panel content
-			panel.Render();
-
-			// end scroll view
-			GUILayout.EndScrollView();
+			if (panel.ExpandsWithoutScrollbar())
+			{
+				// Configure lists show every option; grow the window instead of scrolling.
+				scroll_pos = Vector2.zero;
+				panel.Render();
+			}
+			else
+			{
+				scroll_pos = GUILayout.BeginScrollView(
+					scroll_pos,
+					HighLogic.Skin.horizontalScrollbar,
+					HighLogic.Skin.verticalScrollbar);
+				panel.Render();
+				GUILayout.EndScrollView();
+			}
 
 			// Capture after all controls have been rendered. Drawing happens outside the
 			// GUI.Window so the tooltip can use the full screen bounds.
