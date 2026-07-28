@@ -26,7 +26,7 @@ namespace KERBALISM
 			callbacks = new List<Action>();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
-			compact_scrollbar = false;
+			scroll_only_on_overflow = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -36,7 +36,7 @@ namespace KERBALISM
 			sections.Clear();
 			win_title = string.Empty;
 			min_width = Styles.ScaleWidthFloat(280.0f);
-			compact_scrollbar = false;
+			scroll_only_on_overflow = false;
 			paneltype = PanelType.unknown;
 		}
 
@@ -203,10 +203,9 @@ namespace KERBALISM
 				}
 				foreach (Entry e in p.entries)
 				{
-					if (e.selectable)
-						GUILayout.BeginHorizontal(Styles.entry_container_wrap, GUILayout.MinHeight(Styles.entry_container.fixedHeight));
-					else
-						GUILayout.BeginHorizontal(Styles.entry_container);
+					// Selectable rows use the same fixed-height container as normal
+					// content so Height() matches layout (avoids bottom-row flicker).
+					GUILayout.BeginHorizontal(Styles.entry_container);
 					if (e.leftIcon != null)
 					{
 						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
@@ -214,12 +213,12 @@ namespace KERBALISM
 							callbacks.Add(e.leftIcon.click);
 					}
 					if (e.selectable)
-						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label);
+						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label_nowrap, GUILayout.Height(Styles.entry_label.fontSize));
 					else
 						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
 					if (e.selectable)
-						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Width(Styles.ScaleWidthFloat(20.0f)));
+						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Width(Styles.ScaleWidthFloat(20.0f)), GUILayout.Height(Styles.entry_value.fontSize));
 					else
 						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
 					if (!e.selectable && e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
@@ -249,6 +248,8 @@ namespace KERBALISM
 							GUI.DrawTexture(rowRect, Texture2D.whiteTexture);
 							GUI.color = previousColor;
 						}
+						// Slightly roomier gaps between configure dropdown options.
+						GUILayout.Space(Styles.ScaleFloat(4.0f));
 					}
 				}
 
@@ -299,17 +300,9 @@ namespace KERBALISM
 				h += Styles.ScaleFloat(34.0f);
 				foreach (Entry e in p.entries)
 				{
+					h += Styles.entry_container.fixedHeight;
 					if (e.selectable)
-					{
-						float labelWidth = Math.Max(Styles.ScaleWidthFloat(40.0f),
-							min_width - Styles.ScaleWidthFloat(50.0f));
-						h += Math.Max(Styles.entry_container.fixedHeight,
-							Styles.entry_label.CalcHeight(new GUIContent(e.label), labelWidth));
-					}
-					else
-					{
-						h += Styles.entry_container.fixedHeight;
-					}
+						h += Styles.ScaleFloat(4.0f);
 				}
 				if (p.desc.Length > 0)
 				{
@@ -375,15 +368,19 @@ namespace KERBALISM
 			min_width = Math.Max(w, min_width);
 		}
 
-		public void UseCompactScrollbar()
+		/// <summary>
+		/// Grow the window to fit all panel content and only use a vertical
+		/// ScrollView when the content exceeds the screen-height limit.
+		/// </summary>
+		public void ScrollOnlyOnOverflow()
 		{
-			compact_scrollbar = true;
+			scroll_only_on_overflow = true;
 		}
 
 		// get medata
 		public string Title() { return win_title; }
 		public float Width() { return min_width; }
-		public bool UsesCompactScrollbar() { return compact_scrollbar; }
+		public bool UsesOverflowOnlyScrollbar() { return scroll_only_on_overflow; }
 
 		sealed class Header
 		{
@@ -431,7 +428,7 @@ namespace KERBALISM
 		List<Action> callbacks;  // functions to call on input events
 		string win_title;        // metadata stored in panel
 		float min_width;         // metadata stored in panel
-		bool compact_scrollbar;  // opt-in compact vertical scrollbar
+		bool scroll_only_on_overflow; // opt-in: scroll only when screen height is exceeded
 		public PanelType paneltype;
 	}
 } // KERBALISM

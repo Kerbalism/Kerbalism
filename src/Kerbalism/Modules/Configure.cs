@@ -602,7 +602,9 @@ namespace KERBALISM
 			// set metadata
 			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(Localizer.Format(title), Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
-			p.UseCompactScrollbar();
+			// Grow to show every configure option (including "None") when possible;
+			// only use a vertical scrollbar if the full panel exceeds screen height.
+			p.ScrollOnlyOnOverflow();
 		}
 
 		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
@@ -628,11 +630,12 @@ namespace KERBALISM
 			}
 
 			int capturedSlot = selected_i;
+			// Keep the same non-pinned flow as the collapsed details view so Height()
+			// agrees with layout (avoids bottom-row flicker while dragging).
 			p.AddSection(
 				titleText,
 				isExpanded ? string.Empty : setupDesc,
-				click: canReconfigure ? (Action)(() => Toggle_expansion(capturedSlot)) : null,
-				pin: isExpanded);
+				click: canReconfigure ? (Action)(() => Toggle_expansion(capturedSlot)) : null);
 
 			if (isExpanded)
 			{
