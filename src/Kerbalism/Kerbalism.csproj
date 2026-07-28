@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>3.40.0</Version>
+    <Version>3.41.0</Version>
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>Kerbalism</AssemblyName>
     <RootNamespace>KERBALISM</RootNamespace>
