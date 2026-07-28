@@ -846,7 +846,7 @@ namespace KERBALISM
 					}
 					// note that the experiment modules on the prefab gets initialized from the scienceDB init, which also do
 					// a LoadedPartsList loop to get the scienceDB module infos. So this has to be called after the scienceDB init.
-					else if (module is Experiment)
+					else if (module is Experiment || module is KerbalismScansat)
 					{
 						partNeedsInfoRecompile = true;
 					}

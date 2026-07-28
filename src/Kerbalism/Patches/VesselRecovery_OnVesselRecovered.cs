@@ -73,6 +73,7 @@ namespace KERBALISM
 		public SubjectData SubjectData => isFile ? file.subjectData : sample.subjectData;
 		public double Size => isFile ? file.size : sample.size;
 		public bool UseStockCrediting => isFile ? file.useStockCrediting : sample.useStockCrediting;
+		public File File => isFile ? file : null;
 		public ScienceData ConvertToStockData() => isFile ? file.ConvertToStockData() : sample.ConvertToStockData();
 
 		public KsmScienceData(File file)
@@ -133,6 +134,7 @@ namespace KERBALISM
 				foreach (Sample sample in drive.samples.Values)
 					RecoverScienceData(new KsmScienceData(sample), protoHardDrive, pv, quick, ref scienceToCredit);
 			}
+
 		}
 
 		private static void RecoverScienceData(KsmScienceData data, ProtoPartModuleSnapshot protoHardDrive, ProtoVessel pv, bool quick, ref double scienceToCredit)
@@ -153,7 +155,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				double scienceCredited = subject.RetrieveScience(subjectValue, false, pv);
+				double scienceCredited = subject.RetrieveScience(subjectValue, false, pv, data.File);
 				scienceToCredit += scienceCredited;
 
 				// stock recovery dialog is shown only if quick is false

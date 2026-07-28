@@ -6,4 +6,9 @@
     <!-- Optional: also copy GameData/Kerbalism + KerbalismConfig into that install on build. -->
     <Kerbalism_DeployToKsp>true</Kerbalism_DeployToKsp>
   </PropertyGroup>
+
+  <!-- Optional: in-game Kerbalism profiler (Ctrl+P). Debug builds only. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);DEBUG_PROFILER</DefineConstants>
+  </PropertyGroup>
 </Project>

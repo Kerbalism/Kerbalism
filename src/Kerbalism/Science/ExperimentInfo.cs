@@ -320,6 +320,13 @@ namespace KERBALISM
 							}
 						}
 					}
+					else if (module is KerbalismScansat scansatModule)
+					{
+						if (scansatModule.experimentType == ExperimentId && string.IsNullOrEmpty(ModuleInfo))
+						{
+							ModuleInfo = scansatModule.GetInfo();
+						}
+					}
 
 					if (!string.IsNullOrEmpty(ModuleInfo))
 						continue;

@@ -193,7 +193,8 @@ namespace KERBALISM
 
 					// delete empty files that aren't being transmitted
 					// note : this won't work in case the same subject is split over multiple files (on different drives)
-					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
+					if (f.size <= 0.0
+						&& (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
 					{
 						filesToRemove.Add(f.subjectData);
 						continue;

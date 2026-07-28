@@ -699,6 +699,8 @@ namespace KERBALISM
 		public static string SCIENCEARCHIVE_samples = GetLoc("SCIENCEARCHIVE_samples"); // "samples"
 		public static string SCIENCEARCHIVE_situation = GetLoc("SCIENCEARCHIVE_situation"); // "situation"
 		public static string SCIENCEARCHIVE_retrieved = GetLoc("SCIENCEARCHIVE_retrieved"); // "retrieved"
+		public static string SCIENCEARCHIVE_bodycoverage = GetLoc("SCIENCEARCHIVE_bodycoverage"); // "body coverage"
+		public static string SCIENCEARCHIVE_stored = GetLoc("SCIENCEARCHIVE_stored"); // "stored"
 		public static string SCIENCEARCHIVE_invalidsituation = GetLoc("SCIENCEARCHIVE_invalidsituation"); // "invalid situation"
 		public static string SCIENCEARCHIVE_value = GetLoc("SCIENCEARCHIVE_value"); // "value"
 		public static string SCIENCEARCHIVE_never = GetLoc("SCIENCEARCHIVE_never"); // "never"
