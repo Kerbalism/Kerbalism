@@ -97,11 +97,18 @@ namespace KERBALISM
 				if (totalSlots > 0 && !unlimitedSamples) title += ", " + Lib.HumanReadableSampleSize(totalSlots) + " "+ Local.FILEMANAGER_SAMPLESAvailable;//available
 				p.AddSection(title);
 
+				Sample activeAnalysisSample;
+				double activeAnalysisEta;
+				bool hasAnalysisEta = Laboratory.TryGetAnalysisETA(v, out activeAnalysisSample, out activeAnalysisEta);
+
 				foreach (var drive in drives)
 				{
 					foreach (Sample sample in drive.Value.samples.Values)
 					{
-						Render_sample(p, drive.Key, sample, drive.Value, short_strings && Lib.IsFlight());
+						double analysisEta = hasAnalysisEta && ReferenceEquals(sample, activeAnalysisSample)
+							? activeAnalysisEta
+							: double.NaN;
+						Render_sample(p, drive.Key, sample, drive.Value, short_strings && Lib.IsFlight(), analysisEta);
 					}
 				}
 
@@ -168,7 +175,7 @@ namespace KERBALISM
 			);
 		}
 
-		static void Render_sample(Panel p, uint partId, Sample sample, Drive drive, bool short_strings)
+		static void Render_sample(Panel p, uint partId, Sample sample, Drive drive, bool short_strings, double analysis_eta)
 		{
 			// render experiment name
 			string exp_label = Lib.BuildString
@@ -188,10 +195,24 @@ namespace KERBALISM
 			double exp_value = sample.size * sample.subjectData.SciencePerMB;
 			if (exp_value >= 0.1) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableScience(exp_value, false), "</b>");
 			if (sample.mass > Double.Epsilon) exp_tooltip = Lib.BuildString(exp_tooltip, "\n<b>", Lib.HumanReadableMass(sample.mass), "</b>");
+
+			string analysis_eta_txt = !double.IsNaN(analysis_eta) ? Lib.HumanReadableCountdown(analysis_eta) : string.Empty;
+			if (!string.IsNullOrEmpty(analysis_eta_txt))
+				exp_tooltip = Lib.Color(Lib.BuildString(exp_tooltip, "\n", Local.FILEMANAGER_AnalysisETA.Format(analysis_eta_txt)), Lib.Kolor.Cyan);
+
 			if (!string.IsNullOrEmpty(sample.resultText)) exp_tooltip = Lib.BuildString(exp_tooltip, "\n", Lib.WordWrapAtLength(sample.resultText, 50));
 
-			p.AddContent(exp_label, Lib.HumanReadableSampleSize(sample.size), exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
-			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, Local.FILEMANAGER_analysis, () => { sample.analyze = !sample.analyze; });//"Flag the file for analysis in a <b>laboratory</b>"
+			string size = Lib.HumanReadableSampleSize(sample.size);
+			if (!string.IsNullOrEmpty(analysis_eta_txt))
+				size = Lib.Color(Lib.BuildString(size, "  ", analysis_eta_txt), Lib.Kolor.Cyan);
+
+			p.AddContent(exp_label, size, exp_tooltip, (Action)null, () => Highlighter.Set(partId, Color.cyan));
+
+			string analysis_icon_tooltip = Local.FILEMANAGER_analysis;
+			if (!string.IsNullOrEmpty(analysis_eta_txt))
+				analysis_icon_tooltip = Lib.BuildString(analysis_icon_tooltip, "\n", Local.FILEMANAGER_AnalysisETA.Format(analysis_eta_txt));
+
+			p.AddRightIcon(sample.analyze ? Textures.lab_cyan : Textures.lab_black, analysis_icon_tooltip, () => { sample.analyze = !sample.analyze; });//"Flag the file for analysis in a <b>laboratory</b>"
 			p.AddRightIcon(Textures.toggle_red, Local.FILEMANAGER_Dumpsample, () =>//"Dump the sample"
 				{
 					Lib.Popup(Local.FILEMANAGER_Warning_title,//"Warning!"
