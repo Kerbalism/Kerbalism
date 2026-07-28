@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
-  - name: FAQ & Wiki
-    url: https://github.com/Kerbalism/Kerbalism/wiki/FAQ
+  - name: FAQ & Documentation
+    url: https://kerbalism.github.io/Kerbalism/faq/
     about: Check known issues and documentation before opening an issue.
   - name: Discord
     url: https://discord.gg/3JAE2JE

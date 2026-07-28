@@ -382,4 +382,9 @@ SciTE*.properties
 # KSPBuildTools local config (copy from Kerbalism.props.user.example)
 *.props.user
 
+# MkDocs
+/site/
+.cache/
+.venv/
+
 

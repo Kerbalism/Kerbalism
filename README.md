@@ -18,12 +18,12 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 - **Vessels management** : All vessels can be monitored and controlled to some extent from a centralized user interface available in all scenes.
 - **Mission planning** : The editor user interface allow to evaluate your vessel design against various environments and provide extended information about all aspects of the mod.
 
-For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
+For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 
 ## Current version: 3.41
  
 **Download** : **[Github releases]** - **[CKAN]**  
-**Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
+**Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
 **License** : [Unlicense] (public domain)  
 **KSP version** : 1.12.x  
 **Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
@@ -79,7 +79,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 ## Documentation, help and bug-reporting
 
-- **Tutorials and documentation** are available at the **[Github wiki]**
+- **Tutorials and documentation** are available in the **[Documentation]** (MkDocs; English / 中文)
 
 - Need **help** ?
 
@@ -95,10 +95,11 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
   - Report it on [Github issues] (preferred) or in the [KSP forums thread] (we don't go there often).
 
 - You want to **contribute** or add support for your mod ?
-  - Check the technical guide on the wiki
+  - Check the technical guide in the [Documentation]
   - Pull requests are welcome, especially for mod support configs. For code contributions, it is recommended to talk to us on [Discord] before engaging anything.
   - Read the [contributing] documentation
   - To build the plugin from the source code, see [CONTRIBUTING.md](CONTRIBUTING.md#setup-guide)
+  - To preview docs locally: `pip install -r requirements.txt` then `mkdocs serve`
 
 ## Disclaimer and license
 
@@ -106,10 +107,10 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 
 
 [Github releases]: https://github.com/Kerbalism/Kerbalism/releases
-[Github wiki]: https://github.com/Kerbalism/Kerbalism/wiki
+[Documentation]: https://kerbalism.github.io/Kerbalism/
 [GitHub issues]: https://github.com/Kerbalism/Kerbalism/issues
 [Dev Builds]: https://github.com/Kerbalism/DevBuilds/releases
-[Mod Compatibility]: https://github.com/Kerbalism/Kerbalism/wiki/Home-~-Mod-Support
+[Mod Compatibility]: https://kerbalism.github.io/Kerbalism/mod-support/
 [Changelog]: https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md
 [Contributing]: https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
@@ -126,5 +127,4 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 
 [KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/banner.png
 
-[New and Noteworthy]: https://github.com/Kerbalism/Kerbalism/wiki/New-And-Noteworthy
-[FAQ]: https://github.com/Kerbalism/Kerbalism/wiki/FAQ
+[FAQ]: https://kerbalism.github.io/Kerbalism/faq/
