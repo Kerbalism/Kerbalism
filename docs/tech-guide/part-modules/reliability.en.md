@@ -20,6 +20,8 @@ Source: [`Reliability.cs`](https://github.com/Kerbalism/Kerbalism/blob/master/sr
 
 | PROPERTY | DESCRIPTION | DEFAULT |
 | --- | --- | --- |
+| engine_reliability_auto | auto-rate engine ignition/burn values from propulsion-family config | `false` |
+| engine_reliability_family | explicit propulsion family, or `auto` to inspect modules/propellants | `auto` |
 | turnon_failure_probability | failure chance on ignition (0..1); `-1` disables | `-1` |
 | rated_operation_duration | expected burn duration (s) before failure rate rises; `-1` disables | `-1` |
 | rated_ignitions | expected ignitions before failure rate rises; `-1` disables | `-1` |
@@ -27,6 +29,19 @@ Source: [`Reliability.cs`](https://github.com/Kerbalism/Kerbalism/blob/master/sr
 Applies to `ModuleEngines` / `ModuleEnginesFX`. Ignition means providing thrust after not providing thrust (not merely enabling the PAW toggle).
 
 Engines get a fraction of `rated_operation_duration` / `rated_ignitions` with low failure odds; beyond that, failure rate rises sharply. Failures can destroy the engine.
+
+The official config enables automatic ratings with the internal `-2` sentinel.
+Explicit values (`0`, `-1`, or positive) always override auto-rating. Propulsion
+families and resource aliases are configured in
+`GameData/KerbalismConfig/System/EngineReliability.cfg`:
+
+- Chemical, methalox, hydrolox, storable and nuclear-thermal families use
+  family-specific, bounded vacuum-ISP curves for rated burn duration.
+- Finite-restart families use continuous thrust and vacuum/atmosphere-ISP
+  curves instead of the old thrust buckets.
+- Solid, electric and advanced propulsion default to no generic burn/ignition
+  hard limit unless a support config explicitly supplies one.
+- Unknown engines fail open (no arbitrary 600-second limit).
 
 ## MTBF
 

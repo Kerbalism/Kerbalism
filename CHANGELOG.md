@@ -3,6 +3,7 @@
  - 2026-07-28
 
  ### Changes since the last release
+ * Changed: Engine ignition and burn-time auto-ratings now use configurable propulsion families with bounded ISP/thrust curves and safe fallbacks for electric/far-future engines (#1087, @Aebestach)
  * Added: Greenhouse overhaul with continuous food production and balance tuning (#1096, @Aebestach)
  * Added: Configure dropdown UI for process/setup selection (#1072, #1131, @Aebestach)
  * Added: Default planetary resource maps and ISRU processes from Kerbalism Compatibility Overhaul (#1081, @Aebestach)

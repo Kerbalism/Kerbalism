@@ -21,6 +21,8 @@ namespace KERBALISM
 		[KSPField] public double radiation_decay_rate = 1;                  // time to next failure is reduced by (rad/h - rated_radiation) * radiation_decay_rate per second
 
 		// engine only features
+		[KSPField] public bool engine_reliability_auto = false;             // calculate -2 sentinel values from engine family definitions
+		[KSPField] public string engine_reliability_family = "auto";        // explicit family name, or auto-detect from module/propellants
 		[KSPField] public double turnon_failure_probability = -1;           // probability of a failure when turned on or staged
 		[KSPField] public double rated_operation_duration = -1;             // failure rate increases dramatically if this is exceeded
 		[KSPField] public int rated_ignitions = -1;                         // failure rate increases dramatically if this is exceeded
@@ -50,12 +52,14 @@ namespace KERBALISM
 		List<ModuleAlternator> alternators;                                 // engine-mounted ModuleAlternator cache
 		CrewSpecs repair_cs;                                                // crew specs
 		bool explode = false;
+		bool engineReliabilityRatingsApplied;
 
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
+			EnsureEngineReliabilityRatings();
 			Fields["Status"].guiName = LocalizeTitle(title);
 #if DEBUG_RELIABILITY
 			Events["Break"].guiName = "Break " + LocalizeTitle(title) + " [DEBUG]";
@@ -906,6 +910,7 @@ namespace KERBALISM
 		// specifics support
 		public Specifics Specs()
 		{
+			EnsureEngineReliabilityRatings();
 			Specifics specs = new Specifics();
 			if (redundancy.Length > 0) specs.Add(Local.Reliability_info1, LocalizeRedundancyGroup(redundancy));//"Redundancy"
 			specs.Add(Local.Reliability_info2, new CrewSpecs(repair).Info());//"Repair"
@@ -931,6 +936,13 @@ namespace KERBALISM
 			if (mtbf > 0 && rated_radiation > 0) specs.Add(Local.Reliability_info8, Lib.HumanReadableRadiation(Settings.QualityScale * rated_radiation / 3600.0));//"Radiation rating"
 
 			return specs;
+		}
+
+		internal void EnsureEngineReliabilityRatings()
+		{
+			if (engineReliabilityRatingsApplied)
+				return;
+			engineReliabilityRatingsApplied = EngineReliabilityHeuristics.Apply(this);
 		}
 
 		// module info support
