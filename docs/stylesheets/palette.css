@@ -1,0 +1,31 @@
+/* Kerbalism brand palette */
+
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: #117f82;
+  --md-primary-fg-color--light: #21a3a5;
+  --md-primary-fg-color--dark: #0b5c5f;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+}
+
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #c47a12;
+  --md-accent-fg-color--transparent: #c47a121f;
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: #ffffffb3;
+}
+
+[data-md-color-scheme="slate"][data-md-color-primary="custom"] {
+  /* Cool steel blue — less neon mint than the old teal */
+  --md-primary-fg-color: #8aa4bd;
+  --md-primary-fg-color--light: #b7c9db;
+  --md-primary-fg-color--dark: #6a849d;
+  /* Text/icons on the dark header — must stay light */
+  --md-primary-bg-color: #eef3f7;
+  --md-primary-bg-color--light: #eef3f7b3;
+}
+
+[data-md-color-scheme="slate"][data-md-color-accent="custom"] {
+  --md-accent-fg-color: #d2a35c;
+  --md-accent-fg-color--transparent: #d2a35c26;
+}
