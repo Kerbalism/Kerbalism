@@ -163,7 +163,8 @@ namespace KERBALISM
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
 								   * step                    // seconds elapsed or by number of steps
-								   * Variance(name, c, variance); // kerbal-specific variance
+								   * Variance(name, c, variance) // kerbal-specific variance
+								   / ExperienceResistance(c); // experienced kerbals cope better with stress
 					}
 					// else slowly recover
 					else
@@ -275,6 +276,20 @@ namespace KERBALISM
 
 			// return kerbal-specific variance in range [1-n .. 1+n]
 			return 1.0 + variance * k;
+		}
+
+
+		// experienced kerbals accumulate stress more slowly (breakdown rules only)
+		double ExperienceResistance(ProtoCrewMember c)
+		{
+			if (!breakdown)
+				return 1.0;
+
+			float bonus = PreferencesComfort.Instance.stressExperienceBonus;
+			if (bonus <= 0f)
+				return 1.0;
+
+			return 1.0 + c.experienceLevel * bonus;
 		}
 
 
