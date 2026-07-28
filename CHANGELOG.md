@@ -1,3 +1,49 @@
+## v3.41 for KSP 1.12.x
+
+ - 2026-07-28
+
+ ### Changes since the last release
+ * Added: Greenhouse overhaul with continuous food production and balance tuning (#1096, @Aebestach)
+ * Added: Configure dropdown UI for process/setup selection (#1072, #1131, @Aebestach)
+ * Added: Default planetary resource maps and ISRU processes from Kerbalism Compatibility Overhaul (#1081, @Aebestach)
+ * Added: Laboratory sample analysis ETA in the File Manager (#1126, @Aebestach)
+ * Added: Difficulty option to freeze unloaded solar panel exposure (#1121, @Aebestach)
+ * Added: Warning before boarding when the vessel cannot store EVA science (#1116, @Aebestach)
+ * Added: Bluedog Design Bureau, Planetside Exploration Technologies, Feline Utility Rovers, Interkosmos, Solar Science, Probes/DMOS, and Universal Storage 2 science/support configs (#1057, #1119, #1074, #1115, #1088, #1117, #1064, #1084, @SerShrubert, @Aebestach)
+ * Added: KPBS greenhouse plants comfort and SystemHeat support for the KPBS nuclear centrifuge (#1077, #1066, @Aebestach)
+ * Added: Reliability for SSTU Custom Probe Core (#1114, @Aebestach)
+ * Added: CryoTanks cooling automation device (#1110, @Aebestach)
+ * Fixed: Solar panel shadow detection, unloaded tracking-panel power, planner output for cylindrical/spherical panels, Monitor average exposure, and SolarPanelFixer allocation reductions (#1058, #1060, #1104, #1070, #1090, @siimav, @Aebestach)
+ * Fixed: Science experiments broken by NaN CommNet damping (#1056, @Aebestach)
+ * Fixed: Kopernicus crash when bodies have a null scaledBody (#1063, @Aebestach)
+ * Fixed: Failed engines still producing EC from alternators (#1082, @Aebestach)
+ * Fixed: PAW status freeze after ResourceDisplay tooltips (#1079, @Aebestach)
+ * Fixed: Habitat centrifuge Auto control (#1099, @Aebestach)
+ * Fixed: Engineer specialist bonus for Process-based ISRU converters (#1106, @Aebestach)
+ * Fixed: Sterling ISRU processes missing with RationalResourcesKerbalism (#1105, @Aebestach)
+ * Fixed: CryoTanks planner/monitor EC costs (#1110, @Aebestach)
+ * Fixed: Greenhouse free artificial light when `ec_rate` is 0 (#1109, @Aebestach)
+ * Fixed: CactEye infinite science exploit (#1113, @Aebestach)
+ * Fixed: SCANsat science/EC ownership with overlapping coverage (#1123, @Aebestach)
+ * Fixed: Space weather notification preset not applying to new vessels (#1125, @Aebestach)
+ * Fixed: Pressurized tanks storing too much XenonGas (#1129, @Aebestach)
+ * Fixed: Seafloor vessels treated as splashed for science situations (#1086, @Aebestach)
+ * Fixed: KsmGui showing in facilities; Body Info hotkey ignored while typing (#1107, @Aebestach)
+ * Changed: Supply and Configure can add capacity to existing resources (#1054, @SerShrubert)
+ * Changed: Experienced kerbals accumulate stress more slowly (#1127, @Aebestach)
+ * Changed: Waste incinerator can dump CO2 (#1083, @Aebestach)
+ * Changed: Asteroid and comet mining routed through Harvester type 4 (#1095, @Aebestach)
+ * Changed: Stars use the SpaceHigh science modifier for Space/Global situations (#1118, @SerShrubert)
+ * Changed: Optional SystemHeat config patches moved into Extras (#1093, @Aebestach)
+ * Changed: Completed localization coverage across supported languages (#1133, #1062, #1075, @Aebestach)
+ * Changed: Stock fuel cell and MannedOrbit contract text clarified (#1067, #1059, @Aebestach)
+ * Changed: Live KSP GameData deploy is now opt-in via `Kerbalism_DeployToKsp` (#1055, @Aebestach)
+ * Changed: Add PR compile check and issue templates (#1094, @Aebestach)
+ * Changed: Remove dead SolarPanelFixer.OnSave VesselData rebuild (#1101, @Aebestach)
+ * Changed: Remove obsolete pre-3.1 save migration code (#1111, @Aebestach)
+ * Changed: Remove unused UPGRADE_GooStorage localization keys (#1122, @Aebestach)
+ * Optimized: Reduced editor PAW lag from Planner GetManifest polling (#1098, @Aebestach)
+
 ## v3.40 for KSP 1.12.x
 
  - 2026-07-13
