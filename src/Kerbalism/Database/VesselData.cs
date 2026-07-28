@@ -830,7 +830,7 @@ namespace KERBALISM
 			cfg_supply = PreferencesMessages.Instance.supply;
 			cfg_signal = PreferencesMessages.Instance.signal;
 			cfg_malfunction = PreferencesMessages.Instance.malfunction;
-			cfg_storm = Features.SpaceWeather && PreferencesMessages.Instance.storm && Lib.CrewCount(pv) > 0;
+			cfg_storm = Features.SpaceWeather && PreferencesMessages.Instance.storm;
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
@@ -866,7 +866,7 @@ namespace KERBALISM
 			cfg_supply = Lib.ConfigValue(node, "cfg_supply", PreferencesMessages.Instance.supply);
 			cfg_signal = Lib.ConfigValue(node, "cfg_signal", PreferencesMessages.Instance.signal);
 			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
-			cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
+			cfg_storm = Lib.ConfigValue(node, "cfg_storm", Features.SpaceWeather && PreferencesMessages.Instance.storm);
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
