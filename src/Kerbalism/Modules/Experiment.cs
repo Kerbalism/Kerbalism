@@ -158,6 +158,15 @@ namespace KERBALISM
 			loopAnimator = new Animator(part, anim_loop);
 			loopAnimator.reversed = anim_loop_reverse;
 
+			// Editor preview can persist Running onto a launched craft; do not resume
+			// while local fairings are still attached.
+			if (require_jettison && HasUnjettisonedFairings(part) && Running)
+			{
+				expState = RunningState.Stopped;
+				status = ExpStatus.Stopped;
+				issue = string.Empty;
+			}
+
 			// set initial animation states
 			deployAnimator.Still(Running ? 1.0 : 0.0);
 			SetDragCubes(Running);
