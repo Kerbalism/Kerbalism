@@ -162,9 +162,8 @@ namespace KERBALISM
 			// while local fairings are still attached.
 			if (require_jettison && HasUnjettisonedFairings(part) && Running)
 			{
-				expState = RunningState.Stopped;
-				status = ExpStatus.Stopped;
 				issue = string.Empty;
+				State = RunningState.Stopped;
 			}
 
 			// set initial animation states
