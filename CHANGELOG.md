@@ -3,7 +3,11 @@
  - 2026-07-28
 
  ### Changes since the last release
- * Changed: Engine ignition and burn-time auto-ratings now use configurable propulsion families with bounded ISP/thrust curves and safe fallbacks for electric/far-future engines (#1087, @Aebestach)
+ * Changed: Engine ignition, burn-time and turn-on failures moved into optional companion mod KerbalismEngineFailures; core Reliability keeps MTBF/radiation only (#1087, @Aebestach)
+ * Added: KerbalismEngineFailures companion (CKAN recommended by KerbalismConfig; conflicts with TestFlight / TestLite / RO / RP-1) (#1087, @Aebestach)
+ * Added: KerbalismEngineFailures propulsion-family auto-ratings with bounded ISP/thrust curves and safe fallbacks (#1087, @Aebestach)
+ * Changed: Kerbalism MTBF Reliability is no longer stripped entirely when TestFlight is present (#1087, @Aebestach)
+* Changed: Critical Reliability and engine failures can be repaired with two EVA repair kits by crew one qualification tier above the normal repair requirement (#814, @Aebestach)
  * Added: Greenhouse overhaul with continuous food production and balance tuning (#1096, @Aebestach)
  * Added: Configure dropdown UI for process/setup selection (#1072, #1131, @Aebestach)
  * Added: Default planetary resource maps and ISRU processes from Kerbalism Compatibility Overhaul (#1081, @Aebestach)

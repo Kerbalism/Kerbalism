@@ -94,7 +94,7 @@ Kerbalism 得在**未加载飞船**上继续跑生命维持、ISRU、科研、�
 | RealAntennas / RealFuels 等 | 有对应配置（RO/RSS 玩家多用 ROKerbalism） |
 | TweakScale、B9PartSwitch、CCK、CLS | 工具向补丁 |
 | Kopernicus / 行星包 | 有辐射 / 天体挂钩≠全面支持 |
-| EngineIgnitor、TestFlight、PayToPlay | 可靠性 / 点火相关 |
+| TestFlight / RO / RP-1 | 与可选包 KerbalismEngineFailures 不兼容（CKAN 冲突）；请用它们自己的引擎可靠性。核心 Kerbalism MTBF Reliability 不受影响 |
 
 ### USI 与 Sterling Systems
 

@@ -17,9 +17,11 @@ namespace KERBALISM
 		private bool need_maintenance;
 		private double maintenance_after = 0;
 
+		public static readonly List<Action<Vessel, List<ReliabilityInfo>>> ExtraProviders =
+			new List<Action<Vessel, List<ReliabilityInfo>>>();
+
 		public ReliabilityInfo(Reliability module)
 		{
-			module.EnsureEngineReliabilityRatings();
 			title = Lib.BuildString(module.part.partInfo.title, Lib.Color(" " + Reliability.LocalizeTitle(module.title), Lib.Kolor.LightGrey));
 			group = module.redundancy;
 			broken = module.broken;
@@ -27,18 +29,6 @@ namespace KERBALISM
 			partId = module.part.flightID;
 			need_maintenance = module.needMaintenance;
 			mtbf = Reliability.EffectiveMTBF(module.quality, module.mtbf);
-
-			if(module.rated_operation_duration > 0)
-			{
-				rel_duration = module.operation_duration / Reliability.EffectiveDuration(module.quality, module.rated_operation_duration);
-				rel_duration = Lib.Clamp(rel_duration, 0, 1);
-			}
-
-			if(module.rated_ignitions > 0)
-			{
-				rel_ignitions = (double)module.ignitions / Reliability.EffectiveIgnitions(module.quality, module.rated_ignitions);
-				rel_ignitions = Lib.Clamp(rel_ignitions, 0, 1);
-			}
 
 			if (mtbf > 0)
 			{
@@ -48,7 +38,6 @@ namespace KERBALISM
 
 		public ReliabilityInfo(ProtoPartSnapshot p, ProtoPartModuleSnapshot m, Reliability module_prefab)
 		{
-			module_prefab.EnsureEngineReliabilityRatings();
 			title = Lib.BuildString(p.partInfo.title, Lib.Color(" " + Reliability.LocalizeTitle(module_prefab.title), Lib.Kolor.LightGrey));
 			group = module_prefab.redundancy;
 			broken = Lib.Proto.GetBool(m, "broken", false);
@@ -57,21 +46,6 @@ namespace KERBALISM
 			need_maintenance = Lib.Proto.GetBool(m, "need_maintenance", false);
 
 			bool quality = Lib.Proto.GetBool(m, "quality", false);
-
-			if (module_prefab.rated_operation_duration > 0)
-			{
-				var operation_duration = Lib.Proto.GetDouble(m, "operation_duration", 0);
-				rel_duration = operation_duration / Reliability.EffectiveDuration(quality, module_prefab.rated_operation_duration);
-				rel_duration = Lib.Clamp(rel_duration, 0, 1);
-			}
-
-			if (module_prefab.rated_ignitions > 0)
-			{
-				var ignitions = Lib.Proto.GetInt(m, "ignitions", 0);
-				rel_ignitions = (double)ignitions / Reliability.EffectiveDuration(quality, module_prefab.rated_ignitions);
-				rel_ignitions = Lib.Clamp(rel_ignitions, 0, 1);
-			}
-
 			mtbf = Reliability.EffectiveMTBF(quality, module_prefab.mtbf);
 
 			if (mtbf > 0)
@@ -79,6 +53,20 @@ namespace KERBALISM
 				var last_inspection = Lib.Proto.GetDouble(m, "last_inspection", 0);
 				maintenance_after = last_inspection + mtbf * 0.5;
 			}
+		}
+
+		public ReliabilityInfo(string title, string group, bool broken, bool critical, uint partId,
+			bool needMaintenance, double relDuration, double relIgnitions, double maintenanceAfter)
+		{
+			this.title = title;
+			this.group = group;
+			this.broken = broken;
+			this.critical = critical;
+			this.partId = partId;
+			need_maintenance = needMaintenance;
+			rel_duration = relDuration;
+			rel_ignitions = relIgnitions;
+			maintenance_after = maintenanceAfter;
 		}
 
 		public bool NeedsMaintenance()
@@ -126,6 +114,9 @@ namespace KERBALISM
 					}
 				}
 			}
+
+			foreach (Action<Vessel, List<ReliabilityInfo>> provider in ExtraProviders)
+				provider(vessel, result);
 
 			result.Sort((a, b) => {
 				if (a.group != b.group) return string.Compare(a.group, b.group, StringComparison.Ordinal);

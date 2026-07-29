@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-namespace KERBALISM
+namespace KERBALISM.EngineFailures
 {
 	/// <summary>
 	/// Calculates automatic engine reliability ratings from config-defined
-	/// propulsion families. This class only supplies ratings: Reliability
+	/// propulsion families. This class only supplies ratings: EngineFailures
 	/// continues to own wear, failures, persistence, UI and repairs.
 	/// </summary>
 	internal static class EngineReliabilityHeuristics
@@ -47,18 +47,16 @@ namespace KERBALISM
 
 		static bool loaded;
 
-		internal static bool Apply(Reliability reliability)
+		internal static bool Apply(EngineFailures module)
 		{
-			if (reliability == null || !reliability.engine_reliability_auto)
+			if (module == null || !module.engine_reliability_auto)
 				return true;
-			if (reliability.part == null || string.IsNullOrEmpty(reliability.type))
+			if (module.part == null)
 				return false;
-			if (!reliability.type.StartsWith("ModuleEngines", StringComparison.Ordinal))
-				return true;
 
-			bool automaticBurn = IsAutomatic(reliability.rated_operation_duration);
-			bool automaticIgnitions = reliability.rated_ignitions == AutomaticInt;
-			bool automaticTurnon = IsAutomatic(reliability.turnon_failure_probability);
+			bool automaticBurn = IsAutomatic(module.rated_operation_duration);
+			bool automaticIgnitions = module.rated_ignitions == AutomaticInt;
+			bool automaticTurnon = IsAutomatic(module.turnon_failure_probability);
 			if (!automaticBurn && !automaticIgnitions && !automaticTurnon)
 				return true;
 
@@ -66,41 +64,41 @@ namespace KERBALISM
 				return false;
 
 			EngineRatings ratings;
-			if (!TryCalculate(reliability, out ratings))
+			if (!TryCalculate(module, out ratings))
 			{
 				// Automatic values must fail open: an unsupported future engine
 				// should not inherit an arbitrary chemical-engine lifetime.
 				ratings = SafeFallback("unknownAdvanced");
-				LogUnknown(reliability.part);
+				LogUnknown(module.part);
 			}
 
 			if (automaticBurn)
-				reliability.rated_operation_duration = ratings.BurnDuration;
+				module.rated_operation_duration = ratings.BurnDuration;
 			if (automaticIgnitions)
-				reliability.rated_ignitions = ratings.Ignitions;
+				module.rated_ignitions = ratings.Ignitions;
 			if (automaticTurnon)
-				reliability.turnon_failure_probability = ratings.TurnonFailureProbability;
+				module.turnon_failure_probability = ratings.TurnonFailureProbability;
 			return true;
 		}
 
-		static bool TryCalculate(Reliability reliability, out EngineRatings ratings)
+		static bool TryCalculate(EngineFailures module, out EngineRatings ratings)
 		{
 			ratings = default(EngineRatings);
 			if (families.Count == 0)
 				return false;
 
-			string explicitFamily = reliability.engine_reliability_family;
+			string explicitFamily = module.engine_reliability_family;
 			if (!string.IsNullOrEmpty(explicitFamily)
 				&& !explicitFamily.Equals("auto", StringComparison.OrdinalIgnoreCase))
 			{
-				return TryCalculateForFamily(reliability.part.FindModulesImplementing<ModuleEngines>(), explicitFamily, out ratings);
+				return TryCalculateForFamily(module.part.FindModulesImplementing<ModuleEngines>(), explicitFamily, out ratings);
 			}
 
-			string moduleFamily = FindModuleFamily(reliability.part);
+			string moduleFamily = FindModuleFamily(module.part);
 			if (!string.IsNullOrEmpty(moduleFamily))
-				return TryCalculateForFamily(reliability.part.FindModulesImplementing<ModuleEngines>(), moduleFamily, out ratings);
+				return TryCalculateForFamily(module.part.FindModulesImplementing<ModuleEngines>(), moduleFamily, out ratings);
 
-			List<ModuleEngines> engines = reliability.part.FindModulesImplementing<ModuleEngines>();
+			List<ModuleEngines> engines = module.part.FindModulesImplementing<ModuleEngines>();
 			if (engines == null || engines.Count == 0)
 				return false;
 

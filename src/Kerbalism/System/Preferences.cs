@@ -12,29 +12,20 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("#KERBALISM_HighlightMalfunctions", toolTip = "#KERBALISM_HighlightMalfunctions_desc")]//Highlight Malfunctions--Highlight failed parts in flight
 		public bool highlights = true;
 
-		[GameParameters.CustomParameterUI("#KERBALISM_PartMalfunctions", toolTip = "#KERBALISM_PartMalfunctions_desc")]//Part Malfunctions--Allow engine failures based on part age and mean time between failures
+		[GameParameters.CustomParameterUI("#KERBALISM_PartMalfunctions", toolTip = "#KERBALISM_PartMalfunctions_desc")]//Part Malfunctions--Allow part failures based on part age and mean time between failures (MTBF)
 		public bool mtbfFailures = true;
 
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_CriticalFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_CriticalFailureRate_desc")]//Critical Failure Rate---Proportion of malfunctions that lead to critical failures
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_CriticalFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_CriticalFailureRate_desc")]//Critical Failure Chance--Chance that a breakdown becomes a critical (red) failure instead of a normal (yellow) malfunction
 		public float criticalChance = 0.25f;
 
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_FixableFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FixableFailureRate_desc")]//Fixable Failure Rate--Proportion of malfunctions that can be fixed remotely
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_FixableFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FixableFailureRate_desc")]//Unmanned Safe Mode--On unmanned vessels, chance that a malfunction is automatically cleared instead of breaking the part
 		public float safeModeChance = 0.5f;
 
-		[GameParameters.CustomParameterUI("#KERBALISM_IncentiveRedundancy", toolTip = "#KERBALISM_IncentiveRedundancy_desc")]//Incentive Redundancy--Each malfunction will increase the MTBF\nof components in the same redundancy group
+		[GameParameters.CustomParameterUI("#KERBALISM_IncentiveRedundancy", toolTip = "#KERBALISM_IncentiveRedundancy_desc")]//Redundancy Bonus--When a part malfunctions, other parts in the same redundancy group get increased MTBF
 		public bool incentiveRedundancy = true;
-
-		[GameParameters.CustomParameterUI("#KERBALISM_EngineMalfunctions", toolTip = "#KERBALISM_EngineMalfunctions_desc")]//Engine Malfunctions--Allow engine failures on ignition and exceeded burn durations
-		public bool engineFailures = true;
 
 		[GameParameters.CustomParameterUI("#KERBALISM_RequireRepairKits", toolTip = "#KERBALISM_RequireRepairKits_desc")]//Require Repair Kits--Require Repair Kits to repair parts
 		public bool requireRepairKits = true;
-
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_EngineIgnitionFailureChance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "#KERBALISM_EngineIgnitionFailureChance_desc")]//Engine Ignition Failure Chance--Adjust the probability of engine failures on ignition
-		public float ignitionFailureChance = 1.0f;
-
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_EngineBurnFailureChance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "#KERBALISM_EngineBurnFailureChance_desc")]//Engine Burn Failure Chance--Adjust the probability of an engine failure caused by excessive burn time
-		public float engineOperationFailureChance = 1.0f;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
@@ -47,36 +38,24 @@ namespace KERBALISM
 				case GameParameters.Preset.Easy:
 					criticalChance = 0.15f;
 					safeModeChance = 0.6f;
-					ignitionFailureChance = 0.5f;
-					engineOperationFailureChance = 0.5f;
-					engineFailures = false;
 					mtbfFailures = false;
 					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Normal:
 					criticalChance = 0.25f;
 					safeModeChance = 0.5f;
-					ignitionFailureChance = 0.75f;
-					engineOperationFailureChance = 0.75f;
-					engineFailures = true;
 					mtbfFailures = true;
 					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Moderate:
 					criticalChance = 0.3f;
 					safeModeChance = 0.45f;
-					ignitionFailureChance = 0.8f;
-					engineOperationFailureChance = 0.8f;
-					engineFailures = true;
 					mtbfFailures = true;
 					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Hard:
 					criticalChance = 0.35f;
 					safeModeChance = 0.4f;
-					ignitionFailureChance = 1f;
-					engineOperationFailureChance = 1f;
-					engineFailures = true;
 					mtbfFailures = true;
 					requireRepairKits = false;
 					break;

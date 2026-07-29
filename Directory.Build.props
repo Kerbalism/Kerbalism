@@ -9,6 +9,8 @@
     <ProjectRootDir>$(MSBuildThisFileDirectory)</ProjectRootDir>
     <SolutionDir Condition=" '$(SolutionDir)' == '' ">$(ProjectRootDir)</SolutionDir>
     <SolutionName Condition=" '$(SolutionName)' == '' ">Kerbalism</SolutionName>
+    <!-- Shared package version for Kerbalism core and companion mods. -->
+    <KerbalismPackageVersion>3.41.0</KerbalismPackageVersion>
   </PropertyGroup>
 
   <!-- KSPBuildTools CKAN auto-install uses bash input redirect; broken on Windows cmd. -->

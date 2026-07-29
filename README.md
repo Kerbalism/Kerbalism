@@ -11,7 +11,7 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 - **Life support** : Kerbals consume food, water and oxygen and will die if they aren't provided. Various processes can be added to recycle or produce those resources in situ.
 - **Stress** : Without adequate living space, atmospheric pressure and comforts, Kerbals will get stressed and start making mission-threatening mistakes.
 - **Radiation** : Kerbalism simulate the space radiation environment and radiation from local sources. A vessel must be adequately shielded and mission planning must be adjusted to avoid the most deadly places like planetary radiation belts.
-- **Reliability** : Components have a limited operational lifetime and will fail over time. Engines have a limited amount of ignitions and a limited burn time.
+- **Reliability** : Components have a limited operational lifetime and will fail over time. Optional **KerbalismEngineFailures** adds engine ignitions, burn-time limits and turn-on failures.
 - **ISRU** : Instead of the easy "ore to everything" stock system, producing and processing resources in situ uses a semi-realistic set of extraction and conversion rules.
 - **Science over time** : Experiments produce data over time, up to several years. This data is also transmitted over time, making science collection a relaxing background mechanism instead of the stock click-spammy system. Kerbalism also replace the stock labs "infinite science", rebalance existing experiments and add many probe, satellite and late-game manned experiments.
 - **Background processing** : All vessels are simulated continuously, not only the currently active one. Life support, resource processing, experiments and data transmission are simulated in the background while keeping a low performance overhead.
@@ -38,6 +38,9 @@ Two packages are required :
 - **Kerbalism** is the core plugin, always required.
 - **KerbalismConfig** is the official configuration pack.\
   It can be be replaced by other packs distributed elsewhere.
+
+Optional :
+- **KerbalismEngineFailures** adds engine ignition counts, rated burn time and turn-on failures. Recommended by CKAN with official KerbalismConfig. Conflicts with TestFlight / RO / RP-1.
 
 **Requirements**
 
