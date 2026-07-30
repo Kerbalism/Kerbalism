@@ -310,10 +310,14 @@ namespace KERBALISM
 				return false;
 			if (Sim.suns.Count <= 1)
 				return true;
+
+			double primaryFluxProportion = vd.EnvMainSun?.FluxProportion ?? 0.0;
 			// Always track the local brightest / SOI star and any companion contributing meaningful flux
 			return sunInfo == vd.EnvMainSun
 				|| sunInfo.SunData.body == v.mainBody
-				|| sunInfo.FluxProportion >= MinCompanionFluxFraction;
+				// Both proportions have the same total-flux denominator, so this compares
+				// companion flux against primary flux rather than against total system flux.
+				|| sunInfo.FluxProportion >= primaryFluxProportion * MinCompanionFluxFraction;
 		}
 
 		/// <summary>Enumerate storm slots that can affect this vessel.</summary>
