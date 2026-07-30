@@ -35,9 +35,6 @@ namespace KERBALISM
 		internal static Texture2D file_scicolor;
 		internal static Texture2D sample_scicolor;
 
-		internal static Texture2D category_normal;
-		internal static Texture2D category_selected;
-
 		internal static Texture2D sun_black;
 		internal static Texture2D sun_white;
 		internal static Texture2D solar_panel;
@@ -178,9 +175,6 @@ namespace KERBALISM
 
 			file_scicolor = GetTexture("icons8-file-scicolor");
 			sample_scicolor = GetTexture("icons8-sample-scicolor");
-
-			category_normal = GetTexture("category-normal");
-			category_selected = GetTexture("category-selected");
 
 			sun_black = GetTexture("sun-black");
 			sun_white = GetTexture("sun-white");
