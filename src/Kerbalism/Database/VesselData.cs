@@ -84,7 +84,10 @@ namespace KERBALISM
 
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
+		/// <summary>Legacy primary storm slot (mirrored from stormDataByStar for save compat).</summary>
 		public StormData stormData;
+		/// <summary>Per-source-star CME state for vessels in a star SOI (multi-star packs).</summary>
+		public Dictionary<string, StormData> stormDataByStar;
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		public double scienceTransmitted;
@@ -812,7 +815,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				Load(node);
+				Load(node, protoVessel);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
 
@@ -840,6 +843,7 @@ namespace KERBALISM
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
 			isSerenityGroundController = pv != null && pv.vesselType == VesselType.DeployedScienceController;
 
+			stormDataByStar = new Dictionary<string, StormData>();
 			stormData = new StormData(null);
 			habitatInfo = new VesselHabitatInfo(null);
 			computer = new Computer(null);
@@ -851,6 +855,26 @@ namespace KERBALISM
 
 		}
 
+		/// <summary>Get or create the CME slot for a source star (interplanetary multi-star storms).</summary>
+		public StormData GetStormDataForStar(CelestialBody star)
+		{
+			if (stormDataByStar == null)
+				stormDataByStar = new Dictionary<string, StormData>();
+
+			string key = star != null ? star.bodyName : "Sun";
+			if (!stormDataByStar.TryGetValue(key, out StormData bd))
+			{
+				bd = new StormData(null);
+				stormDataByStar[key] = bd;
+			}
+
+			// Keep legacy slot pointing at a useful primary entry
+			if (stormData == null || stormData.storm_state == 0)
+				stormData = bd;
+
+			return bd;
+		}
+
 		private void InitializeCommHandler()
 		{
 			connection = new ConnectionInfo();
@@ -858,7 +882,7 @@ namespace KERBALISM
 			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
-		private void Load(ConfigNode node)
+		private void Load(ConfigNode node, ProtoVessel protoVessel)
 		{
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
 			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
@@ -887,7 +911,62 @@ namespace KERBALISM
 			vesselBodyCrossSectionOrbitAvg = Lib.ConfigValue(node, "vesselBodyCrossSectionOrbitAvg", -1.0);
 			vesselEmissivity = Lib.ConfigValue(node, "vesselEmissivity", 0.9);
 
-			stormData = new StormData(node.GetNode("StormData"));
+			stormDataByStar = new Dictionary<string, StormData>();
+			ConfigNode byStarNode = node.GetNode("StormDataByStar");
+			if (byStarNode != null)
+			{
+				foreach (ConfigNode starNode in byStarNode.nodes)
+					stormDataByStar[DB.From_safe_key(starNode.name)] = new StormData(starNode);
+			}
+
+			// Migrate legacy single StormData into the per-star map when needed
+			ConfigNode legacyStorm = node.GetNode("StormData");
+			if (legacyStorm != null)
+			{
+				stormData = new StormData(legacyStorm);
+				if (stormDataByStar.Count == 0)
+				{
+					string migrateKey = "Sun";
+					CelestialBody referenceBody = null;
+					if (Vessel != null)
+					{
+						referenceBody = Vessel.mainBody;
+					}
+					else if (protoVessel?.orbitSnapShot != null)
+					{
+						int bodyIndex = protoVessel.orbitSnapShot.ReferenceBodyIndex;
+						if (bodyIndex >= 0 && bodyIndex < FlightGlobals.Bodies.Count)
+							referenceBody = FlightGlobals.Bodies[bodyIndex];
+					}
+
+					CelestialBody sun = Lib.IsSun(referenceBody) ? referenceBody : Lib.GetParentSun(referenceBody);
+					if (sun != null)
+						migrateKey = sun.bodyName;
+					else if (Sim.suns.Count > 0 && Sim.suns[0].body != null)
+						migrateKey = Sim.suns[0].body.bodyName;
+
+					stormDataByStar[migrateKey] = stormData;
+				}
+				else
+				{
+					// The per-star data is authoritative; keep the legacy field as an alias, not a detached copy.
+					foreach (StormData bd in stormDataByStar.Values)
+					{
+						stormData = bd;
+						break;
+					}
+				}
+			}
+			else
+			{
+				stormData = new StormData(null);
+				foreach (StormData bd in stormDataByStar.Values)
+				{
+					stormData = bd;
+					break;
+				}
+			}
+
 			habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
 			computer = new Computer(node.GetNode("computer"));
 
@@ -969,7 +1048,30 @@ namespace KERBALISM
 			node.AddValue("vesselBodyCrossSectionOrbitAvg", vesselBodyCrossSectionOrbitAvg);
 			node.AddValue("vesselEmissivity", vesselEmissivity);
 
+			// Legacy single node (primary / first star) for older readers
+			if (stormData == null)
+				stormData = new StormData(null);
+			if (Vessel != null
+				&& (Lib.IsSun(Vessel.mainBody) || Lib.IsBarycenter(Vessel.mainBody))
+				&& Storm.TryGetPrimaryStorm(Vessel, out StormData primaryStorm, out _))
+				stormData = primaryStorm;
+			else if (stormDataByStar != null)
+			{
+				foreach (StormData bd in stormDataByStar.Values)
+				{
+					stormData = bd;
+					break;
+				}
+			}
 			stormData.Save(node.AddNode("StormData"));
+
+			if (stormDataByStar != null && stormDataByStar.Count > 0)
+			{
+				ConfigNode byStarSave = node.AddNode("StormDataByStar");
+				foreach (KeyValuePair<string, StormData> kv in stormDataByStar)
+					kv.Value.Save(byStarSave.AddNode(DB.To_safe_key(kv.Key)));
+			}
+
 			computer.Save(node.AddNode("computer"));
 
 			var supplies_node = node.AddNode("supplies");
@@ -1250,15 +1352,7 @@ namespace KERBALISM
 			thermosphere = Sim.InsideThermosphere(Vessel);
 			exosphere = Sim.InsideExosphere(Vessel);
 			inStorm = Storm.InProgress(Vessel);
-
-			if(inStorm)
-			{
-				var sunActivity = Radiation.Info(mainSun.SunData.body).SolarActivity(false) / 2.0;
-				stormRadiation = PreferencesRadiation.Instance.StormRadiation * mainSun.SunlightFactor * (sunActivity + 0.5);
-			} else
-			{
-				stormRadiation = 0.0;
-			}
+			stormRadiation = inStorm ? Storm.RadiationStrength(Vessel, this) : 0.0;
 
 			vesselSituations.Update();
 

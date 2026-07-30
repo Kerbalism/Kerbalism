@@ -497,21 +497,25 @@ namespace KERBALISM
 
 		void Problem_storm(Vessel v, ref List<Texture2D> icons, ref List<string> tooltips)
 		{
-			if (Storm.Incoming(v))
+			if (Storm.TryGetPrimaryStorm(v, out StormData inbound, out CelestialBody inboundStar, 1))
 			{
 				icons.Add(Textures.storm_yellow);
 
-				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
-				var tti = bd.storm_time - Planetarium.GetUniversalTime();
-				tooltips.Add(Lib.BuildString(Lib.Color(Local.Monitor_ejectionincoming, Lib.Kolor.Orange), "\n<i>", Local.Monitor_TimetoimpactCoronalmass, Lib.HumanReadableDuration(tti), "</i>"));//"Coronal mass ejection incoming"Time to impact:
+				var tti = inbound.storm_time - Planetarium.GetUniversalTime();
+				string tip = Lib.BuildString(Lib.Color(Local.Monitor_ejectionincoming, Lib.Kolor.Orange), "\n<i>", Local.Monitor_TimetoimpactCoronalmass, Lib.HumanReadableDuration(tti), "</i>");
+				if (Sim.suns.Count > 1 && inboundStar != null)
+					tip = Lib.BuildString(tip, "\n<i>", inboundStar.bodyName, "</i>");
+				tooltips.Add(tip);//"Coronal mass ejection incoming"Time to impact:
 			}
-			if (Storm.InProgress(v))
+			if (Storm.TryGetPrimaryStorm(v, out StormData active, out CelestialBody activeStar, 2))
 			{
 				icons.Add(Textures.storm_red);
 
-				var bd = Lib.IsSun(v.mainBody) ? v.KerbalismData().stormData : DB.Storm(Lib.GetParentPlanet(v.mainBody).name);
-				var remainingDuration = bd.storm_time + bd.displayed_duration - Planetarium.GetUniversalTime();
-				tooltips.Add(Lib.BuildString(Lib.Color(Local.Monitor_Solarstorminprogress, Lib.Kolor.Red), "\n<i>", Local.Monitor_SolarstormRemaining, Lib.HumanReadableDuration(remainingDuration), "</i>"));//"Solar storm in progress"Remaining duration:
+				var remainingDuration = active.storm_time + active.displayed_duration - Planetarium.GetUniversalTime();
+				string tip = Lib.BuildString(Lib.Color(Local.Monitor_Solarstorminprogress, Lib.Kolor.Red), "\n<i>", Local.Monitor_SolarstormRemaining, Lib.HumanReadableDuration(remainingDuration), "</i>");
+				if (Sim.suns.Count > 1 && activeStar != null)
+					tip = Lib.BuildString(tip, "\n<i>", activeStar.bodyName, "</i>");
+				tooltips.Add(tip);//"Solar storm in progress"Remaining duration:
 			}
 		}
 

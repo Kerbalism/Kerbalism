@@ -29,8 +29,7 @@ namespace KERBALISM
 					if (c.GetType().ToString().Contains("LightShifter"))
 					{
 						double starFluxAtHome = Lib.ReflectionValue<double>(c, "solarLuminosity");
-						double packSunAU = ReadLightShifterSunAU(c);
-						suns.Add(new SunData(body.flightGlobalsIndex, starFluxAtHome, packSunAU));
+						suns.Add(new SunData(body.flightGlobalsIndex, starFluxAtHome));
 					}
 				}
 			}
@@ -38,7 +37,7 @@ namespace KERBALISM
 			// if nothing was found, assume the sun is the stock default
 			if (suns.Count == 0)
 			{
-				suns.Add(new SunData(0, PhysicsGlobals.SolarLuminosityAtHome, 0.0));
+				suns.Add(new SunData(0, PhysicsGlobals.SolarLuminosityAtHome));
 			}
 
 			// Resolve home star / AU before converting pack "flux at 1 AU" into total luminosity (#829 / #1080)
@@ -595,17 +594,14 @@ namespace KERBALISM
 		{
 			public CelestialBody body;
 			public int bodyIndex;
-			/// <summary>Kopernicus Light.sunAU when present (pack author AU scale); 0 if unknown.</summary>
-			public readonly double packSunAU;
 			private double solarFluxAtAU;
 			private double solarFluxTotal;
 
-			public SunData(int bodyIndex, double solarFluxAtAU, double packSunAU = 0.0)
+			public SunData(int bodyIndex, double solarFluxAtAU)
 			{
 				body = FlightGlobals.Bodies[bodyIndex];
 				this.bodyIndex = bodyIndex;
 				this.solarFluxAtAU = solarFluxAtAU;
-				this.packSunAU = packSunAU;
 			}
 
 			// This must be called after home-system AU is resolved (#829 / #1080)
@@ -877,7 +873,8 @@ namespace KERBALISM
 			if (Lib.IsSun(refBody))
 				return refBody;
 			refBody = home.referenceBody;
-			while (refBody != null)
+			int remainingBodies = FlightGlobals.Bodies.Count + 1;
+			while (refBody != null && remainingBodies-- > 0)
 			{
 				if (Lib.IsSun(refBody))
 					return refBody;
@@ -905,22 +902,15 @@ namespace KERBALISM
 				return homeBodySma;
 			}
 
-			// 2) Pack-authored Light.sunAU on the home star
-			SunData homeStarData = suns.Find(s => s.body == star);
-			if (homeStarData != null && homeStarData.packSunAU > 0.0)
-			{
-				source = "LightShifter.sunAU";
-				return homeStarData.packSunAU;
-			}
-
-			// 3) SMA of the body in the home hierarchy that directly orbits the home star
+			// 2) SMA of the body in the home hierarchy that directly orbits the home star.
+			// Kopernicus Light.sunAU is intentionally not used here: it only scales brightnessCurve visuals.
 			if (TryGetDirectOrbitSMAAroundStar(home, star, out double sma) && sma > 0.0)
 			{
 				source = "orbit.semiMajorAxis";
 				return sma;
 			}
 
-			// 4) Last resort: instantaneous world distance (eccentricity / timing sensitive)
+			// 3) Last resort: instantaneous world distance (eccentricity / timing sensitive)
 			double instantaneous = (home.position - star.position).magnitude;
 			if (instantaneous > 0.0)
 			{
@@ -940,7 +930,8 @@ namespace KERBALISM
 				return false;
 
 			CelestialBody body = home;
-			while (body != null && body != star)
+			int remainingBodies = FlightGlobals.Bodies.Count + 1;
+			while (body != null && body != star && remainingBodies-- > 0)
 			{
 				if (body.referenceBody == star && body.orbit != null && body.orbit.semiMajorAxis > 0.0)
 				{
@@ -979,21 +970,6 @@ namespace KERBALISM
 				}
 			}
 			return best;
-		}
-
-		static double ReadLightShifterSunAU(object lightShifter)
-		{
-			try
-			{
-				FieldInfo fi = lightShifter.GetType().GetField("sunAU", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-				if (fi == null)
-					return 0.0;
-				return Convert.ToDouble(fi.GetValue(lightShifter));
-			}
-			catch
-			{
-				return 0.0;
-			}
 		}
 
 		static bool TryGetKopernicusLocalStar(CelestialBody body, out CelestialBody star)

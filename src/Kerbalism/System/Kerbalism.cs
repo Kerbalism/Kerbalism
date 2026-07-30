@@ -164,7 +164,9 @@ namespace KERBALISM
 					Cache.Init();
 					ResourceCache.Init();
 
-					// prepare storm data
+					// prepare storm data (rebuild each save-game init; static list must not accumulate)
+					storm_bodies.Clear();
+					storm_index = 0;
 					foreach (CelestialBody body in FlightGlobals.Bodies)
 					{
 						if (Storm.Skip_body(body))

@@ -4,6 +4,7 @@
 
  ### Changes since the last release
  * Fixed: Home-star / AU reference and adaptive comms damping calibration for large and multi-star packs (#829, #1080, @Aebestach)
+ * Fixed: Multi-star solar storm generation, per-star vessel CME tracking, and storm radiation summing (#1080, @Aebestach)
  * Added: KerbalismEngineFailures companion (CKAN recommended by KerbalismConfig; conflicts with TestFlight / TestLite / RO / RP-1) (#1087, @Aebestach)
  * Added: KerbalismEngineFailures propulsion-family auto-ratings with bounded ISP/thrust curves and safe fallbacks (#1087, @Aebestach)
  * Added: Greenhouse overhaul with continuous food production and balance tuning (#1096, @Aebestach)
