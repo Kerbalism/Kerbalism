@@ -266,14 +266,14 @@ namespace KERBALISM.Planner
 			environment["temperature"] = env.temperature;
 			environment["sunlight"] = Planner.Sunlight == Planner.SunlightState.Shadow ? 0 : 1;
 
-			Lib.Log("resource count before call " + resourcesList.Count);
+			Lib.LogDebug("resource count before call " + resourcesList.Count);
 			string title;
 			IKerbalismModule km = m as IKerbalismModule;
 			if (km != null)
 				title = km.PlannerUpdate(resourcesList, env.body, environment);
 			else
 				title = apiDelegates[m.moduleName].Invoke(m, resourcesList, env.body, environment);
-			Lib.Log("resource count after call " + resourcesList.Count);
+			Lib.LogDebug("resource count after call " + resourcesList.Count);
 
 			foreach (var p in resourcesList)
 			{
