@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Experience;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace KERBALISM
 		[KSPField] public double sample_amount = 0.0;         // the amount of samples this unit is shipped with
 		[KSPField] public bool sample_collecting = false;     // if set to true, the experiment will generate mass out of nothing
 		[KSPField] public bool allow_shrouded = true;         // true if data can be transmitted
+		[KSPField] public bool require_jettison = false;      // true if local ModuleJettison fairings must be gone before starting
 		[KSPField] public string requires = string.Empty;     // additional requirements that must be met
 		[KSPField] public string crew_operate = string.Empty; // operator crew. if set, crew has to be on vessel while recording
 		[KSPField] public string crew_reset = string.Empty;   // reset crew. if set, experiment will stop recording after situation change
@@ -156,6 +158,14 @@ namespace KERBALISM
 			loopAnimator = new Animator(part, anim_loop);
 			loopAnimator.reversed = anim_loop_reverse;
 
+			// Editor preview can persist Running onto a launched craft; do not resume
+			// while local fairings are still attached.
+			if (require_jettison && HasUnjettisonedFairings(part) && Running)
+			{
+				issue = string.Empty;
+				State = RunningState.Stopped;
+			}
+
 			// set initial animation states
 			deployAnimator.Still(Running ? 1.0 : 0.0);
 			SetDragCubes(Running);
@@ -204,6 +214,9 @@ namespace KERBALISM
 				Lib.Log($"ExpInfo for experiment_id `{experiment_id}` is null, does the config definition exists ?", Lib.LogLevel.Error);
 				return;
 			}
+
+			if (Lib.IsEditor() && require_jettison)
+				StartCoroutine(SyncJettisonFairingsInEditor());
 
 			Actions["StartAction"].guiName = Local.Generic_START + ": " + ExpInfo.Title;
 			Actions["StopAction"].guiName = Local.Generic_STOP + ": " + ExpInfo.Title;
@@ -358,7 +371,7 @@ namespace KERBALISM
 				return;
 			}
 
-			shrouded = part.ShieldedFromAirstream;
+			shrouded = part.ShieldedFromAirstream || (require_jettison && HasUnjettisonedFairings(part));
 
 			Profiler.BeginSample("Experiment.FixedUpdate.RunningUpdate");
 			prodFactor = RunningUpdate(
@@ -417,6 +430,8 @@ namespace KERBALISM
 
 			bool didPrepare = Lib.Proto.GetBool(m, "didPrepare", false);
 			bool shrouded = Lib.Proto.GetBool(m, "shrouded", false);
+			if (require_jettison && HasUnjettisonedFairings(p))
+				shrouded = true;
 			int situationId = Lib.Proto.GetInt(m, "situationId", 0);
 			double remainingSampleMass = Lib.Proto.GetDouble(m, "remainingSampleMass", 0.0);
 			uint privateHdId = Lib.Proto.GetUInt(m, "privateHdId", 0u);
@@ -750,6 +765,9 @@ namespace KERBALISM
 					State = RunningState.Running;
 				}
 
+				if (require_jettison && Running)
+					SetJettisonFairingsVisible(false);
+
 				if (AnimationGroup != null)
 				{
 					// extend automatically, retract manually
@@ -760,6 +778,9 @@ namespace KERBALISM
 				{
 					deployAnimator.Play(!Running, false);
 					SetDragCubes(Running);
+
+					if (require_jettison && !Running)
+						StartCoroutine(RestoreJettisonFairingsAfterRetraction());
 				}
 
 				GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -805,6 +826,12 @@ namespace KERBALISM
 					return State;
 				}
 
+				if (require_jettison && HasUnjettisonedFairings(part))
+				{
+					Message.Post(Lib.Color(ExpInfo.Title, Lib.Kolor.Orange, true), Local.Module_Experiment_issue2);
+					return State;
+				}
+
 				// start experiment
 				// play the deploy animation, when it's done start the loop animation
 				if (AnimationGroup != null)
@@ -847,6 +874,15 @@ namespace KERBALISM
 						return expState;
 					}
 				}
+
+				if (prefab.require_jettison && HasUnjettisonedFairings(FindProtoPart(v, protoModule)))
+				{
+					Message.Post(
+						Lib.Color(ScienceDB.GetExperimentInfo(prefab.experiment_id).Title, Lib.Kolor.Orange, true),
+						Local.Module_Experiment_issue2);
+					return expState;
+				}
+
 				expState = setForcedRun ? RunningState.Forced : RunningState.Running;
 			}
 			else if (setForcedRun && expState == RunningState.Running)
@@ -1279,6 +1315,80 @@ namespace KERBALISM
 
 			part.DragCubes.SetCubeWeight(retractedDragCube, deployed ? 0f : 1f);
 			part.DragCubes.SetCubeWeight(deployedDragCube, deployed ? 1f : 0f);
+		}
+
+		private static bool HasUnjettisonedFairings(Part p)
+		{
+			if (p == null)
+				return false;
+
+			for (int i = 0; i < p.Modules.Count; ++i)
+			{
+				if (p.Modules[i] is ModuleJettison jettison && !jettison.isJettisoned)
+					return true;
+			}
+
+			return false;
+		}
+
+		private static bool HasUnjettisonedFairings(ProtoPartSnapshot p)
+		{
+			if (p == null)
+				return false;
+
+			for (int i = 0; i < p.modules.Count; ++i)
+			{
+				ProtoPartModuleSnapshot module = p.modules[i];
+				if (module.moduleName == "ModuleJettison"
+					&& !Lib.Proto.GetBool(module, "isJettisoned", false))
+					return true;
+			}
+
+			return false;
+		}
+
+		private static ProtoPartSnapshot FindProtoPart(Vessel v, ProtoPartModuleSnapshot module)
+		{
+			if (v?.protoVessel == null || module == null)
+				return null;
+
+			List<ProtoPartSnapshot> parts = v.protoVessel.protoPartSnapshots;
+			for (int i = 0; i < parts.Count; ++i)
+			{
+				if (parts[i].modules.Contains(module))
+					return parts[i];
+			}
+
+			return null;
+		}
+
+		private void SetJettisonFairingsVisible(bool visible)
+		{
+			if (!require_jettison || part == null)
+				return;
+
+			for (int i = 0; i < part.Modules.Count; ++i)
+			{
+				if (!(part.Modules[i] is ModuleJettison jettison) || jettison.isJettisoned)
+					continue;
+
+				if (jettison.jettisonTransform != null)
+					jettison.jettisonTransform.gameObject.SetActive(visible);
+			}
+		}
+
+		private IEnumerator SyncJettisonFairingsInEditor()
+		{
+			yield return new WaitForEndOfFrame();
+			SetJettisonFairingsVisible(!Running);
+		}
+
+		private IEnumerator RestoreJettisonFairingsAfterRetraction()
+		{
+			while (deployAnimator.Playing())
+				yield return null;
+
+			SetJettisonFairingsVisible(true);
 		}
 
 
