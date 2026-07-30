@@ -1485,12 +1485,17 @@ namespace KERBALISM
 			if (IsSun(body)) return body;
 
 			CelestialBody refBody = body.referenceBody;
-			do
+			while (refBody != null)
 			{
 				if (IsSun(refBody)) return refBody;
 				refBody = refBody.referenceBody;
 			}
-			while (refBody != null);
+
+			// No sun on the referenceBody chain (barycenters / PostSpawnOrbit). Prefer the brightest
+			// known star at this body over silently assuming the universe root (#829).
+			CelestialBody brightest = Sim.BrightestSunAt(body.position);
+			if (brightest != null)
+				return brightest;
 
 			return FlightGlobals.Bodies[0];
 		}

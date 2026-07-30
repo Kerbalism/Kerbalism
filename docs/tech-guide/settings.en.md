@@ -34,7 +34,7 @@ Values below are the **shipped official config** defaults (3.40). Code fallbacks
 | TransmitterActiveEcFactorRT | Same for RemoteTech while transmitting | `1.0` |
 | TransmitterPassiveEcFactorRT | Same for RemoteTech while idle | `1.0` |
 | DataRateMinimumBitsPerSecond | Floor on science data rate when a control link exists | `1.0` |
-| DampingExponentOverride | Optional override for data-rate damping (see KSP.log) | commented out |
+| DampingExponentOverride | Optional override for data-rate damping; auto-calibrates from home-star AU when unset (see KSP.log for `DataRateDampingExponent` / `Home system`) | commented out |
 | UnlinkedControl | Control when unlinked: `none` / `limited` / `full` | `none` (code; often omitted from cfg) |
 
 ## Science and reliability

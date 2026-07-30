@@ -475,17 +475,16 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Heliocentric distance / home-body SMA. Requires sun SOI. Returns NaN when unavailable.
-		/// Uses FlightGlobals.GetHomeBody() so RSS/Kopernicus follow the configured home world.
-		/// EnvMainSun.Distance is surface distance; home SMA is center-to-center, so Radius is added.
+		/// Heliocentric distance / Sim.AU (home-star orbital scale). Requires sun SOI. Returns NaN when unavailable.
+		/// Uses the shared home-system AU so RSS/Kopernicus match solar-flux and comms calibration (#829 / #1080).
+		/// EnvMainSun.Distance is surface distance; AU is center-to-center, so Radius is added.
 		/// </summary>
 		private static double TestHomeStarDistanceAU(Vessel vessel, VesselData vd)
 		{
 			if (vessel == null || !Lib.IsSun(vessel.mainBody))
 				return double.NaN;
 
-			CelestialBody home = FlightGlobals.GetHomeBody();
-			if (home == null || home.orbit == null || home.orbit.semiMajorAxis <= 0.0)
+			if (Sim.AU <= 0.0)
 				return double.NaN;
 
 			double heliocentric;
@@ -494,7 +493,7 @@ namespace KERBALISM
 			else
 				heliocentric = Vector3d.Distance(Lib.VesselPosition(vessel), vessel.mainBody.position);
 
-			return heliocentric / home.orbit.semiMajorAxis;
+			return heliocentric / Sim.AU;
 		}
 
 		/// <summary>
