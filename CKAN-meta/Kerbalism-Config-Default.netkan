@@ -20,6 +20,9 @@
         { "name": "CommunityResourcePack" },
         { "name": "Kerbalism" }
     ],
+    "recommends": [
+        { "name": "KerbalismEngineFailures" }
+    ],
     "suggests": [
         { "name": "SystemHeat" },
         { "name": "KerbalismSystemHeatCore" },

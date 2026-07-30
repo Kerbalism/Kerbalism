@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>3.41.0</Version>
+    <Version>$(KerbalismPackageVersion)</Version>
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>Kerbalism</AssemblyName>
     <RootNamespace>KERBALISM</RootNamespace>
@@ -65,13 +65,16 @@
     <PropertyGroup>
       <_KspKerbalismDeployDir>$(KSPBT_GameRoot)/GameData/Kerbalism</_KspKerbalismDeployDir>
       <_KspKerbalismConfigDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismConfig</_KspKerbalismConfigDeployDir>
+      <_KspKerbalismEngineFailuresDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismEngineFailures</_KspKerbalismEngineFailuresDeployDir>
     </PropertyGroup>
     <ItemGroup>
       <_KerbalismDeployFiles Include="$(KSPBT_ModRoot)/**/*" />
       <_KerbalismConfigDeployFiles Include="$(ProjectRootDir)GameData/KerbalismConfig/**/*" />
+      <_KerbalismEngineFailuresDeployFiles Include="$(ProjectRootDir)GameData/KerbalismEngineFailures/**/*" />
     </ItemGroup>
     <Copy SourceFiles="@(_KerbalismDeployFiles)" DestinationFolder="$(_KspKerbalismDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(_KerbalismConfigDeployFiles)" DestinationFolder="$(_KspKerbalismConfigDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" />
-    <Message Text="Deployed GameData/Kerbalism and GameData/KerbalismConfig to $(KSPBT_GameRoot)" Importance="high" />
+    <Copy SourceFiles="@(_KerbalismEngineFailuresDeployFiles)" DestinationFolder="$(_KspKerbalismEngineFailuresDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" Condition="Exists('$(ProjectRootDir)GameData/KerbalismEngineFailures')" />
+    <Message Text="Deployed GameData/Kerbalism, KerbalismConfig, and KerbalismEngineFailures to $(KSPBT_GameRoot)" Importance="high" />
   </Target>
 </Project>

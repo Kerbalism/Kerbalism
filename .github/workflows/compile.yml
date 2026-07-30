@@ -22,4 +22,4 @@ jobs:
 
       - uses: KSPModdingLibs/KSPBuildTools/.github/actions/compile@1.1.1
         with:
-          solution-file-path: src/Kerbalism/Kerbalism.csproj
+          solution-file-path: Kerbalism.sln

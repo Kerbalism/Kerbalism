@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>$(KerbalismPackageVersion)</Version>
+    <FileVersion>$(Version)</FileVersion>
+    <AssemblyName>KerbalismEngineFailures</AssemblyName>
+    <RootNamespace>KERBALISM.EngineFailures</RootNamespace>
+    <TargetFramework>net481</TargetFramework>
+
+    <Description>Optional Kerbalism companion mod for engine ignition, burn time, and turn-on failures.</Description>
+    <Product>KerbalismEngineFailures</Product>
+    <ComVisible>false</ComVisible>
+
+    <KSPBT_ModRoot>$(ProjectRootDir)GameData\KerbalismEngineFailures</KSPBT_ModRoot>
+    <KSPBT_ModPluginFolder>Plugins</KSPBT_ModPluginFolder>
+    <Kerbalism_DeployToKsp Condition=" '$(Kerbalism_DeployToKsp)' == '' ">false</Kerbalism_DeployToKsp>
+
+    <LangVersion>latest</LangVersion>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(KSPBT_ModVersion)' != '' ">
+    <Version>$(KSPBT_ModVersion)</Version>
+    <FileVersion>$(Version)</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="KSPBuildTools" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kerbalism\Kerbalism.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <KSPVersionFile Include=".">
+      <Destination>$(KSPBT_ModRoot)/KerbalismEngineFailures.version</Destination>
+      <URL>https://raw.githubusercontent.com/Kerbalism/Kerbalism/master/GameData/KerbalismEngineFailures/KerbalismEngineFailures.version</URL>
+      <Download>https://github.com/Kerbalism/Kerbalism/releases</Download>
+      <KSP_Version>1.12.5</KSP_Version>
+      <KSP_Version_Min>1.12.0</KSP_Version_Min>
+      <KSP_Version_Max>1.12.99</KSP_Version_Max>
+    </KSPVersionFile>
+  </ItemGroup>
+
+  <Target Name="DeployGameDataToKsp" AfterTargets="KSPBT_CopyDLLsToPluginFolder"
+          Condition=" '$(Kerbalism_DeployToKsp)' == 'true' And '$(KSPBT_GameRoot)' != '' ">
+    <PropertyGroup>
+      <_KspEngineFailuresDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismEngineFailures</_KspEngineFailuresDeployDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_EngineFailuresDeployFiles Include="$(KSPBT_ModRoot)/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_EngineFailuresDeployFiles)" DestinationFolder="$(_KspEngineFailuresDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Message Text="Deployed GameData/KerbalismEngineFailures to $(KSPBT_GameRoot)" Importance="high" />
+  </Target>
+</Project>

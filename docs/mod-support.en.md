@@ -102,7 +102,7 @@ Patches live under `GameData/KerbalismConfig/Support/` in the official config pa
 | TweakScale, B9PartSwitch, CCK, CLS | utility patches |
 | Contract Configurator, Engineer, … | limited hooks |
 | Kopernicus / planet packs (OPM, GPP, RSS, …) | radiation / body hooks where present — not full “support” |
-| EngineIgnitor, TestFlight, PayToPlay | reliability/ignition related |
+| TestFlight / RO / RP-1 | incompatible with optional `KerbalismEngineFailures` (CKAN conflicts); use those stacks' own engine reliability. Core Kerbalism MTBF Reliability is unaffected |
 
 ### USI and Sterling Systems
 

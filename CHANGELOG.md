@@ -3,6 +3,8 @@
  - 2026-07-28
 
  ### Changes since the last release
+ * Added: KerbalismEngineFailures companion (CKAN recommended by KerbalismConfig; conflicts with TestFlight / TestLite / RO / RP-1) (#1087, @Aebestach)
+ * Added: KerbalismEngineFailures propulsion-family auto-ratings with bounded ISP/thrust curves and safe fallbacks (#1087, @Aebestach)
  * Added: Greenhouse overhaul with continuous food production and balance tuning (#1096, @Aebestach)
  * Added: Configure dropdown UI for process/setup selection (#1072, #1131, @Aebestach)
  * Added: Default planetary resource maps and ISRU processes from Kerbalism Compatibility Overhaul (#1081, @Aebestach)
@@ -29,6 +31,9 @@
  * Fixed: Pressurized tanks storing too much XenonGas (#1129, @Aebestach)
  * Fixed: Seafloor vessels treated as splashed for science situations (#1086, @Aebestach)
  * Fixed: KsmGui showing in facilities; Body Info hotkey ignored while typing (#1107, @Aebestach)
+ * Changed: Engine ignition, burn-time and turn-on failures moved into optional companion mod KerbalismEngineFailures; core Reliability keeps MTBF/radiation only (#1087, @Aebestach)
+ * Changed: Kerbalism MTBF Reliability is no longer stripped entirely when TestFlight is present (#1087, @Aebestach)
+ * Changed: Critical Reliability and engine failures can be repaired with two EVA repair kits by crew one qualification tier above the normal repair requirement (#814, @Aebestach)
  * Changed: Supply and Configure can add capacity to existing resources (#1054, @SerShrubert)
  * Changed: Experienced kerbals accumulate stress more slowly (#1127, @Aebestach)
  * Changed: Waste incinerator can dump CO2 (#1083, @Aebestach)

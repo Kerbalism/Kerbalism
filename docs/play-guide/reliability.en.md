@@ -7,13 +7,9 @@ Failures comes in two variants: *malfunctions* and *critical failures*. The form
 Every time a component fails on an unmanned vessel, there is a chance that it will be fixed remotely by mission control engineers.
 
 ## Engines
-Most engines have a limited number of ignitions, that means that you can turn them on (by throttling up) and off only so many times. You might be lucky and get more than the advertised ignitions, but at the very real risk of possibly permanent engine damage, or a RUD event. Regardless of how many ignitions are left on an engine, there is the slim chance that any ignition will go wrong and damage the engine.
+Engine ignition limits, rated burn time and turn-on failures are provided by the optional companion mod **KerbalismEngineFailures**. CKAN recommends it with official KerbalismConfig. It conflicts with TestFlight / RO / RP-1 — those stacks use their own engine reliability instead.
 
-For these reasons it is highly advisable to think about launch abort systems that will rescue your crew if anything should go wrong during liftoff!
-
-Since a running engine imposes immense loads on the engine itself, it won't keep burning forever. Many engines have a limited rated burn duration, which is no guarantee that it actually will last that long (but odds are they do). Once an engine reaches its operational limits, chances of permanent engine damage or engine loss rise exponentially.
-
-Good news is that Kerbals (on EVA) can inspect and repair engines, which restores the available ignitions and burn duration - at least to a degree.
+With the companion installed, most engines have a limited number of ignitions and a rated burn duration, plus a small chance of failure on ignition. EVA inspection and repair can restore remaining ignitions and burn time to a degree.
 
 ## Quality
 Manufacturing quality can be specified per-component in the VAB. A high quality will increase the MTBF, but also requires more money and mass. Thus there is a trade off between high reliability and cost/mass of components. Extra cost and mass are expressed in proportion to part cost and mass.

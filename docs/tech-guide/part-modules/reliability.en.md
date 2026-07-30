@@ -1,6 +1,6 @@
 # Reliability
 
-Disables other modules when a failure happens. Also models engine ignitions / burn-time wear.
+Disables other modules when a failure happens.
 
 Source: [`Reliability.cs`](https://github.com/Kerbalism/Kerbalism/blob/master/src/Kerbalism/Modules/Reliability.cs).
 
@@ -18,15 +18,9 @@ Source: [`Reliability.cs`](https://github.com/Kerbalism/Kerbalism/blob/master/sr
 
 ## Engine failures
 
-| PROPERTY | DESCRIPTION | DEFAULT |
-| --- | --- | --- |
-| turnon_failure_probability | failure chance on ignition (0..1); `-1` disables | `-1` |
-| rated_operation_duration | expected burn duration (s) before failure rate rises; `-1` disables | `-1` |
-| rated_ignitions | expected ignitions before failure rate rises; `-1` disables | `-1` |
+Engine ignition counts, rated burn time and turn-on failure chance are **not** part of core `Reliability`. They live in the optional companion mod **KerbalismEngineFailures** (`GameData/KerbalismEngineFailures`, module `EngineFailures`).
 
-Applies to `ModuleEngines` / `ModuleEnginesFX`. Ignition means providing thrust after not providing thrust (not merely enabling the PAW toggle).
-
-Engines get a fraction of `rated_operation_duration` / `rated_ignitions` with low failure odds; beyond that, failure rate rises sharply. Failures can destroy the engine.
+See that package's README and `EngineReliability.cfg` for propulsion-family auto-ratings. CKAN recommends the companion with official KerbalismConfig and marks conflicts with TestFlight / RO / RP-1.
 
 ## MTBF
 
@@ -42,6 +36,6 @@ In the editor, parts can be set to high quality:
 
 - Adds `extra_cost` / `extra_mass`
 - Multiplies MTBF by Settings `QualityScale` (default `4`)
-- Improves ignition / burn / radiation ratings accordingly
+- Improves radiation ratings accordingly
 
 Difficulty options can require **repair kits** for repairs (non-default).
