@@ -903,7 +903,7 @@ namespace KERBALISM
 			if (Settings.UseSIUnits && GetResourceUnitInfo(resID) is ResourceUnitInfo rui)
 			{
 				if (rui.UseHuman)
-					HumanReadableRate(rate, precision, rui.RateUnit);
+					return HumanReadableRate(rate, precision, rui.RateUnit);
 				else
 					return SIRate(rate, rui, sigFigs, longPrefix);
 			}
@@ -940,6 +940,9 @@ namespace KERBALISM
 
 		public static string SIRate(double rate, ResourceUnitInfo rui, int sigFigs = 3, bool longPrefix = false)
 		{
+			// Missing RESOURCE_DEFINITION unit info (no amountUnit/rateUnit) must not crash part compile (#882)
+			if (rui == null)
+				return HumanReadableRate(rate);
 			return SIRate(rate * rui.MultiplierToUnit, rui.RateUnit, sigFigs, longPrefix);
 		}
 
@@ -955,6 +958,8 @@ namespace KERBALISM
 
 		public static string SIAmount(double rate, ResourceUnitInfo rui, int sigFigs = 3, bool longPrefix = false)
 		{
+			if (rui == null)
+				return HumanReadableAmount(rate);
 			return SIAmount(rate * rui.MultiplierToUnit, rui.AmountUnit, sigFigs, longPrefix);
 		}
 
