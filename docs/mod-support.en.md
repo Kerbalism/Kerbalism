@@ -40,6 +40,7 @@ These can run alongside Kerbalism, but some features will not work as their auth
 | Mod | Issues | Notes |
 | --- | --- | --- |
 | **Strategia** | [#757](https://github.com/Kerbalism/Kerbalism/issues/757) | Non-science strategies and the rest of the mod can be used. Science-modifying strategies (e.g. Probe Frenzy: probe bonuses and transmit-vs-recover differences) do **not** apply correctly under Kerbalism’s science pipeline. Kerbalism deliberately avoids transmit/recover science splits; fixing that properly would need non-trivial changes on the Strategia side. |
+| **MOAR Station Science** (StationScience) | [#746](https://github.com/Kerbalism/Kerbalism/issues/746) | Experiments / parts can still be used. Recovery contracts that check for stock science data fail under Kerbalism because StationScience hardcodes stock data fields instead of using the stock science retrieval APIs. **Fix belongs in StationScience**, not Kerbalism. |
 
 ## BackgroundResources / DeepFreeze / TAC-LS
 

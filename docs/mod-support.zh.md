@@ -40,6 +40,7 @@ Kerbalism 得在**未加载飞船**上继续跑生命维持、ISRU、科研、�
 | 模组 | Issue | 说明 |
 | --- | --- | --- |
 | **Strategia** | [#757](https://github.com/Kerbalism/Kerbalism/issues/757) | 非科研类策略及模组其余部分可用。改科学产出的策略（如 Probe Frenzy：探针加成、传输 vs 回收差异）在 Kerbalism 科学管线下**不会**正确生效。Kerbalism 有意不做传输/回收科学分差；要修好需要大幅改 Strategia 一侧。 |
+| **MOAR Station Science**（StationScience） | [#746](https://github.com/Kerbalism/Kerbalism/issues/746) | 实验 / 部件仍可用。依赖原版科学数据格式的回收合同在 Kerbalism 下无法完成：StationScience 硬编码检查了原版数据字段，而不是走原版科学回收 API。**需要 StationScience 一侧修复**，Kerbalism 这边改不了。 |
 
 ## DeepFreeze / BackgroundResources / TAC-LS
 
