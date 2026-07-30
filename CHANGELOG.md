@@ -33,6 +33,7 @@
  * Fixed: Pressurized tanks storing too much XenonGas (#1129, @Aebestach)
  * Fixed: Seafloor vessels treated as splashed for science situations (#1086, @Aebestach)
  * Fixed: KsmGui showing in facilities; Body Info hotkey ignored while typing (#1107, @Aebestach)
+ * Fixed: Body Info `B` hotkey ignored over empty map space (KEYBOARDINPUT lock was too broad)
  * Changed: Engine ignition, burn-time and turn-on failures moved into optional companion mod KerbalismEngineFailures; core Reliability keeps MTBF/radiation only (#1087, @Aebestach)
  * Changed: Kerbalism MTBF Reliability is no longer stripped entirely when TestFlight is present (#1087, @Aebestach)
  * Changed: Critical Reliability and engine failures can be repaired with two EVA repair kits by crew one qualification tier above the normal repair requirement (#814, @Aebestach)
