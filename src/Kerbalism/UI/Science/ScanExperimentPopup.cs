@@ -270,10 +270,10 @@ namespace KERBALISM
 				sb.Append(Lib.InlineSpriteScience);
 				sb.Append(" ");
 				sb.Append(Local.SCIENCEARCHIVE_inRnD);
-				if (subjectData.ScienceCollectedInFlight > 0.05)
+				if (subjectData.ScienceCollectedInFlightValue > 0.05)
 				{
 					sb.Append(" (");
-					sb.Append(Lib.Color(Lib.BuildString("+", subjectData.ScienceCollectedInFlight.ToString("F1")), Lib.Kolor.Science, true));
+					sb.Append(Lib.Color(Lib.BuildString("+", subjectData.ScienceCollectedInFlightValue.ToString("F1")), Lib.Kolor.Science, true));
 					sb.Append(Lib.InlineSpriteScience);
 					sb.Append(" ");
 					sb.Append(Local.SCIENCEARCHIVE_inflight);

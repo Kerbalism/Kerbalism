@@ -628,6 +628,35 @@ namespace KERBALISM
 
 			chunkSize = Math.Min(chunkSize, available);
 
+			// Forced may ignore remaining science value, but never store more than one full result on this vessel (#832)
+			if (expState == RunningState.Forced)
+			{
+				double stored = 0.0;
+				foreach (Drive vesselDrive in Drive.GetDrives(vd, true))
+				{
+					if (!expInfo.IsSample)
+					{
+						if (vesselDrive.files.TryGetValue(subjectData, out File storedFile))
+							stored += storedFile.size;
+					}
+					else if (vesselDrive.samples.TryGetValue(subjectData, out Sample storedSample))
+					{
+						stored += storedSample.size;
+					}
+				}
+
+				if (!expInfo.IsSample
+					&& vd.TransmitBufferDrive != null
+					&& vd.TransmitBufferDrive.files.TryGetValue(subjectData, out File bufferedFile))
+				{
+					stored += bufferedFile.size;
+				}
+
+				chunkSize = Math.Min(chunkSize, Math.Max(0.0, expInfo.DataSize - stored));
+				if (chunkSize <= 0.0)
+					return 0.0;
+			}
+
 			// TODO : prodfactor rely on resource capacity, resulting in wrong (lower) rate at high timewarp speeds if resource capacity is too low
 			// There is no way to fix that currently, this is another example of why virtual ressource recipes are needed
 			double prodFactor = chunkSize / chunkSizeMax;
