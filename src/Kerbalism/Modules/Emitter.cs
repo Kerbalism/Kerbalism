@@ -218,12 +218,7 @@ namespace KERBALISM
 			Specifics specs = new Specifics();
 			specs.Add(radiation >= 0.0 ? Local.Emitter_Emitted : Local.Emitter_ActiveShielding, Lib.HumanReadableRadiation(Math.Abs(radiation)));
 			if (ec_rate > double.Epsilon)
-			{
-				if (Settings.UseSIUnits)
-					specs.Add(Local.Deploy_actualCost, Lib.SIRate(ec_rate, Lib.ECResID));
-				else
-					specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
-			}
+				specs.Add(Local.Deploy_actualCost, Lib.HumanOrSIRate(ec_rate, Lib.ECResID));
 			return specs;
 		}
 
