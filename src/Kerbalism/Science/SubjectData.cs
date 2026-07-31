@@ -52,20 +52,23 @@ namespace KERBALISM
 		// Note : this code is a bit convoluted to avoid "never completed" issues due to float <> double conversions
 		public virtual double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science <= 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
 
-		/// <summary> all science points recovered, transmitted or collected in flight </summary>
-		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
+		/// <summary> science value remaining to retrieve. </summary>
+		public double ScienceRemainingToRetrieve => Math.Max(ScienceMaxValue - ScienceRetrievedInKSC, 0.0);
+
+		/// <summary> useful science value collected in flight, excluding redundant force-run data </summary>
+		public double ScienceCollectedInFlightValue => Math.Min(ScienceCollectedInFlight, ScienceRemainingToRetrieve);
+
+		/// <summary> useful science points recovered, transmitted or collected in flight </summary>
+		public double ScienceCollectedTotal => Math.Min(ScienceRetrievedInKSC + ScienceCollectedInFlightValue, ScienceMaxValue);
 
 		/// <summary> science value remaining to collect. </summary>
 		public double ScienceRemainingToCollect => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
-
-		/// <summary> science value remaining to retrieve. </summary>
-		public double ScienceRemainingToRetrieve => Math.Max(ScienceMaxValue - ScienceRetrievedInKSC, 0.0);
 
 		/// <summary> science value remaining (accounting for retrieved in KSC and collected in flight) </summary>
 		public double ScienceRemainingTotal => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> percentage [0;1] of science collected. </summary>
-		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
+		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : ScienceCollectedTotal / ScienceMaxValue;
 
 		public string DebugStateInfo => $"{FullTitle} :\nExistsInRnD={ExistsInRnD} - ScienceMaxValue={ScienceMaxValue} - SciencePerMB={SciencePerMB} - ScienceCollectedInFlight={ScienceCollectedInFlight} - RnDSubject.science={RnDSubject?.science}";
 
@@ -249,12 +252,13 @@ namespace KERBALISM
 			if (!API.preventScienceCrediting)
 				ScienceDB.uncreditedScience += scienceRetrieved;
 
-			// fire subject completed events
-			int timesCompleted = UpdateSubjectCompletion(scienceValue);
+			// Track repeated retrievals, but don't let one oversized force-run result count as multiple completions (#832)
+			double completionValue = Math.Min(scienceValue, ScienceMaxValue);
+			int timesCompleted = UpdateSubjectCompletion(completionValue);
 			if (timesCompleted > 0)
 				OnSubjectCompleted(showMessage, fromVessel, file);
 
-			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
+			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceRetrieved), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
 
 			if (API.subjectsReceivedEventEnabled)

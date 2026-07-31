@@ -151,7 +151,7 @@ namespace KERBALISM
 					data.SubjectData.CreateSubjectInRnD();
 
 				data.SubjectData.SetAsPersistent();
-				data.SubjectData.UpdateSubjectCompletion(subjectValue);
+				data.SubjectData.UpdateSubjectCompletion(Math.Min(subjectValue, subject.ScienceMaxValue));
 			}
 			else
 			{

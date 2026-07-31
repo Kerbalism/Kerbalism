@@ -359,7 +359,7 @@ namespace KERBALISM
 					"<pos=10>",
 					Lib.Color(Math.Round(SubjectData.ScienceRetrievedInKSC, 1).ToString("0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=60>",
-					Lib.Color(Math.Round(SubjectData.ScienceCollectedInFlight, 1).ToString("+0.0;--;--"), Lib.Kolor.Science, true),
+					Lib.Color(Math.Round(SubjectData.ScienceCollectedInFlightValue, 1).ToString("+0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=110>",
 					Lib.Color(Math.Round(SubjectData.ScienceRemainingTotal, 1).ToString("0.0;--;--"), Lib.Kolor.Science, true),
 					"<pos=160>",
