@@ -1,16 +1,18 @@
+using System;
+
 namespace KERBALISM.Planner
 {
 
     ///<summary> Planners simulator for the environment the vessel is presently in, according to the planners environment settings </summary>
     public sealed class EnvironmentAnalyzer
     {
-        public void Analyze(CelestialBody body, double altitude_mult, Planner.SunlightState sunlight)
+        public void Analyze(CelestialBody body, double orbital_altitude_m, Planner.SunlightState sunlight)
         {
             this.body = body;
             CelestialBody mainSun;
             Vector3d sun_dir;
             solar_flux = Sim.SolarFluxAtBody(body, true, out mainSun, out sun_dir, out sun_dist);
-            altitude = body.Radius * altitude_mult;
+            altitude = Math.Max(0.0, orbital_altitude_m);
             landed = altitude <= double.Epsilon;
             atmo_factor = Sim.AtmosphereFactor(body, 0.7071);
             solar_flux = sunlight == Planner.SunlightState.Shadow ? 0.0 : solar_flux * (landed ? atmo_factor : 1.0);
@@ -22,7 +24,7 @@ namespace KERBALISM.Planner
             temp_diff = Sim.TempDiff(temperature, body, landed);
             orbital_period = Sim.OrbitalPeriod(body, altitude);
             shadow_period = Sim.ShadowPeriod(body, altitude);
-            shadow_time = shadow_period / orbital_period;
+            shadow_time = orbital_period > double.Epsilon ? shadow_period / orbital_period : 0.0;
             zerog = !landed && (!body.atmosphere || body.atmosphereDepth < altitude);
 
             RadiationBody rb = Radiation.Info(body);

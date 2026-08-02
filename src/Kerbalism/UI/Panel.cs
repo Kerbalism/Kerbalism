@@ -92,7 +92,7 @@ namespace KERBALISM
 			sections.Add(p);
 		}
 
-		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null)
+		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null, Action rightClick = null)
 		{
 			Entry e = new Entry
 			{
@@ -101,6 +101,7 @@ namespace KERBALISM
 				tooltip = tooltip,
 				click = click,
 				hover = hover,
+				rightClick = rightClick,
 				selectable = false,
 				icons = new List<Icon>()
 			};
@@ -222,6 +223,11 @@ namespace KERBALISM
 					else
 						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
 					if (!e.selectable && e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
+					if (!e.selectable && e.rightClick != null && Lib.IsClicked(1))
+					{
+						callbacks.Add(e.rightClick);
+						Event.current.Use();
+					}
 					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
 					foreach (Icon i in e.icons)
 					{
@@ -410,6 +416,7 @@ namespace KERBALISM
 			public string value;
 			public string tooltip;
 			public Action click;
+			public Action rightClick;
 			public Action hover;
 			public Boolean selectable;
 			public List<Icon> icons;

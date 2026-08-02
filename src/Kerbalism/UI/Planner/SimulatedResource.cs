@@ -209,6 +209,13 @@ namespace KERBALISM.Planner
 			return amount <= double.Epsilon ? 0.0 : rate > -1e-10 ? double.NaN : amount / -rate;
 		}
 
+		/// <summary>time to fill capacity from empty at simulated net production (NaN if not charging)</summary>
+		public double ChargeTime()
+		{
+			double rate = produced - consumed;
+			return capacity <= double.Epsilon || rate <= 1e-10 ? double.NaN : capacity / rate;
+		}
+
 		/// <summary>generate resource tooltip multi-line string</summary>
 		public string Tooltip(bool invert = false)
 		{
