@@ -50,7 +50,15 @@ namespace KERBALISM
 
 		private double ReactorPowerScale => IsRunning() ? Mathf.Clamp(CurrentPowerPercent, 0f, 100f) / 100.0 : 0.0;
 
-		private bool IsFissionReactor() => resource == "_Nukereactor";
+		/// <summary>
+		/// True when core-damage thresholds are configured on this module.
+		/// Gate is independent of the process pseudo-resource name so multi-recipe
+		/// reactors can keep distinct modifiers and still get fission UI / damage.
+		/// </summary>
+		internal static bool HasCoreDamageConfig(float meltdownTemperature, float maximumTemperature)
+			=> meltdownTemperature > 0f && maximumTemperature > meltdownTemperature;
+
+		internal bool IsFissionReactor() => HasCoreDamageConfig(meltdownTemperature, MaximumTemperature);
 
 		private float EffectiveShutdownTemperature() => IsFissionReactor() ? CurrentSafetyOverride : shutdownTemperature;
 
@@ -742,7 +750,7 @@ namespace KERBALISM
 
 		private void ApplyCoreDamage(float loopTemperature, float elapsedSeconds)
 		{
-			if (!IsFissionReactor() || meltdownTemperature <= 0f || elapsedSeconds <= 0f)
+			if (!IsFissionReactor() || elapsedSeconds <= 0f)
 				return;
 
 			CoreDamage = SystemHeatEditorSimulation.AccumulateCoreDamage(
@@ -810,7 +818,8 @@ namespace KERBALISM
 			List<KeyValuePair<string, double>> resourceChangeRequest,
 			double elapsed_s)
 		{
-			if (Lib.Proto.GetString(moduleSnapshot, "resource") == "_Nukereactor")
+			ProcessControllerSystemHeat heatPrefab = protoPartModule as ProcessControllerSystemHeat;
+			if (heatPrefab != null && heatPrefab.IsFissionReactor())
 				SystemHeatBackgroundThermal.SyncFrozenProcessReactor(v, partSnapshot, moduleSnapshot, protoPartModule, protoPart, elapsed_s);
 			else
 				SystemHeatBackgroundThermal.TryRun(v, elapsed_s);
