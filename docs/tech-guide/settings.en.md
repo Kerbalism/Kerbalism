@@ -57,7 +57,18 @@ Values below are the **shipped official config** defaults (3.40). Code fallbacks
 | RadiationInSievert | Use Sv instead of rad | commented / `false` |
 | UseSIUnits | Prefer SI pretty-printing when resources define units | commented / `false` |
 
-Additional storm / comfort / shielding presets exist as code defaults (`StormFrequency`, `ComfortLivingSpace`, `ComfortFirmGround`, `ShieldingEfficiency*`, …) and feed in-game difficulty preferences even when not listed in Settings.cfg. `ComfortFirmGround` is the comfort **factor weight** when firm ground is active (landed/splashed or a deployed Gravity Ring on a powered vessel) — not a whole-vessel spin threshold. Whole-vessel spin firm-ground settings are not implemented.
+Additional storm / comfort / shielding presets exist as code defaults (`StormFrequency`, `ComfortLivingSpace`, `ComfortFirmGround`, `ShieldingEfficiency*`, …) and feed in-game difficulty preferences even when not listed in Settings.cfg.
+
+`ComfortFirmGround` is the comfort **factor weight** when firm ground is active — not a spin threshold. Whole-vessel spin firm ground is controlled separately (also as Comfort difficulty preferences):
+
+| KEY | DESCRIPTION | CODE DEFAULT |
+| --- | --- | --- |
+| ComfortSpinFirmGround | Allow firm ground from whole-vessel spin | `true` |
+| ComfortSpinMinArtificialG | Minimum artificial gravity (g) for a seat to count | `0.25` |
+| ComfortSpinMaxRpm | Maximum whole-vessel spin rate (rpm) | `3.0` |
+| ComfortSpinCrewCoverage | Fraction of aboard crew that must have a qualifying high-g seat | `1.0` |
+
+See [Habitat → Comforts](../play-guide/habitat.md) for how qualifying seats are counted.
 
 ## Misc
 

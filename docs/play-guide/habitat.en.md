@@ -41,10 +41,32 @@ Comforts are provided by some vessel conditions, and parts implementing the [Com
 
 | COMFORT | CONDITION | PART |
 | --- | --- | --- |
-| firm-ground | vessel is landed/splashed, or a Gravity Ring is deployed on a powered vessel | Gravity Ring |
+| firm-ground | vessel is landed/splashed; a Gravity Ring is deployed on a powered vessel; or whole-vessel spin meets the seat-coverage thresholds below | Gravity Ring |
 | not-alone | more than 1 crew member in the vessel |  |
 | call-home | vessel can communicate with DSN via an antennas science rate |  |
 | exercise | Kerbal's can ride a bike or use a treadmill etc | Hitchhiker |
 | panorama | Kerbal's can look out of a big window | Cupola |
 
-Whole-vessel spin does **not** grant firm ground. Use a dedicated Gravity Ring (deployed, vessel powered) or land/splash the vessel.
+### Firm ground from whole-vessel spin
+Besides landing/splashing or a deployed [Gravity Ring](../tech-guide/part-modules/gravityring.md), a vessel can earn firm ground by spinning as a whole so that enough **crew seats** sit at useful artificial gravity.
+
+Kerbalism does **not** track which Kerbal is sitting where. It assumes the crew can move around the living volume. What matters is capacity:
+
+1. For each crewable part with live `CrewCapacity` (disabled or still-inflating Habitats count as zero), compute artificial gravity from the vessel spin rate and the part’s cylindrical radius about the spin axis through the vessel CoM.
+2. Seats that meet the configured minimum g are *qualifying seats*.
+3. Firm ground is granted when qualifying seats cover enough of the aboard crew **and** the spin rate stays at or below the configured maximum RPM (to limit Coriolis discomfort).
+
+Defaults (difficulty / Kerbalism Comfort preferences, also overridable via Settings.cfg keys):
+
+| OPTION | DEFAULT | MEANING |
+| --- | --- | --- |
+| Vessel Spin Firm Ground | on | Master toggle for this source of firm ground |
+| Minimum Spin Gravity | 0.25 g | Seat must reach at least this much artificial gravity to count |
+| Maximum Spin Rate | 3.0 rpm | Whole-vessel spin must stay at or below this rate |
+| Spin Seat Coverage | 100% | Fraction of aboard crew that must have a qualifying high-g seat |
+
+Example: 8 crew, 100% coverage, 0.25 g / 3 rpm → you need at least 8 seats that reach ≥ 0.25 g while spinning no faster than 3 rpm. Airlocks and other near-axis seats usually do not qualify; they do not “punish” the ship either — they simply do not help.
+
+The VAB/SPH Planner shows a spin estimate: qualifying seats / seats needed, innermost relevant radius, gravity at max RPM, and the RPM required to hit the target. It picks the root-part principal axis that covers the needed seats at the lowest RPM.
+
+A Gravity Ring remains the compact shortcut (part + EC, whole vessel gets firm ground while deployed and powered). Whole-vessel spin is free of that part cost but needs geometry: enough seats far enough from the spin axis at an acceptable RPM.
