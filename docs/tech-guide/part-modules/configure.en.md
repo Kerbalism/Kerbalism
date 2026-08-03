@@ -27,7 +27,7 @@ A **MODULE** sub-node, inside a *SETUP* node, associates a specific module (that
 | PROPERTY | DESCRIPTION |
 | --- | --- |
 | type | module name |
-| id_field/id_value | the name of a field in the module definition and its value respectively, used to identify a module in particular if multiple ones of the same type exist in the part |
-| id_index | the zero-based index, selecting a specific module of *type* among all the ones present in the part |
+| id_field/id_value | the name of a field in the module definition and its value respectively, used to identify a module in particular if multiple ones of the same type exist in the part (for Emitter use `id_field = emitterId`) |
+| id_index | the zero-based index, selecting a specific module of *type* among all the ones present in the part (order-dependent; prefer a stable `id_field` when other mods may also patch the part) |
 
 A **RESOURCE** sub-node, inside a *SETUP* node, adds a specific resource amount and/or capacity to the setup. The resource definition is the same as the stock one you are familiar with. The resource doesn't need to be defined in the part directly but only in the setup. When the setup is selected, the resource will be added to the part. If the part already contain the same resource, the amount and/or capacity will simply increase when the setup is selected.
