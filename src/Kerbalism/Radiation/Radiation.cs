@@ -782,14 +782,12 @@ namespace KERBALISM
             if (Storm.InProgress(v))
             {
                 // inside a magnetopause (except heliosphere), blackout the signal
-                // outside, add storm radiations modulated by sun visibility
+                // outside, add storm radiations from every active CME (multi-star aware)
                 if (magnetosphere) blackout = true;
                 else
                 {
                     var vd = v.KerbalismData();
-
-                    var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
-                    var strength = PreferencesRadiation.Instance.StormRadiation * sunlight * (activity + 0.5);
+                    var strength = Storm.RadiationStrength(v, vd);
 
                     radiation += strength;
                     shieldedRadiation += vd.EnvHabitatInfo.AverageHabitatRadiation(strength);

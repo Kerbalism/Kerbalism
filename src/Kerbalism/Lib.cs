@@ -1436,13 +1436,29 @@ namespace KERBALISM
 
 		#region BODY
 
-		/// <summary>For a given body, return the last parent body that is not a sun </summary>
+		/// <summary>
+		/// For a given body, return the planetary-system root. A sun or barycenter is treated
+		/// as a hierarchy boundary, so planets sharing a barycenter keep independent storm state.
+		/// </summary>
 		public static CelestialBody GetParentPlanet(CelestialBody body)
 		{
-			if (Lib.IsSun(body)) return body;
-			CelestialBody checkedBody = body;
-			while (!Lib.IsSun(checkedBody.referenceBody)) checkedBody = checkedBody.referenceBody;
-			return checkedBody;
+			if (body == null) return null;
+			if (IsSun(body)) return body;
+
+			CelestialBody current = body;
+			int remainingBodies = FlightGlobals.Bodies.Count + 1;
+			while (remainingBodies-- > 0)
+			{
+				CelestialBody parent = current.referenceBody;
+				if (parent == null || parent == current)
+					return current;
+				if (IsSun(parent) || IsBarycenter(parent))
+					return current;
+
+				current = parent;
+			}
+
+			return current;
 		}
 
 		/// <summary> optimized method for getting normalized direction and distance between the surface of two bodies</summary>
@@ -1476,6 +1492,7 @@ namespace KERBALISM
 		/// <summary> Is this body a sun ? </summary>
 		public static bool IsSun(CelestialBody body)
 		{
+			if (body == null) return false;
 			int idx = body.flightGlobalsIndex;
 			foreach (Sim.SunData s in Sim.suns)
 			{
@@ -1484,18 +1501,43 @@ namespace KERBALISM
 			return false;
 		}
 
+		/// <summary>
+		/// True for a non-luminous hierarchy root used as a multi-star barycenter.
+		/// Kopernicus barycenters either parent one or more stars or are self-referential roots.
+		/// </summary>
+		public static bool IsBarycenter(CelestialBody body)
+		{
+			if (body == null || IsSun(body)) return false;
+			if (body.referenceBody == body) return true;
+
+			foreach (Sim.SunData sun in Sim.suns)
+			{
+				if (sun.body != null && sun.body.referenceBody == body)
+					return true;
+			}
+
+			return false;
+		}
+
 		/// <summary> return the first found parent sun for a given body </summary>
 		public static CelestialBody GetParentSun(CelestialBody body)
 		{
+			if (body == null) return null;
 			if (IsSun(body)) return body;
 
 			CelestialBody refBody = body.referenceBody;
-			do
+			int remainingBodies = FlightGlobals.Bodies.Count + 1;
+			while (refBody != null && remainingBodies-- > 0)
 			{
 				if (IsSun(refBody)) return refBody;
 				refBody = refBody.referenceBody;
 			}
-			while (refBody != null);
+
+			// No sun on the referenceBody chain (barycenters / PostSpawnOrbit). Prefer the brightest
+			// known star at this body over silently assuming the universe root (#829).
+			CelestialBody brightest = Sim.BrightestSunAt(body.position);
+			if (brightest != null)
+				return brightest;
 
 			return FlightGlobals.Bodies[0];
 		}

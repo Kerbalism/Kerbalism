@@ -3,6 +3,8 @@
  - 2026-07-28
 
  ### Changes since the last release
+ * Fixed: Home-star / AU reference and adaptive comms damping calibration for large and multi-star packs (#829, #1080, @Aebestach)
+ * Fixed: Multi-star solar storm generation, per-star vessel CME tracking, and storm radiation summing (#1080, @Aebestach)
  * Added: KerbalismEngineFailures companion (CKAN recommended by KerbalismConfig; conflicts with TestFlight / TestLite / RO / RP-1) (#1087, @Aebestach)
  * Added: KerbalismEngineFailures propulsion-family auto-ratings with bounded ISP/thrust curves and safe fallbacks (#1087, @Aebestach)
  * Added: Greenhouse overhaul with continuous food production and balance tuning (#1096, @Aebestach)
@@ -31,6 +33,7 @@
  * Fixed: Pressurized tanks storing too much XenonGas (#1129, @Aebestach)
  * Fixed: Seafloor vessels treated as splashed for science situations (#1086, @Aebestach)
  * Fixed: KsmGui showing in facilities; Body Info hotkey ignored while typing (#1107, @Aebestach)
+ * Fixed: Body Info `B` hotkey ignored over empty map space (KEYBOARDINPUT lock was too broad)
  * Fixed: Emitter (and similar modules) crashing part compile when EC has no rateUnit under UseSIUnits (#882, @Aebestach)
  * Fixed: Force-run experiments showing oversized collected science and corrupting archive completion (#832, @Aebestach)
  * Changed: Engine ignition, burn-time and turn-on failures moved into optional companion mod KerbalismEngineFailures; core Reliability keeps MTBF/radiation only (#1087, @Aebestach)

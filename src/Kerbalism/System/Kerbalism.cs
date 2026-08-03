@@ -164,7 +164,9 @@ namespace KERBALISM
 					Cache.Init();
 					ResourceCache.Init();
 
-					// prepare storm data
+					// prepare storm data (rebuild each save-game init; static list must not accumulate)
+					storm_bodies.Clear();
+					storm_index = 0;
 					foreach (CelestialBody body in FlightGlobals.Bodies)
 					{
 						if (Storm.Skip_body(body))
@@ -913,12 +915,18 @@ namespace KERBALISM
 		}
 
 		/// <summary>true when an IMGUI or uGUI text field has keyboard focus</summary>
+		/// <remarks>
+		/// Do not use InputLockManager.KEYBOARDINPUT here: map view and several UI/mod
+		/// locks set that bit without a text field focused, which blocked Body Info (B)
+		/// over empty map space while still allowing it over toolbars/windows.
+		/// </remarks>
 		private static bool IsTextInputFocused()
 		{
-			if (global::InputLockManager.IsLocked(ControlTypes.KEYBOARDINPUT))
+			// Named IMGUI text fields (when a control called GUI.SetNextControlName is focused)
+			if (!string.IsNullOrEmpty(GUI.GetNameOfFocusedControl()))
 				return true;
 
-			// uGUI / TMP input fields used by some mods
+			// uGUI / TMP input fields used by stock rename dialogs and some mods
 			UnityEngine.EventSystems.EventSystem es = UnityEngine.EventSystems.EventSystem.current;
 			if (es == null || es.currentSelectedGameObject == null)
 				return false;
