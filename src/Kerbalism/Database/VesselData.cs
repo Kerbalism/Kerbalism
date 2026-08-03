@@ -100,10 +100,11 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Last readable loaded/unpacked spin sample. Kept across packing/unloading so background
-		/// comfort evaluation can reuse min g / rpm without reconstructing vessel physics.
+		/// comfort evaluation can reuse qualifying seat capacity / rpm without reconstructing vessel physics.
 		/// </summary>
 		public bool EnvSpinSnapshotValid => spinSnapshotValid; bool spinSnapshotValid;
-		public double EnvSpinMinGee => spinMinGee; double spinMinGee;
+		public int EnvSpinQualifyingCapacity => spinQualifyingCapacity; int spinQualifyingCapacity;
+		private float spinSampleMinArtificialG;
 		public double EnvSpinRpm => spinRpm; double spinRpm;
 
 		// Loaded-only spin stability tracking. Never persisted: a vessel must demonstrate
@@ -857,7 +858,8 @@ namespace KERBALISM
 			deviceTransmit = true;
 
 			spinSnapshotValid = false;
-			spinMinGee = 0.0;
+			spinQualifyingCapacity = 0;
+			spinSampleMinArtificialG = 0.0f;
 			spinRpm = 0.0;
 
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
@@ -926,8 +928,12 @@ namespace KERBALISM
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
 			spinSnapshotValid = Lib.ConfigValue(node, "spinSnapshotValid", false);
-			spinMinGee = Lib.ConfigValue(node, "spinMinGee", 0.0);
+			spinQualifyingCapacity = Lib.ConfigValue(node, "spinQualifyingCapacity", -1);
+			spinSampleMinArtificialG = Lib.ConfigValue(node, "spinSampleMinArtificialG", 0.0f);
 			spinRpm = Lib.ConfigValue(node, "spinRpm", 0.0);
+			// Legacy whole-crew min-g snapshots are incompatible with capacity coverage.
+			if (spinQualifyingCapacity < 0 || node.HasValue("spinMinGee"))
+				InvalidateSpinComfortSnapshot();
 			ValidateSpinComfortSnapshot();
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
@@ -1068,7 +1074,8 @@ namespace KERBALISM
 
 			ValidateSpinComfortSnapshot();
 			node.AddValue("spinSnapshotValid", spinSnapshotValid);
-			node.AddValue("spinMinGee", spinMinGee);
+			node.AddValue("spinQualifyingCapacity", spinQualifyingCapacity);
+			node.AddValue("spinSampleMinArtificialG", spinSampleMinArtificialG);
 			node.AddValue("spinRpm", spinRpm);
 
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
@@ -1161,6 +1168,25 @@ namespace KERBALISM
 		{
 			if (Vessel == null)
 				return;
+
+			float requiredGee = PreferencesComfort.Instance.spinMinArtificialG;
+			if (!SpinComfort.IsFinite(requiredGee) || requiredGee <= 0.0f)
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+				return;
+			}
+
+			// qualifyingCapacity depends on the g threshold used during sampling.
+			// An unloaded vessel can't be re-sampled, so discard stale results instead.
+			if (spinSnapshotValid
+				&& (!SpinComfort.IsFinite(spinSampleMinArtificialG)
+					|| Math.Abs(spinSampleMinArtificialG - requiredGee) > 1e-6f))
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+			}
+
 			if (!Vessel.loaded || Vessel.packed)
 			{
 				// Keep the last accepted snapshot for background simulation, but require
@@ -1169,12 +1195,14 @@ namespace KERBALISM
 				return;
 			}
 
-			SpinComfort.Sample sample = SpinComfort.Evaluate(Vessel);
+			SpinComfort.Sample sample = SpinComfort.Evaluate(
+				Vessel,
+				requiredGee);
 			if (!sample.available)
 				return;
 
 			if (!sample.coherent
-				|| !SpinComfort.IsFinite(sample.minGee)
+				|| sample.qualifyingCapacity < 0
 				|| !SpinComfort.IsFinite(sample.rpm)
 				|| !SpinComfort.IsFinite(sample.axisWorld))
 			{
@@ -1183,11 +1211,12 @@ namespace KERBALISM
 				return;
 			}
 
-			spinMinGee = sample.minGee;
+			spinQualifyingCapacity = sample.qualifyingCapacity;
+			spinSampleMinArtificialG = requiredGee;
 			spinRpm = sample.rpm;
 
-			// A stationary/no-crew vessel has a valid negative sample and needs no axis check.
-			if (!sample.hasOccupiedParts || sample.rpm <= double.Epsilon)
+			// A stationary / non-crewable vessel has a valid negative sample and needs no axis check.
+			if (!sample.hasCrewableParts || sample.rpm <= double.Epsilon)
 			{
 				spinSnapshotValid = true;
 				ResetSpinStability();
@@ -1224,10 +1253,12 @@ namespace KERBALISM
 
 		private void ValidateSpinComfortSnapshot()
 		{
-			if (!SpinComfort.IsFinite(spinMinGee)
+			if (spinQualifyingCapacity < 0
 				|| !SpinComfort.IsFinite(spinRpm)
-				|| spinMinGee < 0.0
-				|| spinRpm < 0.0)
+				|| spinRpm < 0.0
+				|| (spinSnapshotValid
+					&& (!SpinComfort.IsFinite(spinSampleMinArtificialG)
+						|| spinSampleMinArtificialG <= 0.0f)))
 			{
 				InvalidateSpinComfortSnapshot();
 			}
@@ -1236,7 +1267,8 @@ namespace KERBALISM
 		private void InvalidateSpinComfortSnapshot()
 		{
 			spinSnapshotValid = false;
-			spinMinGee = 0.0;
+			spinQualifyingCapacity = 0;
+			spinSampleMinArtificialG = 0.0f;
 			spinRpm = 0.0;
 		}
 
@@ -1282,12 +1314,16 @@ namespace KERBALISM
 
 			Profiler.BeginSample("SpinComfort");
 			UpdateSpinComfortSnapshot(elapsedSeconds);
+			int spinSeatsNeeded = SpinComfort.SeatsNeeded(
+				(int)crewCount,
+				PreferencesComfort.Instance.spinCrewCoverage);
 			bool spinFirmGround = SpinComfort.Qualifies(
 				spinSnapshotValid,
-				spinMinGee,
+				spinQualifyingCapacity,
+				(int)crewCount,
 				spinRpm,
 				PreferencesComfort.Instance.spinFirmGround,
-				PreferencesComfort.Instance.spinMinArtificialG,
+				PreferencesComfort.Instance.spinCrewCoverage,
 				PreferencesComfort.Instance.spinMaxRpm);
 			Profiler.EndSample();
 
@@ -1297,7 +1333,8 @@ namespace KERBALISM
 				EnvLanded,
 				spinFirmGround,
 				spinSnapshotValid,
-				spinMinGee,
+				spinQualifyingCapacity,
+				spinSeatsNeeded,
 				spinRpm,
 				crewCount > 1,
 				connection.linked && connection.rate > double.Epsilon);

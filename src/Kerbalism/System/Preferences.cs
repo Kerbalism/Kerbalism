@@ -244,14 +244,17 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_FirmGroundFactor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FirmGroundFactor_desc")]//Firm Ground Factor--Having something to walk on
 		public float firmGround = Settings.ComfortFirmGround;
 
-		[GameParameters.CustomParameterUI("#KERBALISM_SpinFirmGround", toolTip = "#KERBALISM_SpinFirmGround_desc")]//Vessel Spin Firm Ground--Grant firm ground when the whole vessel spins with enough artificial gravity
+		[GameParameters.CustomParameterUI("#KERBALISM_SpinFirmGround", toolTip = "#KERBALISM_SpinFirmGround_desc")]//Vessel Spin Firm Ground--Grant firm ground when enough crew seats meet the artificial-gravity threshold while the vessel spins
 		public bool spinFirmGround = Settings.ComfortSpinFirmGround;
 
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMinArtificialG", minValue = 0.05f, maxValue = 1f, displayFormat = "F2", toolTip = "#KERBALISM_SpinMinArtificialG_desc")]//Minimum Spin Gravity--Minimum artificial gravity in g at every occupied crew part
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMinArtificialG", minValue = 0.05f, maxValue = 1f, displayFormat = "F2", toolTip = "#KERBALISM_SpinMinArtificialG_desc")]//Minimum Spin Gravity--Minimum artificial gravity in g for a seat to count toward firm ground
 		public float spinMinArtificialG = Settings.ComfortSpinMinArtificialG;
 
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMaxRpm", minValue = 0.5f, maxValue = 10f, displayFormat = "F1", toolTip = "#KERBALISM_SpinMaxRpm_desc")]//Maximum Spin Rate--Maximum vessel spin rate in RPM (limits Coriolis discomfort)
 		public float spinMaxRpm = Settings.ComfortSpinMaxRpm;
+
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinCrewCoverage", asPercentage = true, minValue = 0.5f, maxValue = 1f, displayFormat = "F2", toolTip = "#KERBALISM_SpinCrewCoverage_desc")]//Spin Seat Coverage--Fraction of aboard crew that must have a qualifying high-g seat
+		public float spinCrewCoverage = Settings.ComfortSpinCrewCoverage;
 
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_ExerciseFactor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_ExerciseFactor_desc")]//Exercise Factor--Having a treadmill
 		public float exercise = Settings.ComfortExercise;
@@ -339,6 +342,12 @@ namespace KERBALISM
 				|| float.IsInfinity(spinMaxRpm)
 				|| spinMaxRpm <= 0.0f)
 				spinMaxRpm = Settings.ComfortSpinMaxRpm;
+			if (float.IsNaN(spinCrewCoverage)
+				|| float.IsInfinity(spinCrewCoverage)
+				|| spinCrewCoverage <= 0.0f)
+				spinCrewCoverage = Settings.ComfortSpinCrewCoverage;
+			else if (spinCrewCoverage > 1.0f)
+				spinCrewCoverage = 1.0f;
 		}
 	}
 

@@ -127,25 +127,9 @@ namespace KERBALISM.Planner
 			if (manifest == null)
 				return;
 
-			// Check both total crew and occupied parts. Moving a Kerbal between cabins
-			// keeps CrewCount unchanged but can change the spin estimate substantially.
-			// Throttle the occupied-part hash and use the editor's existing list to avoid
-			// allocating a recursive part list every UI frame.
+			// Capacity coverage only depends on crew count, not which cabin each Kerbal occupies.
 			if (vessel_analyzer.crew_count != manifest.CrewCount)
-			{
 				enforceUpdate = true;
-				crew_assignment_check_counter = 0;
-			}
-			else if (++crew_assignment_check_counter >= 5)
-			{
-				crew_assignment_check_counter = 0;
-				List<Part> editorParts = EditorLogic.fetch != null && EditorLogic.fetch.ship != null
-					? EditorLogic.fetch.ship.parts
-					: null;
-				if (editorParts != null
-					&& vessel_analyzer.crew_assignment_hash != SpinComfort.EditorCrewAssignmentHash(editorParts, manifest))
-					enforceUpdate = true;
-			}
 
 			// only update when we need to, repeat update a number of times to allow the simulators to catch up
 			if (!enforceUpdate && update_counter++ > 3)
@@ -557,13 +541,16 @@ namespace KERBALISM.Planner
 				(
 					"<align=left />",
 					Local.Planner_spin_tip_intro, "\n",
-					Local.Planner_spin_worst_radius, "\t<b>", spin.worstRadius.ToString("F1"), " m</b>\n",
+					Local.Planner_spin_seats, "\t<b>",
+					spin.qualifyingCapacity.ToString(), " / ", spin.seatsNeeded.ToString(), "</b>\n",
+					Local.Planner_spin_marginal_radius, "\t<b>", spin.marginalRadius.ToString("F1"), " m</b>\n",
 					Local.Planner_spin_gee_at_max, "\t<b>", spin.geeAtMaxRpm.ToString("F2"), " g</b>\n",
 					Local.Planner_spin_rpm_needed, "\t<b>",
 					double.IsInfinity(spin.rpmRequired) ? "∞" : spin.rpmRequired.ToString("F2"),
 					" rpm</b>\n",
 					Local.Planner_spin_thresholds, "\t<b>",
-					spin.requiredGee.ToString("F2"), " g / ≤ ", spin.maxRpm.ToString("F1"), " rpm</b>"
+					spin.requiredGee.ToString("F2"), " g / ≤ ", spin.maxRpm.ToString("F1"),
+					" rpm / ≥ ", (spin.coverageRatio * 100.0f).ToString("F0"), "%</b>"
 				);
 			}
 
@@ -791,7 +778,6 @@ namespace KERBALISM.Planner
 		private static Panel panel = new Panel();
 		private static bool enforceUpdate = false;
 		private static int update_counter = 0;
-		private static int crew_assignment_check_counter = 0;
 #endregion
 	}
 

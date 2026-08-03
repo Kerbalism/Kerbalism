@@ -59,7 +59,7 @@ namespace KERBALISM
 	{
 		/// <summary>Compatibility ctor used by planner and external callers without spin metrics.</summary>
 		public Comforts(Vessel v, bool env_firm_ground, bool env_not_alone, bool env_call_home)
-			: this(v, env_firm_ground, false, false, 0.0, 0.0, env_not_alone, env_call_home)
+			: this(v, env_firm_ground, false, false, 0, 0, 0.0, env_not_alone, env_call_home)
 		{
 		}
 
@@ -68,7 +68,8 @@ namespace KERBALISM
 			bool env_firm_ground,
 			bool env_spin_firm_ground,
 			bool env_spin_snapshot_valid,
-			double env_spin_min_gee,
+			int env_spin_qualifying_capacity,
+			int env_spin_seats_needed,
 			double env_spin_rpm,
 			bool env_not_alone,
 			bool env_call_home)
@@ -77,7 +78,8 @@ namespace KERBALISM
 			firm_ground = env_firm_ground || env_spin_firm_ground;
 			spin_firm_ground = env_spin_firm_ground;
 			spin_snapshot_valid = env_spin_snapshot_valid;
-			spin_min_gee = env_spin_min_gee;
+			spin_qualifying_capacity = env_spin_qualifying_capacity;
+			spin_seats_needed = env_spin_seats_needed;
 			spin_rpm = env_spin_rpm;
 			call_home = env_call_home;
 
@@ -214,7 +216,8 @@ namespace KERBALISM
 			else
 			{
 				string metrics = Local.Comfort_spin_metrics.Format(
-					spin_min_gee.ToString("F2"),
+					spin_qualifying_capacity.ToString(),
+					spin_seats_needed.ToString(),
 					spin_rpm.ToString("F1"));
 				spinStatus = Lib.BuildString(spin_firm_ground ? yes : no, " ", metrics);
 			}
@@ -245,7 +248,8 @@ namespace KERBALISM
 		public bool firm_ground;
 		public bool spin_firm_ground;
 		public bool spin_snapshot_valid;
-		public double spin_min_gee;
+		public int spin_qualifying_capacity;
+		public int spin_seats_needed;
 		public double spin_rpm;
 		public bool exercise;
 		public bool not_alone;

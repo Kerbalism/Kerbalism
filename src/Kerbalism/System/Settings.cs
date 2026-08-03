@@ -95,6 +95,7 @@ namespace KERBALISM
 			ComfortSpinFirmGround = Lib.ConfigValue(cfg, "ComfortSpinFirmGround", true);
 			ComfortSpinMinArtificialG = Lib.ConfigValue(cfg, "ComfortSpinMinArtificialG", 0.25f);
 			ComfortSpinMaxRpm = Lib.ConfigValue(cfg, "ComfortSpinMaxRpm", 3.0f);
+			ComfortSpinCrewCoverage = Lib.ConfigValue(cfg, "ComfortSpinCrewCoverage", 1.0f);
 			if (float.IsNaN(ComfortSpinMinArtificialG)
 				|| float.IsInfinity(ComfortSpinMinArtificialG)
 				|| ComfortSpinMinArtificialG <= 0.0f)
@@ -103,6 +104,12 @@ namespace KERBALISM
 				|| float.IsInfinity(ComfortSpinMaxRpm)
 				|| ComfortSpinMaxRpm <= 0.0f)
 				ComfortSpinMaxRpm = 3.0f;
+			if (float.IsNaN(ComfortSpinCrewCoverage)
+				|| float.IsInfinity(ComfortSpinCrewCoverage)
+				|| ComfortSpinCrewCoverage <= 0.0f)
+				ComfortSpinCrewCoverage = 1.0f;
+			else if (ComfortSpinCrewCoverage > 1.0f)
+				ComfortSpinCrewCoverage = 1.0f;
 
 			StormFrequency = Lib.ConfigValue(cfg, "StormFrequency", 0.4f);
 			StormRadiation = Lib.ConfigValue(cfg, "StormRadiation", 5.0f);
@@ -214,6 +221,7 @@ namespace KERBALISM
 		public static bool ComfortSpinFirmGround;
 		public static float ComfortSpinMinArtificialG;
 		public static float ComfortSpinMaxRpm;
+		public static float ComfortSpinCrewCoverage;
 
 		public static float StormFrequency;
 		public static int StormDurationHours;

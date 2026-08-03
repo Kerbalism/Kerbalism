@@ -7,8 +7,9 @@ namespace KERBALISM
 {
 	/// <summary>
 	/// Whole-vessel spin artificial-gravity helper for firm-ground comfort.
-	/// Uses world-space rigidbody angular velocity and the cylindrical radius of
-	/// each occupied crew part about the spin axis through the vessel CoM.
+	/// Grants firm ground when enough crew capacity sits at sufficient cylindrical
+	/// radius about the spin axis through the vessel CoM — independent of which
+	/// seats are currently occupied (crew are assumed to use the living volume).
 	/// </summary>
 	public static class SpinComfort
 	{
@@ -26,18 +27,22 @@ namespace KERBALISM
 		{
 			/// <summary>True when physics state was readable and a snapshot can be stored.</summary>
 			public bool available;
-			/// <summary>True when the root and every occupied part share the same angular velocity.</summary>
+			/// <summary>True when the root and every crewable part share the same angular velocity.</summary>
 			public bool coherent;
-			/// <summary>True when at least one occupied crew part was evaluated.</summary>
-			public bool hasOccupiedParts;
+			/// <summary>True when at least one crewable part was evaluated.</summary>
+			public bool hasCrewableParts;
 			/// <summary>World-space spin axis used for stability checks.</summary>
 			public Vector3 axisWorld;
-			/// <summary>Minimum artificial gravity (g) among occupied crew parts; 0 if none/spinless.</summary>
-			public double minGee;
+			/// <summary>Crew seats whose artificial gravity meets the configured minimum.</summary>
+			public int qualifyingCapacity;
+			/// <summary>Total crew capacity of all crewable parts.</summary>
+			public int totalCrewCapacity;
+			/// <summary>Lowest gee among seats that meet the minimum; 0 if none.</summary>
+			public double marginalGee;
+			/// <summary>Cylindrical radius (m) of the marginal qualifying seat.</summary>
+			public double marginalRadius;
 			/// <summary>Vessel spin rate in revolutions per minute.</summary>
 			public double rpm;
-			/// <summary>Cylindrical radius (m) of the occupied part with the lowest gee.</summary>
-			public double worstRadius;
 		}
 
 		/// <summary>
@@ -49,12 +54,22 @@ namespace KERBALISM
 			public bool available;
 			public bool qualifies;
 			public int crewPartCount;
-			public double worstRadius;
+			public int qualifyingCapacity;
+			public int seatsNeeded;
+			public int crewDemand;
+			public double marginalRadius;
 			public double geeAtMaxRpm;
 			public double rpmRequired;
 			public float requiredGee;
 			public float maxRpm;
+			public float coverageRatio;
 			public bool usesAssignedCrew;
+		}
+
+		private struct SeatRadius
+		{
+			public int capacity;
+			public double radius;
 		}
 
 		/// <summary>
@@ -62,10 +77,12 @@ namespace KERBALISM
 		/// with an active root rigidbody. Callers must leave previous snapshots untouched
 		/// when <see cref="Sample.available"/> is false.
 		/// </summary>
-		public static Sample Evaluate(Vessel v)
+		public static Sample Evaluate(Vessel v, float requiredGee)
 		{
 			Sample sample = new Sample();
 			if (v == null || !v.loaded || v.packed)
+				return sample;
+			if (!IsFinite(requiredGee) || requiredGee <= 0.0f)
 				return sample;
 
 			Part root = v.rootPart;
@@ -92,17 +109,25 @@ namespace KERBALISM
 				? rootOmegaWorld / (float)rootOmega
 				: Vector3.zero;
 
-			bool anyOccupied = false;
-			double minGee = double.PositiveInfinity;
-			double worstRadius = double.PositiveInfinity;
+			bool anyCrewable = false;
+			int qualifyingCapacity = 0;
+			int totalCrewCapacity = 0;
+			double marginalGee = double.PositiveInfinity;
+			double marginalRadius = double.PositiveInfinity;
 			double maxRpm = sample.rpm;
 
 			foreach (Part p in v.parts)
 			{
-				if (p == null || p.protoModuleCrew == null || p.protoModuleCrew.Count == 0)
+				if (p == null)
 					continue;
 
-				anyOccupied = true;
+				int capacity = p.CrewCapacity;
+				if (capacity <= 0)
+					continue;
+
+				anyCrewable = true;
+				totalCrewCapacity += capacity;
+
 				Rigidbody partRb = GetPhysicalRigidbody(p);
 				if (partRb == null)
 				{
@@ -128,15 +153,17 @@ namespace KERBALISM
 				if ((partOmegaWorld - rootOmegaWorld).magnitude > allowedDifference)
 				{
 					sample.coherent = false;
-					sample.hasOccupiedParts = true;
-					sample.minGee = 0.0;
-					sample.worstRadius = 0.0;
+					sample.hasCrewableParts = true;
+					sample.qualifyingCapacity = 0;
+					sample.totalCrewCapacity = totalCrewCapacity;
+					sample.marginalGee = 0.0;
+					sample.marginalRadius = 0.0;
 					sample.rpm = Math.Max(maxRpm, OmegaToRpm(partOmega));
 					return sample;
 				}
 
 				if (partOmega <= AngularVelocityEpsilon)
-				continue;
+					continue;
 
 				Vector3 partOmegaHat = partOmegaWorld / (float)partOmega;
 				Vector3 r = p.transform.position - com;
@@ -149,66 +176,97 @@ namespace KERBALISM
 					sample.coherent = false;
 					return sample;
 				}
-				if (gee < minGee)
+
+				if (gee + double.Epsilon >= requiredGee)
 				{
-					minGee = gee;
-					worstRadius = radius;
+					qualifyingCapacity += capacity;
+					if (gee < marginalGee)
+					{
+						marginalGee = gee;
+						marginalRadius = radius;
+					}
 				}
 			}
 
-			sample.hasOccupiedParts = anyOccupied;
+			sample.hasCrewableParts = anyCrewable;
 			sample.rpm = maxRpm;
-			if (!anyOccupied)
+			sample.totalCrewCapacity = totalCrewCapacity;
+			sample.qualifyingCapacity = qualifyingCapacity;
+			if (qualifyingCapacity <= 0)
 			{
-				sample.minGee = 0.0;
-				sample.worstRadius = 0.0;
+				sample.marginalGee = 0.0;
+				sample.marginalRadius = 0.0;
 			}
 			else
 			{
-				sample.minGee = double.IsPositiveInfinity(minGee) ? 0.0 : minGee;
-				sample.worstRadius = double.IsPositiveInfinity(worstRadius) ? 0.0 : worstRadius;
+				sample.marginalGee = marginalGee;
+				sample.marginalRadius = marginalRadius;
 			}
 			return sample;
 		}
 
 		/// <summary>
 		/// Apply current difficulty thresholds to a (possibly persisted) sample.
-		/// All occupied crew parts must meet minGee and the whole vessel must stay under maxRpm.
+		/// Enough crew-capacity at the required gee must cover the aboard crew.
 		/// </summary>
-		public static bool Qualifies(bool snapshotValid, double minGee, double rpm, bool enabled, float requiredGee, float maxRpm)
+		public static bool Qualifies(
+			bool snapshotValid,
+			int qualifyingCapacity,
+			int crewCount,
+			double rpm,
+			bool enabled,
+			float coverageRatio,
+			float maxRpm)
 		{
-			if (!enabled || !snapshotValid)
+			if (!enabled || !snapshotValid || crewCount <= 0)
 				return false;
-			if (!IsFinite(minGee) || !IsFinite(rpm) || !IsFinite(requiredGee) || !IsFinite(maxRpm))
+			if (!IsFinite(rpm) || !IsFinite(coverageRatio) || !IsFinite(maxRpm))
 				return false;
-			if (requiredGee <= 0.0f || maxRpm < 0.0f || minGee < 0.0 || rpm < 0.0)
+			if (qualifyingCapacity < 0 || rpm < 0.0 || maxRpm < 0.0f || coverageRatio <= 0.0f)
 				return false;
-			return minGee >= requiredGee && rpm <= maxRpm;
+			if (rpm > maxRpm)
+				return false;
+			return qualifyingCapacity >= SeatsNeeded(crewCount, coverageRatio);
+		}
+
+		public static int SeatsNeeded(int crewCount, float coverageRatio)
+		{
+			if (crewCount <= 0 || !IsFinite(coverageRatio) || coverageRatio <= 0.0f)
+				return int.MaxValue;
+			double needed = crewCount * (double)coverageRatio;
+			if (!IsFinite(needed))
+				return int.MaxValue;
+			return Math.Max(1, (int)Math.Ceiling(needed - 1e-9));
 		}
 
 		/// <summary>
 		/// Pre-compute whether an editor ship can meet spin firm-ground thresholds.
-		/// Uses assigned crew parts when available, otherwise falls back to all prefab seats.
-		/// Spin axis is chosen as the root-part axis that maximizes the worst-case crew radius.
+		/// Uses assigned crew count when available, otherwise the ship's full seat count.
+		/// Spin axis is chosen as the root-part axis that covers the required seats
+		/// at the lowest RPM.
 		/// </summary>
 		public static EditorEstimate EvaluateEditor(
 			List<Part> parts,
-			VesselCrewManifest crewManifest,
+			int crewDemand,
 			float requiredGee,
-			float maxRpm)
+			float maxRpm,
+			float coverageRatio)
 		{
 			EditorEstimate estimate = new EditorEstimate
 			{
 				requiredGee = requiredGee,
-				maxRpm = maxRpm
+				maxRpm = maxRpm,
+				coverageRatio = coverageRatio
 			};
 
 			if (parts == null
 				|| parts.Count == 0
 				|| !IsFinite(requiredGee)
 				|| !IsFinite(maxRpm)
+				|| !IsFinite(coverageRatio)
 				|| requiredGee <= 0.0f
-				|| maxRpm <= 0.0f)
+				|| maxRpm <= 0.0f
+				|| coverageRatio <= 0.0f)
 				return estimate;
 
 			Part root = EditorLogic.RootPart;
@@ -221,28 +279,34 @@ namespace KERBALISM
 			if (!TryGetEditorCoM(parts, out com))
 				return estimate;
 
-			List<Part> assignedCrewParts = new List<Part>();
-			List<Part> crewableParts = new List<Part>();
+			List<Part> crewParts = new List<Part>();
+			List<int> capacities = new List<int>();
+			int totalCapacity = 0;
 			foreach (Part p in parts)
 			{
-				if (p == null || p.partInfo == null || p.partInfo.partPrefab == null)
+				if (p == null)
 					continue;
-				if (p.partInfo.partPrefab.CrewCapacity > 0)
-				{
-					crewableParts.Add(p);
-					if (GetAssignedCrewCount(p, crewManifest) > 0)
-						assignedCrewParts.Add(p);
-				}
+
+				// Habitat sets live capacity to zero while disabled, deploying or inflating.
+				int capacity = p.CrewCapacity;
+				if (capacity <= 0)
+					continue;
+
+				crewParts.Add(p);
+				capacities.Add(capacity);
+				totalCapacity += capacity;
 			}
 
-			List<Part> crewParts = assignedCrewParts.Count > 0 ? assignedCrewParts : crewableParts;
-			estimate.usesAssignedCrew = assignedCrewParts.Count > 0;
 			estimate.crewPartCount = crewParts.Count;
 			if (crewParts.Count == 0)
 			{
 				estimate.available = true;
 				return estimate;
 			}
+
+			estimate.usesAssignedCrew = crewDemand > 0 && crewDemand < totalCapacity;
+			estimate.crewDemand = crewDemand > 0 ? crewDemand : totalCapacity;
+			estimate.seatsNeeded = SeatsNeeded(estimate.crewDemand, coverageRatio);
 
 			Transform rootT = root.transform;
 			Vector3[] axes = new Vector3[]
@@ -252,76 +316,140 @@ namespace KERBALISM
 				rootT.forward.normalized
 			};
 
-			double bestMinRadius = -1.0;
+			int bestQualifying = -1;
+			double bestMarginalRadius = -1.0;
+			double bestRpmRequired = double.PositiveInfinity;
+			List<SeatRadius> bestSeats = null;
+			double omegaMax = maxRpm * (2.0 * Math.PI) / 60.0;
+
 			foreach (Vector3 axis in axes)
 			{
 				if (axis.sqrMagnitude < 1e-8f)
 					continue;
 
-				double minRadius = double.PositiveInfinity;
-				foreach (Part p in crewParts)
+				List<SeatRadius> axisSeats = new List<SeatRadius>(crewParts.Count);
+				int qualifying = 0;
+				double innermostQualifyingRadius = double.PositiveInfinity;
+				bool axisValid = true;
+
+				for (int i = 0; i < crewParts.Count; i++)
 				{
+					Part p = crewParts[i];
+					int capacity = capacities[i];
 					Vector3 r = p.transform.position - com;
 					double radius = Vector3.Cross(r, axis).magnitude;
-					if (radius < minRadius)
-						minRadius = radius;
+					if (!IsFinite(radius))
+					{
+						axisValid = false;
+						break;
+					}
+
+					axisSeats.Add(new SeatRadius { capacity = capacity, radius = radius });
+
+					double gee = omegaMax * omegaMax * radius / StandardGravity;
+					if (IsFinite(gee) && gee + double.Epsilon >= requiredGee)
+					{
+						qualifying += capacity;
+						if (radius < innermostQualifyingRadius)
+							innermostQualifyingRadius = radius;
+					}
 				}
 
-				if (minRadius > bestMinRadius && IsFinite(minRadius))
-					bestMinRadius = minRadius;
+				if (!axisValid)
+					continue;
+
+				double requiredRadius;
+				double rpmRequired = RpmRequiredForSeats(
+					axisSeats,
+					estimate.seatsNeeded,
+					requiredGee,
+					out requiredRadius);
+				bool canCover = IsFinite(rpmRequired);
+				bool bestCanCover = IsFinite(bestRpmRequired);
+
+				// Prefer the axis that covers the required seats at the lowest RPM.
+				// If no axis can cover them, retain the most useful max-RPM estimate.
+				bool better = canCover
+					? !bestCanCover
+						|| rpmRequired < bestRpmRequired - 1e-9
+						|| (Math.Abs(rpmRequired - bestRpmRequired) <= 1e-9
+							&& qualifying > bestQualifying)
+					: !bestCanCover
+						&& (qualifying > bestQualifying
+							|| (qualifying == bestQualifying
+								&& innermostQualifyingRadius > bestMarginalRadius));
+
+				if (better)
+				{
+					bestQualifying = qualifying;
+					bestMarginalRadius = canCover
+						? requiredRadius
+						: double.IsPositiveInfinity(innermostQualifyingRadius)
+							? -1.0
+							: innermostQualifyingRadius;
+					bestRpmRequired = rpmRequired;
+					bestSeats = axisSeats;
+				}
 			}
 
-			if (bestMinRadius < 0.0)
+			if (bestSeats == null || bestQualifying < 0)
 				return estimate;
 
 			estimate.available = true;
-			estimate.worstRadius = bestMinRadius;
+			estimate.qualifyingCapacity = bestQualifying;
+			estimate.marginalRadius = Math.Max(0.0, bestMarginalRadius);
 
-			double omegaMax = maxRpm * (2.0 * Math.PI) / 60.0;
-			estimate.geeAtMaxRpm = omegaMax * omegaMax * bestMinRadius / StandardGravity;
+			double omegaMaxRpm = maxRpm * (2.0 * Math.PI) / 60.0;
+			estimate.geeAtMaxRpm = estimate.marginalRadius > 0.0
+				? omegaMaxRpm * omegaMaxRpm * estimate.marginalRadius / StandardGravity
+				: 0.0;
 			if (!IsFinite(estimate.geeAtMaxRpm))
 				return new EditorEstimate();
 
-			if (bestMinRadius > 1e-6)
-			{
-				double omegaNeeded = Math.Sqrt(requiredGee * StandardGravity / bestMinRadius);
-				estimate.rpmRequired = omegaNeeded * 60.0 / (2.0 * Math.PI);
-			}
-			else
-			{
-				estimate.rpmRequired = double.PositiveInfinity;
-			}
-
-			estimate.qualifies = estimate.geeAtMaxRpm >= requiredGee && estimate.rpmRequired <= maxRpm;
+			estimate.rpmRequired = bestRpmRequired;
+			estimate.qualifies = estimate.qualifyingCapacity >= estimate.seatsNeeded
+				&& estimate.rpmRequired <= maxRpm
+				&& IsFinite(estimate.rpmRequired);
 			return estimate;
 		}
 
 		/// <summary>
-		/// Hash only the occupied editor parts and their crew counts. Moving crew between
-		/// parts changes the hash; swapping seats within one part does not affect geometry.
+		/// Lowest RPM that puts at least <paramref name="seatsNeeded"/> seats at
+		/// <paramref name="requiredGee"/>, using the outermost seats first.
 		/// </summary>
-		public static int EditorCrewAssignmentHash(List<Part> parts, VesselCrewManifest crewManifest)
+		private static double RpmRequiredForSeats(
+			List<SeatRadius> seats,
+			int seatsNeeded,
+			float requiredGee,
+			out double marginalRadius)
 		{
-			if (parts == null || crewManifest == null)
-				return 0;
+			marginalRadius = 0.0;
+			if (seats == null || seats.Count == 0 || seatsNeeded <= 0 || requiredGee <= 0.0f)
+				return double.PositiveInfinity;
 
-			unchecked
+			List<SeatRadius> sorted = new List<SeatRadius>(seats);
+			sorted.Sort((a, b) => b.radius.CompareTo(a.radius));
+
+			int accumulated = 0;
+			double innermost = double.PositiveInfinity;
+			foreach (SeatRadius seat in sorted)
 			{
-				int hash = 17;
-				foreach (Part p in parts)
-				{
-					if (p == null)
-						continue;
-
-					int assignedCrew = GetAssignedCrewCount(p, crewManifest);
-					if (assignedCrew == 0)
-						continue;
-
-					hash = hash * 31 + (int)p.craftID;
-					hash = hash * 31 + assignedCrew;
-				}
-				return hash;
+				if (seat.radius <= 1e-6)
+					continue;
+				accumulated += seat.capacity;
+				if (seat.radius < innermost)
+					innermost = seat.radius;
+				if (accumulated >= seatsNeeded)
+					break;
 			}
+
+			if (accumulated < seatsNeeded || !IsFinite(innermost) || innermost <= 1e-6)
+				return double.PositiveInfinity;
+
+			marginalRadius = innermost;
+			double omegaNeeded = Math.Sqrt(requiredGee * StandardGravity / innermost);
+			double rpm = omegaNeeded * 60.0 / (2.0 * Math.PI);
+			return IsFinite(rpm) ? rpm : double.PositiveInfinity;
 		}
 
 		private static bool TryGetEditorCoM(List<Part> parts, out Vector3 com)
@@ -358,24 +486,6 @@ namespace KERBALISM
 
 			com /= mass;
 			return IsFinite(com);
-		}
-
-		private static int GetAssignedCrewCount(Part p, VesselCrewManifest crewManifest)
-		{
-			if (p == null || crewManifest == null)
-				return 0;
-
-			PartCrewManifest partManifest = crewManifest.GetPartCrewManifest(p.craftID);
-			if (partManifest == null || partManifest.partCrew == null)
-				return 0;
-
-			int count = 0;
-			foreach (string crewName in partManifest.partCrew)
-			{
-				if (!string.IsNullOrEmpty(crewName))
-					count++;
-			}
-			return count;
 		}
 
 		public static bool IsFinite(double value)
