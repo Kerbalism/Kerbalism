@@ -307,106 +307,165 @@ namespace KERBALISM
 			return value > 0.0 && !double.IsNaN(value) && !double.IsInfinity(value);
 		}
 
-		///<summary>Return the current in-game calendar unit lengths in seconds.</summary>
-		private static void CalendarLengths(out double minute, out double hour, out double day, out double year)
+		///<summary>True when the active formatter comes from KSP itself (not Kronometer / calendar mods).</summary>
+		private static bool IsStockDateTimeFormatter(IDateTimeFormatter formatter)
+		{
+			return formatter == null || formatter.GetType().Assembly == typeof(KSPUtil).Assembly;
+		}
+
+		private static bool TryGetFormatterLengths(IDateTimeFormatter formatter, out double minute, out double hour, out double day, out double year)
+		{
+			if (formatter == null
+				|| !IsPositiveFinite(formatter.Minute)
+				|| !IsPositiveFinite(formatter.Hour)
+				|| !IsPositiveFinite(formatter.Day)
+				|| !IsPositiveFinite(formatter.Year))
+			{
+				minute = hour = day = year = 0.0;
+				return false;
+			}
+
+			minute = formatter.Minute;
+			hour = formatter.Hour;
+			day = formatter.Day;
+			year = formatter.Year;
+			return true;
+		}
+
+		///<summary>Apply home-body solar day / orbital year when available. Ignores GameSettings.KERBIN_TIME.</summary>
+		private static void ApplyHomeBodyPhysicalDayYear(ref double day, ref double year)
+		{
+			if (!(FlightGlobals.ready || IsEditor()))
+				return;
+
+			CelestialBody homeBody = FlightGlobals.GetHomeBody();
+			if (homeBody == null)
+				return;
+
+			double homeDay = Math.Abs(homeBody.solarDayLength);
+			if (!IsPositiveFinite(homeDay))
+				homeDay = Math.Abs(homeBody.rotationPeriod);
+			if (IsPositiveFinite(homeDay))
+			{
+				day = homeDay;
+				// Kerbin-like day count until a valid orbital year is available.
+				year = day * 426.0;
+			}
+
+			double homeYear = homeBody.orbit == null ? 0.0 : Math.Abs(homeBody.orbit.period);
+			if (IsPositiveFinite(homeYear))
+				year = homeYear;
+		}
+
+		///<summary>
+		/// Display / UI calendar lengths in seconds.
+		/// Follows KSPUtil.dateTimeFormatter (stock Kerbin Time setting or Kronometer).
+		/// Don't cache: the formatter can be replaced during main-menu startup.
+		///</summary>
+		private static void DisplayCalendarLengths(out double minute, out double hour, out double day, out double year)
 		{
 			minute = 60.0;
 			hour = 3600.0;
-			double stockDaysInYear = GameSettings.KERBIN_TIME ? 426.0 : 365.0;
 			day = hour * (GameSettings.KERBIN_TIME ? 6.0 : 24.0);
-			year = day * stockDaysInYear;
+			year = day * (GameSettings.KERBIN_TIME ? 426.0 : 365.0);
 
-			// Kronometer and other calendar mods expose their calendar through this KSP API.
-			// Don't cache these values: the formatter can be replaced during main-menu startup.
-			IDateTimeFormatter formatter = KSPUtil.dateTimeFormatter;
-			if (formatter != null
-				&& IsPositiveFinite(formatter.Minute)
-				&& IsPositiveFinite(formatter.Hour)
-				&& IsPositiveFinite(formatter.Day)
-				&& IsPositiveFinite(formatter.Year))
+			if (TryGetFormatterLengths(KSPUtil.dateTimeFormatter, out double fmtMinute, out double fmtHour, out double fmtDay, out double fmtYear))
 			{
-				minute = formatter.Minute;
-				hour = formatter.Hour;
-				day = formatter.Day;
-				year = formatter.Year;
+				minute = fmtMinute;
+				hour = fmtHour;
+				day = fmtDay;
+				year = fmtYear;
 				return;
 			}
 
-			// This is only an initialization fallback. Once KSP has a formatter, its calendar is
-			// authoritative even when it intentionally differs from the home body's physical periods.
-			if (FlightGlobals.ready || IsEditor())
-			{
-				CelestialBody homeBody = FlightGlobals.GetHomeBody();
-				if (homeBody != null)
-				{
-					double homeDay = Math.Abs(homeBody.solarDayLength);
-					if (!IsPositiveFinite(homeDay))
-						homeDay = Math.Abs(homeBody.rotationPeriod);
-					if (IsPositiveFinite(homeDay) && homeDay > hour)
-					{
-						day = homeDay;
-						year = day * stockDaysInYear;
-					}
-
-					double homeYear = homeBody.orbit == null ? 0.0 : Math.Abs(homeBody.orbit.period);
-					if (IsPositiveFinite(homeYear) && homeYear > day)
-						year = homeYear;
-				}
-			}
+			// Formatter unavailable during very early init: keep Kerbin Time defaults above,
+			// then refine from the home body if the game world is ready.
+			ApplyHomeBodyPhysicalDayYear(ref day, ref year);
 		}
 
+		///<summary>
+		/// Gameplay calendar lengths in seconds (contracts, reliability, storms, RTG, etc.).
+		/// Stock calendar: home-body physical day/year — never GameSettings.KERBIN_TIME.
+		/// Custom calendar mods (Kronometer, etc.): follow their dateTimeFormatter.
+		///</summary>
+		private static void GameplayCalendarLengths(out double minute, out double hour, out double day, out double year)
+		{
+			minute = 60.0;
+			hour = 3600.0;
+			// Kerbin physical defaults; not tied to the display-only Kerbin Time setting.
+			day = hour * 6.0;
+			year = day * 426.0;
+
+			IDateTimeFormatter formatter = KSPUtil.dateTimeFormatter;
+			if (!IsStockDateTimeFormatter(formatter)
+				&& TryGetFormatterLengths(formatter, out double fmtMinute, out double fmtHour, out double fmtDay, out double fmtYear))
+			{
+				minute = fmtMinute;
+				hour = fmtHour;
+				day = fmtDay;
+				year = fmtYear;
+				return;
+			}
+
+			ApplyHomeBodyPhysicalDayYear(ref day, ref year);
+		}
+
+		///<summary>Display calendar: seconds in a minute</summary>
 		public static double MinuteSeconds
 		{
 			get
 			{
-				CalendarLengths(out double minute, out _, out _, out _);
+				DisplayCalendarLengths(out double minute, out _, out _, out _);
 				return minute;
 			}
 		}
 
+		///<summary>Display calendar: seconds in an hour</summary>
 		public static double HourSeconds
 		{
 			get
 			{
-				CalendarLengths(out _, out double hour, out _, out _);
+				DisplayCalendarLengths(out _, out double hour, out _, out _);
 				return hour;
 			}
 		}
 
+		///<summary>Gameplay calendar: seconds in a day</summary>
 		public static double DaySeconds
 		{
 			get
 			{
-				CalendarLengths(out _, out _, out double day, out _);
+				GameplayCalendarLengths(out _, out _, out double day, out _);
 				return day;
 			}
 		}
 
+		///<summary>Gameplay calendar: seconds in a year</summary>
 		public static double YearSeconds
 		{
 			get
 			{
-				CalendarLengths(out _, out _, out _, out double year);
+				GameplayCalendarLengths(out _, out _, out _, out double year);
 				return year;
 			}
 		}
 
-		///<summary>return hours in a day</summary>
+		///<summary>Gameplay calendar: hours in a day</summary>
 		public static double HoursInDay
 		{
 			get
 			{
-				CalendarLengths(out _, out double hour, out double day, out _);
+				GameplayCalendarLengths(out _, out double hour, out double day, out _);
 				return day / hour;
 			}
 		}
 
-		///<summary>return year length</summary>
+		///<summary>Gameplay calendar: days in a year</summary>
 		public static double DaysInYear
 		{
 			get
 			{
-				CalendarLengths(out _, out _, out double day, out double year);
+				GameplayCalendarLengths(out _, out _, out double day, out double year);
 				return year / day;
 			}
 		}
@@ -473,7 +532,7 @@ namespace KERBALISM
 				return BuildString("[", formatter.PrintDateCompact(t, true, false), "]");
 			}
 
-			CalendarLengths(out double len_min, out double len_hour, out double len_day, out double len_year);
+			DisplayCalendarLengths(out double len_min, out double len_hour, out double len_day, out double len_year);
 
 			double year = Math.Floor(t / len_year);
 			t -= year * len_year;
@@ -1089,7 +1148,7 @@ namespace KERBALISM
 			if (rate == 0.0) return Local.Generic_NONE;//"none"
 			rate = Math.Abs(rate);
 			if (rate >= 0.01) return BuildString(rate.ToString(precision), unit, Local.Generic_perSecond);//"/s"
-			CalendarLengths(out double minuteSeconds, out double hourSeconds, out double daySeconds, out double yearSeconds);
+			DisplayCalendarLengths(out double minuteSeconds, out double hourSeconds, out double daySeconds, out double yearSeconds);
 			double minuteRate = rate * minuteSeconds;
 			if (minuteRate >= 0.01) return BuildString(minuteRate.ToString(precision), unit, Local.Generic_perMinute);//"/m"
 			if (hourSeconds <= minuteSeconds) return BuildString(minuteRate.ToString(precision), unit, Local.Generic_perMinute);
@@ -1108,7 +1167,7 @@ namespace KERBALISM
 		///<summary> Pretty-print a duration (duration is in seconds, must be positive) </summary>
 		public static string HumanReadableDuration(double d, bool fullprecison = false)
 		{
-			CalendarLengths(out double minuteSeconds, out double hourSeconds, out double daySeconds, out double yearSeconds);
+			DisplayCalendarLengths(out double minuteSeconds, out double hourSeconds, out double daySeconds, out double yearSeconds);
 			bool useHours = hourSeconds > minuteSeconds;
 			bool useDays = useHours && daySeconds > hourSeconds;
 			bool useYears = useDays && yearSeconds > daySeconds;
