@@ -252,7 +252,7 @@ namespace KERBALISM
 							ProcessControllerSystemHeat heatProcess = m as ProcessControllerSystemHeat;
 							if (heatProcess == null || !m.isEnabled)
 								continue;
-							if (heatProcess.resource == "_Nukereactor" && heatProcess.toggle)
+							if (heatProcess.IsFissionReactor() && heatProcess.toggle)
 								device = new FissionReactorProcessDevice(heatProcess);
 							else if (heatProcess.toggle)
 								device = new SystemHeatProcessDevice(heatProcess);
@@ -337,7 +337,7 @@ namespace KERBALISM
 								ProcessControllerSystemHeat heatProcess = module_prefab as ProcessControllerSystemHeat;
 								if (heatProcess == null || !heatProcess.toggle)
 									continue;
-								if (heatProcess.resource == "_Nukereactor")
+								if (heatProcess.IsFissionReactor())
 									device = new ProtoFissionReactorProcessDevice(heatProcess, p, m);
 								else
 									device = new ProtoSystemHeatProcessDevice(heatProcess, p, m);

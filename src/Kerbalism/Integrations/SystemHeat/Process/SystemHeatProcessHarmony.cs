@@ -78,7 +78,7 @@ namespace KERBALISM
 				{
 					foreach (PartModule module in part.Modules)
 					{
-						if (module is ProcessControllerSystemHeat heat && heat.resource == "_Nukereactor")
+						if (module is ProcessControllerSystemHeat heat && heat.IsFissionReactor())
 							heat.SyncPlannerPseudoResource();
 					}
 				}

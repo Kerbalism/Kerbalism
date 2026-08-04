@@ -70,7 +70,7 @@ namespace KERBALISM
 		{
 			foreach (ProcessControllerSystemHeat process in part.FindModulesImplementing<ProcessControllerSystemHeat>())
 			{
-				if (process == null || process.resource != "_Nukereactor")
+				if (process == null || !process.IsFissionReactor())
 					continue;
 
 				ProtoPartModuleSnapshot protoModule = FindMatchingProcessModuleSnapshot(part.protoPartSnapshot, process.resource);
@@ -82,7 +82,7 @@ namespace KERBALISM
 				Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), process.CurrentPowerPercent);
 				Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CoreDamage), process.CoreDamage);
 
-				if (!part.Resources.Contains(process.resource))
+				if (string.IsNullOrEmpty(process.resource) || !part.Resources.Contains(process.resource))
 					continue;
 
 				PartResource pseudo = part.Resources[process.resource];
@@ -128,14 +128,17 @@ namespace KERBALISM
 
 				foreach (ProtoPartModuleSnapshot module in part.modules)
 				{
-					if (module.moduleName != "ProcessControllerSystemHeat"
-						|| Lib.Proto.GetString(module, "resource") != "_Nukereactor")
-						continue;
-
-					if (part.resources.Find(k => k.resourceName == "_Nukereactor") == null)
+					if (module.moduleName != "ProcessControllerSystemHeat")
 						continue;
 
 					PartModule processPrefab = FindMatchingPrefabModule(prefab, module, "ProcessControllerSystemHeat");
+					if (!IsFissionProcessController(prefab, module, processPrefab))
+						continue;
+
+					string resource = Lib.Proto.GetString(module, "resource");
+					if (string.IsNullOrEmpty(resource) || part.resources.Find(k => k.resourceName == resource) == null)
+						continue;
+
 					SyncFrozenProcessReactor(v, part, module, processPrefab, prefab, elapsed_s);
 				}
 			}
@@ -236,10 +239,14 @@ namespace KERBALISM
 			if (v == null || part == null || module == null || partPrefab == null || v.loaded)
 				return;
 
-			if (Lib.Proto.GetString(module, "resource") != "_Nukereactor")
+			if (!IsFissionProcessController(partPrefab, module, processPrefab))
 				return;
 
-			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == "_Nukereactor");
+			string resource = Lib.Proto.GetString(module, "resource");
+			if (string.IsNullOrEmpty(resource))
+				return;
+
+			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == resource);
 			if (pseudoResource == null)
 				return;
 
@@ -386,10 +393,10 @@ namespace KERBALISM
 						if (loopId < 0)
 							continue;
 
-						bool isFissionProcess = Lib.Proto.GetString(module, "resource") == "_Nukereactor";
 						float meltdown = GetProcessField(prefab, module, "meltdownTemperature", 0f);
 						float maximum = GetProcessField(prefab, module, "MaximumTemperature", 0f);
-						if (meltdown > 0f && maximum > meltdown)
+						bool isFissionProcess = ProcessControllerSystemHeat.HasCoreDamageConfig(meltdown, maximum);
+						if (isFissionProcess)
 							riskLoopIds.Add(loopId);
 
 						float shutdown = isFissionProcess
@@ -741,10 +748,13 @@ namespace KERBALISM
 			if (processPrefab != null && !IntegrationReflection.GetBool(processPrefab, "AutoShutdown", true))
 				return;
 
-			if (Lib.Proto.GetString(producer.module, "resource") == "_Nukereactor")
+			if (IsFissionProcessController(prefab, producer.module, processPrefab))
 			{
 				SetProtoFissionRunning(v, producer.part, producer.module, false);
-				ProtoPartResourceSnapshot pseudo = producer.part.resources.Find(k => k.resourceName == "_Nukereactor");
+				string resource = Lib.Proto.GetString(producer.module, "resource");
+				ProtoPartResourceSnapshot pseudo = !string.IsNullOrEmpty(resource)
+					? producer.part.resources.Find(k => k.resourceName == resource)
+					: null;
 				if (pseudo != null)
 					ClearFrozenFissionPseudoResource(pseudo);
 				return;
@@ -1012,6 +1022,16 @@ namespace KERBALISM
 		{
 			float percent = Lib.Proto.GetFloat(module, "CurrentPowerPercent", 100f);
 			return Mathf.Clamp(percent, 0f, 100f) / 100f;
+		}
+
+		private static bool IsFissionProcessController(Part prefab, ProtoPartModuleSnapshot module, PartModule processPrefab)
+		{
+			if (processPrefab is ProcessControllerSystemHeat heatPrefab)
+				return heatPrefab.IsFissionReactor();
+
+			float meltdown = GetProcessField(prefab, module, "meltdownTemperature", 0f);
+			float maximum = GetProcessField(prefab, module, "MaximumTemperature", 0f);
+			return ProcessControllerSystemHeat.HasCoreDamageConfig(meltdown, maximum);
 		}
 
 		private static ProtoPartModuleSnapshot FindMatchingProcessModuleSnapshot(ProtoPartSnapshot part, string resource)

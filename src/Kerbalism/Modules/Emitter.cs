@@ -9,6 +9,8 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
+		// Stable MM-safe id for Configure MODULE matching (id_field = emitterId). Prefer this over id_index when a part has multiple Emitters.
+		[KSPField] public string emitterId = string.Empty;
 
 		[KSPField(isPersistant = true)] public string title = string.Empty;     // GUI name of the status action in the PAW
 		[KSPField(isPersistant = true)] public bool toggle;						// true if the effect can be toggled on/off
