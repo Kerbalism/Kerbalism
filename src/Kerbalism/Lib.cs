@@ -359,7 +359,9 @@ namespace KERBALISM
 
 		///<summary>
 		/// Display / UI calendar lengths in seconds.
-		/// Follows KSPUtil.dateTimeFormatter (stock Kerbin Time setting or Kronometer).
+		/// Stock: GameSettings.KERBIN_TIME (6h×426d vs 24h×365d) — stock dateTimeFormatter.Day/Year
+		/// are home-body physical periods and do not flip with that setting.
+		/// Custom calendar mods (Kronometer, etc.): follow their dateTimeFormatter.
 		/// Don't cache: the formatter can be replaced during main-menu startup.
 		///</summary>
 		private static void DisplayCalendarLengths(out double minute, out double hour, out double day, out double year)
@@ -369,18 +371,15 @@ namespace KERBALISM
 			day = hour * (GameSettings.KERBIN_TIME ? 6.0 : 24.0);
 			year = day * (GameSettings.KERBIN_TIME ? 426.0 : 365.0);
 
-			if (TryGetFormatterLengths(KSPUtil.dateTimeFormatter, out double fmtMinute, out double fmtHour, out double fmtDay, out double fmtYear))
+			IDateTimeFormatter formatter = KSPUtil.dateTimeFormatter;
+			if (!IsStockDateTimeFormatter(formatter)
+				&& TryGetFormatterLengths(formatter, out double fmtMinute, out double fmtHour, out double fmtDay, out double fmtYear))
 			{
 				minute = fmtMinute;
 				hour = fmtHour;
 				day = fmtDay;
 				year = fmtYear;
-				return;
 			}
-
-			// Formatter unavailable during very early init: keep Kerbin Time defaults above,
-			// then refine from the home body if the game world is ready.
-			ApplyHomeBodyPhysicalDayYear(ref day, ref year);
 		}
 
 		///<summary>
