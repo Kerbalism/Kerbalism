@@ -158,7 +158,7 @@ namespace KERBALISM.Planner
 			redundancy = new Dictionary<string, int>();
 
 			// scan the parts
-			double year_time = 60.0 * 60.0 * Lib.HoursInDay * Lib.DaysInYear;
+			double year_time = Lib.YearSeconds;
 			foreach (Part p in parts)
 			{
 				// for each module
