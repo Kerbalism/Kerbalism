@@ -2005,6 +2005,29 @@ namespace KERBALISM
 			return part.GetVisiblePAW() != null;
 		}
 
+		/// <summary>
+		/// Assign a PAW string field only when the value changed.
+		/// Avoids dirtying UIPartActionWindow every frame (costly with heavy PAWs / PartInfoInPAW).
+		/// </summary>
+		public static bool SetPAWValue(ref string field, string value)
+		{
+			if (field == value)
+				return false;
+			field = value;
+			return true;
+		}
+
+		/// <summary>
+		/// Assign a PAW event label only when the value changed.
+		/// </summary>
+		public static bool SetEventGuiName(BaseEvent evt, string guiName)
+		{
+			if (evt == null || evt.guiName == guiName)
+				return false;
+			evt.guiName = guiName;
+			return true;
+		}
+
 		#endregion
 
 		#region PART VOLUME/SURFACE

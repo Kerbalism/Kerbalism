@@ -41,15 +41,17 @@ namespace KERBALISM
 		List<ModuleAlternator> alternators;                                 // engine-mounted ModuleAlternator cache
 		CrewSpecs repair_cs;                                                // crew specs
 		bool explode = false;
+		string localizedTitle = string.Empty;                               // cached LocalizeTitle(title)
 
 		public override void OnStart(StartState state)
 		{
 			// don't break tutorial scenarios
 			if (Lib.DisableScenario(this)) return;
 
-			Fields["Status"].guiName = LocalizeTitle(title);
+			localizedTitle = LocalizeTitle(title);
+			Fields["Status"].guiName = localizedTitle;
 #if DEBUG_RELIABILITY
-			Events["Break"].guiName = "Break " + LocalizeTitle(title) + " [DEBUG]";
+			Events["Break"].guiName = "Break " + localizedTitle + " [DEBUG]";
 #endif
 
 			// do nothing in the editors and when compiling parts
@@ -90,8 +92,8 @@ namespace KERBALISM
 			repair_cs = new CrewSpecs(repair);
 
 			// setup ui
-			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>"+LocalizeTitle(title)+"</b>");//Lib.BuildString("Inspect <<1>>)
-			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>"+LocalizeTitle(title)+"</b>");//Lib.BuildString("Repair <<1>>)
+			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>"+localizedTitle+"</b>");//Lib.BuildString("Inspect <<1>>)
+			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>"+localizedTitle+"</b>");//Lib.BuildString("Repair <<1>>)
 			
 			// sync monobehaviour state with module state
 			// - required as the monobehaviour state is not serialized
@@ -139,11 +141,11 @@ namespace KERBALISM
 				// update ui
 				if (part.IsPAWVisible())
 				{
-					Status = string.Empty;
+					string newStatus = string.Empty;
 
 					if (broken)
 					{
-						Status = critical ? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red) : Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);//"critical failure""malfunction"
+						newStatus = critical ? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red) : Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);//"critical failure""malfunction"
 					}
 					else
 					{
@@ -153,19 +155,24 @@ namespace KERBALISM
 							var current = vessel.KerbalismData().EnvRadiation * 3600.0;
 							if (rated < current)
 							{
-								Status = Lib.BuildString(Status, (string.IsNullOrEmpty(Status) ? "" : ", "), Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange));//"taking radiation damage"
+								newStatus = Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange);//"taking radiation damage"
 							}
 						}
 					}
 
-					if (string.IsNullOrEmpty(Status)) Status = Local.Generic_NOMINAL;//"nominal"
+					if (string.IsNullOrEmpty(newStatus)) newStatus = Local.Generic_NOMINAL;//"nominal"
+					Lib.SetPAWValue(ref Status, newStatus);
 
-					Events["Inspect"].active = !broken && !needMaintenance;
-					Events["Repair"].active = repair_cs && (broken || needMaintenance);
+					bool inspectActive = !broken && !needMaintenance;
+					bool repairActive = repair_cs && (broken || needMaintenance);
+					if (Events["Inspect"].active != inspectActive)
+						Events["Inspect"].active = inspectActive;
+					if (Events["Repair"].active != repairActive)
+						Events["Repair"].active = repairActive;
 
 					if (needMaintenance)
 					{
-						Events["Repair"].guiName = Local.Reliability_Service.Format("<b>" + LocalizeTitle(title) + "</b>");//Lib.BuildString("Service <<1>>")
+						Lib.SetEventGuiName(Events["Repair"], Local.Reliability_Service.Format("<b>" + localizedTitle + "</b>"));//Lib.BuildString("Service <<1>>")
 					}
 				}
 
@@ -187,24 +194,23 @@ namespace KERBALISM
 				// update ui
 				if (part.IsPAWVisible())
 				{
-					Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + LocalizeTitle(title) + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);//Lib.BuildString(<<1>> quality")"high""standard"
+					Lib.SetEventGuiName(Events["Quality"], Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + localizedTitle + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard));//Lib.BuildString(<<1>> quality")"high""standard"
 
-					Status = string.Empty;
+					string newStatus = string.Empty;
 					if (mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
 					{
 						double effective_mtbf = EffectiveMTBF(quality, mtbf);
-						Status = Lib.BuildString(Status,
-							(string.IsNullOrEmpty(Status) ? "" : ", "),
-							Local.Reliability_MTBF + " ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
+						newStatus = Lib.BuildString(Local.Reliability_MTBF + " ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
 					}
 
 					if (rated_radiation > 0 && PreferencesReliability.Instance.mtbfFailures)
 					{
 						var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-						Status = Lib.BuildString(Status,
-							(string.IsNullOrEmpty(Status) ? "" : ", "),
+						newStatus = Lib.BuildString(newStatus,
+							(string.IsNullOrEmpty(newStatus) ? "" : ", "),
 							Lib.HumanReadableRadiation(r / 3600.0));
 					}
+					Lib.SetPAWValue(ref Status, newStatus);
 				}
 			}
 		}

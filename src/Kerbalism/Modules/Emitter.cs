@@ -137,8 +137,8 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none;//"none"
-			Events["Toggle"].guiName = Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED);
+			Lib.SetPAWValue(ref Status, running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none);//"none"
+			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED));
 		}
 
 		public void FixedUpdate()

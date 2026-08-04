@@ -25,7 +25,7 @@ namespace KERBALISM
 			if (dumpEvent == null || !dumpEvent.active)
 				return;
 
-			dumpEvent.guiName = Lib.StatusToggle(Local.ProcessController_Dump, DumpValveTitle(module));
+			Lib.SetEventGuiName(dumpEvent, Lib.StatusToggle(Local.ProcessController_Dump, DumpValveTitle(module)));
 		}
 	}
 }

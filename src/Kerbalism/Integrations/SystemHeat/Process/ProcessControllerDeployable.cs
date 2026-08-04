@@ -151,19 +151,20 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			if (DeployGateActive())
-				Events["Toggle"].guiActive = IsDeployedForUse() && !broken;
-			else
-				Events["Toggle"].guiActive = !broken;
+			bool toggleActive = DeployGateActive() ? IsDeployedForUse() && !broken : !broken;
+			if (Events["Toggle"].guiActive != toggleActive)
+				Events["Toggle"].guiActive = toggleActive;
 
-			Events["Toggle"].guiName = Lib.StatusToggle(lastMultiplier + " " + title,
+			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(lastMultiplier + " " + title,
 				broken ? Local.ProcessController_broken
 					: running ? Local.ProcessController_running
-					: Local.ProcessController_stopped);
+					: Local.ProcessController_stopped));
 
 			if (Events["DumpValve"].active)
 			{
-				Events["DumpValve"].guiActive = !DeployGateActive() || IsDeployedForUse();
+				bool dumpActive = !DeployGateActive() || IsDeployedForUse();
+				if (Events["DumpValve"].guiActive != dumpActive)
+					Events["DumpValve"].guiActive = dumpActive;
 				ProcessControllerUiHelper.RefreshDumpValveLabel(this);
 			}
 		}

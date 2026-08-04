@@ -39,11 +39,11 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			Events["Toggle"].guiName = Lib.StatusToggle
+			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle
 			(
 			  Local.StatuToggle_Simulate.Format(Localizer.Format(title)),//String.Format("Simulate {0} in planner", title)
 			  considered ? "<b><color=#00ff00>"+ Local.PlannerController_yes + "</color></b>" : "<b><color=#ffff00>"+ Local.PlannerController_no + "</color></b>"//yes  no
-			);
+			));
 		}
 
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "_", active = true)]
