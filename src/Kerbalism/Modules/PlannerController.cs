@@ -17,6 +17,9 @@ namespace KERBALISM
 		// persistence
 		[KSPField(isPersistant = true)] public bool considered;     // true to consider the part modules in planner
 
+		private bool pawUiInitialized;
+		private bool lastPawConsidered;
+		private string lastPawTitle = string.Empty;
 
 		public override void OnStart(StartState state)
 		{
@@ -39,11 +42,17 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
+			if (pawUiInitialized && lastPawConsidered == considered && lastPawTitle == title)
+				return;
+
 			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle
 			(
 			  Local.StatuToggle_Simulate.Format(Localizer.Format(title)),//String.Format("Simulate {0} in planner", title)
 			  considered ? "<b><color=#00ff00>"+ Local.PlannerController_yes + "</color></b>" : "<b><color=#ffff00>"+ Local.PlannerController_no + "</color></b>"//yes  no
 			));
+			pawUiInitialized = true;
+			lastPawConsidered = considered;
+			lastPawTitle = title;
 		}
 
 		[KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "_", active = true)]

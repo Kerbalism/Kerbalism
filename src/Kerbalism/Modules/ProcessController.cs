@@ -41,6 +41,13 @@ namespace KERBALISM
 		private int persistentValveIndex = -1;
 		
 		private bool isConfigurable = false;
+		private bool pawLabelsInitialized;
+		private int lastPawMultiplier;
+		private bool lastPawBroken;
+		private bool lastPawRunning;
+		private bool lastPawLocalizeTitle;
+		private string lastPawTitle = string.Empty;
+		private string lastPawValveTitle = string.Empty;
 
 		public override void OnLoad(ConfigNode node)
 		{
@@ -167,9 +174,47 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			// update rmb ui (skip assignments that would redirty the PAW every frame)
-			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(lastMultiplier + " " + Localizer.Format(title), broken ? Local.ProcessController_broken : running ? Local.ProcessController_running : Local.ProcessController_stopped));//"broken""running""stopped"
-			Lib.SetEventGuiName(Events["DumpValve"], Lib.StatusToggle(Local.ProcessController_Dump, dumpValve.ValveTitle));//"Dump"
+			RefreshPAWLabels();
+		}
+
+		protected void RefreshPAWLabels(bool? toggleActive = null, bool? dumpActive = null, bool localizeTitle = true)
+		{
+			BaseEvent toggleEvent = Events["Toggle"];
+			if (toggleActive.HasValue && toggleEvent.guiActive != toggleActive.Value)
+				toggleEvent.guiActive = toggleActive.Value;
+
+			if (!pawLabelsInitialized
+				|| lastPawMultiplier != lastMultiplier
+				|| lastPawBroken != broken
+				|| lastPawRunning != running
+				|| lastPawTitle != title
+				|| lastPawLocalizeTitle != localizeTitle)
+			{
+				Lib.SetEventGuiName(toggleEvent, Lib.StatusToggle(
+					lastMultiplier + " " + (localizeTitle ? Localizer.Format(title) : title),
+					broken ? Local.ProcessController_broken
+						: running ? Local.ProcessController_running
+						: Local.ProcessController_stopped));//"broken""running""stopped"
+
+				lastPawMultiplier = lastMultiplier;
+				lastPawBroken = broken;
+				lastPawRunning = running;
+				lastPawTitle = title;
+				lastPawLocalizeTitle = localizeTitle;
+			}
+
+			BaseEvent dumpEvent = Events["DumpValve"];
+			if (dumpActive.HasValue && dumpEvent.guiActive != dumpActive.Value)
+				dumpEvent.guiActive = dumpActive.Value;
+
+			string valveTitle = dumpValve?.ValveTitle ?? string.Empty;
+			if (!pawLabelsInitialized || lastPawValveTitle != valveTitle)
+			{
+				Lib.SetEventGuiName(dumpEvent, Lib.StatusToggle(Local.ProcessController_Dump, valveTitle));//"Dump"
+				lastPawValveTitle = valveTitle;
+			}
+
+			pawLabelsInitialized = true;
 		}
 
 		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "_", active = true, groupName = "Processes", groupDisplayName = "#KERBALISM_Group_Processes")]//Processes

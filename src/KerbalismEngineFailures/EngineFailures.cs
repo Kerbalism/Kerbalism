@@ -40,13 +40,27 @@ namespace KERBALISM.EngineFailures
 		CrewSpecs repair_cs;
 		bool explode = false;
 		bool engineReliabilityRatingsApplied;
+		string localizedTitle = string.Empty;
+		bool flightPawInitialized;
+		bool lastFlightPawBroken;
+		bool lastFlightPawCritical;
+		bool lastFlightPawMaintenance;
+		bool lastFlightPawFailuresEnabled;
+		long lastFlightPawBurnSeconds;
+		int lastFlightPawIgnitions;
+		bool editorPawInitialized;
+		bool lastEditorPawQuality;
+		bool lastEditorPawFailuresEnabled;
+		long lastEditorPawBurnSeconds;
+		int lastEditorPawIgnitions;
 
 		public override void OnStart(StartState state)
 		{
 			if (Lib.DisableScenario(this)) return;
 
 			EnsureRatings();
-			Fields["Status"].guiName = Reliability.LocalizeTitle(title);
+			localizedTitle = Reliability.LocalizeTitle(title);
+			Fields["Status"].guiName = localizedTitle;
 
 			if (!Lib.IsFlight()) return;
 
@@ -59,8 +73,8 @@ namespace KERBALISM.EngineFailures
 
 			repair_cs = new CrewSpecs(repair);
 
-			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>" + Reliability.LocalizeTitle(title) + "</b>");
-			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>" + Reliability.LocalizeTitle(title) + "</b>");
+			Events["Inspect"].guiName = Local.Reliability_Inspect.Format("<b>" + localizedTitle + "</b>");
+			Events["Repair"].guiName = Local.Reliability_Repair.Format("<b>" + localizedTitle + "</b>");
 
 			if (broken)
 			{
@@ -161,37 +175,7 @@ namespace KERBALISM.EngineFailures
 				}
 
 				if (part.IsPAWVisible())
-				{
-					Status = string.Empty;
-
-					if (broken)
-					{
-						Status = critical ? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red) : Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);
-					}
-					else if (PreferencesEngineFailures.Instance.engineFailures && (rated_operation_duration > 0 || rated_ignitions > 0))
-					{
-						if (rated_operation_duration > 0)
-						{
-							double effective_duration = Reliability.EffectiveDuration(quality, rated_operation_duration);
-							Status = Lib.BuildString(Local.Reliability_burnremaining, " ", Lib.HumanReadableDuration(Math.Max(0, effective_duration - operation_duration)));
-						}
-						if (rated_ignitions > 0)
-						{
-							int effective_ignitions = Reliability.EffectiveIgnitions(quality, rated_ignitions);
-							Status = Lib.BuildString(Status,
-								(string.IsNullOrEmpty(Status) ? "" : ", "),
-								Local.Reliability_ignitions, " ", Math.Max(0, effective_ignitions - ignitions).ToString());
-						}
-					}
-
-					if (string.IsNullOrEmpty(Status)) Status = Local.Generic_NOMINAL;
-
-					Events["Inspect"].active = !broken && !needMaintenance;
-					Events["Repair"].active = repair_cs && (broken || needMaintenance);
-
-					if (needMaintenance)
-						Events["Repair"].guiName = Local.Reliability_Service.Format("<b>" + Reliability.LocalizeTitle(title) + "</b>");
-				}
+					RefreshFlightPAW();
 
 				RunningCheck();
 
@@ -202,28 +186,115 @@ namespace KERBALISM.EngineFailures
 				Highlight(part);
 			}
 			else if (part.IsPAWVisible())
+				RefreshEditorPAW();
+		}
+
+		private void RefreshFlightPAW()
+		{
+			bool failuresEnabled = PreferencesEngineFailures.Instance.engineFailures;
+			long remainingBurnSeconds = -1;
+			if (!broken && failuresEnabled && rated_operation_duration > 0)
 			{
-				Events["Quality"].guiName = Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + Reliability.LocalizeTitle(title) + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard);
+				double effectiveDuration = Reliability.EffectiveDuration(quality, rated_operation_duration);
+				remainingBurnSeconds = (long)Math.Round(Math.Max(0, effectiveDuration - operation_duration));
+			}
 
-				Status = string.Empty;
+			int remainingIgnitions = -1;
+			if (!broken && failuresEnabled && rated_ignitions > 0)
+			{
+				int effectiveIgnitions = Reliability.EffectiveIgnitions(quality, rated_ignitions);
+				remainingIgnitions = Math.Max(0, effectiveIgnitions - ignitions);
+			}
 
-				if (rated_operation_duration > 0 && PreferencesEngineFailures.Instance.engineFailures)
+			if (flightPawInitialized
+				&& lastFlightPawBroken == broken
+				&& lastFlightPawCritical == critical
+				&& lastFlightPawMaintenance == needMaintenance
+				&& lastFlightPawFailuresEnabled == failuresEnabled
+				&& lastFlightPawBurnSeconds == remainingBurnSeconds
+				&& lastFlightPawIgnitions == remainingIgnitions)
+				return;
+
+			string newStatus = string.Empty;
+			if (broken)
+			{
+				newStatus = critical
+					? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red)
+					: Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);
+			}
+			else if (failuresEnabled)
+			{
+				if (remainingBurnSeconds >= 0)
+					newStatus = Lib.BuildString(Local.Reliability_burnremaining, " ", Lib.HumanReadableDuration(remainingBurnSeconds));
+				if (remainingIgnitions >= 0)
 				{
-					double effective_duration = Reliability.EffectiveDuration(quality, rated_operation_duration);
-					Status = Lib.BuildString(Status,
-						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						Local.Reliability_Burntime + " ",
-						Lib.HumanReadableDuration(effective_duration));
-				}
-
-				if (rated_ignitions > 0 && PreferencesEngineFailures.Instance.engineFailures)
-				{
-					int effective_ignitions = Reliability.EffectiveIgnitions(quality, rated_ignitions);
-					Status = Lib.BuildString(Status,
-						(string.IsNullOrEmpty(Status) ? "" : ", "),
-						Local.Reliability_ignitions + " ", effective_ignitions.ToString());
+					newStatus = Lib.BuildString(newStatus,
+						(string.IsNullOrEmpty(newStatus) ? "" : ", "),
+						Local.Reliability_ignitions, " ", remainingIgnitions.ToString());
 				}
 			}
+			if (string.IsNullOrEmpty(newStatus))
+				newStatus = Local.Generic_NOMINAL;
+			Lib.SetPAWValue(ref Status, newStatus);
+
+			bool inspectActive = !broken && !needMaintenance;
+			bool repairActive = repair_cs && (broken || needMaintenance);
+			if (Events["Inspect"].active != inspectActive)
+				Events["Inspect"].active = inspectActive;
+			if (Events["Repair"].active != repairActive)
+				Events["Repair"].active = repairActive;
+			if (needMaintenance)
+				Lib.SetEventGuiName(Events["Repair"], Local.Reliability_Service.Format("<b>" + localizedTitle + "</b>"));
+
+			flightPawInitialized = true;
+			lastFlightPawBroken = broken;
+			lastFlightPawCritical = critical;
+			lastFlightPawMaintenance = needMaintenance;
+			lastFlightPawFailuresEnabled = failuresEnabled;
+			lastFlightPawBurnSeconds = remainingBurnSeconds;
+			lastFlightPawIgnitions = remainingIgnitions;
+		}
+
+		private void RefreshEditorPAW()
+		{
+			bool failuresEnabled = PreferencesEngineFailures.Instance.engineFailures;
+			long burnSeconds = rated_operation_duration > 0 && failuresEnabled
+				? (long)Math.Round(Reliability.EffectiveDuration(quality, rated_operation_duration))
+				: -1;
+			int effectiveIgnitions = rated_ignitions > 0 && failuresEnabled
+				? Reliability.EffectiveIgnitions(quality, rated_ignitions)
+				: -1;
+
+			if (editorPawInitialized
+				&& lastEditorPawQuality == quality
+				&& lastEditorPawFailuresEnabled == failuresEnabled
+				&& lastEditorPawBurnSeconds == burnSeconds
+				&& lastEditorPawIgnitions == effectiveIgnitions)
+				return;
+
+			Lib.SetEventGuiName(Events["Quality"], Lib.StatusToggle(
+				Local.Reliability_qualityinfo.Format("<b>" + localizedTitle + "</b>"),
+				quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard));
+
+			string newStatus = string.Empty;
+			if (burnSeconds >= 0)
+			{
+				newStatus = Lib.BuildString(Local.Reliability_Burntime + " ",
+					Lib.HumanReadableDuration(burnSeconds));
+			}
+			if (effectiveIgnitions >= 0)
+			{
+				newStatus = Lib.BuildString(newStatus,
+					(string.IsNullOrEmpty(newStatus) ? "" : ", "),
+					Local.Reliability_ignitions + " ", effectiveIgnitions.ToString());
+			}
+			Lib.SetPAWValue(ref Status, newStatus);
+
+			editorPawInitialized = true;
+			lastEditorPawQuality = quality;
+			lastEditorPawFailuresEnabled = failuresEnabled;
+			lastEditorPawBurnSeconds = burnSeconds;
+			lastEditorPawIgnitions = effectiveIgnitions;
 		}
 
 		protected double nextRunningCheck = 0.0;

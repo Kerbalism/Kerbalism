@@ -42,6 +42,17 @@ namespace KERBALISM
 		CrewSpecs repair_cs;                                                // crew specs
 		bool explode = false;
 		string localizedTitle = string.Empty;                               // cached LocalizeTitle(title)
+		bool flightPawInitialized;
+		bool lastFlightPawBroken;
+		bool lastFlightPawCritical;
+		bool lastFlightPawMaintenance;
+		bool lastFlightPawRadiationWarning;
+		bool editorPawInitialized;
+		bool lastEditorPawQuality;
+		bool lastEditorPawMtbfFailures;
+		double lastEditorPawMtbf;
+		double lastEditorPawRatedRadiation;
+		double lastEditorPawQualityScale;
 
 		public override void OnStart(StartState state)
 		{
@@ -140,41 +151,7 @@ namespace KERBALISM
 
 				// update ui
 				if (part.IsPAWVisible())
-				{
-					string newStatus = string.Empty;
-
-					if (broken)
-					{
-						newStatus = critical ? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red) : Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow);//"critical failure""malfunction"
-					}
-					else
-					{
-						if (rated_radiation > 0)
-						{
-							var rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-							var current = vessel.KerbalismData().EnvRadiation * 3600.0;
-							if (rated < current)
-							{
-								newStatus = Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange);//"taking radiation damage"
-							}
-						}
-					}
-
-					if (string.IsNullOrEmpty(newStatus)) newStatus = Local.Generic_NOMINAL;//"nominal"
-					Lib.SetPAWValue(ref Status, newStatus);
-
-					bool inspectActive = !broken && !needMaintenance;
-					bool repairActive = repair_cs && (broken || needMaintenance);
-					if (Events["Inspect"].active != inspectActive)
-						Events["Inspect"].active = inspectActive;
-					if (Events["Repair"].active != repairActive)
-						Events["Repair"].active = repairActive;
-
-					if (needMaintenance)
-					{
-						Lib.SetEventGuiName(Events["Repair"], Local.Reliability_Service.Format("<b>" + localizedTitle + "</b>"));//Lib.BuildString("Service <<1>>")
-					}
-				}
+					RefreshFlightPAW();
 
 				// if it has failed, trigger malfunction
 				var now = Planetarium.GetUniversalTime();
@@ -193,26 +170,90 @@ namespace KERBALISM
 			{
 				// update ui
 				if (part.IsPAWVisible())
-				{
-					Lib.SetEventGuiName(Events["Quality"], Lib.StatusToggle(Local.Reliability_qualityinfo.Format("<b>" + localizedTitle + "</b>"), quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard));//Lib.BuildString(<<1>> quality")"high""standard"
-
-					string newStatus = string.Empty;
-					if (mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
-					{
-						double effective_mtbf = EffectiveMTBF(quality, mtbf);
-						newStatus = Lib.BuildString(Local.Reliability_MTBF + " ", Lib.HumanReadableDuration(effective_mtbf));//"MTBF:"
-					}
-
-					if (rated_radiation > 0 && PreferencesReliability.Instance.mtbfFailures)
-					{
-						var r = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
-						newStatus = Lib.BuildString(newStatus,
-							(string.IsNullOrEmpty(newStatus) ? "" : ", "),
-							Lib.HumanReadableRadiation(r / 3600.0));
-					}
-					Lib.SetPAWValue(ref Status, newStatus);
-				}
+					RefreshEditorPAW();
 			}
+		}
+
+		private void RefreshFlightPAW()
+		{
+			bool radiationWarning = false;
+			if (!broken && rated_radiation > 0)
+			{
+				double rated = quality ? rated_radiation * Settings.QualityScale : rated_radiation;
+				radiationWarning = rated < vessel.KerbalismData().EnvRadiation * 3600.0;
+			}
+
+			if (flightPawInitialized
+				&& lastFlightPawBroken == broken
+				&& lastFlightPawCritical == critical
+				&& lastFlightPawMaintenance == needMaintenance
+				&& lastFlightPawRadiationWarning == radiationWarning)
+				return;
+
+			string newStatus = broken
+				? critical
+					? Lib.Color(Local.Reliability_criticalfailure, Lib.Kolor.Red)
+					: Lib.Color(Local.Reliability_malfunction, Lib.Kolor.Yellow)
+				: radiationWarning
+					? Lib.Color(Local.Reliability_takingradiationdamage, Lib.Kolor.Orange)
+					: Local.Generic_NOMINAL;
+			Lib.SetPAWValue(ref Status, newStatus);
+
+			bool inspectActive = !broken && !needMaintenance;
+			bool repairActive = repair_cs && (broken || needMaintenance);
+			if (Events["Inspect"].active != inspectActive)
+				Events["Inspect"].active = inspectActive;
+			if (Events["Repair"].active != repairActive)
+				Events["Repair"].active = repairActive;
+
+			if (needMaintenance)
+				Lib.SetEventGuiName(Events["Repair"], Local.Reliability_Service.Format("<b>" + localizedTitle + "</b>"));//Lib.BuildString("Service <<1>>")
+
+			flightPawInitialized = true;
+			lastFlightPawBroken = broken;
+			lastFlightPawCritical = critical;
+			lastFlightPawMaintenance = needMaintenance;
+			lastFlightPawRadiationWarning = radiationWarning;
+		}
+
+		private void RefreshEditorPAW()
+		{
+			bool mtbfFailures = PreferencesReliability.Instance.mtbfFailures;
+			double qualityScale = Settings.QualityScale;
+			if (editorPawInitialized
+				&& lastEditorPawQuality == quality
+				&& lastEditorPawMtbfFailures == mtbfFailures
+				&& lastEditorPawMtbf.Equals(mtbf)
+				&& lastEditorPawRatedRadiation.Equals(rated_radiation)
+				&& lastEditorPawQualityScale.Equals(qualityScale))
+				return;
+
+			Lib.SetEventGuiName(Events["Quality"], Lib.StatusToggle(
+				Local.Reliability_qualityinfo.Format("<b>" + localizedTitle + "</b>"),
+				quality ? Local.Reliability_qualityhigh : Local.Reliability_qualitystandard));//Lib.BuildString(<<1>> quality")"high""standard"
+
+			string newStatus = string.Empty;
+			if (mtbf > 0 && mtbfFailures)
+			{
+				double effectiveMtbf = EffectiveMTBF(quality, mtbf);
+				newStatus = Lib.BuildString(Local.Reliability_MTBF + " ", Lib.HumanReadableDuration(effectiveMtbf));//"MTBF:"
+			}
+
+			if (rated_radiation > 0 && mtbfFailures)
+			{
+				double radiationRating = quality ? rated_radiation * qualityScale : rated_radiation;
+				newStatus = Lib.BuildString(newStatus,
+					(string.IsNullOrEmpty(newStatus) ? "" : ", "),
+					Lib.HumanReadableRadiation(radiationRating / 3600.0));
+			}
+			Lib.SetPAWValue(ref Status, newStatus);
+
+			editorPawInitialized = true;
+			lastEditorPawQuality = quality;
+			lastEditorPawMtbfFailures = mtbfFailures;
+			lastEditorPawMtbf = mtbf;
+			lastEditorPawRatedRadiation = rated_radiation;
+			lastEditorPawQualityScale = qualityScale;
 		}
 
 		public void FixedUpdate()

@@ -44,6 +44,12 @@ namespace KERBALISM
 		private float lastUiPowerPercent = -1f;
 		private int flightThermalGraceFrames = 0;
 		private int fissionLoopRestoreFrames = 0;
+		private bool efficiencyDisplayInitialized;
+		private bool lastEfficiencyWasPlaceholder;
+		private double lastEfficiencyPercent;
+		private bool coreStatusInitialized;
+		private bool lastCoreStatusWasMeltdown;
+		private double lastCoreHealthPercent;
 		private const int DeployAnimationSettleFrames = 2;
 
 		public string ReactorPowerStatus => IsRunning() ? CurrentPowerPercent.ToString("0.#") + "%" : Local.Generic_STOPPED;
@@ -465,15 +471,27 @@ namespace KERBALISM
 
 			if (CoreDamage >= 100f || broken)
 			{
+				if (coreStatusInitialized && lastCoreStatusWasMeltdown)
+					return;
+
 				Lib.SetPAWValue(ref CoreStatus,
 					Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatFissionReactor_Field_CoreStatus_Meltdown"));
+				coreStatusInitialized = true;
+				lastCoreStatusWasMeltdown = true;
 				return;
 			}
 
 			float loopK = heatModule != null ? SystemHeat.CurrentLoopTemperature(heatModule) : 0f;
 			float health = SystemHeatEditorSimulation.GetCoreHealthPercent(
 				loopK, meltdownTemperature, MaximumTemperature, CoreDamage);
-			Lib.SetPAWValue(ref CoreStatus, string.Format("{0:F2} %", health));
+			double roundedHealth = Math.Round(health, 2, MidpointRounding.ToEven);
+			if (coreStatusInitialized && !lastCoreStatusWasMeltdown && lastCoreHealthPercent.Equals(roundedHealth))
+				return;
+
+			Lib.SetPAWValue(ref CoreStatus, string.Format("{0:F2} %", roundedHealth));
+			coreStatusInitialized = true;
+			lastCoreStatusWasMeltdown = false;
+			lastCoreHealthPercent = roundedHealth;
 		}
 
 		internal void SyncPlannerPseudoResource()
@@ -497,12 +515,26 @@ namespace KERBALISM
 
 		private void SetEfficiencyPlaceholder()
 		{
-			SetEfficiencyDisplay(Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", "-1"));
+			if (efficiencyDisplayInitialized && lastEfficiencyWasPlaceholder)
+				return;
+
+			Lib.SetPAWValue(ref ConverterOfEfficiency,
+				Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", "-1"));
+			efficiencyDisplayInitialized = true;
+			lastEfficiencyWasPlaceholder = true;
 		}
 
-		private void SetEfficiencyDisplay(string value)
+		private void SetEfficiencyDisplay(double efficiency)
 		{
-			Lib.SetPAWValue(ref ConverterOfEfficiency, value);
+			double percent = Math.Round(efficiency * 100.0, 1, MidpointRounding.ToEven);
+			if (efficiencyDisplayInitialized && !lastEfficiencyWasPlaceholder && lastEfficiencyPercent.Equals(percent))
+				return;
+
+			Lib.SetPAWValue(ref ConverterOfEfficiency,
+				Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", percent.ToString("F1")));
+			efficiencyDisplayInitialized = true;
+			lastEfficiencyWasPlaceholder = false;
+			lastEfficiencyPercent = percent;
 		}
 
 		public new void Update()
@@ -533,21 +565,10 @@ namespace KERBALISM
 				return;
 
 			bool toggleActive = DeployGateActive() ? IsDeployedForUse() && !broken : !broken;
-			if (Events["Toggle"].guiActive != toggleActive)
-				Events["Toggle"].guiActive = toggleActive;
-
-			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(lastMultiplier + " " + title,
-				broken ? Local.ProcessController_broken
-					: running ? Local.ProcessController_running
-					: Local.ProcessController_stopped));
-
-			if (Events["DumpValve"].active)
-			{
-				bool dumpActive = !DeployGateActive() || IsDeployedForUse();
-				if (Events["DumpValve"].guiActive != dumpActive)
-					Events["DumpValve"].guiActive = dumpActive;
-				ProcessControllerUiHelper.RefreshDumpValveLabel(this);
-			}
+			bool? dumpActive = Events["DumpValve"].active
+				? !DeployGateActive() || IsDeployedForUse()
+				: (bool?)null;
+			RefreshPAWLabels(toggleActive, dumpActive, false);
 		}
 
 		public override void Configure(bool enable, int multiplier)
@@ -693,7 +714,7 @@ namespace KERBALISM
 			float loopK = SystemHeat.CurrentLoopTemperature(heatModule);
 			double thermalEff = SystemHeatEditorSimulation.CalculateProcessEfficiency(systemEfficiency, loopK, systemPower, false);
 			double displayEff = IsFissionReactor() ? Math.Min(thermalEff, 1.0) : thermalEff;
-			SetEfficiencyDisplay(Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", (displayEff * 100f).ToString("F1")));
+			SetEfficiencyDisplay(displayEff);
 		}
 
 		private void ApplyThermalCapacityScale(bool force = false)
@@ -732,7 +753,7 @@ namespace KERBALISM
 			double thermalEff = SystemHeatEditorSimulation.CalculateProcessEfficiency(systemEfficiency, loopK, systemPower, SystemHeatEditorSimulation.IsEditorScene);
 			double displayEff = IsFissionReactor() ? Math.Min(thermalEff, 1.0) : thermalEff;
 
-			SetEfficiencyDisplay(Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", (displayEff * 100f).ToString("F1")));
+			SetEfficiencyDisplay(displayEff);
 
 			double desiredCapacity = SystemHeatEditorSimulation.IsEditorScene
 				? configuredCapacity * ReactorPowerScale

@@ -23,6 +23,10 @@ namespace KERBALISM
 		// animations
 		Animator active_anim;
 		bool radiation_impact_calculated = false;
+		bool pawUiInitialized;
+		bool lastPawRunning;
+		double lastPawRadiation;
+		string lastPawPartTitle = string.Empty;
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -137,8 +141,19 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
+			string partTitle = part.partInfo.title;
+			if (pawUiInitialized
+				&& lastPawRunning == running
+				&& lastPawRadiation.Equals(radiation)
+				&& lastPawPartTitle == partTitle)
+				return;
+
 			Lib.SetPAWValue(ref Status, running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none);//"none"
-			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED));
+			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(partTitle, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED));
+			pawUiInitialized = true;
+			lastPawRunning = running;
+			lastPawRadiation = radiation;
+			lastPawPartTitle = partTitle;
 		}
 
 		public void FixedUpdate()
