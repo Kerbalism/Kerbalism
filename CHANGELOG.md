@@ -38,7 +38,7 @@
  * Fixed: Sterling ISRU processes missing with RationalResourcesKerbalism (#1105, @Aebestach)
  * Fixed: Engineer specialist bonus for Process-based ISRU converters (#1106, @Aebestach)
  * Fixed: KsmGui showing in facilities; Body Info hotkey ignored while typing (#1107, @Aebestach)
- * Fixed: Body Info `B` hotkey ignored over empty map space (KEYBOARDINPUT lock was too broad)
+ * Fixed: Body Info `B` hotkey ignored over empty map space (KEYBOARDINPUT lock was too broad) (#1145, @Aebestach)
  * Fixed: Greenhouse free artificial light when `ec_rate` is 0 (#1109, @Aebestach)
  * Fixed: CryoTanks planner/monitor EC costs (#1110, @Aebestach)
  * Fixed: CactEye infinite science exploit (#1113, @Aebestach)
