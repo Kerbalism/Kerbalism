@@ -63,7 +63,7 @@ Additional storm / comfort / shielding presets exist as code defaults (`StormFre
 
 | KEY | DESCRIPTION | CODE DEFAULT |
 | --- | --- | --- |
-| ComfortSpinFirmGround | Allow firm ground from whole-vessel spin | `true` |
+| ComfortSpinFirmGround | Allow firm ground from whole-vessel spin | `false` |
 | ComfortSpinMinArtificialG | Minimum artificial gravity (g) for a seat to count | `0.25` |
 | ComfortSpinMaxRpm | Maximum whole-vessel spin rate (rpm) | `3.0` |
 | ComfortSpinCrewCoverage | Fraction of aboard crew that must have a qualifying high-g seat | `1.0` |
