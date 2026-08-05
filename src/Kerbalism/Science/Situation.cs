@@ -132,7 +132,7 @@ namespace KERBALISM
 			return Lib.BuildString(BodyName, ScienceSituationName, BiomeName);
 		}
 
-		public virtual double SituationMultiplier => Body != null ? ScienceSituation.BodyMultiplier(Body) : 1.0;
+		public virtual double SituationMultiplier => Body != null ? ScienceSituation.BodyMultiplier(Body, Biome) : 1.0;
 
 		public virtual string GetTitleForExperiment(ExperimentInfo expInfo)
 		{
