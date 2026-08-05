@@ -60,7 +60,7 @@ Defaults (difficulty / Kerbalism Comfort preferences, also overridable via Setti
 
 | OPTION | DEFAULT | MEANING |
 | --- | --- | --- |
-| Vessel Spin Firm Ground | on | Master toggle for this source of firm ground |
+| Vessel Spin Firm Ground | off | Master toggle for this source of firm ground |
 | Minimum Spin Gravity | 0.25 g | Seat must reach at least this much artificial gravity to count |
 | Maximum Spin Rate | 3.0 rpm | Whole-vessel spin must stay at or below this rate |
 | Spin Seat Coverage | 100% | Fraction of aboard crew that must have a qualifying high-g seat |

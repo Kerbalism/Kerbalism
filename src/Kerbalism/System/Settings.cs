@@ -92,7 +92,7 @@ namespace KERBALISM
 			ComfortCallHome = Lib.ConfigValue(cfg, "ComfortCallHome", 0.2f);
 			ComfortPanorama = Lib.ConfigValue(cfg, "ComfortPanorama", 0.1f);
 			ComfortPlants = Lib.ConfigValue(cfg, "ComfortPlants", 0.1f);
-			ComfortSpinFirmGround = Lib.ConfigValue(cfg, "ComfortSpinFirmGround", true);
+			ComfortSpinFirmGround = Lib.ConfigValue(cfg, "ComfortSpinFirmGround", false);
 			ComfortSpinMinArtificialG = Lib.ConfigValue(cfg, "ComfortSpinMinArtificialG", 0.25f);
 			ComfortSpinMaxRpm = Lib.ConfigValue(cfg, "ComfortSpinMaxRpm", 3.0f);
 			ComfortSpinCrewCoverage = Lib.ConfigValue(cfg, "ComfortSpinCrewCoverage", 1.0f);

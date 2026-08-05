@@ -69,7 +69,7 @@ Kerbalism **不会**追踪每个 Kerbal 此刻坐在哪一舱，默认船员可�
 
 | 选项 | 默认 | 含义 |
 | --- | --- | --- |
-| Vessel Spin Firm Ground | 开 | 是否启用这一种坚实地面来源 |
+| Vessel Spin Firm Ground | 关 | 是否启用这一种坚实地面来源 |
 | Minimum Spin Gravity | 0.25 g | 座位至少要达到这么多人工重力才算达标 |
 | Maximum Spin Rate | 3.0 rpm | 整船转速不得超过此值 |
 | Spin Seat Coverage | 100% | 船上乘员中必须拥有达标高 g 座位的比例 |
