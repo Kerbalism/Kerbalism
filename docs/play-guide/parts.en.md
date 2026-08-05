@@ -11,7 +11,7 @@ See [Greenhouse balance](greenhouse-balance.md) for continuous production and ma
 ## Gravity Ring
 ![](../assets/parts/gravity-ring.png)
 
-A rotating ring inflatable habitat.
+A rotating ring inflatable habitat. When deployed on a powered vessel it grants the firm-ground comfort to the whole ship. Whole-vessel spin can do the same without this part — see [Habitat → Comforts](habitat.md).
 
 ## Active Shield
 ![](../assets/parts/active-shield.png)

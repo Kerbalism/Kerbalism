@@ -57,10 +57,30 @@ namespace KERBALISM
 
 	public class Comforts
 	{
+		/// <summary>Compatibility ctor used by planner and external callers without spin metrics.</summary>
 		public Comforts(Vessel v, bool env_firm_ground, bool env_not_alone, bool env_call_home)
+			: this(v, env_firm_ground, false, false, 0, 0, 0.0, env_not_alone, env_call_home)
+		{
+		}
+
+		public Comforts(
+			Vessel v,
+			bool env_firm_ground,
+			bool env_spin_firm_ground,
+			bool env_spin_snapshot_valid,
+			int env_spin_qualifying_capacity,
+			int env_spin_seats_needed,
+			double env_spin_rpm,
+			bool env_not_alone,
+			bool env_call_home)
 		{
 			// environment factors
-			firm_ground = env_firm_ground;
+			firm_ground = env_firm_ground || env_spin_firm_ground;
+			spin_firm_ground = env_spin_firm_ground;
+			spin_snapshot_valid = env_spin_snapshot_valid;
+			spin_qualifying_capacity = env_spin_qualifying_capacity;
+			spin_seats_needed = env_spin_seats_needed;
+			spin_rpm = env_spin_rpm;
 			call_home = env_call_home;
 
 			if (v.loaded)
@@ -176,12 +196,37 @@ namespace KERBALISM
 
 		public string Tooltip()
 		{
+			return Tooltip(true);
+		}
+
+		public string Tooltip(bool includeSpin)
+		{
 			string yes = Lib.BuildString("<b><color=#00ff00>", Local.Generic_YES, " </color></b>");
 			string no = Lib.BuildString("<b><color=#ffaa00>", Local.Generic_NO, " </color></b>");
+
+			string spinStatus;
+			if (!PreferencesComfort.Instance.spinFirmGround)
+			{
+				spinStatus = no;
+			}
+			else if (!spin_snapshot_valid)
+			{
+				spinStatus = Lib.BuildString("<b><color=#ffaa00>", Local.Comfort_spin_na, " </color></b>");
+			}
+			else
+			{
+				string metrics = Local.Comfort_spin_metrics.Format(
+					spin_qualifying_capacity.ToString(),
+					spin_seats_needed.ToString(),
+					spin_rpm.ToString("F1"));
+				spinStatus = Lib.BuildString(spin_firm_ground ? yes : no, " ", metrics);
+			}
+
 			return Lib.BuildString
 			(
 				"<align=left />",
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_firmground, firm_ground ? yes : no),
+				includeSpin ? String.Format("{0,-14}\t{1}\n", Local.Comfort_spin, spinStatus) : string.Empty,
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_exercise, exercise ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_notalone, not_alone ? yes : no),
 				String.Format("{0,-14}\t{1}\n", Local.Comfort_callhome, call_home ? yes : no),
@@ -201,6 +246,11 @@ namespace KERBALISM
 		}
 
 		public bool firm_ground;
+		public bool spin_firm_ground;
+		public bool spin_snapshot_valid;
+		public int spin_qualifying_capacity;
+		public int spin_seats_needed;
+		public double spin_rpm;
 		public bool exercise;
 		public bool not_alone;
 		public bool call_home;

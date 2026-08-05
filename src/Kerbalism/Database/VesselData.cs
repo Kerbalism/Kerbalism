@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 
 namespace KERBALISM
@@ -96,6 +97,22 @@ namespace KERBALISM
 
 		// persist that so we don't have to do an expensive check every time
 		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
+
+		/// <summary>
+		/// Last readable loaded/unpacked spin sample. Kept across packing/unloading so background
+		/// comfort evaluation can reuse qualifying seat capacity / rpm without reconstructing vessel physics.
+		/// </summary>
+		public bool EnvSpinSnapshotValid => spinSnapshotValid; bool spinSnapshotValid;
+		public int EnvSpinQualifyingCapacity => spinQualifyingCapacity; int spinQualifyingCapacity;
+		private float spinSampleMinArtificialG;
+		public double EnvSpinRpm => spinRpm; double spinRpm;
+
+		// Loaded-only spin stability tracking. Never persisted: a vessel must demonstrate
+		// stable rotation again after being unpacked before a new snapshot is accepted.
+		private bool spinStabilityInitialized;
+		private Vector3 spinPreviousAxis;
+		private double spinPreviousRpm;
+		private double spinStableSeconds;
 		#endregion
 
 		#region evaluated environment properties
@@ -840,6 +857,11 @@ namespace KERBALISM
 			cfg_show = true;
 			deviceTransmit = true;
 
+			spinSnapshotValid = false;
+			spinQualifyingCapacity = 0;
+			spinSampleMinArtificialG = 0.0f;
+			spinRpm = 0.0;
+
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
 			isSerenityGroundController = pv != null && pv.vesselType == VesselType.DeployedScienceController;
 
@@ -904,6 +926,15 @@ namespace KERBALISM
 			// the high-warp/full-period exposure metric.
 			solarPanelsAverageHighWarpExposure = Lib.ConfigValue(node, "solarPanelsAverageAnalyticExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
+
+			spinSnapshotValid = Lib.ConfigValue(node, "spinSnapshotValid", false);
+			spinQualifyingCapacity = Lib.ConfigValue(node, "spinQualifyingCapacity", -1);
+			spinSampleMinArtificialG = Lib.ConfigValue(node, "spinSampleMinArtificialG", 0.0f);
+			spinRpm = Lib.ConfigValue(node, "spinRpm", 0.0);
+			// Legacy whole-crew min-g snapshots are incompatible with capacity coverage.
+			if (spinQualifyingCapacity < 0 || node.HasValue("spinMinGee"))
+				InvalidateSpinComfortSnapshot();
+			ValidateSpinComfortSnapshot();
 
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
 			vesselSolarCrossSection = Lib.ConfigValue(node, "vesselSolarCrossSection", -1.0);
@@ -1041,6 +1072,12 @@ namespace KERBALISM
 			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageHighWarpExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
+			ValidateSpinComfortSnapshot();
+			node.AddValue("spinSnapshotValid", spinSnapshotValid);
+			node.AddValue("spinQualifyingCapacity", spinQualifyingCapacity);
+			node.AddValue("spinSampleMinArtificialG", spinSampleMinArtificialG);
+			node.AddValue("spinRpm", spinRpm);
+
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
 			node.AddValue("vesselSolarCrossSection", vesselSolarCrossSection);
 			node.AddValue("vesselBodyCrossSection", vesselBodyCrossSection);
@@ -1123,6 +1160,126 @@ namespace KERBALISM
 		}
 
 		#region vessel state evaluation
+		/// <summary>
+		/// Refresh the persisted spin sample only when loaded physics is readable.
+		/// Packed / unloaded vessels keep the last valid sample for background comfort.
+		/// </summary>
+		private void UpdateSpinComfortSnapshot(double elapsedSeconds)
+		{
+			if (Vessel == null)
+				return;
+
+			float requiredGee = PreferencesComfort.Instance.spinMinArtificialG;
+			if (!SpinComfort.IsFinite(requiredGee) || requiredGee <= 0.0f)
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+				return;
+			}
+
+			// qualifyingCapacity depends on the g threshold used during sampling.
+			// An unloaded vessel can't be re-sampled, so discard stale results instead.
+			if (spinSnapshotValid
+				&& (!SpinComfort.IsFinite(spinSampleMinArtificialG)
+					|| Math.Abs(spinSampleMinArtificialG - requiredGee) > 1e-6f))
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+			}
+
+			if (!Vessel.loaded || Vessel.packed)
+			{
+				// Keep the last accepted snapshot for background simulation, but require
+				// a fresh two-second stability window the next time physics is unpacked.
+				ResetSpinStability();
+				return;
+			}
+
+			SpinComfort.Sample sample = SpinComfort.Evaluate(
+				Vessel,
+				requiredGee);
+			if (!sample.available)
+				return;
+
+			if (!sample.coherent
+				|| sample.qualifyingCapacity < 0
+				|| !SpinComfort.IsFinite(sample.rpm)
+				|| !SpinComfort.IsFinite(sample.axisWorld))
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+				return;
+			}
+
+			spinQualifyingCapacity = sample.qualifyingCapacity;
+			spinSampleMinArtificialG = requiredGee;
+			spinRpm = sample.rpm;
+
+			// A stationary / non-crewable vessel has a valid negative sample and needs no axis check.
+			if (!sample.hasCrewableParts || sample.rpm <= double.Epsilon)
+			{
+				spinSnapshotValid = true;
+				ResetSpinStability();
+				return;
+			}
+
+			double stabilityStep = Lib.Clamp(elapsedSeconds, 0.0, 0.25);
+			if (!spinStabilityInitialized)
+			{
+				spinStabilityInitialized = true;
+				spinPreviousAxis = sample.axisWorld;
+				spinPreviousRpm = sample.rpm;
+				spinStableSeconds = 0.0;
+				spinSnapshotValid = false;
+				return;
+			}
+
+			double axisDelta = Vector3.Angle(spinPreviousAxis, sample.axisWorld);
+			double rpmDelta = Math.Abs(sample.rpm - spinPreviousRpm);
+			double allowedAxisDelta = SpinComfort.MaxStableAxisRateDegrees * stabilityStep;
+			double allowedRpmDelta = Math.Max(
+				SpinComfort.MaxStableAbsoluteRpmRate,
+				spinPreviousRpm * SpinComfort.MaxStableRelativeRpmRate) * stabilityStep;
+
+			if (axisDelta <= allowedAxisDelta && rpmDelta <= allowedRpmDelta)
+				spinStableSeconds += stabilityStep;
+			else
+				spinStableSeconds = 0.0;
+
+			spinPreviousAxis = sample.axisWorld;
+			spinPreviousRpm = sample.rpm;
+			spinSnapshotValid = spinStableSeconds >= SpinComfort.RequiredStableSeconds;
+		}
+
+		private void ValidateSpinComfortSnapshot()
+		{
+			if (spinQualifyingCapacity < 0
+				|| !SpinComfort.IsFinite(spinRpm)
+				|| spinRpm < 0.0
+				|| (spinSnapshotValid
+					&& (!SpinComfort.IsFinite(spinSampleMinArtificialG)
+						|| spinSampleMinArtificialG <= 0.0f)))
+			{
+				InvalidateSpinComfortSnapshot();
+			}
+		}
+
+		private void InvalidateSpinComfortSnapshot()
+		{
+			spinSnapshotValid = false;
+			spinQualifyingCapacity = 0;
+			spinSampleMinArtificialG = 0.0f;
+			spinRpm = 0.0;
+		}
+
+		private void ResetSpinStability()
+		{
+			spinStabilityInitialized = false;
+			spinPreviousAxis = Vector3.zero;
+			spinPreviousRpm = 0.0;
+			spinStableSeconds = 0.0;
+		}
+
 		private void EvaluateStatus(double elapsedSeconds)
 		{
 			Profiler.BeginSample("EvaluateStatus");
@@ -1154,8 +1311,33 @@ namespace KERBALISM
 			habitatInfo.Update(Vessel, this, elapsedSeconds);
 			Profiler.EndSample();
 			evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
+
+			Profiler.BeginSample("SpinComfort");
+			UpdateSpinComfortSnapshot(elapsedSeconds);
+			int spinSeatsNeeded = SpinComfort.SeatsNeeded(
+				(int)crewCount,
+				PreferencesComfort.Instance.spinCrewCoverage);
+			bool spinFirmGround = SpinComfort.Qualifies(
+				spinSnapshotValid,
+				spinQualifyingCapacity,
+				(int)crewCount,
+				spinRpm,
+				PreferencesComfort.Instance.spinFirmGround,
+				PreferencesComfort.Instance.spinCrewCoverage,
+				PreferencesComfort.Instance.spinMaxRpm);
+			Profiler.EndSample();
+
 			Profiler.BeginSample("Comforts");
-			comforts = new Comforts(Vessel, EnvLanded, crewCount > 1, connection.linked && connection.rate > double.Epsilon);
+			comforts = new Comforts(
+				Vessel,
+				EnvLanded,
+				spinFirmGround,
+				spinSnapshotValid,
+				spinQualifyingCapacity,
+				spinSeatsNeeded,
+				spinRpm,
+				crewCount > 1,
+				connection.linked && connection.rate > double.Epsilon);
 			Profiler.EndSample();
 
 			// data about greenhouses

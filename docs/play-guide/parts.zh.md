@@ -11,7 +11,7 @@
 ## 重力环
 ![](../assets/parts/gravity-ring.png)
 
-可旋转的充气栖息地环。
+可旋转的充气栖息地环。有电且已展开时，整船获得坚实地面舒适度。不用这个部件也可以靠整船自旋达成——见 [栖息地 → 舒适度](habitat.md)。
 
 ## 主动屏蔽
 ![](../assets/parts/active-shield.png)
