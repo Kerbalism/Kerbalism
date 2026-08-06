@@ -100,8 +100,6 @@ namespace KERBALISM
 			return node?.transform?.gameObject.GetComponent<Vessel>();
 		}
 
-		private static bool UseStockCommNet => API.Comm.handlers.Count == 0 && !RemoteTech.Installed;
-
 		public static void ApplyHarmonyPatches()
 		{
 			MethodInfo CommNetVessel_OnNetworkPreUpdate_Info = AccessTools.Method(typeof(CommNetVessel), nameof(CommNetVessel.OnNetworkPreUpdate));
@@ -126,7 +124,7 @@ namespace KERBALISM
 		// ensure unloadedDoOnce is true for unloaded vessels
 		private static void CommNetVessel_OnNetworkPreUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
 		{
-			if (!UseStockCommNet || __instance.Vessel.loaded)
+			if (__instance.Vessel.loaded)
 				return;
 
 			// Stock doesn't update unloaded vessels after canComm becomes false. Force an update
@@ -145,7 +143,7 @@ namespace KERBALISM
 		// ensure unloadedDoOnce is true for unloaded vessels
 		private static void CommNetVessel_OnNetworkPostUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
 		{
-			if (UseStockCommNet && !__instance.Vessel.loaded && __instance.CanComm)
+			if (!__instance.Vessel.loaded && __instance.CanComm)
 				___unloadedDoOnce = true;
 		}
 
@@ -154,9 +152,6 @@ namespace KERBALISM
 		// factor to the comm strength multiplier used by stock for plasma blackout
 		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance, ref bool ___canComm, ref bool ___inPlasma, ref double ___plasmaMult)
 		{
-			if (!UseStockCommNet)
-				return;
-
 			if (!__instance.Vessel.TryGetVesselData(out VesselData vd))
 				return;
 
@@ -186,12 +181,6 @@ namespace KERBALISM
 		// apply storm radiation factor to the comm strength multiplier used by stock for plasma blackout
 		private static bool CommNetVessel_GetSignalStrengthModifier_Prefix(CommNetVessel __instance, bool ___canComm, bool ___inPlasma, double ___plasmaMult, out double __result)
 		{
-			if (!UseStockCommNet)
-			{
-				__result = 0.0;
-				return true;
-			}
-
 			if (!___canComm)
 			{
 				__result = 0.0;
