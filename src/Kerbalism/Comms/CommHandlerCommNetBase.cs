@@ -2,15 +2,12 @@
 using KSP.Localization;
 using System;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using HarmonyLib;
 
 namespace KERBALISM
 {
 	public class CommHandlerCommNetBase : CommHandler
 	{
-		private static readonly ConditionalWeakTable<CommNetVessel, object> powerDisabledVessels = new ConditionalWeakTable<CommNetVessel, object>();
-
 		/// <summary> base data rate set in derived classes from UpdateTransmitters()</summary>
 		protected double baseRate = 0.0;
 
@@ -135,8 +132,8 @@ namespace KERBALISM
 			// Stock doesn't update unloaded vessels after canComm becomes false. Force an update
 			// only when a vessel disabled by Kerbalism has power again, so it can rejoin CommNet.
 			if (__instance.CanComm
-				|| (powerDisabledVessels.TryGetValue(__instance, out _)
-					&& __instance.Vessel.TryGetVesselData(out VesselData vd)
+				|| (__instance.Vessel.TryGetVesselData(out VesselData vd)
+					&& vd.CommNetPowerDisabled
 					&& vd.IsSimulated
 					&& Lib.IsPowered(__instance.Vessel)))
 			{
@@ -169,11 +166,11 @@ namespace KERBALISM
 			if (vd.IsSimulated && !Lib.IsPowered(__instance.Vessel))
 			{
 				___canComm = false;
-				powerDisabledVessels.GetOrCreateValue(__instance);
+				vd.CommNetPowerDisabled = true;
 				return;
 			}
 
-			powerDisabledVessels.Remove(__instance);
+			vd.CommNetPowerDisabled = false;
 
 			if (!___canComm)
 				return;
