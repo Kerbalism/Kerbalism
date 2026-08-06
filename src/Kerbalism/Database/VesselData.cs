@@ -410,6 +410,12 @@ namespace KERBALISM
 		/// <summary>true if vessel is powered</summary>
 		public bool Powered => powered; bool powered;
 
+		/// <summary>
+		/// True while Kerbalism has forced stock CommNet canComm off due to no EC.
+		/// Used to re-enable unloaded network updates when power returns.
+		/// </summary>
+		public bool CommNetPowerDisabled;
+
 		/// <summary>free data storage available data capacity of all public drives</summary>
 		public double DrivesFreeSpace => drivesFreeSpace; double drivesFreeSpace = 0.0;
 
