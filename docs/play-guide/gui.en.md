@@ -80,8 +80,9 @@ The last bottom menu button in *vessel details* allows you to see and change the
 
 **Signal icon**
 
-|  | signal-white |  | Transmission rate above 5Kbps |
+|  | signal-white |  | Linked, telemetry only (rate above 5Kbps) |
 | --- | --- | --- | --- |
+|  | signal-cyan |  | Transmitting science |
 |  | signal-yellow |  | Transmission rate below 5Kbps |
 |  | signal-red |  | No signal / Blackout |
 

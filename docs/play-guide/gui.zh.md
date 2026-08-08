@@ -81,8 +81,9 @@
 
 **信号**
 
-|  | signal-white |  | 传输速率高于 5 Kbps |
+|  | signal-white |  | 已连接，仅遥测（速率高于 5 Kbps） |
 | --- | --- | --- | --- |
+|  | signal-cyan |  | 正在传输科学数据 |
 |  | signal-yellow |  | 传输速率低于 5 Kbps |
 |  | signal-red |  | 无信号 / 中断 |
 
