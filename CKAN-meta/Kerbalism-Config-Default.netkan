@@ -34,16 +34,7 @@
         { "name": "TACLS" },
         { "name": "Snacks" },
         { "name": "USI-LS" },
-        { "name": "BackgroundProcessing" },
-        { "name": "Kerbalism-FarFutureTechnologies" },
-        { "name": "SterlingSystemsKerbalism" },
-        { "name": "Kerbalism-SystemHeat" },
-        { "name": "SystemHeat-CryoTanks" },
-        { "name": "SystemHeat-Converters" },
-        { "name": "SystemHeat-FissionEngines" },
-        { "name": "SystemHeat-FissionReactors" },
-        { "name": "SystemHeat-Harvesters" },
-        { "name": "SystemHeat-IonEngines" }
+        { "name": "BackgroundProcessing" }
     ],
     "install": [ {
         "find":       "KerbalismConfig",
