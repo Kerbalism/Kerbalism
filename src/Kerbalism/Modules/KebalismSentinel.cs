@@ -146,7 +146,10 @@ namespace KERBALISM
 				ScreenMessages.PostScreenMessage(msg, SentinelUtilities.CalculateReadDuration(msg), ScreenMessageStyle.UPPER_CENTER);
 				__result = false;
 			}
-			__result = true;
+			else
+			{
+				__result = true;
+			}
 
 			return false;
 		}
