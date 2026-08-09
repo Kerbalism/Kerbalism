@@ -52,6 +52,7 @@ namespace KERBALISM
 		internal static Texture2D wrench_red;
 
 		internal static Texture2D signal_white;
+		internal static Texture2D signal_cyan;
 		internal static Texture2D signal_yellow;
 		internal static Texture2D signal_red;
 
@@ -193,6 +194,7 @@ namespace KERBALISM
 			wrench_red = GetTexture("wrench-red");
 
 			signal_white = GetTexture("signal-white");
+			signal_cyan = GetTexture("signal-cyan");
 			signal_yellow = GetTexture("signal-yellow");
 			signal_red = GetTexture("signal-red");
 

@@ -669,15 +669,20 @@ namespace KERBALISM
 			);
 
 			// create icon status
+			// Priority: red (no link) > yellow (weak) > cyan (transmitting science) > white (telemetry only)
 			Texture2D image = Textures.signal_red;
 			switch (conn.Status)
 			{
 				case LinkStatus.direct_link:
-					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
+					image = conn.strength > 0.05
+						? (vd.filesTransmitted.Count > 0 ? Textures.signal_cyan : Textures.signal_white)
+						: Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
 					break;
 
 				case LinkStatus.indirect_link:
-					image = conn.strength > 0.05 ? Textures.signal_white : Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
+					image = conn.strength > 0.05
+						? (vd.filesTransmitted.Count > 0 ? Textures.signal_cyan : Textures.signal_white)
+						: Textures.iconSwitch(Textures.signal_yellow, image);   // or 5% signal strength
 					tooltip += Lib.Color("\n" + Local.UI_Signalrelayed, Lib.Kolor.Yellow);
 					break;
 
