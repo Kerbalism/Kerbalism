@@ -170,6 +170,7 @@ namespace KERBALISM
 				return;
 
 			Lib.Proto.Set(protoModule, "power_disabled", false);
+			Lib.Proto.Set(protoModule, "storage_disabled", false);
 			vessel.KerbalismData().scansat_id.Remove(protoPart.flightID);
 			if (value) SCANsat.ResumeScanner(vessel, scanner, prefab.part);
 			else SCANsat.StopScanner(vessel, scanner, prefab.part);
