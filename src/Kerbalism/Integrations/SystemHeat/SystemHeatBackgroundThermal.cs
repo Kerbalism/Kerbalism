@@ -30,24 +30,37 @@ namespace KERBALISM
 		/// <summary>Stock SystemHeat radiator patches reach their rated rejection at 400 K.</summary>
 		private const float StockRadiatorRatedTemperatureK = 400f;
 
+		/// <summary>
+		/// Sync live SystemHeat loop state and fission ProcessController fields into proto.
+		/// Call at pack / rails / scene / save boundaries — not every FixedUpdate.
+		/// </summary>
 		public static void CaptureLoadedTemperatures(Vessel v)
 		{
-			if (!Enabled || v == null || !v.loaded)
+			if (!Enabled || v == null || !v.loaded || v.parts == null)
 				return;
 
-			foreach (Part part in v.parts)
+			for (int p = 0; p < v.parts.Count; p++)
 			{
-				if (part == null || part.protoPartSnapshot == null)
+				Part part = v.parts[p];
+				if (part == null || part.protoPartSnapshot == null || part.Modules == null)
 					continue;
 
-				CaptureLoadedFissionReactorState(part);
-
-				foreach (PartModule module in part.Modules)
+				for (int i = 0; i < part.Modules.Count; i++)
 				{
-					if (module == null || !IsLoadedHeatLoopModule(module))
+					PartModule module = part.Modules[i];
+					if (module == null)
 						continue;
 
-					ProtoPartModuleSnapshot protoModule = FindMatchingLoadedHeatModuleSnapshot(part.protoPartSnapshot, module);
+					if (module.moduleName == "ProcessControllerSystemHeat")
+					{
+						CaptureLoadedFissionReactorState(part, module as ProcessControllerSystemHeat);
+						continue;
+					}
+
+					if (!IsLoadedHeatLoopModule(module))
+						continue;
+
+					ProtoPartModuleSnapshot protoModule = GetLoadedModuleSnapshot(module, part.protoPartSnapshot);
 					if (protoModule == null)
 						continue;
 
@@ -68,35 +81,48 @@ namespace KERBALISM
 		/// </summary>
 		public static void CaptureLoadedFissionReactorState(Part part)
 		{
-			foreach (ProcessControllerSystemHeat process in part.FindModulesImplementing<ProcessControllerSystemHeat>())
+			if (part == null || part.protoPartSnapshot == null || part.Modules == null)
+				return;
+
+			for (int i = 0; i < part.Modules.Count; i++)
 			{
-				if (process == null || !process.IsFissionReactor())
+				PartModule module = part.Modules[i];
+				if (module == null || module.moduleName != "ProcessControllerSystemHeat")
 					continue;
 
-				ProtoPartModuleSnapshot protoModule = FindMatchingProcessModuleSnapshot(part.protoPartSnapshot, process.resource);
-				if (protoModule == null)
-					continue;
-
-				Lib.Proto.Set(protoModule, nameof(ProcessController.running), process.running);
-				Lib.Proto.Set(protoModule, nameof(ProcessController.broken), process.broken);
-				Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), process.CurrentPowerPercent);
-				Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CoreDamage), process.CoreDamage);
-
-				if (string.IsNullOrEmpty(process.resource) || !part.Resources.Contains(process.resource))
-					continue;
-
-				PartResource pseudo = part.Resources[process.resource];
-				ProtoPartResourceSnapshot protoResource = part.protoPartSnapshot.resources.Find(k => k.resourceName == process.resource);
-				if (protoResource == null)
-					continue;
-
-				protoResource.flowState = pseudo.flowState;
-				protoResource.amount = pseudo.amount;
-				protoResource.maxAmount = pseudo.maxAmount;
+				CaptureLoadedFissionReactorState(part, module as ProcessControllerSystemHeat);
 			}
 		}
 
-		/// <summary>Sync fission reactor proto before leaving the flight scene.</summary>
+		private static void CaptureLoadedFissionReactorState(Part part, ProcessControllerSystemHeat process)
+		{
+			if (process == null || !process.IsFissionReactor())
+				return;
+
+			ProtoPartModuleSnapshot protoModule = GetLoadedModuleSnapshot(process, part.protoPartSnapshot)
+				?? FindMatchingProcessModuleSnapshot(part.protoPartSnapshot, process.resource);
+			if (protoModule == null)
+				return;
+
+			Lib.Proto.Set(protoModule, nameof(ProcessController.running), process.running);
+			Lib.Proto.Set(protoModule, nameof(ProcessController.broken), process.broken);
+			Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), process.CurrentPowerPercent);
+			Lib.Proto.Set(protoModule, nameof(ProcessControllerSystemHeat.CoreDamage), process.CoreDamage);
+
+			if (string.IsNullOrEmpty(process.resource) || !part.Resources.Contains(process.resource))
+				return;
+
+			PartResource pseudo = part.Resources[process.resource];
+			ProtoPartResourceSnapshot protoResource = part.protoPartSnapshot.resources.Find(k => k.resourceName == process.resource);
+			if (protoResource == null)
+				return;
+
+			protoResource.flowState = pseudo.flowState;
+			protoResource.amount = pseudo.amount;
+			protoResource.maxAmount = pseudo.maxAmount;
+		}
+
+		/// <summary>Sync loaded SystemHeat proto for every loaded vessel (scene leave, pause, save).</summary>
 		public static void CaptureAllLoadedFissionReactors()
 		{
 			if (!Enabled || !HighLogic.LoadedSceneIsFlight)
@@ -200,8 +226,22 @@ namespace KERBALISM
 			return module.moduleName == "ModuleSystemHeat" || SystemHeat.IsModuleSystemHeat(module);
 		}
 
+		private static ProtoPartModuleSnapshot GetLoadedModuleSnapshot(PartModule module, ProtoPartSnapshot protoPart)
+		{
+			if (module == null)
+				return null;
+
+			if (module.snapshot != null)
+				return module.snapshot;
+
+			return FindMatchingLoadedHeatModuleSnapshot(protoPart, module);
+		}
+
 		private static ProtoPartModuleSnapshot FindMatchingLoadedHeatModuleSnapshot(ProtoPartSnapshot protoPart, PartModule module)
 		{
+			if (protoPart == null || module == null || protoPart.modules == null)
+				return null;
+
 			string moduleId = SystemHeat.GetModuleId(module);
 			ProtoPartModuleSnapshot fallback = null;
 
@@ -1324,7 +1364,7 @@ namespace KERBALISM
 			if (!Enabled || part == null || heatModule == null || part.protoPartSnapshot == null)
 				return;
 
-			ProtoPartModuleSnapshot protoHeat = FindMatchingLoadedHeatModuleSnapshot(part.protoPartSnapshot, heatModule);
+			ProtoPartModuleSnapshot protoHeat = GetLoadedModuleSnapshot(heatModule, part.protoPartSnapshot);
 			if (protoHeat == null)
 				return;
 
