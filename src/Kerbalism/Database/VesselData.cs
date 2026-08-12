@@ -412,7 +412,8 @@ namespace KERBALISM
 
 		/// <summary>
 		/// True while Kerbalism has forced stock CommNet canComm off due to no EC.
-		/// Used to re-enable unloaded network updates when power returns.
+		/// Cleared when power returns; also used to restore canComm and force an
+		/// unloaded CommNet refresh so the vessel can rejoin without being focused.
 		/// </summary>
 		public bool CommNetPowerDisabled;
 
