@@ -351,8 +351,13 @@ namespace KERBALISM
 		private static FusionModeData GetProtoMode(Part protoPart, ProtoPartModuleSnapshot reactor, int modeIndex, List<FusionModeData> parsedModes)
 		{
 			if (parsedModes != null && modeIndex >= 0 && modeIndex < parsedModes.Count)
-				return parsedModes[modeIndex];
+			{
+				FusionModeData parsed = parsedModes[modeIndex];
+				if (parsed != null && parsed.powerGeneration > 0f)
+					return parsed;
+			}
 
+			// Fall back to live FFT mode objects when config parsing missed PowerGeneration.
 			PartModule prefab = FindFusionPrefab(protoPart, reactor);
 			return prefab != null ? GetMode(prefab, modeIndex, null) : null;
 		}
@@ -444,24 +449,39 @@ namespace KERBALISM
 			List<KeyValuePair<string, double>> resourceChangeRequest,
 			double elapsed_s)
 		{
+			if (v == null || reactor == null || elapsed_s <= 0.0)
+				return;
 			if (Lib.Proto.GetBool(reactor, "Enabled"))
 				return;
 			if (!Lib.Proto.GetBool(reactor, "Charging") || Lib.Proto.GetBool(reactor, "Charged"))
 				return;
 
+			PartModule prefabModule = FindFusionPrefab(prefab, reactor);
 			float chargeRate = Lib.Proto.GetFloat(reactor, "ChargeRate");
+			if (chargeRate <= 0f && prefabModule != null)
+				chargeRate = FarFutureTechnologies.Get(prefabModule, "ChargeRate", 0f);
 			if (chargeRate <= 0f)
 				return;
 
-			resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -chargeRate));
+			float chargeGoal = prefabModule != null
+				? FarFutureTechnologies.Get(prefabModule, "ChargeGoal", 500000f)
+				: GetChargeGoal(prefab, reactor);
+			float currentCharge = Lib.Proto.GetFloat(reactor, "CurrentCharge");
+			if (currentCharge >= chargeGoal)
+			{
+				SetProtoCharge(reactor, chargeGoal);
+				Lib.Proto.Set(reactor, "Charged", true);
+				return;
+			}
 
-			double ec = KERBALISM.ResourceCache.Get(v).GetResource(v, "ElectricCharge").Amount;
-			if (ec < chargeRate)
+			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
+			double maxGain = System.Math.Min(chargeRate * elapsed_s, chargeGoal - currentCharge);
+			double gained = System.Math.Min(maxGain, System.Math.Max(0.0, ec.Amount + ec.Deferred));
+			if (gained <= 0.0)
 				return;
 
-			float chargeGoal = GetChargeGoal(prefab);
-			float currentCharge = Lib.Proto.GetFloat(reactor, "CurrentCharge");
-			currentCharge += chargeRate * (float)elapsed_s;
+			resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -gained / elapsed_s));
+			currentCharge += (float)gained;
 			if (currentCharge >= chargeGoal)
 			{
 				SetProtoCharge(reactor, chargeGoal);
@@ -473,9 +493,11 @@ namespace KERBALISM
 			}
 		}
 
-		private static float GetChargeGoal(Part prefab)
+		private static float GetChargeGoal(Part prefab, ProtoPartModuleSnapshot reactor = null)
 		{
-			PartModule module = FarFutureTechnologies.FindFusionReactor(prefab, "");
+			PartModule module = reactor != null
+				? FindFusionPrefab(prefab, reactor)
+				: FarFutureTechnologies.FindFusionReactor(prefab, "");
 			return module != null ? FarFutureTechnologies.Get(module, "ChargeGoal", 500000f) : 500000f;
 		}
 	}
