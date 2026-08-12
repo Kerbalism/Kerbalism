@@ -273,9 +273,13 @@ namespace KERBALISM
 
 			int modeIndex = Lib.Proto.GetInt(reactor, "currentModeIndex", fallbackModeIndex);
 			FusionModeData mode = GetProtoMode(protoPart, reactor, modeIndex, modes);
-			float throttle = Mathf.Clamp01(Lib.Proto.GetFloat(reactor, "reactorThrottle", 1f));
 			float powerGeneration = mode != null ? mode.powerGeneration : fallbackMaxEcGeneration;
-			if (throttle <= 0f && powerGeneration <= 0f)
+			if (powerGeneration <= 0f)
+				return;
+
+			// Unloaded vessels do not run UpdateLoadedThrottle; retarget reactor load from EC demand.
+			float throttle = UpdateBackgroundThrottle(v, reactor, protoPart, powerGeneration, elapsed_s);
+			if (throttle <= 0f)
 				return;
 
 			VesselResources resources = KERBALISM.ResourceCache.Get(v);
@@ -309,11 +313,51 @@ namespace KERBALISM
 			}
 		}
 
+		/// <summary>
+		/// Retarget frozen proto reactorThrottle from current EC headroom, matching loaded demand-following.
+		/// </summary>
+		private static float UpdateBackgroundThrottle(
+			Vessel v,
+			ProtoPartModuleSnapshot reactor,
+			Part protoPart,
+			float powerGeneration,
+			double elapsed_s)
+		{
+			float minThrottle = 0.1f;
+			PartModule prefab = FindFusionPrefab(protoPart, reactor);
+			if (prefab != null)
+				minThrottle = Mathf.Clamp01(FarFutureTechnologies.Get(prefab, "MinimumReactorPower", 0.1f));
+
+			float currentThrottle = Mathf.Clamp01(Lib.Proto.GetFloat(reactor, "reactorThrottle", 1f));
+			if (powerGeneration <= 0f || elapsed_s <= 0.0)
+				return currentThrottle;
+
+			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
+			// Include Deferred so same-step consumers that already queued EC use raise demand.
+			float requestedIntervalPower = (float)System.Math.Max(0.0, ec.Capacity - (ec.Amount + ec.Deferred));
+			float maxIntervalPower = powerGeneration * (float)elapsed_s;
+			float minIntervalPower = maxIntervalPower * minThrottle;
+			float clampedIntervalPower = Mathf.Clamp(requestedIntervalPower, minIntervalPower, maxIntervalPower);
+			float requestedThrottle = maxIntervalPower > 0f ? clampedIntervalPower / maxIntervalPower : minThrottle;
+			requestedThrottle = Mathf.Clamp(requestedThrottle, minThrottle, 1f);
+
+			// Loaded ramps ~0.1 per FixedUpdate (~5/s). Background steps are coarse; allow full catch-up.
+			float maxStep = Mathf.Max(0.1f, 5f * (float)elapsed_s);
+			float throttle = Mathf.MoveTowards(currentThrottle, requestedThrottle, maxStep);
+			Lib.Proto.Set(reactor, "reactorThrottle", throttle);
+			return throttle;
+		}
+
 		private static FusionModeData GetProtoMode(Part protoPart, ProtoPartModuleSnapshot reactor, int modeIndex, List<FusionModeData> parsedModes)
 		{
 			if (parsedModes != null && modeIndex >= 0 && modeIndex < parsedModes.Count)
-				return parsedModes[modeIndex];
+			{
+				FusionModeData parsed = parsedModes[modeIndex];
+				if (parsed != null && parsed.powerGeneration > 0f)
+					return parsed;
+			}
 
+			// Fall back to live FFT mode objects when config parsing missed PowerGeneration.
 			PartModule prefab = FindFusionPrefab(protoPart, reactor);
 			return prefab != null ? GetMode(prefab, modeIndex, null) : null;
 		}
@@ -405,24 +449,39 @@ namespace KERBALISM
 			List<KeyValuePair<string, double>> resourceChangeRequest,
 			double elapsed_s)
 		{
+			if (v == null || reactor == null || elapsed_s <= 0.0)
+				return;
 			if (Lib.Proto.GetBool(reactor, "Enabled"))
 				return;
 			if (!Lib.Proto.GetBool(reactor, "Charging") || Lib.Proto.GetBool(reactor, "Charged"))
 				return;
 
+			PartModule prefabModule = FindFusionPrefab(prefab, reactor);
 			float chargeRate = Lib.Proto.GetFloat(reactor, "ChargeRate");
+			if (chargeRate <= 0f && prefabModule != null)
+				chargeRate = FarFutureTechnologies.Get(prefabModule, "ChargeRate", 0f);
 			if (chargeRate <= 0f)
 				return;
 
-			resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -chargeRate));
+			float chargeGoal = prefabModule != null
+				? FarFutureTechnologies.Get(prefabModule, "ChargeGoal", 500000f)
+				: GetChargeGoal(prefab, reactor);
+			float currentCharge = Lib.Proto.GetFloat(reactor, "CurrentCharge");
+			if (currentCharge >= chargeGoal)
+			{
+				SetProtoCharge(reactor, chargeGoal);
+				Lib.Proto.Set(reactor, "Charged", true);
+				return;
+			}
 
-			double ec = KERBALISM.ResourceCache.Get(v).GetResource(v, "ElectricCharge").Amount;
-			if (ec < chargeRate)
+			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
+			double maxGain = System.Math.Min(chargeRate * elapsed_s, chargeGoal - currentCharge);
+			double gained = System.Math.Min(maxGain, System.Math.Max(0.0, ec.Amount + ec.Deferred));
+			if (gained <= 0.0)
 				return;
 
-			float chargeGoal = GetChargeGoal(prefab);
-			float currentCharge = Lib.Proto.GetFloat(reactor, "CurrentCharge");
-			currentCharge += chargeRate * (float)elapsed_s;
+			resourceChangeRequest.Add(new KeyValuePair<string, double>("ElectricCharge", -gained / elapsed_s));
+			currentCharge += (float)gained;
 			if (currentCharge >= chargeGoal)
 			{
 				SetProtoCharge(reactor, chargeGoal);
@@ -434,9 +493,11 @@ namespace KERBALISM
 			}
 		}
 
-		private static float GetChargeGoal(Part prefab)
+		private static float GetChargeGoal(Part prefab, ProtoPartModuleSnapshot reactor = null)
 		{
-			PartModule module = FarFutureTechnologies.FindFusionReactor(prefab, "");
+			PartModule module = reactor != null
+				? FindFusionPrefab(prefab, reactor)
+				: FarFutureTechnologies.FindFusionReactor(prefab, "");
 			return module != null ? FarFutureTechnologies.Get(module, "ChargeGoal", 500000f) : 500000f;
 		}
 	}
