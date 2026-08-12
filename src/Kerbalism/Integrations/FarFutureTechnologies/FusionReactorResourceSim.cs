@@ -273,9 +273,13 @@ namespace KERBALISM
 
 			int modeIndex = Lib.Proto.GetInt(reactor, "currentModeIndex", fallbackModeIndex);
 			FusionModeData mode = GetProtoMode(protoPart, reactor, modeIndex, modes);
-			float throttle = Mathf.Clamp01(Lib.Proto.GetFloat(reactor, "reactorThrottle", 1f));
 			float powerGeneration = mode != null ? mode.powerGeneration : fallbackMaxEcGeneration;
-			if (throttle <= 0f && powerGeneration <= 0f)
+			if (powerGeneration <= 0f)
+				return;
+
+			// Unloaded vessels do not run UpdateLoadedThrottle; retarget reactor load from EC demand.
+			float throttle = UpdateBackgroundThrottle(v, reactor, protoPart, powerGeneration, elapsed_s);
+			if (throttle <= 0f)
 				return;
 
 			VesselResources resources = KERBALISM.ResourceCache.Get(v);
@@ -307,6 +311,41 @@ namespace KERBALISM
 				SetProtoCharge(reactor, 0f);
 				Lib.Proto.Set(reactor, "Charged", false);
 			}
+		}
+
+		/// <summary>
+		/// Retarget frozen proto reactorThrottle from current EC headroom, matching loaded demand-following.
+		/// </summary>
+		private static float UpdateBackgroundThrottle(
+			Vessel v,
+			ProtoPartModuleSnapshot reactor,
+			Part protoPart,
+			float powerGeneration,
+			double elapsed_s)
+		{
+			float minThrottle = 0.1f;
+			PartModule prefab = FindFusionPrefab(protoPart, reactor);
+			if (prefab != null)
+				minThrottle = Mathf.Clamp01(FarFutureTechnologies.Get(prefab, "MinimumReactorPower", 0.1f));
+
+			float currentThrottle = Mathf.Clamp01(Lib.Proto.GetFloat(reactor, "reactorThrottle", 1f));
+			if (powerGeneration <= 0f || elapsed_s <= 0.0)
+				return currentThrottle;
+
+			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
+			// Include Deferred so same-step consumers that already queued EC use raise demand.
+			float requestedIntervalPower = (float)System.Math.Max(0.0, ec.Capacity - (ec.Amount + ec.Deferred));
+			float maxIntervalPower = powerGeneration * (float)elapsed_s;
+			float minIntervalPower = maxIntervalPower * minThrottle;
+			float clampedIntervalPower = Mathf.Clamp(requestedIntervalPower, minIntervalPower, maxIntervalPower);
+			float requestedThrottle = maxIntervalPower > 0f ? clampedIntervalPower / maxIntervalPower : minThrottle;
+			requestedThrottle = Mathf.Clamp(requestedThrottle, minThrottle, 1f);
+
+			// Loaded ramps ~0.1 per FixedUpdate (~5/s). Background steps are coarse; allow full catch-up.
+			float maxStep = Mathf.Max(0.1f, 5f * (float)elapsed_s);
+			float throttle = Mathf.MoveTowards(currentThrottle, requestedThrottle, maxStep);
+			Lib.Proto.Set(reactor, "reactorThrottle", throttle);
+			return throttle;
 		}
 
 		private static FusionModeData GetProtoMode(Part protoPart, ProtoPartModuleSnapshot reactor, int modeIndex, List<FusionModeData> parsedModes)
