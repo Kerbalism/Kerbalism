@@ -155,9 +155,12 @@ namespace KERBALISM
 			if (isProto)
 			{
 				isScanning = false;
-				issue = Lib.Proto.GetBool(protoModule, "power_disabled")
-					? Local.Module_Experiment_issue4
-					: string.Empty;
+				if (Lib.Proto.GetBool(protoModule, "storage_disabled"))
+					issue = Local.Module_Experiment_issue11;
+				else if (Lib.Proto.GetBool(protoModule, "power_disabled"))
+					issue = Local.Module_Experiment_issue4;
+				else
+					issue = string.Empty;
 				ProtoPartModuleSnapshot scanner = null;
 				if (protoPart != null)
 				{
@@ -306,6 +309,7 @@ namespace KERBALISM
 					return;
 
 				Lib.Proto.Set(protoModule, "power_disabled", false);
+				Lib.Proto.Set(protoModule, "storage_disabled", false);
 				vd.scansat_id.Remove(protoPart.flightID);
 				if (isScanning)
 					SCANsat.StopScanner(vessel, scanner, moduleOrPrefab.part);

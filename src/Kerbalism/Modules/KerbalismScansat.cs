@@ -15,11 +15,10 @@ namespace KERBALISM
 		[KSPField(isPersistant = true)] private double body_coverage = 0.0;
 		[KSPField(isPersistant = true)] private double warp_buffer = 0.0; // retained so old saves load cleanly
 		[KSPField(isPersistant = true)] private bool power_disabled = false;
+		[KSPField(isPersistant = true)] private bool storage_disabled = false;
 
 		private PartModule scanner;
 		private ExperimentInfo expInfo;
-		private bool storageWarningPosted;
-		private int storageUnavailableTicks;
 
 		public int SensorType => sensorType;
 		public ExperimentInfo ExpInfo => expInfo;
@@ -41,7 +40,10 @@ namespace KERBALISM
 				sensorType = scienceSensorType != 0 ? scienceSensorType : SCANsat.SensorType(scanner);
 				IsScanning = SCANsat.IsScanning(scanner);
 				if (IsScanning)
+				{
 					power_disabled = false;
+					storage_disabled = false;
+				}
 				else if (SCANsat.HasPowerProblem(scanner))
 					power_disabled = true;
 			}
@@ -95,6 +97,20 @@ namespace KERBALISM
 					power_disabled = false;
 				}
 			}
+			else if (storage_disabled)
+			{
+				if (HasResumeDriveSpace(vd))
+				{
+					SCANsat.StartScan(scanner);
+					IsScanning = SCANsat.IsScanning(scanner);
+					if (IsScanning)
+					{
+						storage_disabled = false;
+						if (vd.cfg_ec)
+							Message.Post(Local.Scansat_sensorresumed.Format("<b>" + vessel.vesselName + "</b>"));
+					}
+				}
+			}
 			else if (power_disabled && (ec_rate <= double.Epsilon || ec.Level >= 0.25))
 			{
 				SCANsat.StartScan(scanner);
@@ -107,7 +123,7 @@ namespace KERBALISM
 				}
 			}
 
-			RunningUpdate(vessel, vd, experimentType, sensorType, IsScanning, this);
+			RunningUpdate(vessel, vd, experimentType, sensorType, IsScanning, this, out _);
 		}
 
 		public static void BackgroundUpdate(Vessel vessel, ProtoPartSnapshot p, ProtoPartModuleSnapshot m, KerbalismScansat prefab,
@@ -135,6 +151,7 @@ namespace KERBALISM
 			bool legacyAutoDisabled = vd.scansat_id.Remove(p.flightID);
 			bool powerDisabled = Lib.Proto.GetBool(m, "power_disabled")
 				|| (!isScanning && legacyAutoDisabled);
+			bool storageDisabled = Lib.Proto.GetBool(m, "storage_disabled");
 			bool insufficientPower = false;
 
 			if (isScanning)
@@ -165,6 +182,18 @@ namespace KERBALISM
 					powerDisabled = false;
 				}
 			}
+			else if (storageDisabled)
+			{
+				if (HasResumeDriveSpace(vd)
+					&& (prefab.ec_rate <= double.Epsilon || ec.Level >= 0.25)
+					&& SCANsat.ResumeScanner(vessel, scanner, part_prefab))
+				{
+					isScanning = true;
+					storageDisabled = false;
+					if (vd.cfg_ec)
+						Message.Post(Local.Scansat_sensorresumed.Format("<b>" + vessel.vesselName + "</b>"));
+				}
+			}
 			else if (powerDisabled && (prefab.ec_rate <= double.Epsilon || ec.Level >= 0.25))
 			{
 				if (SCANsat.ResumeScanner(vessel, scanner, part_prefab))
@@ -176,10 +205,12 @@ namespace KERBALISM
 				}
 			}
 
-			Lib.Proto.Set(m, "power_disabled", powerDisabled);
-
 			if (!Features.Science || sensorType == 0)
+			{
+				Lib.Proto.Set(m, "power_disabled", powerDisabled);
+				Lib.Proto.Set(m, "storage_disabled", storageDisabled);
 				return;
+			}
 
 			ExperimentInfo info = ScienceDB.GetExperimentInfo(prefab.experimentType);
 			if (info != null)
@@ -197,14 +228,31 @@ namespace KERBALISM
 			}
 
 			if (insufficientPower)
+			{
+				Lib.Proto.Set(m, "power_disabled", powerDisabled);
+				Lib.Proto.Set(m, "storage_disabled", storageDisabled);
 				return;
+			}
 
-			RunningUpdate(vessel, vd, prefab.experimentType, sensorType, isScanning, null);
+			RunningUpdate(vessel, vd, prefab.experimentType, sensorType, isScanning, null, out bool storageHalted);
+			if (storageHalted)
+			{
+				SCANsat.StopScanner(vessel, scanner, part_prefab);
+				storageDisabled = true;
+				powerDisabled = false;
+				Message.Post(
+					Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true),
+					Local.Scansat_Scannerhalted_text.Format("<b>" + vessel.vesselName + "</b>"));
+			}
+
+			Lib.Proto.Set(m, "power_disabled", powerDisabled);
+			Lib.Proto.Set(m, "storage_disabled", storageDisabled);
 		}
 
 		private static void RunningUpdate(Vessel vessel, VesselData vd, string experimentType,
-			int sensorType, bool isScanning, KerbalismScansat loaded)
+			int sensorType, bool isScanning, KerbalismScansat loaded, out bool storageHalted)
 		{
+			storageHalted = false;
 			if (vessel == null || vd == null || sensorType == 0)
 				return;
 
@@ -246,9 +294,12 @@ namespace KERBALISM
 				loaded.BodyCoveragePercent = currentCoverage;
 				loaded.body_name = body.name;
 				loaded.body_coverage = currentCoverage;
-				loaded.Issue = !isScanning && loaded.power_disabled
-					? Local.Module_Experiment_issue4
-					: string.Empty;
+				if (!isScanning && loaded.storage_disabled)
+					loaded.Issue = Local.Module_Experiment_issue11;
+				else if (!isScanning && loaded.power_disabled)
+					loaded.Issue = Local.Module_Experiment_issue4;
+				else
+					loaded.Issue = string.Empty;
 			}
 
 			if (!isScanning)
@@ -268,26 +319,36 @@ namespace KERBALISM
 			if (stored > double.Epsilon)
 				ScanCoverageStore.CommitStoredSize(bodyIndex, experimentType, sensorType, stored);
 
-			if (loaded == null)
+			if (left <= double.Epsilon)
 				return;
 
-			if (left > double.Epsilon)
+			// Drives are full: keep unstored science in the global pending ledger and stop
+			// SCANsat so map coverage cannot run ahead of recoverable Kerbalism data.
+			storageHalted = true;
+			if (loaded != null)
 			{
+				loaded.HaltForStorage();
 				loaded.Issue = Local.Module_Experiment_issue11;
-				loaded.storageUnavailableTicks++;
-				if (loaded.storageUnavailableTicks >= 5 && !loaded.storageWarningPosted)
-				{
-					loaded.storageWarningPosted = true;
-					Message.Post(
-						Lib.Color(Local.Module_Experiment_issue_title, Lib.Kolor.Orange, true),
-						Lib.BuildString("<b>", vessel.vesselName, "</b>: ", Local.Module_Experiment_issue11));
-				}
 			}
-			else
-			{
-				loaded.storageUnavailableTicks = 0;
-				loaded.storageWarningPosted = false;
-			}
+		}
+
+		private void HaltForStorage()
+		{
+			if (scanner == null)
+				return;
+
+			storage_disabled = true;
+			power_disabled = false;
+			SCANsat.StopScan(scanner);
+			IsScanning = SCANsat.IsScanning(scanner);
+			Message.Post(
+				Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true),
+				Local.Scansat_Scannerhalted_text.Format("<b>" + vessel.vesselName + "</b>"));
+		}
+
+		private static bool HasResumeDriveSpace(VesselData vd)
+		{
+			return vd != null && vd.DrivesFreeSpace > 0.0;
 		}
 
 		private static int LegacyBodyIndex(string bodyName, CelestialBody fallback)
@@ -307,6 +368,7 @@ namespace KERBALISM
 		{
 			if (scanner == null) return;
 			power_disabled = false;
+			storage_disabled = false;
 			if (vessel != null)
 				vessel.KerbalismData().scansat_id.Remove(part.flightID);
 			SCANsat.StopScan(scanner);
@@ -317,6 +379,7 @@ namespace KERBALISM
 		{
 			if (scanner == null) return;
 			power_disabled = false;
+			storage_disabled = false;
 			if (vessel != null)
 				vessel.KerbalismData().scansat_id.Remove(part.flightID);
 			SCANsat.StartScan(scanner);
