@@ -5,7 +5,7 @@ Kerbalism 部件模块速查。完整字段说明仍以英文页为准；源码�
 常用入口：
 
 - [ECDrainViaPM](ecdrainviapm.md) — 跟着别的 PartModule 开关走，统计 / 消耗电量
-- [Experiment](experiment.md) / [HardDrive](harddrive.md) — 科研
+- [Experiment](experiment.md) / [HardDrive](harddrive.md) / [SCANsat](scansat.md) — 科研
 - [Habitat](habitat.md) / [ProcessController](processcontroller.md) — 居住与流程
 - [Reliability](reliability.md) — 故障
 

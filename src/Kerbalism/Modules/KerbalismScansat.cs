@@ -348,9 +348,7 @@ namespace KERBALISM
 
 		private static bool HasResumeDriveSpace(VesselData vd)
 		{
-			if (vd == null || vd.DrivesCapacity <= double.Epsilon)
-				return false;
-			return vd.DrivesFreeSpace / vd.DrivesCapacity > 0.9;
+			return vd != null && vd.DrivesFreeSpace > 0.0;
 		}
 
 		private static int LegacyBodyIndex(string bodyName, CelestialBody fallback)
