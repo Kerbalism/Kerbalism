@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/about/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/about/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/about/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/faq/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/faq/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/faq/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/links/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/links/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/links/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/mod-support/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/mod-support/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/mod-support/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/automation/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/automation/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/automation/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/basic-tutorial/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/basic-tutorial/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/basic-tutorial/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/environment/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/environment/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/environment/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/greenhouse-balance/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/greenhouse-balance/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/greenhouse-balance/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/gui/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/gui/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/gui/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/habitat/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/habitat/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/habitat/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/life-support/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/life-support/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/life-support/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/parts/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/parts/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/parts/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/reliability/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/reliability/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/reliability/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/resources/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/resources/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/resources/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/science-tutorial/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/science-tutorial/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/science-tutorial/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/science/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/science/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/science/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/play-guide/signal/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/signal/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/signal/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/background-simulation/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/background-simulation/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/background-simulation/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/csharp-api/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/csharp-api/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/csharp-api/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/mm-patch-injection/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/mm-patch-injection/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/mm-patch-injection/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/profile/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/profile/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/profile/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/radiation/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/radiation/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/radiation/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/settings/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/settings/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/settings/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/supporting-science-mods/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/supporting-science-mods/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/supporting-science-mods/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/comfort/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/comfort/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/comfort/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/configure/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/configure/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/configure/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/crew-specifications/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/crew-specifications/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/crew-specifications/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/ecdrainviapm/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/ecdrainviapm/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/ecdrainviapm/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/emitter/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/emitter/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/emitter/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/experiment/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/experiment/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/experiment/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/gravityring/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/gravityring/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/gravityring/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/greenhouse/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/greenhouse/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/greenhouse/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/habitat/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/habitat/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/habitat/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/harddrive/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/harddrive/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/harddrive/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/harvester/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/harvester/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/harvester/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/laboratory/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/laboratory/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/laboratory/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/passiveshield/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/passiveshield/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/passiveshield/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/plannercontroller/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/plannercontroller/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/plannercontroller/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/processcontroller/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/processcontroller/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/processcontroller/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/reliability/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/reliability/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/reliability/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/scansat/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/scansat/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/scansat/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/sensor/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/sensor/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/sensor/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/solarpanelfixer/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/solarpanelfixer/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/solarpanelfixer/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/about/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/about/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/about/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/faq/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/faq/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/faq/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/links/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/links/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/links/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/mod-support/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/mod-support/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/mod-support/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/automation/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/automation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/automation/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/basic-tutorial/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/basic-tutorial/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/basic-tutorial/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/environment/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/environment/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/environment/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/greenhouse-balance/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/greenhouse-balance/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/greenhouse-balance/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/gui/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/gui/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/gui/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/habitat/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/habitat/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/habitat/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/life-support/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/life-support/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/life-support/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/parts/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/parts/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/parts/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/reliability/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/reliability/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/reliability/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/resources/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/resources/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/resources/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/science-tutorial/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/science-tutorial/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/science-tutorial/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/science/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/science/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/science/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/play-guide/signal/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/play-guide/signal/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/play-guide/signal/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/background-simulation/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/background-simulation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/background-simulation/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/csharp-api/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/csharp-api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/csharp-api/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/mm-patch-injection/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/mm-patch-injection/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/mm-patch-injection/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/profile/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/profile/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/profile/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/radiation/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/radiation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/radiation/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/settings/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/settings/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/settings/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/supporting-science-mods/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/supporting-science-mods/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/supporting-science-mods/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/comfort/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/comfort/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/comfort/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/configure/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/configure/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/configure/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/crew-specifications/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/crew-specifications/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/crew-specifications/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/ecdrainviapm/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/ecdrainviapm/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/ecdrainviapm/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/emitter/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/emitter/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/emitter/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/experiment/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/experiment/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/experiment/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/gravityring/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/gravityring/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/gravityring/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/greenhouse/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/greenhouse/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/greenhouse/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/habitat/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/habitat/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/habitat/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/harddrive/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/harddrive/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/harddrive/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/harvester/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/harvester/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/harvester/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/laboratory/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/laboratory/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/laboratory/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/passiveshield/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/passiveshield/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/passiveshield/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/plannercontroller/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/plannercontroller/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/plannercontroller/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/processcontroller/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/processcontroller/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/processcontroller/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/reliability/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/reliability/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/reliability/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/scansat/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/scansat/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/scansat/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/sensor/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/sensor/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/sensor/"/>
+    </url>
+    <url>
+        <loc>https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/solarpanelfixer/</loc>
+        <lastmod>2026-08-13</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://kerbalism.github.io/Kerbalism/zh/tech-guide/part-modules/solarpanelfixer/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://kerbalism.github.io/Kerbalism/tech-guide/part-modules/solarpanelfixer/"/>
+    </url>
+</urlset>
