@@ -37,14 +37,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(protoModule, nameof(ProcessController.broken)))
 				return false;
 
-			if (Lib.Proto.GetBool(protoModule, nameof(ProcessController.running)))
-				return true;
-
-			ProtoPartResourceSnapshot res = protoPart.resources.Find(k => k.resourceName == prefab.resource);
-			if (res == null || !res.flowState || res.amount <= 0.0)
-				return false;
-
-			return Lib.Proto.GetFloat(protoModule, nameof(ProcessControllerSystemHeat.CurrentPowerPercent)) >= prefab.MinimumThrottle;
+			return Lib.Proto.GetBool(protoModule, nameof(ProcessController.running));
 		}
 
 		public override void Ctrl(bool value)
@@ -64,11 +57,21 @@ namespace KERBALISM
 						res.amount = 0.0;
 				}
 				else
+				{
 					res.flowState = true;
+					double cap = res.maxAmount > 0.0 ? res.maxAmount : prefab.capacity;
+					if (cap <= 0.0)
+						cap = Lib.Proto.GetFloat(protoModule, "capacity");
+					if (cap > 0.0)
+					{
+						res.maxAmount = cap;
+						res.amount = cap;
+					}
+				}
 			}
 		}
 
-		public override void Toggle() => Ctrl(!Lib.Proto.GetBool(protoModule, nameof(ProcessController.running)));
+		public override void Toggle() => Ctrl(!IsProtoRunning());
 	}
 
 	public sealed class SystemHeatProcessDevice : LoadedDevice<ProcessControllerSystemHeat>

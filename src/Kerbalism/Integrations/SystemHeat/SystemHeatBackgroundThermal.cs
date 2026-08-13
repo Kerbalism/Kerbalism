@@ -744,7 +744,12 @@ namespace KERBALISM
 
 		private static bool ShouldFreezeLoopAtAnchor(LoopState loop)
 		{
-			return loop.hasFluxAnchor && loop.anchorTemperature > MinimumLoopTemperatureK;
+			if (!loop.hasFluxAnchor || loop.anchorTemperature <= MinimumLoopTemperatureK)
+				return false;
+
+			// Pack-time flux is often gross UI, not net. Freeze only when reconstructed
+			// producer-minus-rejection at the captured temperature is still balanced.
+			return Mathf.Abs(GetLoopNetFluxKw(loop, loop.anchorTemperature)) <= FluxEpsilonKw;
 		}
 
 		private static void ApplyLoopThermalEffects(Vessel v, LoopState loop, float elapsed_s)
@@ -791,7 +796,8 @@ namespace KERBALISM
 			if (IsFissionProcessController(prefab, producer.module, processPrefab))
 			{
 				SetProtoFissionRunning(v, producer.part, producer.module, false);
-				string resource = Lib.Proto.GetString(producer.module, "resource");
+				Lib.Proto.Set(producer.module, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), 0f);
+				string resource = GetProcessResourceName(producer.module, processPrefab);
 				ProtoPartResourceSnapshot pseudo = !string.IsNullOrEmpty(resource)
 					? producer.part.resources.Find(k => k.resourceName == resource)
 					: null;
@@ -1255,12 +1261,21 @@ namespace KERBALISM
 			TryRun(v, elapsed_s);
 		}
 
+		private static string GetProcessResourceName(ProtoPartModuleSnapshot module, PartModule processPrefab)
+		{
+			if (processPrefab != null)
+				return IntegrationReflection.GetString(processPrefab, "resource", Lib.Proto.GetString(module, "resource"));
+			return Lib.Proto.GetString(module, "resource");
+		}
+
 		private static void SetProtoFissionRunning(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, bool value)
 		{
 			if (Lib.Proto.GetBool(module, nameof(ProcessController.running)) == value)
 				return;
 
 			Lib.Proto.Set(module, nameof(ProcessController.running), value);
+			if (!value)
+				Lib.Proto.Set(module, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), 0f);
 		}
 
 		private static int GetNativeRadiatorLoopId(ProtoPartSnapshot part, Part prefab, ProtoPartModuleSnapshot nativeModule)
