@@ -72,7 +72,7 @@ This notably include most "future scope" mods like KSPIE, USI MKS, BlueShift, as
 
 ## Mod compatibility and support
 
-The **[mod compatibility]** page is quite outdated, but can still help to avoid some issues.
+The **[mod compatibility]** page may contain outdated information, but can still help to avoid some issues.
 
 Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
 
