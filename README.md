@@ -84,7 +84,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 - Need **help** ?
 
-  Ask on **[Discord]** or in the **[KSP forums thread]**\
+  Ask on **[Discord]**\
   Also see [this short YouTube video](https://www.youtube.com/watch?v=eW9pW_839sw) about useful UI tips.
 
 - You **found a bug** ?
