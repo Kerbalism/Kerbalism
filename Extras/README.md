@@ -2,8 +2,6 @@
 
 These optional CFG packages are not part of the default `GameData` tree. Each Extra is a standalone GameData folder so any Kerbalism configuration pack can use them.
 
-中文版见 [README.zh-CN.md](README.zh-CN.md)。
-
 ## Installation
 
 Copy a chosen Extra folder into the KSP `GameData` directory. Example: `Extras/KerbalismSystemHeatCore` → `GameData/KerbalismSystemHeatCore`.
