@@ -93,7 +93,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 - You want to **report a bug** ?
   - Install the [KSPBugReport] plugin and generate a bug report with it. Support requests that don't provide full logs and KSP database dumps are often ignored.
-  - Report it on [Github issues] (preferred) or in the [KSP forums thread] (we don't go there often).
+  - Report it on [Discord] (preferred) or on [Github issues].
 
 - You want to **contribute** or add support for your mod ?
   - Check the technical guide in the [Documentation]
