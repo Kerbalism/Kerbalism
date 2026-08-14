@@ -24,11 +24,11 @@ For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
  
 **Download** : **[Github releases]** - **[CKAN]**  
 **Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
-**License** : [Unlicense] (public domain)  
+**License** : [Unlicense] (public domain)
 **KSP version** : 1.12.x  
 **Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
 
-**[Mod compatibility]** - [Changelog] - [Dev Builds]
+**[Mod compatibility]** - [Changelog]
 
 ## Download and installation
 
@@ -65,20 +65,18 @@ Don't combine packs unless there is explicit instructions to do so.
 
 ## Important notice
 
-Kerbalism hasn't been under full active developement since many years now. Despite various minor bugs and shortcomings, the mod is still functional and can be quite fun to play with.
-However, do note that due to the lack of maintainance, there are a lot of compatibility issues with the wider modding ecosystem.  R-T-B is maintaining it now and doing his best, but the reality is there are probably more integration bugs than he has time to fix.  So PR's are most welcome.
+There may be compatibility issues with some mods.  R-T-B is maintaining it now and doing his best.  PRs are most welcome.
 
-In the current state of things, **Kerbalism is best played in a very lightly modded game**.
-
-In particular, mods introducing mechanisms or features that greatly differ from the stock ones are very likely to cause issues.
-This notably include most "future scope" mods like KSPIE, Near Future Tech, Far Future Tech, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
-Many large part packs are also improperly supported, BDB notably, but a few others too.
+Mods introducing mechanisms or features that greatly differ from the stock ones are more likely to cause issues.
+This notably include most "future scope" mods like KSPIE, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
 
 ## Mod compatibility and support
 
 The **[mod compatibility]** page is quite outdated, but can still help to avoid some issues.
 
 Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
+
+**SystemHeat users**: Kerbalism's SystemHeat extras (`KerbalismSystemHeatCore` / `KerbalismSystemHeatCompat`) are exclusive. Do **not** also install the upstream SystemHeat extras (`SystemHeatFissionEngines`, `SystemHeatFissionReactors`, `SystemHeatIonEngines`, `SystemHeatConverters`, `SystemHeatHarvesters`, `SystemHeatCryoTanks` / `SystemHeatBoiloff`, or the legacy `Kerbalism-SystemHeat`). Mixing both will double-patch parts. See [Extras/README.md](Extras/README.md) for details.
 
 ## Documentation, help and bug-reporting
 
