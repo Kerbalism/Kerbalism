@@ -1213,7 +1213,7 @@ namespace KERBALISM
 			if (expInfo.ExpBodyConditions.HasConditions)
 			{
 				specs.Add(string.Empty);
-				specs.Add(expInfo.ExpBodyConditions.ConditionsToString());
+				expInfo.ExpBodyConditions.AddTo(specs);
 			}
 
 			specs.Add(string.Empty);
