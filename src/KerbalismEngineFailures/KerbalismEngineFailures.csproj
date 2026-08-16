@@ -4,7 +4,7 @@
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>KerbalismEngineFailures</AssemblyName>
     <RootNamespace>KERBALISM.EngineFailures</RootNamespace>
-    <TargetFramework>net481</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
 
     <Description>Optional Kerbalism companion mod for engine ignition, burn time, and turn-on failures.</Description>
     <Product>KerbalismEngineFailures</Product>

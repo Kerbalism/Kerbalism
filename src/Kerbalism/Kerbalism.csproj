@@ -4,7 +4,7 @@
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>Kerbalism</AssemblyName>
     <RootNamespace>KERBALISM</RootNamespace>
-    <TargetFramework>net481</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
 
     <Description>Hundreds of Kerbals were killed in the making of this mod.</Description>
     <Product>Kerbalism</Product>
