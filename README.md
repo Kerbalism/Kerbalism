@@ -22,10 +22,10 @@ For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 
 ## Current version: 3.41
  
-**Download** : **[Github releases]** - **[CKAN]**  
-**Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
+**Download** : **[Github releases]** - **[CKAN]**
+**Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]
 **License** : [Unlicense] (public domain)
-**KSP version** : 1.12.x  
+**KSP version** : 1.12.x
 **Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
 
 **[Mod compatibility]** - [Changelog]
@@ -36,8 +36,7 @@ For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 
 Two packages are required :
 - **Kerbalism** is the core plugin, always required.
-- **KerbalismConfig** is the official configuration pack.\
-  It can be be replaced by other packs distributed elsewhere.
+- **KerbalismConfig** is the official configuration pack, but it can be be replaced by other packs distributed elsewhere.
 
 Optional :
 - **KerbalismEngineFailures** adds engine ignition counts, rated burn time and turn-on failures. Recommended by CKAN with official KerbalismConfig. Conflicts with TestFlight / RO / RP-1.
@@ -65,7 +64,7 @@ Don't combine packs unless there is explicit instructions to do so.
 
 ## Important notice
 
-There may be compatibility issues with some mods.  R-T-B is maintaining it now and doing his best.  PRs are most welcome.
+There may be compatibility issues with some mods. R-T-B is maintaining it now and doing his best. PRs are most welcome.
 
 Mods introducing mechanisms or features that greatly differ from the stock ones are more likely to cause issues.
 This notably include most "future scope" mods like KSPIE, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
