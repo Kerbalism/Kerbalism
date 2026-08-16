@@ -117,6 +117,8 @@ namespace KERBALISM
 			// recreates all PartModules. None of the vessel-modified events fire on these transitions.
 			GameEvents.onVesselLoaded.Add((v) => Cache.PurgeVesselCaches(v));
 			GameEvents.onVesselUnloaded.Add((v) => Cache.PurgeVesselCaches(v));
+			// Capture SystemHeat loop / fission proto while parts are still live, before pack.
+			GameEvents.onVesselGoOnRails.Add(this.OnVesselGoOnRailsCapture);
 
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 
@@ -155,6 +157,8 @@ namespace KERBALISM
 		void OnGameStateSave(ConfigNode node)
 		{
 			ScienceDB.PrepareUnknownSubjectsForSave();
+			if (HighLogic.LoadedSceneIsFlight)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
 		}
 
 		void OnGameStateSaved(Game game)
@@ -189,6 +193,11 @@ namespace KERBALISM
 		{
 			if (HighLogic.LoadedSceneIsFlight)
 				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
+
+		private void OnVesselGoOnRailsCapture(Vessel v)
+		{
+			SystemHeatBackgroundThermal.CaptureLoadedTemperatures(v);
 		}
 
 		// Called when two vessels are about to be merged, while their state is not yet changed.

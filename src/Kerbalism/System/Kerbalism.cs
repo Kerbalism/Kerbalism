@@ -358,8 +358,6 @@ namespace KERBALISM
 					resources.Sync(v, vd, elapsed_s);
 					Profiler.EndSample();
 
-					SystemHeatBackgroundThermal.CaptureLoadedTemperatures(v);
-
 					// call automation scripts
 					vd.computer.Automate(v, vd, resources);
 
