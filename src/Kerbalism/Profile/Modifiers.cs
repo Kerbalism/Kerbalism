@@ -37,7 +37,7 @@ namespace KERBALISM
 						break;
 
 					case "temperature":
-						k *= vd.EnvTempDiff;
+						k *= vd.VesselSurvivalTempDiff;
 						break;
 
 					case "radiation":

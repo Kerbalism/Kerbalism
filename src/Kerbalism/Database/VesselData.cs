@@ -148,11 +148,14 @@ namespace KERBALISM
 		/// <summary> [environment] total flux at vessel position</summary>
 		public double EnvTotalFlux => totalFlux; double totalFlux;
 
-		/// <summary> [environment] temperature ar vessel position</summary>
-		public double EnvTemperature => temperature; double temperature;
+		/// <summary> [environment] temperature at vessel position</summary>
+		public double EnvTemperature => envTemperature; double envTemperature;
 
-		/// <summary> [environment] difference between environment temperature and survival temperature</summary>//
-		public double EnvTempDiff => tempDiff; double tempDiff;
+		/// <summary>
+		/// [environment] difference between environment temperature and survival temperature
+		/// Use VesselSurvivalTempDiff instead when possible since it accounts for vessel geometry and is more accurate.
+		/// </summary>//
+		public double EnvTempDiff => envSurvivalTempDiff; double envSurvivalTempDiff;
 
 		/// <summary> [environment] radiation at vessel position</summary>
 		public double EnvRadiation => radiation; double radiation;
@@ -487,6 +490,9 @@ namespace KERBALISM
 		/// Falls back to EnvTemperature if no geometry data is available yet.
 		/// </summary>
 		public double VesselTemperature => vesselTemperature; double vesselTemperature;
+
+		/// <summary> Difference between vessel temperature and survival temperature</summary>
+		public double VesselSurvivalTempDiff => vesselSurvivalTempDiff; double vesselSurvivalTempDiff;
 
 		/// <summary> Solar power absorbed by the vessel hull in W. Zero if geometry data not yet cached.</summary>
 		public double AbsorbedSolarFlux => absorbedSolarFlux; double absorbedSolarFlux;
@@ -1477,8 +1483,7 @@ namespace KERBALISM
 
 			// temperature at vessel position
 			Profiler.BeginSample("Temperature");
-			temperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
-			tempDiff = Sim.TempDiff(EnvTemperature, Vessel.mainBody, EnvLanded);
+			envTemperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
 
 			// update thermal geometry cache whenever loaded — occlusion multipliers and drag cube
 			// projections are purely geometric and kept current by KSP regardless of sunlight state
@@ -1516,9 +1521,12 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselTemperature = temperature;
+				vesselTemperature = envTemperature;
 				absorbedSolarFlux = absorbedAlbedoFlux = absorbedBodyFlux = absorbedTotalFlux = 0.0;
 			}
+
+			envSurvivalTempDiff = Sim.TempDiff(envTemperature, Vessel.mainBody, EnvLanded);
+			vesselSurvivalTempDiff = Sim.TempDiff(vesselTemperature, Vessel.mainBody, EnvLanded);
 			Profiler.EndSample();
 
 			// radiation
