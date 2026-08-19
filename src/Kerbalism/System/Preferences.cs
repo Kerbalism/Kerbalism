@@ -443,7 +443,7 @@ namespace KERBALISM
 
 	public class PreferencesGeneral : GameParameters.CustomParameterNode
 	{
-		[GameParameters.CustomParameterUI("#KERBALISM_FreezeUnloadedSolarPanelExposure", toolTip = "#KERBALISM_FreezeUnloadedSolarPanelExposure_desc")]//Freeze Unloaded Solar Exposure--Unloaded in-space vessels at low timewarp keep sunlit solar-panel exposure from the loaded→unloaded transition; shadow still zeros output. High-warp analytic is unchanged.
+		[GameParameters.CustomParameterUI("#KERBALISM_FreezeUnloadedSolarPanelExposure", toolTip = "#KERBALISM_FreezeUnloadedSolarPanelExposure_desc")]//Freeze Unloaded Solar Exposure--In-space vessels keep sunlit solar-panel exposure from the last realtime evaluation (loaded high-warp or unloaded). Low-warp shadow still zeros output; analytic still applies the orbit sunlight fraction. Disable to recalculate panel facing while unloaded or in analytic warp.
 		public bool freezeUnloadedSolarPanelExposure = true;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
