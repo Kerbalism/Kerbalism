@@ -341,8 +341,7 @@ namespace KERBALISM
 					Profiler.BeginSample("Kerbalism.Loaded.Experiment");
 					foreach(Experiment e in PartModuleCache.GetModules<Experiment>(v))
 					{
-							if (!e.isEnabled || !e.enabled)
-								continue;
+						if (e.isEnabled)
 							e.ForegroundFixedUpdate();
 					}
 					Profiler.EndSample();
