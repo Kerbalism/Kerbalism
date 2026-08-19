@@ -128,6 +128,8 @@ namespace KERBALISM
 				}
 			}
 
+			Actions["TransferDataAction"].active = !IsPrivate();
+
 			UpdateCapacity();
 		}
 
@@ -283,12 +285,21 @@ namespace KERBALISM
 		[KSPEvent(guiName = "#KERBALISM_HardDrive_TransferData", active = false, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
 		public void TransferData()
 		{
+			if (drive == null || IsPrivate())
+				return;
+
 			var hardDrives = vessel.FindPartModulesImplementing<HardDrive>();
 			foreach(var hardDrive in hardDrives)
 			{
 				if (hardDrive == this) continue;
 				hardDrive.drive.Move(drive, PreferencesScience.Instance.sampleTransfer || Lib.CrewCount(vessel) > 0);
 			}
+		}
+
+		[KSPAction("#KERBALISM_HardDrive_TransferData")]
+		public void TransferDataAction(KSPActionParam param)
+		{
+			TransferData();
 		}
 
 		[KSPEvent(guiActive = false, guiActiveUnfocused = true, guiActiveUncommand = true, guiName = "#KERBALISM_HardDrive_TakeData", active = true, groupName = "Science", groupDisplayName = "#KERBALISM_Group_Science")]//Science
