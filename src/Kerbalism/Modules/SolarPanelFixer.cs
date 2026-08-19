@@ -586,8 +586,13 @@ namespace KERBALISM
 			if (vd.EnvIsAnalytic)
 			{
 				analyticSunlight = true;
-				powerFactor = CalculateMultiStarPowerAnalytic(vessel, vd.EnvSunsInfo, trackedSunInfo, SolarPanel.Type, SolarPanel.IsTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
-				vd.SaveSolarPanelBackgroundExposure(powerFactor, theoreticalMaxPower, nominalRate, true);
+				if (TryGetFrozenPowerFactor(vessel, hasFrozenExposure, frozenExposure, vd, SolarPanel.Type, out powerFactor, out theoreticalMaxPower, out double telemetryActual))
+					vd.SaveSolarPanelBackgroundExposure(telemetryActual, theoreticalMaxPower, nominalRate, true);
+				else
+				{
+					powerFactor = CalculateMultiStarPowerAnalytic(vessel, vd.EnvSunsInfo, trackedSunInfo, SolarPanel.Type, SolarPanel.IsTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
+					vd.SaveSolarPanelBackgroundExposure(powerFactor, theoreticalMaxPower, nominalRate, true);
+				}
 			}
 			else
 			{
@@ -822,12 +827,21 @@ namespace KERBALISM
 
 			bool hasOrientation = TryGetProtoPanelOrientation(v, p, m, isTracking, out Vector3d panelPivotWorld, out Vector3d panelNormalWorld);
 
-			// Optional freeze: reuse unload-time sunlit exposure at low warp; high-warp stays analytic.
+			// Optional freeze: reuse last realtime sunlit exposure (cosine). Analytic still
+			// scales EC by eclipse-inclusive SolarFlux, matching 3.32 unloaded/analytic behavior.
 			double theoreticalMaxPower;
 			double powerFactor;
-			if (!TryGetFrozenUnloadedPowerFactor(v, m, vd, prefab.SolarPanel.Type, out powerFactor, out theoreticalMaxPower))
+			double telemetryActual;
+			if (TryGetFrozenPowerFactor(v, Lib.Proto.GetBool(m, "hasFrozenExposure"), Lib.Proto.GetDouble(m, "frozenExposure"), vd, prefab.SolarPanel.Type, out powerFactor, out theoreticalMaxPower, out telemetryActual))
+			{
+				efficiencyFactor = powerFactor;
+			}
+			else
+			{
 				powerFactor = CalculateMultiStarPowerAnalytic(v, vd.EnvSunsInfo, trackedSunInfo, prefab.SolarPanel.Type, isTracking, out theoreticalMaxPower, hasOrientation, panelPivotWorld, panelNormalWorld);
-			efficiencyFactor = powerFactor;
+				efficiencyFactor = powerFactor;
+				telemetryActual = powerFactor;
+			}
 
 			// get wear factor (output degradation with time)
 			if (m.moduleValues.HasNode("timeEfficCurve"))
@@ -837,7 +851,7 @@ namespace KERBALISM
 				efficiencyFactor *= Lib.Clamp(teCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 			}
 
-			vd.SaveSolarPanelBackgroundExposure(powerFactor, theoreticalMaxPower, nominalRate, vd.EnvIsAnalytic);
+			vd.SaveSolarPanelBackgroundExposure(telemetryActual, theoreticalMaxPower, nominalRate, vd.EnvIsAnalytic);
 
 			// calculate output
 			double output = nominalRate * efficiencyFactor;
@@ -1189,9 +1203,9 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Cache the current loaded realtime sunlit exposure ratio so unloaded low-warp
-		/// simulation can optionally freeze it at the loaded→unloaded transition.
-		/// Does not change loaded power or telemetry.
+		/// Cache the current loaded realtime sunlit exposure ratio so unloaded vessels
+		/// and loaded analytic evaluation can optionally freeze it.
+		/// Does not change loaded realtime power.
 		/// </summary>
 		void TryCacheSunlitExposure(List<VesselData.SunInfo> suns, double powerFactor, double theoreticalMaxPower)
 		{
@@ -1203,34 +1217,33 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// When enabled, unloaded in-space vessels at low timewarp reuse the unload-time
-		/// sunlit exposure ratio. Shadow zeros output; high-warp analytic returns false.
+		/// When enabled, in-space vessels reuse the last realtime sunlit exposure ratio
+		/// while unloaded or in analytic warp. Discrete shadow still zeros output; analytic
+		/// keeps the orbit sunlight fraction because available flux already includes it.
+		/// Monitor exposure reports the frozen ratio (0 in discrete shadow), not the
+		/// eclipse-scaled power.
 		/// </summary>
-		static bool TryGetFrozenUnloadedPowerFactor(Vessel v, ProtoPartModuleSnapshot m, VesselData vd, ModuleDeployableSolarPanel.PanelType panelType, out double powerFactor, out double theoreticalMaxPower)
+		static bool TryGetFrozenPowerFactor(Vessel v, bool hasFrozen, double frozen, VesselData vd, ModuleDeployableSolarPanel.PanelType panelType, out double powerFactor, out double theoreticalMaxPower, out double telemetryActual)
 		{
 			powerFactor = 0.0;
 			theoreticalMaxPower = 0.0;
+			telemetryActual = 0.0;
 
 			PreferencesGeneral prefs = PreferencesGeneral.Instance;
 			if (prefs == null
 				|| !prefs.freezeUnloadedSolarPanelExposure
-				|| vd.EnvIsAnalytic
 				|| Lib.Landed(v)
-				|| !Lib.Proto.GetBool(m, "hasFrozenExposure"))
+				|| !hasFrozen)
 				return false;
 
-			double frozen = Lib.Proto.GetDouble(m, "frozenExposure");
 			if (frozen < 0.0 || double.IsNaN(frozen) || double.IsInfinity(frozen))
 				return false;
 
 			theoreticalMaxPower = CalculateTheoreticalMaxPower(vd.EnvSunsInfo, panelType);
-			if (GetSolarFluxWeight(vd.EnvSunsInfo) <= 1e-9)
-			{
-				powerFactor = 0.0;
-				return true;
-			}
-
-			powerFactor = Lib.Clamp(frozen, 0.0, 1.0) * theoreticalMaxPower;
+			double frozenClamped = Lib.Clamp(frozen, 0.0, 1.0);
+			double availableMaxPower = CalculateAvailableMaxPower(vd.EnvSunsInfo, panelType);
+			powerFactor = frozenClamped * availableMaxPower;
+			telemetryActual = availableMaxPower <= 0.0 ? 0.0 : frozenClamped * theoreticalMaxPower;
 			return true;
 		}
 
@@ -1257,19 +1270,35 @@ namespace KERBALISM
 		/// </summary>
 		static double CalculateTheoreticalMaxPower(List<VesselData.SunInfo> suns, ModuleDeployableSolarPanel.PanelType panelType)
 		{
+			return CalculateMaxPower(suns, panelType, includeBodyShadow: false);
+		}
+
+		/// <summary>
+		/// Like <see cref="CalculateTheoreticalMaxPower"/>, but uses each star's current
+		/// <see cref="VesselData.SunInfo.SolarFlux"/> (discrete 0/1 shadow, or analytic sunlight fraction).
+		/// </summary>
+		static double CalculateAvailableMaxPower(List<VesselData.SunInfo> suns, ModuleDeployableSolarPanel.PanelType panelType)
+		{
+			return CalculateMaxPower(suns, panelType, includeBodyShadow: true);
+		}
+
+		static double CalculateMaxPower(List<VesselData.SunInfo> suns, ModuleDeployableSolarPanel.PanelType panelType, bool includeBodyShadow)
+		{
 			if (suns == null || Sim.SolarFluxAtHome <= double.Epsilon)
 				return 0.0;
 
 			double maxCosine = GetTheoreticalMaxCosineFactor(panelType);
-			double theoreticalMaxPower = 0.0;
+			double maxPower = 0.0;
 			foreach (VesselData.SunInfo sun in suns)
 			{
-				double unshadowedFlux = sun.SunData.SolarFlux(sun.Distance) * sun.AtmoFactor;
-				if (unshadowedFlux <= 0.0 || double.IsNaN(unshadowedFlux) || double.IsInfinity(unshadowedFlux))
+				double flux = includeBodyShadow
+					? sun.SolarFlux
+					: sun.SunData.SolarFlux(sun.Distance) * sun.AtmoFactor;
+				if (flux <= 0.0 || double.IsNaN(flux) || double.IsInfinity(flux))
 					continue;
-				theoreticalMaxPower += (unshadowedFlux / Sim.SolarFluxAtHome) * maxCosine;
+				maxPower += (flux / Sim.SolarFluxAtHome) * maxCosine;
 			}
-			return theoreticalMaxPower;
+			return maxPower;
 		}
 
 		/// <summary>

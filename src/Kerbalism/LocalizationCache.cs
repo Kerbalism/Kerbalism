@@ -1203,7 +1203,7 @@ namespace KERBALISM
 		//
 		public static string Preferences_General = GetLoc("Preferences_General"); // "General"
 		public static string FreezeUnloadedSolarPanelExposure = GetLoc("FreezeUnloadedSolarPanelExposure"); // "Freeze Unloaded Solar Exposure"
-		public static string FreezeUnloadedSolarPanelExposure_desc = GetLoc("FreezeUnloadedSolarPanelExposure_desc"); // "Unloaded in-space vessels at low timewarp keep sunlit solar-panel exposure from the loaded→unloaded transition; shadow still zeros output. High-warp analytic is unchanged."
+		public static string FreezeUnloadedSolarPanelExposure_desc = GetLoc("FreezeUnloadedSolarPanelExposure_desc"); // "In-space vessels keep sunlit solar-panel exposure from the last realtime evaluation (loaded high-warp or unloaded). Low-warp shadow still zeros output; analytic still applies the orbit sunlight fraction. Disable to recalculate panel facing while unloaded or in analytic warp."
 
 		//
 		public static string Preferences_Science = GetLoc("Preferences_Science"); // "Science"
