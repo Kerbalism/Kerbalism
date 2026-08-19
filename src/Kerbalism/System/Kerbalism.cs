@@ -318,7 +318,7 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
-					Profiler.BeginSample("Kerbalism.Loaded.VesselDataEval");
+					Profiler.BeginSample("Loaded.VesselDataEval");
 					// update the vessel info
 					vd.Evaluate(false, elapsed_s);
 					Profiler.EndSample();
@@ -326,7 +326,7 @@ namespace KERBALISM
 					// get most used resource
 					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
 
-					Profiler.BeginSample("Kerbalism.Loaded.Radiation");
+					Profiler.BeginSample("Loaded.Radiation");
 					// show belt warnings
 					Radiation.BeltWarnings(v, vd);
 
@@ -334,11 +334,11 @@ namespace KERBALISM
 					Storm.Update(v, vd, elapsed_s);
 					Profiler.EndSample();
 
-					Profiler.BeginSample("Kerbalism.Loaded.Comms");
+					Profiler.BeginSample("Loaded.Comms");
 					CommsMessages.Update(v, vd, elapsed_s);
 					Profiler.EndSample();
 
-					Profiler.BeginSample("Kerbalism.Loaded.Experiment");
+					Profiler.BeginSample("Loaded.Experiment");
 					foreach(Experiment e in PartModuleCache.GetModules<Experiment>(v))
 					{
 						if (e.isEnabled)
@@ -346,22 +346,22 @@ namespace KERBALISM
 					}
 					Profiler.EndSample();
 
-					Profiler.BeginSample("Kerbalism.Loaded.Science");
+					Profiler.BeginSample("Loaded.Science");
 					// transmit science data
 					Science.Update(v, vd, ec, elapsed_s);
 					Profiler.EndSample();
 
-					Profiler.BeginSample("Kerbalism.Loaded.Profile");
+					Profiler.BeginSample("Loaded.Profile");
 					// apply rules
 					Profile.Execute(v, vd, resources, elapsed_s);
 					Profiler.EndSample();
 
-					Profiler.BeginSample("Kerbalism.Loaded.ResourceUpdate");
+					Profiler.BeginSample("Loaded.ResourceUpdate");
 					// part module resource updates
 					vd.ResourceUpdate(resources, elapsed_s);
 					Profiler.EndSample(); 
 
-					Profiler.BeginSample("Kerbalism.Loaded.Resource");
+					Profiler.BeginSample("Loaded.Resource");
 					// apply deferred requests
 					resources.Sync(v, vd, elapsed_s);
 					Profiler.EndSample();
@@ -410,7 +410,7 @@ namespace KERBALISM
 				// get most used resource
 				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
 
-				Profiler.BeginSample("Kerbalism.Unloaded.Radiation");
+				Profiler.BeginSample("Unloaded.Radiation");
 				// show belt warnings
 				Radiation.BeltWarnings(last_v, last_vd);
 
@@ -418,34 +418,34 @@ namespace KERBALISM
 				Storm.Update(last_v, last_vd, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.Comms");
+				Profiler.BeginSample("Unloaded.Comms");
 				CommsMessages.Update(last_v, last_vd, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.Background");
+				Profiler.BeginSample("Unloaded.Background");
 				// simulate modules in background
 				Background.Update(last_v, last_vd, last_resources, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.SystemHeat");
+				Profiler.BeginSample("Unloaded.SystemHeat");
 				SystemHeatBackgroundThermal.TryRun(last_v, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.FissionReactor");
+				Profiler.BeginSample("Unloaded.FissionReactor");
 				SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(last_v, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.Profile");
+				Profiler.BeginSample("Unloaded.Profile");
 				// apply rules
 				Profile.Execute(last_v, last_vd, last_resources, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.Science");
+				Profiler.BeginSample("Unloaded.Science");
 				// transmit science	data
 				Science.Update(last_v, last_vd, last_ec, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Kerbalism.Unloaded.Resource");
+				Profiler.BeginSample("Unloaded.Resource");
 				// apply deferred requests
 				last_resources.Sync(last_v, last_vd, last_time);
 				Profiler.EndSample();
@@ -493,7 +493,7 @@ namespace KERBALISM
 			Highlighter.Update();
 
 			// prepare gui content
-			Profiler.BeginSample("Kerbalism.UI.Update");
+			Profiler.BeginSample("UI.Update");
 			UI.Update(Callbacks.visible);
 			// KsmGui (Science Archive, etc.) ignores the IMGUI visible flag; sync its canvas
 			// so facility overlays (R&D, Admin, …) hide and restore open windows (#556).
