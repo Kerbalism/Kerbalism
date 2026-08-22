@@ -23,6 +23,7 @@
  * Changed: Freeze solar-panel exposure option also applies while unloaded or in analytic warp, matching 3.32 (#1184, @Aebestach)
  * Changed: Lab experiment EC multipliers reduced from 5x to 2x (#1188, @SerShrubert)
  * Optimized: SystemHeat proto capture at rails/pause/save/scene leave instead of every FixedUpdate (#1167, @Aebestach)
+ * Optimized: Unloaded fission reactor refresh reuses the SystemHeat sim instead of a second vessel scan; skip the handlers when SystemHeat is not installed (#1190, @Aebestach)
 
 ## v3.41 for KSP 1.12.x
 
