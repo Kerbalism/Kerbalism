@@ -7,8 +7,8 @@
     <Kerbalism_DeployToKsp>true</Kerbalism_DeployToKsp>
   </PropertyGroup>
 
-  <!-- Optional: in-game Kerbalism profiler (Ctrl+P). Debug builds only. -->
+  <!-- Debug only. DEBUG_PROFILER = in-game Ctrl+P; ENABLE_PROFILER = Unity Profiler samples. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DefineConstants>$(DefineConstants);DEBUG_PROFILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);DEBUG_PROFILER;ENABLE_PROFILER</DefineConstants>
   </PropertyGroup>
 </Project>
