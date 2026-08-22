@@ -16,6 +16,18 @@ namespace KERBALISM
 		private static readonly string[] FusionReactorModuleNames = { "FusionReactor", "ModuleFusionEngine" };
 
 		internal static bool Enabled = true;
+		private static bool? systemHeatInstalled;
+		internal static bool Active
+		{
+			get
+			{
+				if (!Enabled)
+					return false;
+				if (!systemHeatInstalled.HasValue)
+					systemHeatInstalled = SystemHeat.Installed;
+				return systemHeatInstalled.Value;
+			}
+		}
 		internal static float RadiatorCoefficient = 1f;
 		private const float TransientTemperatureTolerance = 5f;
 		private const float FluxEpsilonKw = 0.01f;
@@ -36,7 +48,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void CaptureLoadedTemperatures(Vessel v)
 		{
-			if (!Enabled || v == null || !v.loaded || v.parts == null)
+			if (!Active || v == null || !v.loaded || v.parts == null)
 				return;
 
 			for (int p = 0; p < v.parts.Count; p++)
@@ -81,7 +93,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void CaptureLoadedFissionReactorState(Part part)
 		{
-			if (part == null || part.protoPartSnapshot == null || part.Modules == null)
+			if (!Active || part == null || part.protoPartSnapshot == null || part.Modules == null)
 				return;
 
 			for (int i = 0; i < part.Modules.Count; i++)
@@ -125,7 +137,7 @@ namespace KERBALISM
 		/// <summary>Sync loaded SystemHeat proto for every loaded vessel (scene leave, pause, save).</summary>
 		public static void CaptureAllLoadedFissionReactors()
 		{
-			if (!Enabled || !HighLogic.LoadedSceneIsFlight)
+			if (!Active || !HighLogic.LoadedSceneIsFlight)
 				return;
 
 			if (FlightGlobals.Vessels == null)
@@ -147,7 +159,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void PrepareFrozenFissionReactors(Vessel v, double elapsed_s)
 		{
-			if (!Enabled || v == null || v.loaded || elapsed_s <= 0f)
+			if (!Active || v == null || v.loaded || elapsed_s <= 0f)
 				return;
 
 			if (lastRunTime.TryGetValue(v.id, out double last) && last == Planetarium.GetUniversalTime())
@@ -292,7 +304,7 @@ namespace KERBALISM
 
 		public static void TryRun(Vessel v, double elapsed_s)
 		{
-			if (!Enabled || v == null || elapsed_s <= 0.0 || v.loaded)
+			if (!Active || v == null || elapsed_s <= 0.0 || v.loaded)
 				return;
 
 			double now = Planetarium.GetUniversalTime();
@@ -310,7 +322,7 @@ namespace KERBALISM
 
 		private static void SyncFrozenProcessReactor(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, PartModule processPrefab, Part partPrefab, double elapsed_s, bool ensureSimulated)
 		{
-			if (v == null || part == null || module == null || partPrefab == null || v.loaded)
+			if (!Active || v == null || part == null || module == null || partPrefab == null || v.loaded)
 				return;
 
 			if (!IsFissionProcessController(partPrefab, module, processPrefab))
@@ -1415,7 +1427,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void RestoreLoadedFissionLoopTemperature(Part part, PartModule heatModule)
 		{
-			if (!Enabled || part == null || heatModule == null || part.protoPartSnapshot == null)
+			if (!Active || part == null || heatModule == null || part.protoPartSnapshot == null)
 				return;
 
 			ProtoPartModuleSnapshot protoHeat = GetLoadedModuleSnapshot(heatModule, part.protoPartSnapshot);

@@ -427,13 +427,16 @@ namespace KERBALISM
 				Background.Update(last_v, last_vd, last_resources, last_time);
 				Profiler.EndSample();
 
-				Profiler.BeginSample("Unloaded.SystemHeat");
-				SystemHeatBackgroundThermal.TryRun(last_v, last_time);
-				Profiler.EndSample();
+				if (SystemHeatBackgroundThermal.Active)
+				{
+					Profiler.BeginSample("Unloaded.SystemHeat");
+					SystemHeatBackgroundThermal.TryRun(last_v, last_time);
+					Profiler.EndSample();
 
-				Profiler.BeginSample("Unloaded.FissionReactor");
-				SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(last_v, last_time);
-				Profiler.EndSample();
+					Profiler.BeginSample("Unloaded.FissionReactor");
+					SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(last_v, last_time);
+					Profiler.EndSample();
+				}
 
 				Profiler.BeginSample("Unloaded.Profile");
 				// apply rules
