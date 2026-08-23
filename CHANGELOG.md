@@ -1,3 +1,30 @@
+## v3.42 for KSP 1.12.x
+
+ - 2026-08-22
+
+ ### Changes since the last release
+ * Added: Cyan vessel-list signal icon while transmitting science (#1155, @Aebestach)
+ * Added: Action group for HardDrive Transfer data here (#1187, @Aebestach)
+ * Fixed: SENTINEL Infrared Telescope activating outside solar orbit (#1153, @Aebestach)
+ * Fixed: GBK mojibake in non-English localization files (#1157, @Aebestach)
+ * Fixed: Russian localization strings, terminology, and missing translations (#1158, @sherhan19)
+ * Fixed: ModuleManager error when DynamicRadiation.cfg is not present (#1170, @Clayell, @Aebestach)
+ * Fixed: SSPX Fish Study lab experiment requiring the aquaculture part and appearing last in lab setups (#1161, @sherhan19)
+ * Fixed: Unloaded vessels not reconnecting CommNet after power is restored (#1166, @Aebestach)
+ * Fixed: SCANsat map progress permanently lost when the drive is full (#1168, @Aebestach)
+ * Fixed: Unloaded FFT fusion reactors producing 0 EC (#1165, @Aebestach)
+ * Fixed: Unloaded NFE Auto not restoring fission capacity; thermal shutdown not fully stopping reactors (#1167, @Aebestach)
+ * Fixed: Overlapping Configure details in nested setup panels (#1176, @Aebestach)
+ * Fixed: Duplicate Atmospheric Filter entries in the Spectro-Variometer menu (#1181, @Aebestach)
+ * Fixed: Excessive EC drain when transmitting experiments after a bandwidth drop (#1182, @SerShrubert)
+ * Fixed: BDB Skylab extra-supply mass, ATM crew-reset, and lab multipliers applying to crew experiments (#1188, @SerShrubert)
+ * Changed: Climatization power uses vessel temperature instead of environment temperature (#1183, @siimav)
+ * Changed: Target .NET Framework 4.8 so other mods can reference Kerbalism (#1177, @Clayell)
+ * Changed: Freeze solar-panel exposure option also applies while unloaded or in analytic warp, matching 3.32 (#1184, @Aebestach)
+ * Changed: Lab experiment EC multipliers reduced from 5x to 2x (#1188, @SerShrubert)
+ * Optimized: SystemHeat proto capture at rails/pause/save/scene leave instead of every FixedUpdate (#1167, @Aebestach)
+ * Optimized: Unloaded fission reactor refresh reuses the SystemHeat sim instead of a second vessel scan; skip the handlers when SystemHeat is not installed (#1190, @Aebestach)
+
 ## v3.41 for KSP 1.12.x
 
  - 2026-08-05
