@@ -77,7 +77,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= ResourceAmountFactor(mod, res => resources.GetResource(v, res).Amount);
+						k *= ResourceAmountFactor(mod, v, resources);
 						break;
 				}
 			}
@@ -150,7 +150,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= ResourceAmountFactor(mod, res => sim.Resource(res).amount);
+						k *= ResourceAmountFactor(mod, sim);
 						break;
 				}
 			}
@@ -161,19 +161,31 @@ namespace KERBALISM
 		/// Resource amount, or 1/amount when prefixed with <see cref="InversePrefix"/>.
 		/// Zero (or near-zero) amount yields 0 for the inverse, so rates stay finite.
 		/// </summary>
-		static double ResourceAmountFactor(string mod, Func<string, double> amountOf)
+		static double ResourceAmountFactor(string mod, Vessel v, VesselResources resources)
 		{
-			if (mod.StartsWith(InversePrefix, StringComparison.Ordinal))
-			{
-				string resource = mod.Substring(InversePrefix.Length);
-				if (string.IsNullOrEmpty(resource))
-					return 0.0;
+			if (!mod.StartsWith(InversePrefix, StringComparison.Ordinal))
+				return resources.GetResource(v, mod).Amount;
 
-				double amount = amountOf(resource);
-				return amount > double.Epsilon ? 1.0 / amount : 0.0;
-			}
+			string resource = mod.Substring(InversePrefix.Length);
+			if (resource.Length == 0)
+				return 0.0;
 
-			return amountOf(mod);
+			double amount = resources.GetResource(v, resource).Amount;
+			return amount > double.Epsilon ? 1.0 / amount : 0.0;
+		}
+
+		/// <summary> planner variant of <see cref="ResourceAmountFactor(string, Vessel, VesselResources)"/> </summary>
+		static double ResourceAmountFactor(string mod, ResourceSimulator sim)
+		{
+			if (!mod.StartsWith(InversePrefix, StringComparison.Ordinal))
+				return sim.Resource(mod).amount;
+
+			string resource = mod.Substring(InversePrefix.Length);
+			if (resource.Length == 0)
+				return 0.0;
+
+			double amount = sim.Resource(resource).amount;
+			return amount > double.Epsilon ? 1.0 / amount : 0.0;
 		}
 	}
 
