@@ -16,6 +16,18 @@ namespace KERBALISM
 		private static readonly string[] FusionReactorModuleNames = { "FusionReactor", "ModuleFusionEngine" };
 
 		internal static bool Enabled = true;
+		private static bool? systemHeatInstalled;
+		internal static bool Active
+		{
+			get
+			{
+				if (!Enabled)
+					return false;
+				if (!systemHeatInstalled.HasValue)
+					systemHeatInstalled = SystemHeat.Installed;
+				return systemHeatInstalled.Value;
+			}
+		}
 		internal static float RadiatorCoefficient = 1f;
 		private const float TransientTemperatureTolerance = 5f;
 		private const float FluxEpsilonKw = 0.01f;
@@ -36,7 +48,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void CaptureLoadedTemperatures(Vessel v)
 		{
-			if (!Enabled || v == null || !v.loaded || v.parts == null)
+			if (!Active || v == null || !v.loaded || v.parts == null)
 				return;
 
 			for (int p = 0; p < v.parts.Count; p++)
@@ -81,7 +93,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void CaptureLoadedFissionReactorState(Part part)
 		{
-			if (part == null || part.protoPartSnapshot == null || part.Modules == null)
+			if (!Active || part == null || part.protoPartSnapshot == null || part.Modules == null)
 				return;
 
 			for (int i = 0; i < part.Modules.Count; i++)
@@ -113,7 +125,7 @@ namespace KERBALISM
 				return;
 
 			PartResource pseudo = part.Resources[process.resource];
-			ProtoPartResourceSnapshot protoResource = part.protoPartSnapshot.resources.Find(k => k.resourceName == process.resource);
+			ProtoPartResourceSnapshot protoResource = FindPartResource(part.protoPartSnapshot, process.resource);
 			if (protoResource == null)
 				return;
 
@@ -125,7 +137,7 @@ namespace KERBALISM
 		/// <summary>Sync loaded SystemHeat proto for every loaded vessel (scene leave, pause, save).</summary>
 		public static void CaptureAllLoadedFissionReactors()
 		{
-			if (!Enabled || !HighLogic.LoadedSceneIsFlight)
+			if (!Active || !HighLogic.LoadedSceneIsFlight)
 				return;
 
 			if (FlightGlobals.Vessels == null)
@@ -142,10 +154,23 @@ namespace KERBALISM
 
 		/// <summary>
 		/// Refresh frozen fission reactor pseudo-resources before Profile rules run on unloaded vessels.
+		/// No-ops when TryRun already simulated this vessel this UT; SimulateVessel writes
+		/// the same capacities after the loop step.
 		/// </summary>
 		public static void PrepareFrozenFissionReactors(Vessel v, double elapsed_s)
 		{
-			if (!Enabled || v == null || v.loaded || elapsed_s <= 0f)
+			if (!Active || v == null || v.loaded || elapsed_s <= 0f)
+				return;
+
+			if (lastRunTime.TryGetValue(v.id, out double last) && last == Planetarium.GetUniversalTime())
+				return;
+
+			SyncAllFrozenFissionReactors(v, elapsed_s);
+		}
+
+		private static void SyncAllFrozenFissionReactors(Vessel v, double elapsed_s)
+		{
+			if (v.protoVessel == null)
 				return;
 
 			foreach (ProtoPartSnapshot part in v.protoVessel.protoPartSnapshots)
@@ -161,11 +186,27 @@ namespace KERBALISM
 					if (!IsFissionProcessController(prefab, module, processPrefab))
 						continue;
 
-					string resource = Lib.Proto.GetString(module, "resource");
-					if (string.IsNullOrEmpty(resource) || part.resources.Find(k => k.resourceName == resource) == null)
+					SyncFrozenProcessReactor(v, part, module, processPrefab, prefab, elapsed_s);
+				}
+			}
+		}
+
+		private static void SyncFrozenFissionReactorsFromLoops(Vessel v, Dictionary<int, LoopState> loops, float elapsed_s)
+		{
+			foreach (LoopState loop in loops.Values)
+			{
+				List<HeatProducer> producers = loop.heatProducers;
+				for (int i = 0; i < producers.Count; i++)
+				{
+					HeatProducer producer = producers[i];
+					if (!producer.isFissionProcess || producer.part == null || producer.module == null)
+						continue;
+					if (producer.module.moduleName != "ProcessControllerSystemHeat")
 						continue;
 
-					SyncFrozenProcessReactor(v, part, module, processPrefab, prefab, elapsed_s);
+					Part prefab = PartLoader.getPartInfoByName(producer.part.partName).partPrefab;
+					PartModule processPrefab = FindMatchingPrefabModule(prefab, producer.module, "ProcessControllerSystemHeat");
+					SyncFrozenProcessReactor(v, producer.part, producer.module, processPrefab, prefab, elapsed_s, false);
 				}
 			}
 		}
@@ -263,7 +304,7 @@ namespace KERBALISM
 
 		public static void TryRun(Vessel v, double elapsed_s)
 		{
-			if (!Enabled || v == null || elapsed_s <= 0.0 || v.loaded)
+			if (!Active || v == null || elapsed_s <= 0.0 || v.loaded)
 				return;
 
 			double now = Planetarium.GetUniversalTime();
@@ -276,7 +317,12 @@ namespace KERBALISM
 
 		public static void SyncFrozenProcessReactor(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, PartModule processPrefab, Part partPrefab, double elapsed_s)
 		{
-			if (v == null || part == null || module == null || partPrefab == null || v.loaded)
+			SyncFrozenProcessReactor(v, part, module, processPrefab, partPrefab, elapsed_s, true);
+		}
+
+		private static void SyncFrozenProcessReactor(Vessel v, ProtoPartSnapshot part, ProtoPartModuleSnapshot module, PartModule processPrefab, Part partPrefab, double elapsed_s, bool ensureSimulated)
+		{
+			if (!Active || v == null || part == null || module == null || partPrefab == null || v.loaded)
 				return;
 
 			if (!IsFissionProcessController(partPrefab, module, processPrefab))
@@ -286,7 +332,7 @@ namespace KERBALISM
 			if (string.IsNullOrEmpty(resource))
 				return;
 
-			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == resource);
+			ProtoPartResourceSnapshot pseudoResource = FindPartResource(part, resource);
 			if (pseudoResource == null)
 				return;
 
@@ -296,7 +342,8 @@ namespace KERBALISM
 				return;
 			}
 
-			EnsureUnloadedFissionLoopSimulated(v, (float)elapsed_s);
+			if (ensureSimulated)
+				EnsureUnloadedFissionLoopSimulated(v, (float)elapsed_s);
 
 			ProtoPartModuleSnapshot heatModule = GetLinkedHeatModule(part, partPrefab, Lib.Proto.GetString(module, "systemHeatModuleID"));
 			float loopTemperature = heatModule != null ? Lib.Proto.GetFloat(heatModule, "currentLoopTemperature") : GetFallbackLoopTemperature();
@@ -384,6 +431,7 @@ namespace KERBALISM
 			internal float maximumTemperature;
 			internal float coreDamageRate;
 			internal FloatCurve coreDamageCurve;
+			internal bool isFissionProcess;
 		}
 
 		private class HeatSink
@@ -453,7 +501,8 @@ namespace KERBALISM
 							meltdownTemperature = meltdown,
 							maximumTemperature = maximum > 0f ? maximum : 2000f,
 							coreDamageRate = GetProcessField(prefab, module, "CoreDamageRate", 0f),
-							coreDamageCurve = IntegrationReflection.GetField(processPrefab, "coreDamageCurve", new FloatCurve())
+							coreDamageCurve = IntegrationReflection.GetField(processPrefab, "coreDamageCurve", new FloatCurve()),
+							isFissionProcess = isFissionProcess
 						});
 
 						if (!IsProcessOperational(part, prefab, module, processPrefab))
@@ -740,6 +789,7 @@ namespace KERBALISM
 				ApplyLoopThermalEffects(v, loop, elapsed_s);
 			}
 
+			SyncFrozenFissionReactorsFromLoops(v, loops, elapsed_s);
 		}
 
 		private static bool ShouldFreezeLoopAtAnchor(LoopState loop)
@@ -799,7 +849,7 @@ namespace KERBALISM
 				Lib.Proto.Set(producer.module, nameof(ProcessControllerSystemHeat.CurrentPowerPercent), 0f);
 				string resource = GetProcessResourceName(producer.module, processPrefab);
 				ProtoPartResourceSnapshot pseudo = !string.IsNullOrEmpty(resource)
-					? producer.part.resources.Find(k => k.resourceName == resource)
+					? FindPartResource(producer.part, resource)
 					: null;
 				if (pseudo != null)
 					ClearFrozenFissionPseudoResource(pseudo);
@@ -1014,9 +1064,10 @@ namespace KERBALISM
 		{
 			string moduleId = Lib.Proto.GetString(module, "moduleID");
 			PartModule fallback = null;
-			foreach (PartModule heat in prefab.FindModulesImplementing<PartModule>())
+			for (int i = 0; i < prefab.Modules.Count; i++)
 			{
-				if (heat.moduleName != "ModuleSystemHeat")
+				PartModule heat = prefab.Modules[i];
+				if (heat == null || heat.moduleName != "ModuleSystemHeat")
 					continue;
 
 				if (fallback == null)
@@ -1106,7 +1157,7 @@ namespace KERBALISM
 			string resource = processPrefab != null
 				? IntegrationReflection.GetString(processPrefab, "resource", Lib.Proto.GetString(module, "resource"))
 				: Lib.Proto.GetString(module, "resource");
-			ProtoPartResourceSnapshot pseudoResource = part.resources.Find(k => k.resourceName == resource);
+			ProtoPartResourceSnapshot pseudoResource = FindPartResource(part, resource);
 			if (pseudoResource == null)
 				return;
 
@@ -1376,7 +1427,7 @@ namespace KERBALISM
 		/// </summary>
 		public static void RestoreLoadedFissionLoopTemperature(Part part, PartModule heatModule)
 		{
-			if (!Enabled || part == null || heatModule == null || part.protoPartSnapshot == null)
+			if (!Active || part == null || heatModule == null || part.protoPartSnapshot == null)
 				return;
 
 			ProtoPartModuleSnapshot protoHeat = GetLoadedModuleSnapshot(heatModule, part.protoPartSnapshot);
@@ -1515,7 +1566,7 @@ namespace KERBALISM
 
 			PartModule prefab = FindMatchingPrefabModule(part.partPrefab, module, "ProcessControllerSystemHeat");
 			string resource = prefab != null ? IntegrationReflection.GetString(prefab, "resource") : Lib.Proto.GetString(module, "resource");
-			ProtoPartResourceSnapshot res = part.resources.Find(k => k.resourceName == resource);
+			ProtoPartResourceSnapshot res = FindPartResource(part, resource);
 			if (res != null)
 				res.flowState = false;
 
@@ -1872,12 +1923,30 @@ namespace KERBALISM
 
 		private static ProtoPartModuleSnapshot GetLinkedHeatModule(ProtoPartSnapshot part, Part prefab, string moduleId)
 		{
-			foreach (PartModule heat in prefab.FindModulesImplementing<PartModule>())
+			if (prefab == null)
+				return FindHeatModuleSnapshot(part, moduleId);
+
+			for (int i = 0; i < prefab.Modules.Count; i++)
 			{
-				if (heat.moduleName != "ModuleSystemHeat")
+				PartModule heat = prefab.Modules[i];
+				if (heat == null || heat.moduleName != "ModuleSystemHeat")
 					continue;
 				if (string.IsNullOrEmpty(moduleId) || GetModuleId(heat) == moduleId)
 					return FindHeatModuleSnapshot(part, moduleId);
+			}
+			return null;
+		}
+
+		private static ProtoPartResourceSnapshot FindPartResource(ProtoPartSnapshot part, string resource)
+		{
+			if (part == null || part.resources == null || string.IsNullOrEmpty(resource))
+				return null;
+
+			for (int i = 0; i < part.resources.Count; i++)
+			{
+				ProtoPartResourceSnapshot res = part.resources[i];
+				if (res != null && res.resourceName == resource)
+					return res;
 			}
 			return null;
 		}
