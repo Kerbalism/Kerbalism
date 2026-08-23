@@ -27,7 +27,7 @@ namespace KERBALISM
 			if (!IsBlocking || part == null)
 				return false;
 
-			return part.FindModuleImplementing<SpaceDustHarvesterKerbalismUpdater>() != null;
+			return part.FindModuleImplementingFast<SpaceDustHarvesterKerbalismUpdater>() != null;
 		}
 
 		internal static bool TryBlockRequest(Part part, double demand, ref double __result)

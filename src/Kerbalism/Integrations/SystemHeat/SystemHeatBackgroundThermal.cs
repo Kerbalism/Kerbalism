@@ -1186,7 +1186,7 @@ namespace KERBALISM
 				? IntegrationReflection.GetBool(processPrefab, "requireDeploy", false)
 				: Lib.Proto.GetBool(module, "requireDeploy");
 
-			if (requireDeploy && !Lib.IsEditor() && prefab.FindModuleImplementing<ModuleAnimationGroup>() != null)
+			if (requireDeploy && !Lib.IsEditor() && prefab.FindModuleImplementingFast<ModuleAnimationGroup>() != null)
 			{
 				ProtoPartModuleSnapshot animator = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleAnimationGroup");
 				if (animator != null)
@@ -1743,7 +1743,7 @@ namespace KERBALISM
 		{
 			string moduleId = Lib.Proto.GetString(engineModule, "moduleID");
 			PartModule fallback = null;
-			foreach (PartModule engine in prefab.FindModulesImplementing<PartModule>())
+			foreach (PartModule engine in prefab.Modules)
 			{
 				if (engine.moduleName != "ModuleSystemHeatFissionEngine")
 					continue;
@@ -1764,7 +1764,7 @@ namespace KERBALISM
 					return loopId;
 			}
 
-			foreach (PartModule heatEngine in prefab.FindModulesImplementing<PartModule>())
+			foreach (PartModule heatEngine in prefab.Modules)
 			{
 				if (heatEngine.moduleName != "ModuleSystemHeatEngine")
 					continue;
@@ -1779,7 +1779,7 @@ namespace KERBALISM
 		private static int GetUniqueHeatLoopId(ProtoPartSnapshot part, Part prefab)
 		{
 			int heatCount = 0;
-			foreach (PartModule heat in prefab.FindModulesImplementing<PartModule>())
+			foreach (PartModule heat in prefab.Modules)
 			{
 				if (heat.moduleName != "ModuleSystemHeat")
 					continue;
@@ -1835,7 +1835,7 @@ namespace KERBALISM
 			string moduleId = Lib.Proto.GetString(module, "moduleID");
 			PartModule fallback = null;
 
-			foreach (PartModule cryo in prefab.FindModulesImplementing<PartModule>())
+			foreach (PartModule cryo in prefab.Modules)
 			{
 				if (cryo.moduleName != "ModuleSystemHeatCryoTank")
 					continue;
@@ -1853,7 +1853,7 @@ namespace KERBALISM
 			string moduleId = Lib.Proto.GetString(module, "moduleID");
 			PartModule fallback = null;
 
-			foreach (PartModule sink in prefab.FindModulesImplementing<PartModule>())
+			foreach (PartModule sink in prefab.Modules)
 			{
 				if (sink.moduleName != "ModuleSystemHeatSink")
 					continue;

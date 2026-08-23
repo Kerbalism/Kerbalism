@@ -37,7 +37,7 @@ namespace KERBALISM
 			if (module == null || module.part == null)
 				return true;
 
-			if (module.part.FindModuleImplementing<PETTurbineFixer>() == null)
+			if (module.part.FindModuleImplementingFast<PETTurbineFixer>() == null)
 				return true;
 
 			try

@@ -29,8 +29,8 @@ namespace KERBALISM
 			PartModule module = __instance as PartModule;
 			if (module == null || module.part == null)
 				return true;
-			return module.part.FindModuleImplementing<CryoTankKerbalismUpdater>() == null
-				&& module.part.FindModuleImplementing<SystemHeatCryoTankKerbalismUpdater>() == null;
+			return module.part.FindModuleImplementingFast<CryoTankKerbalismUpdater>() == null
+				&& module.part.FindModuleImplementingFast<SystemHeatCryoTankKerbalismUpdater>() == null;
 		}
 
 		private static bool PartHasUpdater(ProtoPartSnapshot part, string moduleName)

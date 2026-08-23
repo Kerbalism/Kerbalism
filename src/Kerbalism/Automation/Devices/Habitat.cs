@@ -6,7 +6,7 @@ namespace KERBALISM
 
 		public HabitatDevice(Habitat module) : base(module)
 		{
-			hasGravityRing = module.part.FindModuleImplementing<GravityRing>() != null;
+			hasGravityRing = module.part.FindModuleImplementingFast<GravityRing>() != null;
 		}
 
 		// keep Name English for stable device Id hashing across languages

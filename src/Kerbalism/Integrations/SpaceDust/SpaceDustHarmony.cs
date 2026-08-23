@@ -114,13 +114,13 @@ namespace KERBALISM
 
 		private static void SpaceDustFixedUpdatePrefix(PartModule __instance)
 		{
-			if (__instance.part.FindModuleImplementing<SpaceDustHarvesterKerbalismUpdater>() != null)
+			if (__instance.part.FindModuleImplementingFast<SpaceDustHarvesterKerbalismUpdater>() != null)
 				SpaceDustResourceBlocker.EnterBlock();
 		}
 
 		private static void SpaceDustFixedUpdatePostfix(PartModule __instance)
 		{
-			if (__instance?.part?.FindModuleImplementing<SpaceDustHarvesterKerbalismUpdater>() == null)
+			if (__instance?.part?.FindModuleImplementingFast<SpaceDustHarvesterKerbalismUpdater>() == null)
 				return;
 
 			SpaceDustHarvesterKerbalismUpdater.SyncNativeUiAfterFixedUpdate(__instance);

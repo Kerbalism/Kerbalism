@@ -330,7 +330,7 @@ namespace KERBALISM
 					foreach (Part p in part.symmetryCounterparts)
 					{
 						// get the Configure module
-						Configure c = p.FindModulesImplementing<Configure>().Find(k => k.title == title);
+						Configure c = Lib.FindModules<Configure>(p).Find(k => k.title == title);
 
 						// both modules will share configuration
 						c.selected = selected;

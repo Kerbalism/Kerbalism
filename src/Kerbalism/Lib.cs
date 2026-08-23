@@ -2763,6 +2763,88 @@ namespace KERBALISM
 			return ret;
 		}
 
+		/// <summary>
+		/// Typed view over KSPCF's cached module list. The underlying list is shared: do not modify it.
+		/// </summary>
+		public readonly struct ReadOnlyModules<T> where T : class
+		{
+			readonly List<PartModule> modules;
+
+			public ReadOnlyModules(Part part)
+			{
+				modules = part != null ? part.FindModulesImplementingReadOnly<T>() : null;
+			}
+
+			public int Count => modules != null ? modules.Count : 0;
+
+			public Enumerator GetEnumerator() => new Enumerator(modules);
+
+			public T Find(Predicate<T> match)
+			{
+				if (modules == null)
+					return null;
+				for (int i = 0; i < modules.Count; i++)
+				{
+					if (modules[i] is T t && match(t))
+						return t;
+				}
+				return null;
+			}
+
+			public List<T> ToList()
+			{
+				var dest = new List<T>(Count);
+				if (modules == null)
+					return dest;
+				for (int i = 0; i < modules.Count; i++)
+				{
+					if (modules[i] is T t)
+						dest.Add(t);
+				}
+				return dest;
+			}
+
+			public struct Enumerator
+			{
+				readonly List<PartModule> modules;
+				int index;
+				T current;
+
+				public Enumerator(List<PartModule> modules)
+				{
+					this.modules = modules;
+					index = -1;
+					current = null;
+				}
+
+				public T Current => current;
+
+				public bool MoveNext()
+				{
+					if (modules == null)
+						return false;
+					while (++index < modules.Count)
+					{
+						if (modules[index] is T t)
+						{
+							current = t;
+							return true;
+						}
+					}
+					current = null;
+					return false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Cached lookup of part modules of type T via KSPCommunityFixes. Do not modify the returned view.
+		/// </summary>
+		public static ReadOnlyModules<T> FindModules<T>(Part part) where T : class
+		{
+			return new ReadOnlyModules<T>(part);
+		}
+
 		///<summary>
 		/// return all proto modules with a specified name in a part
 		/// note: disabled modules are not returned
@@ -3175,7 +3257,7 @@ namespace KERBALISM
 			Part p = PartLoader.getPartInfoByName( "kerbalEVA" ).partPrefab;
 
 			// then get the KerbalEVA module prefab
-			KerbalEVA m = p.FindModuleImplementing<KerbalEVA>();
+			KerbalEVA m = p.FindModuleImplementingFast<KerbalEVA>();
 
 			// finally, return the propellant name
 			return m.propellantResourceName;

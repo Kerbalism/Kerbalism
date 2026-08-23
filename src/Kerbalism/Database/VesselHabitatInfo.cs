@@ -474,7 +474,7 @@ namespace KERBALISM
 
 		public override void SetGravityRingDeployed(bool deployed)
 		{
-			GravityRing ring = hab.part.FindModuleImplementing<GravityRing>();
+			GravityRing ring = hab.part.FindModuleImplementingFast<GravityRing>();
 			if (ring != null)
 				ring.deployed = deployed;
 		}

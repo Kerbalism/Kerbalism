@@ -107,7 +107,7 @@ namespace KERBALISM.Planner
 			foreach (Part p in parts)
 			{
 				// get planner controller in the part
-				PlannerController ctrl = p.FindModuleImplementing<PlannerController>();
+				PlannerController ctrl = p.FindModuleImplementingFast<PlannerController>();
 
 				// ignore all modules in the part if specified in controller
 				if (ctrl != null && !ctrl.considered)
@@ -167,7 +167,7 @@ namespace KERBALISM.Planner
 								break;
 							case "USRadiatorSwitch":
 								// SystemHeatRadiatorKerbalism owns resource accounting when present.
-								if (p.FindModuleImplementing<SystemHeatRadiatorKerbalism>() == null)
+								if (p.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>() == null)
 									Process_usRadiatorSwitch(m);
 								break;
 							case "ModuleWheelMotor":
@@ -194,7 +194,7 @@ namespace KERBALISM.Planner
 								break;
 							case "ModuleCryoTank":
 								// CryoTankKerbalismUpdater owns planner rates when present (per-fuel CoolingCost).
-								if (p.FindModuleImplementing<CryoTankKerbalismUpdater>() == null)
+								if (p.FindModuleImplementingFast<CryoTankKerbalismUpdater>() == null)
 									Process_cryotank(p, m);
 								break;
 							case "ModuleRTAntennaPassive":
@@ -673,7 +673,7 @@ namespace KERBALISM.Planner
 			double max_rate = Lib.ReflectionValue<float>(m, "PowerGeneration");
 
 			// get fission reactor tweakable, will default to 1.0 for other modules
-			ModuleResourceConverter reactor = p.FindModuleImplementing<ModuleResourceConverter>();
+			ModuleResourceConverter reactor = p.FindModuleImplementingFast<ModuleResourceConverter>();
 			double tweakable = reactor == null ? 1.0 : Lib.ReflectionValue<float>(reactor, "CurrentPowerPercent") * 0.01f;
 
 			Resource("ElectricCharge").Produce(max_rate * tweakable, Local.Planner_source_fissiongenerator);

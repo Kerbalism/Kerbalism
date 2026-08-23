@@ -91,15 +91,15 @@ namespace KERBALISM.EngineFailures
 			if (!string.IsNullOrEmpty(explicitFamily)
 				&& !explicitFamily.Equals("auto", StringComparison.OrdinalIgnoreCase))
 			{
-				return TryCalculateForFamily(module.part.FindModulesImplementing<ModuleEngines>(), explicitFamily, out ratings);
+				return TryCalculateForFamily(Lib.FindModules<ModuleEngines>(module.part), explicitFamily, out ratings);
 			}
 
 			string moduleFamily = FindModuleFamily(module.part);
 			if (!string.IsNullOrEmpty(moduleFamily))
-				return TryCalculateForFamily(module.part.FindModulesImplementing<ModuleEngines>(), moduleFamily, out ratings);
+				return TryCalculateForFamily(Lib.FindModules<ModuleEngines>(module.part), moduleFamily, out ratings);
 
-			List<ModuleEngines> engines = module.part.FindModulesImplementing<ModuleEngines>();
-			if (engines == null || engines.Count == 0)
+			Lib.ReadOnlyModules<ModuleEngines> engines = Lib.FindModules<ModuleEngines>(module.part);
+			if (engines.Count == 0)
 				return false;
 
 			string commonFamily = null;
@@ -135,7 +135,7 @@ namespace KERBALISM.EngineFailures
 			return true;
 		}
 
-		static bool TryCalculateForFamily(List<ModuleEngines> engines, string familyName, out EngineRatings ratings)
+		static bool TryCalculateForFamily(Lib.ReadOnlyModules<ModuleEngines> engines, string familyName, out EngineRatings ratings)
 		{
 			ratings = default(EngineRatings);
 			FamilyDefinition family;
@@ -144,20 +144,17 @@ namespace KERBALISM.EngineFailures
 
 			double burnDuration = 0.0;
 			int ignitionCount = 0;
-			if (engines != null)
+			foreach (ModuleEngines engine in engines)
 			{
-				foreach (ModuleEngines engine in engines)
-				{
-					double vacuumIsp = GetIsp(engine, 0.0f);
-					double atmosphereIsp = GetIsp(engine, 1.0f);
-					burnDuration = Math.Max(burnDuration, CalculateBurnDuration(family, vacuumIsp));
-					ignitionCount = Math.Max(ignitionCount, CalculateIgnitions(family, engine.maxThrust, vacuumIsp, atmosphereIsp));
-				}
+				double vacuumIsp = GetIsp(engine, 0.0f);
+				double atmosphereIsp = GetIsp(engine, 1.0f);
+				burnDuration = Math.Max(burnDuration, CalculateBurnDuration(family, vacuumIsp));
+				ignitionCount = Math.Max(ignitionCount, CalculateIgnitions(family, engine.maxThrust, vacuumIsp, atmosphereIsp));
 			}
 
 			// A special module may not expose a stock ModuleEngines. Its family
 			// still supplies safe family defaults.
-			if (engines == null || engines.Count == 0)
+			if (engines.Count == 0)
 				burnDuration = family.BurnMax;
 
 			ratings = new EngineRatings

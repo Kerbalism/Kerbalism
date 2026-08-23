@@ -63,12 +63,11 @@ namespace KERBALISM
 		private void FindExperiment()
 		{
 			experiment = null;
-			List<Experiment> experiments = part.FindModulesImplementing<Experiment>();
-			for (int i = 0; i < experiments.Count; i++)
+			foreach (Experiment candidate in Lib.FindModules<Experiment>(part))
 			{
-				if (experiments[i].experiment_id == experiment_id)
+				if (candidate.experiment_id == experiment_id)
 				{
-					experiment = experiments[i];
+					experiment = candidate;
 					break;
 				}
 			}

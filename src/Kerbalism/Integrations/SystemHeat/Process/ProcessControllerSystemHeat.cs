@@ -285,7 +285,7 @@ namespace KERBALISM
 
 		private void InitializeDeployState()
 		{
-			requiresDeploy = requireDeploy && part.FindModuleImplementing<ModuleAnimationGroup>() != null;
+			requiresDeploy = requireDeploy && part.FindModuleImplementingFast<ModuleAnimationGroup>() != null;
 			if (!requiresDeploy || Lib.IsEditor())
 				deployed = true;
 			else
@@ -298,7 +298,7 @@ namespace KERBALISM
 
 		private void SyncDeployedFromAnimator()
 		{
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			if (animator == null)
 				return;
 
@@ -324,7 +324,7 @@ namespace KERBALISM
 			if (!DeployGateActive())
 				return true;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			return animator == null || IsAnimatorReadyForUse(animator);
 		}
 
@@ -377,7 +377,7 @@ namespace KERBALISM
 			if (!DeployGateActive())
 				return;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			deployed = IsAnimatorReadyForUse(animator);
 		}
 
@@ -814,7 +814,7 @@ namespace KERBALISM
 
 			ClearFlux();
 
-			foreach (Reliability reliability in part.FindModulesImplementing<Reliability>())
+			foreach (Reliability reliability in Lib.FindModules<Reliability>(part))
 			{
 				if (!MatchesProcessReliability(reliability))
 					continue;

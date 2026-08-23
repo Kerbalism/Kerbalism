@@ -67,9 +67,9 @@ namespace KERBALISM.EngineFailures
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
 			modules = new List<PartModule>();
-			foreach (ModuleEngines engine in part.FindModulesImplementing<ModuleEngines>())
+			foreach (ModuleEngines engine in Lib.FindModules<ModuleEngines>(part))
 				modules.Add(engine);
-			alternators = part.FindModulesImplementing<ModuleAlternator>();
+			alternators = Lib.FindModules<ModuleAlternator>(part).ToList();
 
 			repair_cs = new CrewSpecs(repair);
 
@@ -464,7 +464,8 @@ namespace KERBALISM.EngineFailures
 
 				Apply(false);
 
-				part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
+				foreach (Configure cfg in Lib.FindModules<Configure>(part))
+					cfg.DoConfigure();
 
 				Message.Post
 				(
@@ -638,7 +639,7 @@ namespace KERBALISM.EngineFailures
 
 			bool brokenState = false;
 			bool criticalState = false;
-			foreach (EngineFailures m in p.FindModulesImplementing<EngineFailures>())
+			foreach (EngineFailures m in Lib.FindModules<EngineFailures>(p))
 			{
 				brokenState |= m.broken;
 				criticalState |= m.critical;

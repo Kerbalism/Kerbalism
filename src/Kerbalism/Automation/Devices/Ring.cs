@@ -7,7 +7,7 @@ namespace KERBALISM
 		public RingDevice(GravityRing module) : base(module)
 		{
 			if (module.isDeployedByHabitat)
-				habitat = module.part.FindModuleImplementing<Habitat>();
+				habitat = module.part.FindModuleImplementingFast<Habitat>();
 		}
 
 		// keep Name English for stable device Id hashing across languages
@@ -54,7 +54,7 @@ namespace KERBALISM
 			habitatModule = protoPart.FindModule("Habitat");
 			deployedByHabitat = habitatModule != null;
 			if (deployedByHabitat)
-				habitatPrefab = prefab.part.FindModuleImplementing<Habitat>();
+				habitatPrefab = prefab.part.FindModuleImplementingFast<Habitat>();
 		}
 
 		// keep Name English for stable device Id hashing across languages

@@ -86,13 +86,13 @@ namespace KERBALISM
 			if (on_pod <= double.Epsilon) return;
 
 			// do nothing for EVA kerbals, that have now CrewCapacity
-			if (prefab.FindModuleImplementing<KerbalEVA>() != null) return;
+			if (prefab.FindModuleImplementingFast<KerbalEVA>() != null) return;
 
 			// do nothing if not manned
 			if (prefab.CrewCapacity == 0) return;
 
 			// do nothing if this isn't a command pod
-			if (prefab.FindModuleImplementing<ModuleCommand>() == null) return;
+			if (prefab.FindModuleImplementingFast<ModuleCommand>() == null) return;
 
 			// calculate quantity
 			double quantity = on_pod * (double)prefab.CrewCapacity;
@@ -135,7 +135,7 @@ namespace KERBALISM
 			if (ResourceCache.GetResource(v, resource).Capacity <= double.Epsilon)
 			{
 				// find the first useful part
-				Part p = v.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementing<KerbalEVA>() != null);
+				Part p = v.parts.Find(k => k.CrewCapacity > 0 || k.FindModuleImplementingFast<KerbalEVA>() != null);
 
 				// add capacity
 				Lib.AddResource(p, resource, 0.0, on_rescue);

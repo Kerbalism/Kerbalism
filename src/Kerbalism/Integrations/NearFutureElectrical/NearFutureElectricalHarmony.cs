@@ -38,7 +38,7 @@ namespace KERBALISM
 		private static bool SkipWhenUpdaterPresent(object __instance)
 		{
 			PartModule module = __instance as PartModule;
-			return module == null || module.part == null || module.part.FindModuleImplementing<NFECapacitorKerbalismUpdater>() == null;
+			return module == null || module.part == null || module.part.FindModuleImplementingFast<NFECapacitorKerbalismUpdater>() == null;
 		}
 
 		private static void RefreshPlanner()

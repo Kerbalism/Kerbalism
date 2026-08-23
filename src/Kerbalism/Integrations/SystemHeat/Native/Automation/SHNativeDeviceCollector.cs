@@ -22,17 +22,17 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				if (part.FindModuleImplementing<SystemHeatConverterKerbalismUpdater>() != null)
+				if (part.FindModuleImplementingFast<SystemHeatConverterKerbalismUpdater>() != null)
 				{
-					SystemHeatConverterKerbalismUpdater updater = part.FindModuleImplementing<SystemHeatConverterKerbalismUpdater>();
+					SystemHeatConverterKerbalismUpdater updater = part.FindModuleImplementingFast<SystemHeatConverterKerbalismUpdater>();
 					PartModule converter = SystemHeat.FindConverter(part, updater.converterModuleID);
 					if (converter != null)
 						AddConverterDevice(devices, converter, updater.converterModuleID);
 				}
 
-				if (part.FindModuleImplementing<SystemHeatHarvesterKerbalismUpdater>() != null)
+				if (part.FindModuleImplementingFast<SystemHeatHarvesterKerbalismUpdater>() != null)
 				{
-					SystemHeatHarvesterKerbalismUpdater updater = part.FindModuleImplementing<SystemHeatHarvesterKerbalismUpdater>();
+					SystemHeatHarvesterKerbalismUpdater updater = part.FindModuleImplementingFast<SystemHeatHarvesterKerbalismUpdater>();
 					PartModule harvester = SystemHeat.FindHarvester(part, updater.harvesterModuleID);
 					if (harvester != null)
 						AddHarvesterDevice(devices, harvester, updater.harvesterModuleID);
