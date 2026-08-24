@@ -115,7 +115,7 @@ namespace KERBALISM
 					// get rate including per-kerbal variance
 					double resRate =
 						rate                                // consumption rate
-						* Variance(name, c, individuality)  // kerbal-specific variance
+						* Variance(c, rd, individuality)    // kerbal-specific variance
 						* k;								// product of environment modifiers
 
 					// determine amount of resource to consume
@@ -162,7 +162,7 @@ namespace KERBALISM
 						rd.problem += degeneration           // degeneration rate per-second or per-interval
 								   * k                       // product of environment modifiers
 								   * step                    // seconds elapsed or by number of steps
-								   * Variance(name, c, variance) // kerbal-specific variance
+								   * Variance(c, rd, variance) // kerbal-specific variance
 								   / ExperienceResistance(c); // experienced kerbals cope better with stress
 					}
 					// else slowly recover
@@ -207,7 +207,7 @@ namespace KERBALISM
 				if (rd.problem >= fatal_threshold)
 				{
 #if DEBUG || DEVBUILD
-					Lib.Log("Rule " + name + " kills " + c.name + " at " + rd.problem + " " + degeneration + "/" + k + "/" + step + "/" + Variance(name, c, variance));
+					Lib.Log("Rule " + name + " kills " + c.name + " at " + rd.problem + " " + degeneration + "/" + k + "/" + step + "/" + Variance(c, rd, variance));
 #endif
 					if (fatal_message.Length > 0)
 						Message.Post(breakdown ? Severity.breakdown : Severity.fatality, Lib.ExpandMsg(fatal_message, v, c, variant));
@@ -259,10 +259,26 @@ namespace KERBALISM
 
 
 		// return per-kerbal variance, in the range [1-variance,1+variance]
-		static double Variance(String name, ProtoCrewMember c, double variance)
+		double Variance(ProtoCrewMember c, RuleData rd, double variance)
 		{
 			if (variance < Double.Epsilon)
 				return 1.0;
+
+			// return kerbal-specific variance in range [1-n .. 1+n]
+			return 1.0 + variance * BaseVariance(c, rd);
+		}
+
+		/// <summary> per-kerbal pseudo-random value in the [-1..+1] range, unique to this rule </summary>
+		/// <remarks>
+		/// Building the hash key allocates three strings, and this runs for every crew member of
+		/// every rule on every simulation step, so the result is cached in the kerbal RuleData.
+		/// </remarks>
+		double BaseVariance(ProtoCrewMember c, RuleData rd)
+		{
+			if (!double.IsNaN(rd.variance_base)
+				&& rd.variance_courage == c.courage
+				&& rd.variance_stupidity == c.stupidity)
+				return rd.variance_base;
 
 			// get a value in [0..1] range associated with a kerbal
 			// we want this to be pseudo-random, so don't just add/multiply the two values, that would be too predictable
@@ -273,8 +289,11 @@ namespace KERBALISM
 			//k = Lib.Clamp(k * 2.0 - 1.0, -1.0, 1.0);
 			k = k * 2.0 - 1.0;
 
-			// return kerbal-specific variance in range [1-n .. 1+n]
-			return 1.0 + variance * k;
+			rd.variance_base = k;
+			rd.variance_courage = c.courage;
+			rd.variance_stupidity = c.stupidity;
+
+			return k;
 		}
 
 
