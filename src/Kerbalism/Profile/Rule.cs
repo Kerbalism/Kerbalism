@@ -144,10 +144,9 @@ namespace KERBALISM
 						{
 							// transform input into output resource
 							// - rules always dump excess overboard (because it is waste)
-							ResourceRecipe recipe = new ResourceRecipe(broker);
+							ResourceRecipe recipe = resources.AddRecipe(broker);
 							recipe.AddInput(input, required);
 							recipe.AddOutput(output, required * ratio, true);
-							resources.AddRecipe(recipe);
 						}
 					}
 				}

@@ -239,7 +239,7 @@ namespace KERBALISM
 			if (!lighting || !pressure || !radiation)
 				return;
 
-			ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Greenhouse);
+			ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.Greenhouse);
 
 			foreach (ModuleResource input in g.resHandler.inputResources)
 			{
@@ -276,8 +276,6 @@ namespace KERBALISM
 						DB.landmarks.space_harvest = true;
 				};
 			}
-
-			resources.AddRecipe(recipe);
 		}
 
 		static double Available(ResourceInfo resource)

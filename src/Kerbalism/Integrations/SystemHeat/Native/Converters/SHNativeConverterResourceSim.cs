@@ -66,7 +66,7 @@ namespace KERBALISM
 				return;
 
 			VesselResources resources = KERBALISM.ResourceCache.Get(v);
-			ResourceRecipe recipe = new ResourceRecipe(KERBALISM.ResourceBroker.GetOrCreate(
+			ResourceRecipe recipe = resources.AddRecipe(KERBALISM.ResourceBroker.GetOrCreate(
 				brokerName,
 				KERBALISM.ResourceBroker.BrokerCategory.Converter,
 				brokerTitle));
@@ -77,7 +77,6 @@ namespace KERBALISM
 			foreach (ResourceRatio output in resourceConverter.outputList)
 				recipe.AddOutput(output.ResourceName, GetConverterEfficiency(converterPrefab) * output.Ratio * elapsed_s, output.DumpExcess);
 
-			resources.AddRecipe(recipe);
 			Lib.Proto.Set(converterSnapshot, "lastUpdateTime", Planetarium.GetUniversalTime());
 		}
 
@@ -99,7 +98,7 @@ namespace KERBALISM
 				return;
 
 			VesselResources resources = KERBALISM.ResourceCache.Get(v);
-			ResourceRecipe recipe = new ResourceRecipe(KERBALISM.ResourceBroker.GetOrCreate(
+			ResourceRecipe recipe = resources.AddRecipe(KERBALISM.ResourceBroker.GetOrCreate(
 				brokerName,
 				KERBALISM.ResourceBroker.BrokerCategory.Harvester,
 				brokerTitle));
@@ -108,7 +107,6 @@ namespace KERBALISM
 				recipe.AddInput(input.ResourceName, input.Ratio * elapsed_s);
 
 			recipe.AddOutput(resourceHarvester.ResourceName, abundance * resourceHarvester.Efficiency * elapsed_s, true);
-			resources.AddRecipe(recipe);
 			Lib.Proto.Set(harvesterSnapshot, "lastUpdateTime", Planetarium.GetUniversalTime());
 		}
 
