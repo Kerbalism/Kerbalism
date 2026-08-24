@@ -67,11 +67,9 @@ namespace KERBALISM.EngineFailures
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
 			modules = new List<PartModule>();
-			foreach (ModuleEngines engine in part.FindModulesImplementingReadOnly<ModuleEngines>())
+			foreach (ModuleEngines engine in part.FindModulesImplementing<ModuleEngines>())
 				modules.Add(engine);
-			alternators = new List<ModuleAlternator>();
-			foreach (ModuleAlternator alt in part.FindModulesImplementingReadOnly<ModuleAlternator>())
-				alternators.Add(alt);
+			alternators = part.FindModulesImplementing<ModuleAlternator>();
 
 			repair_cs = new CrewSpecs(repair);
 

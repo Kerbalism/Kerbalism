@@ -86,12 +86,10 @@ namespace KERBALISM
 				// this will also reduce the amount of configuration overhead, no need to duplicate the same
 				// config for stock with ModuleEngines and ModuleEnginesFX
 				modules = new List<PartModule>();
-				foreach (ModuleEngines engine in part.FindModulesImplementingReadOnly<ModuleEngines>())
+				foreach (ModuleEngines engine in part.FindModulesImplementing<ModuleEngines>())
 					modules.Add(engine);
 				// stock alternators keep producing EC unless disabled separately (#747)
-				alternators = new List<ModuleAlternator>();
-				foreach (ModuleAlternator alt in part.FindModulesImplementingReadOnly<ModuleAlternator>())
-					alternators.Add(alt);
+				alternators = part.FindModulesImplementing<ModuleAlternator>();
 			}
 			else
 			{
