@@ -223,7 +223,7 @@ namespace KERBALISM
 
 			if (Lib.IsFlight())
 			{
-				foreach (HardDrive hd in Lib.FindModules<HardDrive>(part))
+				foreach (HardDrive hd in part.FindModulesImplementingReadOnly<HardDrive>())
 				{
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 				}
@@ -1485,7 +1485,7 @@ namespace KERBALISM
 			experiments.Clear();
 			foreach(var part in construct.Parts)
 			{
-				foreach (Experiment experiment in Lib.FindModules<Experiment>(part))
+				foreach (Experiment experiment in part.FindModulesImplementingReadOnly<Experiment>())
 				{
 					if (!experiment.enabled) experiment.State = Experiment.RunningState.Stopped;
 					if (experiment.Running && !AllowStart(experiment))

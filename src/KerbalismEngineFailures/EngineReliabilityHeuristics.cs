@@ -91,14 +91,14 @@ namespace KERBALISM.EngineFailures
 			if (!string.IsNullOrEmpty(explicitFamily)
 				&& !explicitFamily.Equals("auto", StringComparison.OrdinalIgnoreCase))
 			{
-				return TryCalculateForFamily(Lib.FindModules<ModuleEngines>(module.part), explicitFamily, out ratings);
+				return TryCalculateForFamily(module.part.FindModulesImplementingReadOnly<ModuleEngines>(), explicitFamily, out ratings);
 			}
 
 			string moduleFamily = FindModuleFamily(module.part);
 			if (!string.IsNullOrEmpty(moduleFamily))
-				return TryCalculateForFamily(Lib.FindModules<ModuleEngines>(module.part), moduleFamily, out ratings);
+				return TryCalculateForFamily(module.part.FindModulesImplementingReadOnly<ModuleEngines>(), moduleFamily, out ratings);
 
-			Lib.ReadOnlyModules<ModuleEngines> engines = Lib.FindModules<ModuleEngines>(module.part);
+			List<PartModule> engines = module.part.FindModulesImplementingReadOnly<ModuleEngines>();
 			if (engines.Count == 0)
 				return false;
 
@@ -135,7 +135,7 @@ namespace KERBALISM.EngineFailures
 			return true;
 		}
 
-		static bool TryCalculateForFamily(Lib.ReadOnlyModules<ModuleEngines> engines, string familyName, out EngineRatings ratings)
+		static bool TryCalculateForFamily(List<PartModule> engines, string familyName, out EngineRatings ratings)
 		{
 			ratings = default(EngineRatings);
 			FamilyDefinition family;

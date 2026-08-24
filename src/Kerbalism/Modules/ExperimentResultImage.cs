@@ -63,7 +63,7 @@ namespace KERBALISM
 		private void FindExperiment()
 		{
 			experiment = null;
-			foreach (Experiment candidate in Lib.FindModules<Experiment>(part))
+			foreach (Experiment candidate in part.FindModulesImplementingReadOnly<Experiment>())
 			{
 				if (candidate.experiment_id == experiment_id)
 				{

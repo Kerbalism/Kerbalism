@@ -814,7 +814,7 @@ namespace KERBALISM
 
 			ClearFlux();
 
-			foreach (Reliability reliability in Lib.FindModules<Reliability>(part))
+			foreach (Reliability reliability in part.FindModulesImplementingReadOnly<Reliability>())
 			{
 				if (!MatchesProcessReliability(reliability))
 					continue;

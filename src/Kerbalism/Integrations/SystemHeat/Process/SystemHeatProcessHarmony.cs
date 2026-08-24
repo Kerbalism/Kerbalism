@@ -97,7 +97,7 @@ namespace KERBALISM
 			if (animator == null)
 				return;
 
-			foreach (ProcessControllerSystemHeat module in Lib.FindModules<ProcessControllerSystemHeat>(part))
+			foreach (ProcessControllerSystemHeat module in part.FindModulesImplementingReadOnly<ProcessControllerSystemHeat>())
 			{
 				if (!module.RequiresDeployGate())
 					continue;
@@ -113,7 +113,7 @@ namespace KERBALISM
 					module.DisableModule();
 			}
 
-			foreach (ProcessControllerDeployable module in Lib.FindModules<ProcessControllerDeployable>(part))
+			foreach (ProcessControllerDeployable module in part.FindModulesImplementingReadOnly<ProcessControllerDeployable>())
 			{
 				if (!module.RequiresDeployGate())
 					continue;

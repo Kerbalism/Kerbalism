@@ -731,7 +731,7 @@ namespace KERBALISM
 					if (p.partPrefab.Modules.Count == 0)
 						continue;
 
-					foreach (Configure cfg in Lib.FindModules<Configure>(p.partPrefab))
+					foreach (Configure cfg in p.partPrefab.FindModulesImplementingReadOnly<Configure>())
 					{
 						foreach (ConfigureSetup setup in cfg.Setups())
 						{

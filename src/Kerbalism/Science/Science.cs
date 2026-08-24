@@ -244,7 +244,7 @@ namespace KERBALISM
 		{
 			// first try to get a stock experiment module with the right experiment id
 			// - this support parts with multiple experiment modules, like eva kerbal
-			foreach (ModuleScienceExperiment exp in Lib.FindModules<ModuleScienceExperiment>(p))
+			foreach (ModuleScienceExperiment exp in p.FindModulesImplementingReadOnly<ModuleScienceExperiment>())
 			{
 				if (exp.experimentID == experiment_id) return exp;
 			}
