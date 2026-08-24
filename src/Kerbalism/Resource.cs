@@ -173,10 +173,10 @@ namespace KERBALISM
 			GetResource(v, resource_name).Consume(quantity, broker);
 		}
 
-		/// <summary> register deferred execution of a recipe (shortcut)</summary>
-		public static void AddRecipe(Vessel v, ResourceRecipe recipe)
+		/// <summary> register a recipe for deferred execution, to be filled by the caller (shortcut) </summary>
+		public static ResourceRecipe AddRecipe(Vessel v, ResourceBroker broker)
 		{
-			Get(v).AddRecipe(recipe);
+			return Get(v).AddRecipe(broker);
 		}
 	}
 
@@ -189,7 +189,10 @@ namespace KERBALISM
 	{
 		private Dictionary<int, ResourceInfo> resources = new Dictionary<int, ResourceInfo>(32);
 		private ResourceInfo GetResInfo(string resName) { resources.TryGetValue(resName.GetHashCode(), out var ri); return ri; }
-		private List<ResourceRecipe> recipes = new List<ResourceRecipe>(4);
+		private readonly List<ResourceRecipe> recipes = new List<ResourceRecipe>(4);
+		/// <summary> how many entries of <see cref="recipes"/> are in use for the current step.
+		/// The ones past it are spent recipes, kept around for reuse. </summary>
+		private int activeRecipes;
 		private readonly List<string> _allResourceNames = new List<string>();
 		private readonly List<ResourceInfo> _allResources = new List<ResourceInfo>();
 
@@ -220,11 +223,11 @@ namespace KERBALISM
 		{
 			// execute all recorded recipes
 			Profiler.BeginSample("ExecuteRecipes");
-			ResourceRecipe.ExecuteRecipes(v, this, recipes);
+			ResourceRecipe.ExecuteRecipes(v, this, recipes, activeRecipes);
 			Profiler.EndSample();
 
-			// forget the recipes
-			recipes.Clear();
+			// release the recipes back to the pool
+			activeRecipes = 0;
 
 			// apply all deferred requests and synchronize to vessel
 			// PartResourceList is slow and VERY garbagey to iterate over (because it's a dictionary disguised as a list),
@@ -333,10 +336,30 @@ namespace KERBALISM
 			GetResource(v, resource_name).Consume(quantity, broker);
 		}
 
-		/// <summary> record deferred execution of a recipe (shortcut) </summary>
-		public void AddRecipe(ResourceRecipe recipe)
+		/// <summary>
+		/// Register a recipe for deferred execution and return it, cleared, for the caller to fill.
+		/// </summary>
+		/// <remarks>
+		/// Recipes are pooled: the ones registered in the previous step are kept and handed out
+		/// again instead of being allocated anew.
+		/// Only valid until the next Sync(). Don't hold on to the returned instance.
+		/// </remarks>
+		public ResourceRecipe AddRecipe(ResourceBroker broker)
 		{
-			recipes.Add(recipe);
+			ResourceRecipe recipe;
+			if (activeRecipes < recipes.Count)
+			{
+				recipe = recipes[activeRecipes];
+			}
+			else
+			{
+				recipe = new ResourceRecipe();
+				recipes.Add(recipe);
+			}
+
+			++activeRecipes;
+			recipe.Reset(broker);
+			return recipe;
 		}
 	}
 
@@ -1036,13 +1059,27 @@ namespace KERBALISM
 		private Func<double, double> executionLimiter;
 		private Action<double> executionCallback;
 
-		public ResourceRecipe(ResourceBroker broker)
+		/// <summary> use VesselResources.AddRecipe() rather than instantiating recipes directly </summary>
+		internal ResourceRecipe()
 		{
 			this.inputs = new List<Entry>();
 			this.outputs = new List<Entry>();
 			this.cures = new List<Entry>();
-			this.left = 1.0;
+		}
+
+		/// <summary>
+		/// Clear the recipe so it can be reused for another broker.
+		/// </summary>
+		public void Reset(ResourceBroker broker)
+		{
+			inputs.Clear();
+			outputs.Clear();
+			cures.Clear();
+			left = 1.0;
 			this.broker = broker;
+			onExecuted = null;
+			executionLimiter = null;
+			executionCallback = null;
 		}
 
 		/// <summary>add an input to the recipe</summary>
@@ -1093,14 +1130,14 @@ namespace KERBALISM
 			executionLimiter += limiter;
 		}
 
-		/// <summary>Execute all recipes and record deferred consumption/production for inputs/ouputs</summary>
-		public static void ExecuteRecipes(Vessel v, VesselResources resources, List<ResourceRecipe> recipes)
+		/// <summary>Execute the first <paramref name="count"/> recipes and record deferred consumption/production for inputs/ouputs</summary>
+		public static void ExecuteRecipes(Vessel v, VesselResources resources, List<ResourceRecipe> recipes, int count)
 		{
 			bool executing = true;
 			while (executing)
 			{
 				executing = false;
-				for (int i = 0; i < recipes.Count; ++i)
+				for (int i = 0; i < count; ++i)
 				{
 					ResourceRecipe recipe = recipes[i];
 					if (recipe.left > double.Epsilon)
