@@ -113,24 +113,28 @@ namespace KERBALISM
 			if (size < double.Epsilon)
 				return 0;
 
-			// store what we can
+			// Prefer the warp/transmit buffer, then vessel drives. Do not mutate the cached drive list.
+			double remaining = size;
+			if (!TryStoreOnDrive(vessel.KerbalismData().TransmitBufferDrive, subjectData, ref remaining) || remaining <= double.Epsilon)
+				return remaining;
 
-			var drives = GetDrives(vessel, include_private);
-			drives.Insert(0, vessel.KerbalismData().TransmitBufferDrive);
-
-			foreach (var d in drives)
+			List<Drive> drives = GetDrives(vessel, include_private);
+			for (int i = 0; i < drives.Count; i++)
 			{
-				var available = d.FileCapacityAvailable();
-				var chunk = Math.Min(size, available);
-				if (!d.Record_file(subjectData, chunk, true))
-					break;
-				size -= chunk;
-
-				if (size < double.Epsilon)
-					break;
+				if (!TryStoreOnDrive(drives[i], subjectData, ref remaining) || remaining <= double.Epsilon)
+					return remaining;
 			}
 
-			return size;
+			return remaining;
+		}
+
+		static bool TryStoreOnDrive(Drive d, SubjectData subjectData, ref double size)
+		{
+			double chunk = Math.Min(size, d.FileCapacityAvailable());
+			if (!d.Record_file(subjectData, chunk, true))
+				return false;
+			size -= chunk;
+			return true;
 		}
 
 		// add science data, creating new file or incrementing existing one
@@ -527,16 +531,7 @@ namespace KERBALISM
 		public static List<Drive> GetDrives (VesselData vd, bool includePrivate = false)
 		{
 			Profiler.BeginSample("Drive.GetDrives");
-			List<Drive> drives = new List<Drive>();
-
-			foreach (PartData partData in vd.PartDatas)
-			{
-				if (partData.Drive != null && (includePrivate || !partData.Drive.is_private))
-				{
-					drives.Add(partData.Drive);
-				}
-			}
-
+			List<Drive> drives = vd.GetDrives(includePrivate);
 			Profiler.EndSample();
 			return drives;
 		}

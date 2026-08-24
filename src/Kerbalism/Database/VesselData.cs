@@ -43,6 +43,67 @@ namespace KERBALISM
 		/// <summary>name of last file being transmitted, or empty if nothing is being transmitted</summary>
 		public List<File> filesTransmitted;
 
+		/// <summary> Per-sim-tick crew snapshot. Do not mutate. </summary>
+		readonly List<ProtoCrewMember> crewSimTick = new List<ProtoCrewMember>();
+		uint crewSimTickId;
+
+		readonly List<Drive> drivesAll = new List<Drive>();
+		readonly List<Drive> drivesPublic = new List<Drive>();
+		uint drivesEpoch;
+		bool drivesDirty = true;
+
+		/// <summary> Bumped when any PartData.Drive is assigned so drive lists rebuild without allocating. </summary>
+		internal static uint DriveCacheEpoch;
+
+		readonly Dictionary<string, double> resourceUpdateAvailable = new Dictionary<string, double>();
+		readonly List<KeyValuePair<string, double>> resourceUpdateRequests = new List<KeyValuePair<string, double>>();
+
+		internal static void BumpDriveCacheEpoch()
+		{
+			unchecked { DriveCacheEpoch++; }
+		}
+
+		internal void InvalidateDriveCache()
+		{
+			drivesDirty = true;
+		}
+
+		/// <summary> Crew snapshot for <see cref="Kerbalism.SimTick"/>. Do not mutate. </summary>
+		internal List<ProtoCrewMember> CrewForSimTick(Vessel v)
+		{
+			if (crewSimTickId == Kerbalism.SimTick)
+				return crewSimTick;
+
+			crewSimTickId = Kerbalism.SimTick;
+			Lib.CopyVesselCrew(v, crewSimTick);
+			return crewSimTick;
+		}
+
+		/// <summary> Cached drive lists. Do not mutate the returned list. </summary>
+		internal List<Drive> GetDrives(bool includePrivate)
+		{
+			if (drivesDirty || drivesEpoch != DriveCacheEpoch)
+				RebuildDriveCache();
+			return includePrivate ? drivesAll : drivesPublic;
+		}
+
+		void RebuildDriveCache()
+		{
+			drivesAll.Clear();
+			drivesPublic.Clear();
+			foreach (PartData pd in parts.Values)
+			{
+				Drive d = pd.Drive;
+				if (d == null)
+					continue;
+				drivesAll.Add(d);
+				if (!d.is_private)
+					drivesPublic.Add(d);
+			}
+			drivesDirty = false;
+			drivesEpoch = DriveCacheEpoch;
+		}
+
 		#endregion
 
 		#region non-evaluated persisted fields
@@ -76,6 +137,7 @@ namespace KERBALISM
 					{
 						pd = new PartData(p);
 						parts.Add(flightID, pd);
+						InvalidateDriveCache();
 						Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", Lib.LogLevel.Message, p.partInfo.title, Vessel.vesselName);
 					}
 				}
@@ -663,17 +725,17 @@ namespace KERBALISM
 
 			List<ResourceInfo> allResources = resources.GetAllResources(Vessel); // there might be some performance to be gained by caching the list of all resource
 
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			resourceUpdateAvailable.Clear();
 			foreach (var ri in allResources)
-				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+				resourceUpdateAvailable[ri.ResourceName] = ri.Amount;
+			resourceUpdateRequests.Clear();
 
 			foreach(var resourceUpdateDelegate in resourceUpdateDelegates)
 			{
-				resourceChangeRequests.Clear();
-				string title = resourceUpdateDelegate.invoke(availableResources, resourceChangeRequests);
+				resourceUpdateRequests.Clear();
+				string title = resourceUpdateDelegate.invoke(resourceUpdateAvailable, resourceUpdateRequests);
 				ResourceBroker broker = ResourceBroker.GetOrCreate(title);
-				foreach (var rc in resourceChangeRequests)
+				foreach (var rc in resourceUpdateRequests)
 				{
 					if (rc.Value > 0) resources.Produce(Vessel, rc.Key, rc.Value * elapsed_s, broker);
 					if (rc.Value < 0) resources.Consume(Vessel, rc.Key, -rc.Value * elapsed_s, broker);
@@ -693,6 +755,7 @@ namespace KERBALISM
 				return;
 
 			resourceUpdateDelegates = null;
+			InvalidateDriveCache();
 			ResetReliabilityStatus();
 			habitatInfo.Reset();
 			EvaluateStatus(0.0);
@@ -749,6 +812,7 @@ namespace KERBALISM
 				if (!toVD.parts.ContainsKey(fromPart.flightID))
 				{
 					toVD.parts.Add(fromPart.flightID, new PartData(fromPart));
+					toVD.InvalidateDriveCache();
                     OnPartCoupleComplete(fromPart, toPart);
                     Lib.LogDebug("VesselData : newly created part '{0}' added to vessel '{1}'", Lib.LogLevel.Message, fromPart.partInfo.title, toPart.vessel.vesselName);
 				}
@@ -762,6 +826,8 @@ namespace KERBALISM
 			}
 			// remove all partdata from the docking vessel
 			fromVD.parts.Clear();
+			fromVD.InvalidateDriveCache();
+			toVD.InvalidateDriveCache();
 
 			// reset a few things on the docked to vessel
 			toVD.supplies.Clear();

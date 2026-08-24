@@ -9,7 +9,18 @@ namespace KERBALISM
 	{
 		public uint FlightId { get; private set; }
 
-		public Drive Drive { get; set; }
+		Drive drive;
+		public Drive Drive
+		{
+			get { return drive; }
+			set
+			{
+				if (drive == value)
+					return;
+				drive = value;
+				VesselData.BumpDriveCacheEpoch();
+			}
+		}
 
 		public PartData(Part part)
 		{

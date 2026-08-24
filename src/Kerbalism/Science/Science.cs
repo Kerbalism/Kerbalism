@@ -39,6 +39,9 @@ namespace KERBALISM
 
 		// utility things
 		static readonly List<XmitFile> xmitFiles = new List<XmitFile>();
+		static readonly List<XmitFile> xmitFilePool = new List<XmitFile>();
+		static readonly List<SubjectData> filesToRemove = new List<SubjectData>();
+		static readonly Comparison<XmitFile> compareSciencePerMB = CompareSciencePerMB;
 
 		private class XmitFile
 		{
@@ -48,7 +51,7 @@ namespace KERBALISM
 			public bool isInWarpCache;
 			public File realDriveFile; // reference to the "real" file for files in the warp cache
 
-			public XmitFile(File file, Drive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
+			public void Reset(File file, Drive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
 			{
 				this.file = file;
 				this.drive = drive;
@@ -56,6 +59,31 @@ namespace KERBALISM
 				this.isInWarpCache = isInWarpCache;
 				this.realDriveFile = realDriveFile;
 			}
+		}
+
+		static XmitFile RentXmitFile(File file, Drive drive, double sciencePerMB, bool isInWarpCache, File realDriveFile = null)
+		{
+			XmitFile xf;
+			int last = xmitFilePool.Count - 1;
+			if (last >= 0)
+			{
+				xf = xmitFilePool[last];
+				xmitFilePool.RemoveAt(last);
+			}
+			else
+			{
+				xf = new XmitFile();
+			}
+			xf.Reset(file, drive, sciencePerMB, isInWarpCache, realDriveFile);
+			xmitFiles.Add(xf);
+			return xf;
+		}
+
+		static void ReleaseXmitFiles()
+		{
+			for (int i = 0; i < xmitFiles.Count; i++)
+				xmitFilePool.Add(xmitFiles[i]);
+			xmitFiles.Clear();
 		}
 
 		// pseudo-ctor
@@ -181,8 +209,8 @@ namespace KERBALISM
 			Profiler.BeginSample("GetFilesToTransmit");
 			Drive warpCache = vd.TransmitBufferDrive;
 
-			xmitFiles.Clear();
-			List<SubjectData> filesToRemove = new List<SubjectData>();
+			ReleaseXmitFiles();
+			filesToRemove.Clear();
 
 			foreach (Drive drive in Drive.GetDrives(vd, true))
 			{
@@ -203,7 +231,7 @@ namespace KERBALISM
 					// get files tagged for transmit
 					if (drive.GetFileSend(f.subjectData.Id))
 					{
-						xmitFiles.Add(new XmitFile(f, drive, f.subjectData.SciencePerMB, false));
+						RentXmitFile(f, drive, f.subjectData.SciencePerMB, false);
 					}
 				}
 
@@ -217,7 +245,7 @@ namespace KERBALISM
 			// sort files by science value per MB ascending order so high value files are transmitted first
 			// because XmitFile list is processed from end to start
 			Profiler.BeginSample("GetFilesToTransmit-Sort");
-			xmitFiles.Sort((x, y) => x.sciencePerMB.CompareTo(y.sciencePerMB));
+			xmitFiles.Sort(compareSciencePerMB);
 			Profiler.EndSample();
 
 			// add all warpcache files to the beginning of the XmitFile list
@@ -229,14 +257,27 @@ namespace KERBALISM
 
 				// find the file on a "real" drive that correspond to this warpcache file
 				// this allow to use the real file for displaying transmit info and saving state (filemanager, monitor, vesseldata...)
-				int driveFileIndex = xmitFiles.FindIndex(df => df.file.subjectData == f.subjectData);
-				if (driveFileIndex >= 0)
-					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true, xmitFiles[driveFileIndex].file));
+				File realDriveFile = null;
+				for (int i = 0; i < xmitFiles.Count; i++)
+				{
+					if (xmitFiles[i].file.subjectData == f.subjectData)
+					{
+						realDriveFile = xmitFiles[i].file;
+						break;
+					}
+				}
+				if (realDriveFile != null)
+					RentXmitFile(f, warpCache, f.subjectData.SciencePerMB, true, realDriveFile);
 				else
-					xmitFiles.Add(new XmitFile(f, warpCache, f.subjectData.SciencePerMB, true)); // should not be happening, but better safe than sorry
+					RentXmitFile(f, warpCache, f.subjectData.SciencePerMB, true); // should not be happening, but better safe than sorry
 
 			}
 			Profiler.EndSample();
+		}
+
+		static int CompareSciencePerMB(XmitFile x, XmitFile y)
+		{
+			return x.sciencePerMB.CompareTo(y.sciencePerMB);
 		}
 
 		// return module acting as container of an experiment

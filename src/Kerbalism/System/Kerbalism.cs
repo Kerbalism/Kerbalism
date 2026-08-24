@@ -69,6 +69,12 @@ namespace KERBALISM
 		// note: stored here to avoid converting it to double every time
 		public static double elapsed_s;
 
+		/// <summary>
+		/// Incremented once per Kerbalism FixedUpdate. Used as a generation for per-tick scratch caches
+		/// (crew lists, etc.). 0 means FixedUpdate has not run yet (editor / main menu).
+		/// </summary>
+		internal static uint SimTick { get; private set; }
+
 		// number of steps from last warp blending
 		private static uint warp_blending;
 
@@ -264,6 +270,10 @@ namespace KERBALISM
 			// do nothing if paused
 			if (Lib.IsPaused())
 				return;
+
+			unchecked { SimTick++; }
+			if (SimTick == 0)
+				SimTick = 1;
 
 			// convert elapsed time to double only once
 			double fixedDeltaTime = TimeWarp.fixedDeltaTime;

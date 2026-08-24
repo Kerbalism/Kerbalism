@@ -1776,9 +1776,61 @@ namespace KERBALISM
 
 
 		///<summary>return set of crew on a vessel. Works on loaded and unloaded vessels</summary>
+		/// <remarks>
+		/// During flight simulation the returned list is a per-tick snapshot on VesselData.
+		/// Do not mutate it. Outside of FixedUpdate (SimTick == 0) this falls back to stock GetVesselCrew.
+		/// </remarks>
 		public static List<ProtoCrewMember> CrewList(Vessel v)
 		{
+			if (v == null)
+				return emptyCrew;
+
+			if (Kerbalism.SimTick != 0 && v.TryGetVesselData(out VesselData vd))
+				return vd.CrewForSimTick(v);
+
 			return v.loaded ? v.GetVesselCrew() : v.protoVessel.GetVesselCrew();
+		}
+
+		static readonly List<ProtoCrewMember> emptyCrew = new List<ProtoCrewMember>();
+
+		/// <summary> Copy vessel crew into <paramref name="dest"/> without allocating a stock GetVesselCrew list. </summary>
+		internal static void CopyVesselCrew(Vessel v, List<ProtoCrewMember> dest)
+		{
+			dest.Clear();
+			if (v == null)
+				return;
+
+			if (v.loaded)
+			{
+				List<Part> parts = v.parts;
+				for (int i = 0; i < parts.Count; i++)
+				{
+					List<ProtoCrewMember> partCrew = parts[i].protoModuleCrew;
+					if (partCrew == null)
+						continue;
+					for (int j = 0; j < partCrew.Count; j++)
+						dest.Add(partCrew[j]);
+				}
+				return;
+			}
+
+			if (v.protoVessel == null)
+				return;
+
+			CopyProtoVesselCrew(v.protoVessel, dest);
+		}
+
+		static void CopyProtoVesselCrew(ProtoVessel pv, List<ProtoCrewMember> dest)
+		{
+			List<ProtoPartSnapshot> snaps = pv.protoPartSnapshots;
+			for (int i = 0; i < snaps.Count; i++)
+			{
+				List<ProtoCrewMember> partCrew = snaps[i].protoModuleCrew;
+				if (partCrew == null)
+					continue;
+				for (int j = 0; j < partCrew.Count; j++)
+					dest.Add(partCrew[j]);
+			}
 		}
 
 		///<summary>return crew count of a vessel. Works on loaded and unloaded vessels</summary>
@@ -1793,7 +1845,21 @@ namespace KERBALISM
 			if (pv == null)
 				return 0;
 
-			return pv.vesselType == VesselType.EVA ? 1 : pv.GetVesselCrew().Count();
+			if (pv.vesselType == VesselType.EVA)
+				return 1;
+
+			if (Kerbalism.SimTick != 0 && pv.TryGetVesselData(out VesselData vd) && vd.Vessel != null)
+				return vd.CrewForSimTick(vd.Vessel).Count;
+
+			int n = 0;
+			List<ProtoPartSnapshot> snaps = pv.protoPartSnapshots;
+			for (int i = 0; i < snaps.Count; i++)
+			{
+				List<ProtoCrewMember> partCrew = snaps[i].protoModuleCrew;
+				if (partCrew != null)
+					n += partCrew.Count;
+			}
+			return n;
 		}
 
 		///<summary>return crew capacity of a vessel</summary>
