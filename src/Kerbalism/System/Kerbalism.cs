@@ -693,7 +693,7 @@ namespace KERBALISM
 				double monoprop_amount = Lib.EvaPropellantCapacity();
 				foreach (var part in parts)
 				{
-					if (part.CrewCapacity > 0 || part.FindModuleImplementingFast<KerbalEVA>() != null)
+					if (part.CrewCapacity > 0 || part.HasModuleImplementingFast<KerbalEVA>())
 					{
 						if (Lib.Capacity(part, monoprop_name) <= double.Epsilon)
 						{

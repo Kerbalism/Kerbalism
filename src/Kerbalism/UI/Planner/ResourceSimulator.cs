@@ -167,7 +167,7 @@ namespace KERBALISM.Planner
 								break;
 							case "USRadiatorSwitch":
 								// SystemHeatRadiatorKerbalism owns resource accounting when present.
-								if (p.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>() == null)
+								if (!p.HasModuleImplementingFast<SystemHeatRadiatorKerbalism>())
 									Process_usRadiatorSwitch(m);
 								break;
 							case "ModuleWheelMotor":
@@ -194,7 +194,7 @@ namespace KERBALISM.Planner
 								break;
 							case "ModuleCryoTank":
 								// CryoTankKerbalismUpdater owns planner rates when present (per-fuel CoolingCost).
-								if (p.FindModuleImplementingFast<CryoTankKerbalismUpdater>() == null)
+								if (!p.HasModuleImplementingFast<CryoTankKerbalismUpdater>())
 									Process_cryotank(p, m);
 								break;
 							case "ModuleRTAntennaPassive":

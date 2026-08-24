@@ -285,7 +285,7 @@ namespace KERBALISM
 
 		private void InitializeDeployState()
 		{
-			requiresDeploy = requireDeploy && part.FindModuleImplementingFast<ModuleAnimationGroup>() != null;
+			requiresDeploy = requireDeploy && part.HasModuleImplementingFast<ModuleAnimationGroup>();
 			if (!requiresDeploy || Lib.IsEditor())
 				deployed = true;
 			else

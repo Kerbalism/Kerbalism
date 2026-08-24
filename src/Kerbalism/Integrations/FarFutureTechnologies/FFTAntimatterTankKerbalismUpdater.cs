@@ -307,6 +307,6 @@ namespace KERBALISM
 
 		static float GetDetonationKjPerUnit(PartModule tank) => FarFutureTechnologies.Get(tank, "DetonationKJPerUnit", 0f);
 
-		internal static bool HasUpdater(Part part) => part != null && part.FindModuleImplementingFast<FFTAntimatterTankKerbalismUpdater>() != null;
+		internal static bool HasUpdater(Part part) => part != null && part.HasModuleImplementingFast<FFTAntimatterTankKerbalismUpdater>();
 	}
 }

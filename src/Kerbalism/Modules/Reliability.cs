@@ -70,7 +70,7 @@ namespace KERBALISM
 
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
-			if (part.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>() != null
+			if (part.HasModuleImplementingFast<SystemHeatRadiatorKerbalism>()
 				&& (type == "USRadiatorSwitch" || type == "ModuleActiveRadiator" || type == "ModuleSystemHeatRadiator"))
 			{
 				// Migrate persistent Reliability fields on vessels saved before the

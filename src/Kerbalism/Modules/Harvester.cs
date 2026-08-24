@@ -109,7 +109,7 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// assume deployed if there is no animator
-			deployed |= part.FindModuleImplementingFast<ModuleAnimationGroup>() == null;
+			deployed |= !part.HasModuleImplementingFast<ModuleAnimationGroup>();
 
 			// setup ui
 			Fields["Abundance"].guiName = Local.Harvester_abundance.Format(Lib.GetResourceDisplayName(resource));

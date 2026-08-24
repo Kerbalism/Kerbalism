@@ -23,7 +23,7 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				if (part.FindModuleImplementingFast<NFECapacitorKerbalismUpdater>() == null)
+				if (!part.HasModuleImplementingFast<NFECapacitorKerbalismUpdater>())
 					continue;
 
 				PartModule capacitor = NearFutureElectrical.FindCapacitorModule(part);

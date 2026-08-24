@@ -71,7 +71,7 @@ namespace KERBALISM
 			if (radiator?.part == null)
 				return true;
 
-			if (radiator.part.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>() == null)
+			if (!radiator.part.HasModuleImplementingFast<SystemHeatRadiatorKerbalism>())
 				return true;
 
 			ZeroResHandlerInputRates(radiator);

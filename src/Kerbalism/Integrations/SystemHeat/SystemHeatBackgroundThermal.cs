@@ -1186,7 +1186,7 @@ namespace KERBALISM
 				? IntegrationReflection.GetBool(processPrefab, "requireDeploy", false)
 				: Lib.Proto.GetBool(module, "requireDeploy");
 
-			if (requireDeploy && !Lib.IsEditor() && prefab.FindModuleImplementingFast<ModuleAnimationGroup>() != null)
+			if (requireDeploy && !Lib.IsEditor() && prefab.HasModuleImplementingFast<ModuleAnimationGroup>())
 			{
 				ProtoPartModuleSnapshot animator = IntegrationUtils.TryFindPartModuleSnapshot(part, "ModuleAnimationGroup");
 				if (animator != null)

@@ -53,10 +53,10 @@ namespace KERBALISM
 			if (module?.part == null)
 				return false;
 
-			if (module.part.FindModuleImplementingFast<FFTFusionReactorKerbalismUpdater>() != null)
+			if (module.part.HasModuleImplementingFast<FFTFusionReactorKerbalismUpdater>())
 				return true;
 
-			return IsFusionEngine(module) && module.part.FindModuleImplementingFast<FFTFusionEngineKerbalismUpdater>() != null;
+			return IsFusionEngine(module) && module.part.HasModuleImplementingFast<FFTFusionEngineKerbalismUpdater>();
 		}
 
 		public static void SetPoweredState(PartModule tank, bool powered)
@@ -69,7 +69,7 @@ namespace KERBALISM
 
 		public static bool HasKerbalismAntimatterUpdater(PartModule module)
 		{
-			return module?.part != null && module.part.FindModuleImplementingFast<FFTAntimatterTankKerbalismUpdater>() != null;
+			return module?.part != null && module.part.HasModuleImplementingFast<FFTAntimatterTankKerbalismUpdater>();
 		}
 
 		private static PartModule FindModuleById(Part part, string moduleId, System.Func<PartModule, bool> typeCheck, string moduleName, string idField)
