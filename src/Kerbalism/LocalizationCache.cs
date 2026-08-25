@@ -1204,6 +1204,10 @@ namespace KERBALISM
 		public static string Preferences_General = GetLoc("Preferences_General"); // "General"
 		public static string FreezeUnloadedSolarPanelExposure = GetLoc("FreezeUnloadedSolarPanelExposure"); // "Freeze Unloaded Solar Exposure"
 		public static string FreezeUnloadedSolarPanelExposure_desc = GetLoc("FreezeUnloadedSolarPanelExposure_desc"); // "In-space vessels keep sunlit solar-panel exposure from the last realtime evaluation (loaded high-warp or unloaded). Low-warp shadow still zeros output; analytic still applies the orbit sunlight fraction. Disable to recalculate panel facing while unloaded or in analytic warp."
+		public static string BackgroundVesselsFlight = GetLoc("BackgroundVesselsFlight"); // "BG vessel evaluations / frame (flight)"
+		public static string BackgroundVesselsFlight_desc = GetLoc("BackgroundVesselsFlight_desc"); // "Maximum number of unloaded vessels that get background processing on each physics tick while in flight.\nExtra vessels are only processed once they have piled up more than two minutes of unsimulated time, so this does nothing at low time warp.\nRaising it improves accuracy during fast warp, at the cost of framerate."
+		public static string BackgroundVesselsOtherScenes = GetLoc("BackgroundVesselsOtherScenes"); // "BG vessel evaluations / frame (others)"
+		public static string BackgroundVesselsOtherScenes_desc = GetLoc("BackgroundVesselsOtherScenes_desc"); // "Maximum number of unloaded vessels that get background processing on each physics tick in the Space Center, Tracking Station and Editor.\nExtra vessels are only processed once they have piled up more than two minutes of unsimulated time, so this does nothing at low time warp.\nThese scenes have far more CPU headroom than flight, so a higher value is safe."
 
 		//
 		public static string Preferences_Science = GetLoc("Preferences_Science"); // "Science"

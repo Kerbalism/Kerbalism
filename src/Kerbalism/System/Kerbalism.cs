@@ -60,6 +60,16 @@ namespace KERBALISM
 		sealed class Unloaded_data { public double time; }; //< reference wrapper
 		static Dictionary<Guid, Unloaded_data> unloaded = new Dictionary<Guid, Unloaded_data>();
 
+		// the unloaded vessels selected for background processing in the current step, sorted by
+		// accumulated time in descending order. Kept around and reused to avoid per-step allocations.
+		struct Vessel_bg_processing_item { public double time; public Vessel vessel; };
+		static readonly List<Vessel_bg_processing_item> bg_vessels = new List<Vessel_bg_processing_item>();
+
+		// Accumulated time under which stepping a vessel separately buys us little of value.
+		// Only the oldest vessel is processed below this, which keeps the per-tick cost at
+		// one vessel at low timewarp no matter how high the settings are set.
+		const double bg_batch_threshold = 120.0;
+
 		// used to update storm data on one body per step
 		static int storm_index;
 		class Storm_data { public double time; public CelestialBody body; };
@@ -277,12 +287,9 @@ namespace KERBALISM
 			// update elapsed time
 			elapsed_s = fixedDeltaTime;
 
-			// store info for oldest unloaded vessel
-			double last_time = 0.0;
-			Guid last_id = Guid.Empty;
-			Vessel last_v = null;
-			VesselData last_vd = null;
-			VesselResources last_resources = null;
+			// select the oldest unloaded vessels for background processing
+			int max_bg_vessels = GetNumBGVesselsPerTick;
+			bg_vessels.Clear();
 
 			// credit science at regular interval
 			ScienceDB.CreditScienceBuffers(elapsed_s);
@@ -386,78 +393,79 @@ namespace KERBALISM
 					// accumulate time
 					ud.time += elapsed_s;
 
-					// maintain oldest entry
-					if (ud.time > last_time)
-					{
-						last_time = ud.time;
-						last_v = v;
-						last_vd = vd;
-						last_resources = resources;
-					}
+					// maintain the oldest entries
+					QueueForBackgroundUpdate(ud.time, v, max_bg_vessels);
 				}
 			}
 
-			// at most one vessel gets background processing per physics tick :
-			// if there is a vessel that is not the currently loaded vessel, then
-			// we will update the vessel whose most recent background update is the oldest
-			if (last_v != null)
+			// a limited number of vessels gets background processing per physics tick :
+			// among the vessels that are not the currently loaded vessel, we update the ones
+			// whose most recent background update is the oldest
+			for (int i = 0; i < bg_vessels.Count; i++)
 			{
+				Vessel_bg_processing_item step = bg_vessels[i];
+
+				// the oldest vessel is always processed, the rest only once they have piled up enough
+				// unsimulated time to be worth a separate step. The list is sorted, so we can stop here.
+				if (i > 0 && step.time < bg_batch_threshold)
+					break;
+
+				VesselData vd = step.vessel.KerbalismData();
+				VesselResources resources = ResourceCache.Get(step.vessel);
+
 				//Profiler.BeginSample("Unloaded.VesselDataEval");
 				// update the vessel info (high timewarp speeds reevaluation)
-				last_vd.Evaluate(false, last_time);
+				vd.Evaluate(false, step.time);
 				//Profiler.EndSample();
 
 				// get most used resource
-				ResourceInfo last_ec = last_resources.GetResource(last_v, "ElectricCharge");
+				ResourceInfo step_ec = resources.GetResource(step.vessel, "ElectricCharge");
 
 				Profiler.BeginSample("Unloaded.Radiation");
 				// show belt warnings
-				Radiation.BeltWarnings(last_v, last_vd);
+				Radiation.BeltWarnings(step.vessel, vd);
 
 				// update storm data
-				Storm.Update(last_v, last_vd, last_time);
+				Storm.Update(step.vessel, vd, step.time);
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Unloaded.Comms");
-				CommsMessages.Update(last_v, last_vd, last_time);
+				CommsMessages.Update(step.vessel, vd, step.time);
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Unloaded.Background");
 				// simulate modules in background
-				Background.Update(last_v, last_vd, last_resources, last_time);
+				Background.Update(step.vessel, vd, resources, step.time);
 				Profiler.EndSample();
 
-				if (SystemHeatBackgroundThermal.Active)
-				{
-					Profiler.BeginSample("Unloaded.SystemHeat");
-					SystemHeatBackgroundThermal.TryRun(last_v, last_time);
-					Profiler.EndSample();
+				Profiler.BeginSample("Unloaded.SystemHeat");
+				SystemHeatBackgroundThermal.TryRun(step.vessel, step.time);
+				Profiler.EndSample();
 
-					Profiler.BeginSample("Unloaded.FissionReactor");
-					SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(last_v, last_time);
-					Profiler.EndSample();
-				}
+				Profiler.BeginSample("Unloaded.FissionReactor");
+				SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(step.vessel, step.time);
+				Profiler.EndSample();
 
 				Profiler.BeginSample("Unloaded.Profile");
 				// apply rules
-				Profile.Execute(last_v, last_vd, last_resources, last_time);
+				Profile.Execute(step.vessel, vd, resources, step.time);
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Unloaded.Science");
 				// transmit science	data
-				Science.Update(last_v, last_vd, last_ec, last_time);
+				Science.Update(step.vessel, vd, step_ec, step.time);
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Unloaded.Resource");
 				// apply deferred requests
-				last_resources.Sync(last_v, last_vd, last_time);
+				resources.Sync(step.vessel, vd, step.time);
 				Profiler.EndSample();
 
 				// call automation scripts
-				last_vd.computer.Automate(last_v, last_vd, last_resources);
+				vd.computer.Automate(step.vessel, vd, resources);
 
 				// remove from unloaded data container
-				unloaded.Remove(last_vd.VesselId);
+				unloaded.Remove(vd.VesselId);
 			}
 
 			// update storm data for one body per-step
@@ -471,6 +479,49 @@ namespace KERBALISM
 				storm_index = (storm_index + 1) % storm_bodies.Count;
 				Profiler.EndSample();
 			}
+		}
+
+		/// <summary> How many unloaded vessels may get background processing in a single physics tick </summary>
+		private static int GetNumBGVesselsPerTick
+		{
+			get
+			{
+				PreferencesGeneral prefs = PreferencesGeneral.Instance;
+				if (prefs == null)
+					return 1;
+
+				// flight has to share the tick with physics and expensive game logic, the other scenes don't
+				int count = HighLogic.LoadedSceneIsFlight ? prefs.backgroundVesselsFlight : prefs.backgroundVesselsOtherScenes;
+				return Math.Max(1, count);
+			}
+		}
+
+		/// <summary>
+		/// Keep the <paramref name="max_count"/> unloaded vessels with the longest accumulated time in
+		/// background_steps, sorted in descending order. Called for every unloaded vessel of the step.
+		/// </summary>
+		private static void QueueForBackgroundUpdate(double time, Vessel v, int max_count)
+		{
+			// find the insertion point among the already selected vessels
+			int index = bg_vessels.Count;
+			while (index > 0 && bg_vessels[index - 1].time < time)
+				--index;
+
+			// the selection is full and this vessel is more recent than all of its entries
+			if (index >= max_count)
+				return;
+
+			// an older vessel is already selected, so this one can't end up being the one we are
+			// required to process, and it hasn't accumulated enough time to be worth batching.
+			// Skipping it here avoids churning the selection at low timewarp.
+			if (index > 0 && time < bg_batch_threshold)
+				return;
+
+			// drop the most recently updated entry to make room
+			if (bg_vessels.Count >= max_count)
+				bg_vessels.RemoveAt(bg_vessels.Count - 1);
+
+			bg_vessels.Insert(index, new Vessel_bg_processing_item { time = time, vessel = v });
 		}
 
 		#endregion
