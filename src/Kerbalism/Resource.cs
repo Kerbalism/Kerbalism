@@ -1149,9 +1149,9 @@ namespace KERBALISM
 		}
 
 		/// <summary>
-		/// Execute the recipe and record deferred consumption/production for inputs/ouputs.
-		/// This need to be called multiple times until left &lt;= 0.0 for complete execution of the recipe.
-		/// return true if recipe execution is completed, false otherwise
+		/// Execute the recipe and record deferred consumption/production for inputs/outputs.
+		/// This needs to be called multiple times until left &lt;= 0.0 for complete execution of the recipe.
+		/// Returns true if the recipe was executed at least partially, false if no progress is possible.
 		/// </summary>
 		private bool ExecuteRecipeStep(Vessel v, VesselResources resources)
 		{
@@ -1213,6 +1213,12 @@ namespace KERBALISM
 			{
 				worst_io = Lib.Clamp(executionLimiter(worst_io), 0.0, worst_io);
 			}
+
+			// A positive value can still be too small to change left at its current magnitude.
+			// Treat that as no progress, otherwise ExecuteRecipes() will loop forever.
+			double next_left = left - worst_io;
+			if (worst_io > double.Epsilon && !(next_left < left))
+				return false;
 
 			// consume inputs
 			for (int i = 0; i < inputs.Count; ++i)
@@ -1278,7 +1284,7 @@ namespace KERBALISM
 			}
 
 			// update amount left to execute
-			left -= worst_io;
+			left = next_left;
 
 			if (worst_io > double.Epsilon)
 				onExecuted?.Invoke(worst_io);
