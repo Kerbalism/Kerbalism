@@ -384,7 +384,8 @@ namespace KERBALISM
 				// configure the first time
 				// note: done here, instead of OnStart, so that we are guaranteed to configure()
 				// after the eventual configure(true) that some modules may call in their OnStart
-				DoConfigure();
+				using (ResourceChangeBatch.Begin())
+					DoConfigure();
 			}
 
 			// if this is the last gui event
