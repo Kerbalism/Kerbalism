@@ -244,14 +244,14 @@ namespace KERBALISM
 		{
 			// first try to get a stock experiment module with the right experiment id
 			// - this support parts with multiple experiment modules, like eva kerbal
-			foreach (ModuleScienceExperiment exp in p.FindModulesImplementing<ModuleScienceExperiment>())
+			foreach (ModuleScienceExperiment exp in p.FindModulesImplementingReadOnly<ModuleScienceExperiment>())
 			{
 				if (exp.experimentID == experiment_id) return exp;
 			}
 
 			// if none was found, default to the first module implementing the science data container interface
 			// - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
-			return p.FindModuleImplementing<IScienceDataContainer>();
+			return p.FindModuleImplementingFast<IScienceDataContainer>();
 		}
 
 		/// <summary>

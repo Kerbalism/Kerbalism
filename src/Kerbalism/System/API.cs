@@ -359,13 +359,22 @@ namespace KERBALISM
 		// return true if the part specified has a malfunction or critical failure
 		public static bool Broken(Part part)
 		{
-			return part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken) != null;
+			foreach (Reliability reliability in part.FindModulesImplementingReadOnly<Reliability>())
+			{
+				if (reliability.isEnabled && reliability.broken)
+					return true;
+			}
+			return false;
 		}
 
 		// repair a specified part
 		public static void Repair(Part part)
 		{
-			part.FindModulesImplementing<Reliability>().FindAll(k => k.isEnabled && k.broken).ForEach(k => k.Repair());
+			foreach (Reliability reliability in part.FindModulesImplementingReadOnly<Reliability>())
+			{
+				if (reliability.isEnabled && reliability.broken)
+					reliability.Repair();
+			}
 		}
 
 

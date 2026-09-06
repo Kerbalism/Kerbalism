@@ -80,7 +80,7 @@ namespace KERBALISM
 
 		public SystemHeatProcessDevice(ProcessControllerSystemHeat module) : base(module)
 		{
-			animator = module.part.FindModuleImplementing<ModuleAnimationGroup>();
+			animator = module.part.FindModuleImplementingFast<ModuleAnimationGroup>();
 		}
 
 		public override bool IsVisible => module.toggle;
@@ -162,7 +162,7 @@ namespace KERBALISM
 
 		public SystemHeatHarvesterDevice(HarvesterSystemHeat module) : base(module)
 		{
-			animator = module.part.FindModuleImplementing<ModuleAnimationGroup>();
+			animator = module.part.FindModuleImplementingFast<ModuleAnimationGroup>();
 		}
 
 		// keep Name English for stable device Id hashing across languages

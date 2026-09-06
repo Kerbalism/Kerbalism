@@ -11,7 +11,7 @@ namespace KERBALISM
 
 		public HarvesterDevice(Harvester module) : base(module)
 		{
-			animator = module.part.FindModuleImplementing<ModuleAnimationGroup>();
+			animator = module.part.FindModuleImplementingFast<ModuleAnimationGroup>();
 		}
 
 		// keep Name English for stable device Id hashing across languages

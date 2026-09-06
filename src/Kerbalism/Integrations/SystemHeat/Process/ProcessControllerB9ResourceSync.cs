@@ -19,7 +19,7 @@ namespace KERBALISM
 
 		private void SyncControllers()
 		{
-			foreach (ProcessController controller in part.FindModulesImplementing<ProcessController>())
+			foreach (ProcessController controller in part.FindModulesImplementingReadOnly<ProcessController>())
 			{
 				if (!IsSwitchableProcess(controller.resource))
 					continue;

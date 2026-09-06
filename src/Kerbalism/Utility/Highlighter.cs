@@ -38,7 +38,8 @@ namespace KERBALISM
 						prev_part.SetHighlightDefault();
 
 						// the new color change module overwrite our highlights and was disabled, re-enable it
-						prev_part.FindModulesImplementing<ModuleColorChanger>().ForEach(k => k.enabled = true);
+						foreach (ModuleColorChanger changer in prev_part.FindModulesImplementingReadOnly<ModuleColorChanger>())
+							changer.enabled = true;
 					}
 					catch { }
 				}
@@ -66,7 +67,8 @@ namespace KERBALISM
 						part.SetHighlight(true, false);
 
 						// the new color change module seem to overwrite our highlights, disable it
-						part.FindModulesImplementing<ModuleColorChanger>().ForEach(k => k.enabled = false);
+						foreach (ModuleColorChanger changer in part.FindModulesImplementingReadOnly<ModuleColorChanger>())
+							changer.enabled = false;
 					}
 					catch { }
 				}

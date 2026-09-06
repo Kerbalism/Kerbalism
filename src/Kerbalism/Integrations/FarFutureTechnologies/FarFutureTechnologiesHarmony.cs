@@ -48,7 +48,7 @@ namespace KERBALISM
 		private static bool HasUpdater<T>(object instance) where T : PartModule
 		{
 			PartModule module = instance as PartModule;
-			return module != null && module.part != null && module.part.FindModuleImplementing<T>() != null;
+			return module != null && module.part != null && module.part.HasModuleImplementingFast<T>();
 		}
 	}
 }

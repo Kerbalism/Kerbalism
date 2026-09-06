@@ -744,7 +744,7 @@ namespace KERBALISM
 				double monoprop_amount = Lib.EvaPropellantCapacity();
 				foreach (var part in parts)
 				{
-					if (part.CrewCapacity > 0 || part.FindModuleImplementing<KerbalEVA>() != null)
+					if (part.CrewCapacity > 0 || part.HasModuleImplementingFast<KerbalEVA>())
 					{
 						if (Lib.Capacity(part, monoprop_name) <= double.Epsilon)
 						{
@@ -782,7 +782,7 @@ namespace KERBALISM
 					if (p.partPrefab.Modules.Count == 0)
 						continue;
 
-					foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
+					foreach (Configure cfg in p.partPrefab.FindModulesImplementingReadOnly<Configure>())
 					{
 						foreach (ConfigureSetup setup in cfg.Setups())
 						{
@@ -1039,7 +1039,7 @@ namespace KERBALISM
 						{ part = p; break; }
 					}
 
-					KerbalEVA kerbalEVA = part.FindModuleImplementing<KerbalEVA>();
+					KerbalEVA kerbalEVA = part.FindModuleImplementingFast<KerbalEVA>();
 					if (kerbalEVA != null && kerbalEVA.IsSeated())
 					{
 						Kerbalism.Fetch.StartCoroutine(KillEVAKerbalOnSeat(kerbalEVA, c.name));

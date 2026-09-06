@@ -70,7 +70,7 @@ namespace KERBALISM
 
 			if (last_inspection <= 0) last_inspection = Planetarium.GetUniversalTime();
 
-			if (part.FindModuleImplementing<SystemHeatRadiatorKerbalism>() != null
+			if (part.HasModuleImplementingFast<SystemHeatRadiatorKerbalism>()
 				&& (type == "USRadiatorSwitch" || type == "ModuleActiveRadiator" || type == "ModuleSystemHeatRadiator"))
 			{
 				// Migrate persistent Reliability fields on vessels saved before the
@@ -86,17 +86,20 @@ namespace KERBALISM
 				// this will also reduce the amount of configuration overhead, no need to duplicate the same
 				// config for stock with ModuleEngines and ModuleEnginesFX
 				modules = new List<PartModule>();
-				var engines = part.FindModulesImplementing<ModuleEngines>();
-                foreach (var engine in engines)
-                {
+				foreach (ModuleEngines engine in part.FindModulesImplementing<ModuleEngines>())
 					modules.Add(engine);
-                }
 				// stock alternators keep producing EC unless disabled separately (#747)
 				alternators = part.FindModulesImplementing<ModuleAlternator>();
-            }
+			}
 			else
 			{
-				modules = part.FindModulesImplementing<PartModule>().FindAll(k => k.moduleName == type);
+				modules = new List<PartModule>();
+				for (int i = 0; i < part.Modules.Count; i++)
+				{
+					PartModule m = part.Modules[i];
+					if (m != null && m.moduleName == type)
+						modules.Add(m);
+				}
 			}
 
 			// parse crew specs
@@ -440,7 +443,8 @@ namespace KERBALISM
 				// we need to reconfigure the module here, because if all modules of a type
 				// share the broken state, and these modules are part of a configure setup,
 				// then repairing will enable all of them, messing up with the configuration
-				part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
+				foreach (Configure cfg in part.FindModulesImplementingReadOnly<Configure>())
+					cfg.DoConfigure();
 
 				// notify user
 				Message.Post
@@ -565,14 +569,29 @@ namespace KERBALISM
 
 			// get reliability module prefab
 			string type = Lib.Proto.GetString(m, "type", string.Empty);
-			Reliability reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == type);
+			Reliability reliability = null;
+			foreach (Reliability k in p.partPrefab.FindModulesImplementingReadOnly<Reliability>())
+			{
+				if (k.type == type)
+				{
+					reliability = k;
+					break;
+				}
+			}
 			if (reliability == null && (type == "USRadiatorSwitch"
 				|| type == "ModuleActiveRadiator"
 				|| type == "ModuleSystemHeatRadiator"))
 			{
 				// Existing vessels keep persistent Reliability fields from before the
 				// SystemHeat MM remap. Accept legacy radiator types as sidecar aliases.
-				reliability = p.partPrefab.FindModulesImplementing<Reliability>().Find(k => k.type == "SystemHeatRadiatorKerbalism");
+				foreach (Reliability k in p.partPrefab.FindModulesImplementingReadOnly<Reliability>())
+				{
+					if (k.type == "SystemHeatRadiatorKerbalism")
+					{
+						reliability = k;
+						break;
+					}
+				}
 			}
 			if (reliability == null) return;
 			if (reliability.type != type)
@@ -617,7 +636,7 @@ namespace KERBALISM
 				switch (reliability.type)
 				{
 					case "ProcessController":
-						foreach (ProcessController pc in p.partPrefab.FindModulesImplementing<ProcessController>())
+						foreach (ProcessController pc in p.partPrefab.FindModulesImplementingReadOnly<ProcessController>())
 						{
 							ProtoPartResourceSnapshot res = p.resources.Find(k => k.resourceName == pc.resource);
 							if (res != null) res.flowState = false;
@@ -670,7 +689,7 @@ namespace KERBALISM
 			string nativeModuleName = reliabilityType;
 			if (reliabilityType == "SystemHeatRadiatorKerbalism" && part.partPrefab != null)
 			{
-				SystemHeatRadiatorKerbalism wrapper = part.partPrefab.FindModuleImplementing<SystemHeatRadiatorKerbalism>();
+				SystemHeatRadiatorKerbalism wrapper = part.partPrefab.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>();
 				if (wrapper != null && !string.IsNullOrEmpty(wrapper.radiatorModuleName))
 					nativeModuleName = wrapper.radiatorModuleName;
 			}
@@ -850,7 +869,7 @@ namespace KERBALISM
 						}
 						SetRadiatorCoolingState(m, b ? false : radiator_was_cooling);
 					}
-					foreach (SystemHeatRadiatorKerbalism wrapper in part.FindModulesImplementing<SystemHeatRadiatorKerbalism>())
+					foreach (SystemHeatRadiatorKerbalism wrapper in part.FindModulesImplementingReadOnly<SystemHeatRadiatorKerbalism>())
 					{
 						if (wrapper.radiatorModuleName != "USRadiatorSwitch")
 							continue;
@@ -980,7 +999,7 @@ namespace KERBALISM
 			string radiatorModuleName = "ModuleSystemHeatRadiator";
 			if (part.partPrefab != null)
 			{
-				SystemHeatRadiatorKerbalism prefabWrapper = part.partPrefab.FindModuleImplementing<SystemHeatRadiatorKerbalism>();
+				SystemHeatRadiatorKerbalism prefabWrapper = part.partPrefab.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>();
 				if (prefabWrapper != null && !string.IsNullOrEmpty(prefabWrapper.radiatorModuleName))
 					radiatorModuleName = prefabWrapper.radiatorModuleName;
 			}
@@ -1010,7 +1029,7 @@ namespace KERBALISM
 		{
 			if (type == "USRadiatorSwitch")
 			{
-				foreach (SystemHeatRadiatorKerbalism wrapper in part.FindModulesImplementing<SystemHeatRadiatorKerbalism>())
+				foreach (SystemHeatRadiatorKerbalism wrapper in part.FindModulesImplementingReadOnly<SystemHeatRadiatorKerbalism>())
 				{
 					if (wrapper.radiatorModuleName != "USRadiatorSwitch")
 						continue;
@@ -1097,7 +1116,7 @@ namespace KERBALISM
 				// get state among all reliability components in the part
 				bool broken = false;
 				bool critical = false;
-				foreach (Reliability m in p.FindModulesImplementing<Reliability>())
+				foreach (Reliability m in p.FindModulesImplementingReadOnly<Reliability>())
 				{
 					broken |= m.broken;
 					critical |= m.critical;
