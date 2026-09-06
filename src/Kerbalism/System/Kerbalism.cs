@@ -1021,7 +1021,7 @@ namespace KERBALISM
 			return false;
 		}
 
-		//  a kerbal
+		// kill a kerbal
 		// note: you can't kill a kerbal while iterating over vessel crew list, do it outside the loop
 		public static void Kill(Vessel v, ProtoCrewMember c)
 		{
@@ -1039,7 +1039,7 @@ namespace KERBALISM
 						{ part = p; break; }
 					}
 
-					KerbalEVA kerbalEVA = part.FindModuleImplementing<KerbalEVA>();
+					KerbalEVA kerbalEVA = part.FindModuleImplementingFast<KerbalEVA>();
 					if (kerbalEVA != null && kerbalEVA.IsSeated())
 					{
 						Kerbalism.Fetch.StartCoroutine(KillEVAKerbalOnSeat(kerbalEVA, c.name));
