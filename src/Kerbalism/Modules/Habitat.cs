@@ -1122,51 +1122,110 @@ namespace KERBALISM
 			Lib.GetPartVolumeAndSurface(part, true);
 		}
 
+		// Stock suits first so a later DLC ghost prefab cannot prevent male/female EVA setup.
+		// See https://github.com/Kerbalism/Kerbalism/issues/957
 		private static string[] EVAKerbalPartNames => new string[]
 		{
 			"kerbalEVA",
-			"kerbalEVASlimSuitFemale",
-			"kerbalEVAfemaleFuture",
-			"kerbalEVAFuture",
 			"kerbalEVAfemale",
 			"kerbalEVASlimSuit",
+			"kerbalEVASlimSuitFemale",
+			"kerbalEVAVintage",
 			"kerbalEVAfemaleVintage",
-			"kerbalEVAVintage"
+			"kerbalEVAFuture",
+			"kerbalEVAfemaleFuture"
 		};
 
 		internal static void AddHabitatToEVAKerbalPrefabs()
 		{
+			HashSet<string> processed = new HashSet<string>();
+
 			foreach (string evaKerbalPartName in EVAKerbalPartNames)
+				TryAddHabitatToEVAKerbalPrefab(PartLoader.getPartInfoByName(evaKerbalPartName), processed);
+
+			// pick up extra / modded EVA variants that are not in the hardcoded list
+			List<AvailablePart> loadedParts = PartLoader.LoadedPartsList;
+			if (loadedParts == null)
+				return;
+
+			for (int i = 0; i < loadedParts.Count; ++i)
 			{
-				AvailablePart ap = PartLoader.getPartInfoByName(evaKerbalPartName);
-				if (ap == null)
+				AvailablePart ap = loadedParts[i];
+				if (ap == null || ap.name == null || !ap.name.StartsWith("kerbalEVA", StringComparison.Ordinal))
 					continue;
 
-				Part prefab = ap.partPrefab;
-				Habitat habitat = prefab.FindModuleImplementing<Habitat>();
+				TryAddHabitatToEVAKerbalPrefab(ap, processed);
+			}
+		}
 
-				// backward compatibility (and failsafe) : EVA Kerbals didn't have
-				// the module on previous versions, ensure it is added
+		private static void TryAddHabitatToEVAKerbalPrefab(AvailablePart ap, HashSet<string> processed)
+		{
+			if (ap == null || string.IsNullOrEmpty(ap.name) || !processed.Add(ap.name))
+				return;
+
+			try
+			{
+				EnsureHabitatOnEVAKerbalPrefab(ap);
+			}
+			catch (Exception e)
+			{
+				// Incomplete DLC EVA prefabs (RO without Breaking Ground, kerbalEVA_RD_Exp, etc.)
+				// must not abort setup for the remaining suits.
+				Lib.Log("Skipped EVA habitat setup for '" + ap.name + "' (" + e.GetType().Name + ")", Lib.LogLevel.Warning);
+			}
+		}
+
+		private static void EnsureHabitatOnEVAKerbalPrefab(AvailablePart ap)
+		{
+			Part prefab = ap.partPrefab;
+			if (prefab == null)
+				return;
+
+			// FindModulesImplementing nullrefs when cachedModuleLists is null (Modules.Count == 0).
+			// AddModule also NRE's when the internal module list was never created.
+			PartModuleList modules = prefab.Modules;
+			if (modules == null || modules.Count == 0)
+				return;
+
+			Habitat habitat = prefab.FindModuleImplementing<Habitat>();
+
+			// backward compatibility (and failsafe) : EVA Kerbals didn't have
+			// the module on previous versions, ensure it is added
+			if (habitat == null)
+			{
+				if (prefab.FindModuleImplementing<KerbalEVA>() == null)
+					return;
+
+				habitat = (Habitat)prefab.AddModule(nameof(Habitat), forceAwake: true);
 				if (habitat == null)
+					return;
+
+				habitat.volume = 0.33;
+				habitat.surface = 1.5; // human spacesuit surface ~ 4 m?
+
+				PartResourceList resources = prefab.Resources;
+				if (resources != null)
 				{
-					habitat = (Habitat)prefab.AddModule(nameof(Habitat), forceAwake: true);
 					// deduce the hab volume from the atmo resource, if present
 					// previous versions used to have a MM patch directly adding
 					// atmo / wasteAtmo to the EVAKerbal parts
-					PartResource atmoRes = prefab.Resources[AtmoResName];
+					PartResource atmoRes = resources[AtmoResName];
 					if (atmoRes != null && atmoRes.maxAmount > 0.0)
 						habitat.volume = atmoRes.maxAmount / 1e3;
-					else
-						habitat.volume = 0.33;
 
-					prefab.Resources.dict.Remove(Lib.GetDefinition(AtmoResName).id);
-					prefab.Resources.dict.Remove(Lib.GetDefinition(WasteAtmoResName).id);
-
-					habitat.surface = 1.5; // human spacesuit surface ~ 4 m?
+					if (resources.dict != null)
+					{
+						PartResourceDefinition atmoDef = Lib.GetDefinition(AtmoResName);
+						PartResourceDefinition wasteDef = Lib.GetDefinition(WasteAtmoResName);
+						if (atmoDef != null)
+							resources.dict.Remove(atmoDef.id);
+						if (wasteDef != null)
+							resources.dict.Remove(wasteDef.id);
+					}
 				}
-
-				habitat.state = State.evaKerbal;
 			}
+
+			habitat.state = State.evaKerbal;
 		}
 	}
 }
