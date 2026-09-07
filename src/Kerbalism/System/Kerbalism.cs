@@ -1070,19 +1070,16 @@ namespace KERBALISM
 					if (part.partName == c.GetKerbalEVAPartName())
 					{
 						v.protoVessel.protoPartSnapshots.Remove(part);
-                        v.protoVessel.RemoveCrew(c);
-                        Cache.PurgeVesselCaches(v);
+						v.protoVessel.RemoveCrew(c);
+						Cache.PurgeVesselCaches(v);
 						VesselData.OnPartWillDie(v, part.flightID);
-                    }
+					}
 					else
 					{
-                        // remove from part and vessel
-                        part.RemoveCrew(c.name);
-                        v.protoVessel.RemoveCrew(c);
-                    }
-
-					// flag as dead
-					c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
+						// remove from part and vessel
+						part.RemoveCrew(c.name);
+						v.protoVessel.RemoveCrew(c);
+					}
 				}
 
 				// forget kerbal data
@@ -1097,7 +1094,9 @@ namespace KERBALISM
 				// rename vessel
 				v.vesselName = c.name + "'s body";
 			}
-
+			// flag as dead
+			c.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
+			
 			// remove reputation
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
 			{
