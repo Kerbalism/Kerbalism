@@ -115,7 +115,7 @@ namespace KERBALISM
 			// survive load/unload transitions : Vessel.Unload() replaces the protoVessel instance
 			// (so cached snapshot references would write to dead objects), and loading a vessel
 			// recreates all PartModules. None of the vessel-modified events fire on these transitions.
-			GameEvents.onVesselLoaded.Add((v) => Cache.PurgeVesselCaches(v));
+			GameEvents.onVesselLoaded.Add((v) => { Cache.PurgeVesselCaches(v); SystemHeatBackgroundThermal.OnVesselLoaded(v); });
 			GameEvents.onVesselUnloaded.Add((v) => Cache.PurgeVesselCaches(v));
 			// Capture SystemHeat loop / fission proto while parts are still live, before pack.
 			GameEvents.onVesselGoOnRails.Add(this.OnVesselGoOnRailsCapture);

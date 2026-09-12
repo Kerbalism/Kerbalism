@@ -95,6 +95,12 @@ namespace KERBALISM
 
 		public Dictionary<Process, DumpSpecs.ActiveValve> dumpValves;
 
+		/// <summary>
+		/// SystemHeat background thermal calibration, by loop id. Captured on the first background step after
+		/// the vessel unloads, cleared when it loads again (SystemHeat owns the loops while loaded).
+		/// </summary>
+		public Dictionary<int, SystemHeatLoopCalibration> systemHeatLoops;
+
 		// persist that so we don't have to do an expensive check every time
 		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 
@@ -766,6 +772,7 @@ namespace KERBALISM
 			// reset a few things on the docked to vessel
 			toVD.supplies.Clear();
 			toVD.scansat_id.Clear();
+			toVD.systemHeatLoops.Clear();
 
 			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
 			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
@@ -885,6 +892,7 @@ namespace KERBALISM
 			supplies = new Dictionary<string, SupplyData>();
 			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
 			scansat_id = new List<uint>();
+			systemHeatLoops = new Dictionary<int, SystemHeatLoopCalibration>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 
@@ -1049,6 +1057,18 @@ namespace KERBALISM
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
 
+			systemHeatLoops = new Dictionary<int, SystemHeatLoopCalibration>();
+			ConfigNode systemHeatNode = node.GetNode("SystemHeatLoops");
+			if (systemHeatNode != null)
+			{
+				foreach (ConfigNode.Value loopValue in systemHeatNode.values)
+				{
+					if (int.TryParse(loopValue.name, out int loopId)
+						&& SystemHeatLoopCalibration.TryDeserialize(loopValue.value, out SystemHeatLoopCalibration calibration))
+						systemHeatLoops[loopId] = calibration;
+				}
+			}
+
 			ConfigNode partsNode = new ConfigNode();
 			if (node.TryGetNode("parts", ref partsNode))
 			{
@@ -1139,6 +1159,13 @@ namespace KERBALISM
 			foreach (uint id in scansat_id)
 			{
 				node.AddValue("scansat_id", id.ToString());
+			}
+
+			if (systemHeatLoops != null && systemHeatLoops.Count > 0)
+			{
+				ConfigNode systemHeatNode = node.AddNode("SystemHeatLoops");
+				foreach (KeyValuePair<int, SystemHeatLoopCalibration> loop in systemHeatLoops)
+					systemHeatNode.AddValue(loop.Key.ToString(), loop.Value.Serialize());
 			}
 
 			EnvHabitatInfo.Save(node.AddNode("SunShielding"));

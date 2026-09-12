@@ -131,6 +131,52 @@ namespace KERBALISM
 			return Get(heatModule, "currentLoopTemperature", fallback);
 		}
 
+		/// <summary>SystemHeat CoolantType defaults (also what GetCoolantType returns for an unknown name).</summary>
+		public const float DefaultCoolantDensity = 1000f;
+		public const float DefaultCoolantHeatCapacity = 4f;
+
+		private static readonly Dictionary<string, KeyValuePair<float, float>> coolantCache = new Dictionary<string, KeyValuePair<float, float>>();
+
+		/// <summary>
+		/// Density (kg/m3) and heat capacity (kJ/kg/K) of a SystemHeat coolant, from SystemHeatSettings.GetCoolantType.
+		/// Falls back to the SystemHeat defaults when the assembly / coolant table is not available.
+		/// </summary>
+		public static void GetCoolantProperties(string coolantName, out float density, out float heatCapacity)
+		{
+			density = DefaultCoolantDensity;
+			heatCapacity = DefaultCoolantHeatCapacity;
+
+			string key = coolantName ?? "";
+			if (coolantCache.TryGetValue(key, out KeyValuePair<float, float> cached))
+			{
+				density = cached.Key;
+				heatCapacity = cached.Value;
+				return;
+			}
+
+			try
+			{
+				System.Type settings = assembly.Type("SystemHeat.SystemHeatSettings");
+				System.Reflection.MethodInfo getCoolant = assembly.Method(settings, "GetCoolantType", new[] { typeof(string) });
+				object coolant = getCoolant?.Invoke(null, new object[] { key });
+				if (coolant == null)
+					return;
+
+				float d = Get(coolant, "Density", density);
+				float c = Get(coolant, "HeatCapacity", heatCapacity);
+				if (d > 0f && c > 0f)
+				{
+					density = d;
+					heatCapacity = c;
+				}
+				coolantCache[key] = new KeyValuePair<float, float>(density, heatCapacity);
+			}
+			catch (System.Exception)
+			{
+				// SystemHeatSettings.Load() not run yet (CoolantData null) : keep the defaults, retry next time.
+			}
+		}
+
 		public static void AddFlux(PartModule heatModule, string id, float outletTemperature, float systemPower, bool active)
 		{
 			if (heatModule == null)

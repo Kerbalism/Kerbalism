@@ -276,11 +276,13 @@ namespace KERBALISM
 					protoHeat = protoModule;
 			}
 
-			if (protoHeat == null || !Lib.Proto.GetBool(protoHeat, "backgroundFluxAnchorValid"))
+			if (protoHeat == null)
 				return false;
 
-			float anchorTemp = Lib.Proto.GetFloat(protoHeat, "backgroundFluxAnchorTemperature");
-			return anchorTemp > 0f && anchorTemp <= shutdown;
+			// The persisted loop temperature is where the loop was when the vessel last left the loaded state.
+			// A hotter live reading during the first frames after load is a SystemHeat loop rebuild transient.
+			float persistedTemp = Lib.Proto.GetFloat(protoHeat, "currentLoopTemperature");
+			return persistedTemp > 0f && persistedTemp <= shutdown;
 		}
 
 		private void InitializeDeployState()

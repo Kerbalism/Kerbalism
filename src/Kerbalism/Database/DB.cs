@@ -89,6 +89,14 @@ namespace KERBALISM
 			// migrate pre-3.25 process controllers
 			ProcessController.MigrateSaves(version);
 
+			// 3.42 background thermal sim wrote false SystemHeat reactor meltdowns on unload (#1200).
+			// Revert them once per save last written by 3.42; the flag keeps this from re-running on
+			// saves produced by the fixed code (same Major.Minor when shipped as a point release).
+			systemHeatMeltdownMigrated = Lib.ConfigValue(node, "systemHeatMeltdownMigrated", false);
+			if (!systemHeatMeltdownMigrated && version.Major == 3 && version.Minor == 42)
+				SystemHeatBackgroundThermal.MigrateFalseMeltdowns();
+			systemHeatMeltdownMigrated = true;
+
 			// if an old savegame was imported, log some debug info
 			if (version != Lib.KerbalismVersion) Lib.Log("savegame converted from version " + version + " to " + Lib.KerbalismVersion);
         }
@@ -100,6 +108,8 @@ namespace KERBALISM
 
             // save unique id
             node.AddValue("uid", uid);
+
+			node.AddValue("systemHeatMeltdownMigrated", systemHeatMeltdownMigrated);
 
 			// save kerbals data
 			var kerbals_node = node.AddNode("kerbals");
@@ -246,6 +256,7 @@ namespace KERBALISM
 
         public static Version version;                         // savegame version
         public static int uid;                                 // savegame unique id
+        public static bool systemHeatMeltdownMigrated;         // #1200 false meltdown revert already applied to this save
         private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
         private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();    // store data per-vessel
         public static Dictionary<string, StormData> storms;     // store data per-body
