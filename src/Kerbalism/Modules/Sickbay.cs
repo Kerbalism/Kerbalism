@@ -66,6 +66,12 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this))
 				return;
 
+			using (ResourceChangeBatch.Begin())
+				StartBatched();
+		}
+
+		private void StartBatched()
+		{
 			if (slots > MAX_SLOTS)
 				slots = MAX_SLOTS;
 

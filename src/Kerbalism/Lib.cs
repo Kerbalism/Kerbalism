@@ -2971,6 +2971,7 @@ namespace KERBALISM
 		/// <summary> Adds the specified resource amount and capacity to a part,
 		/// the resource is created if it doesn't already exist </summary>
 		///<summary>poached from https://github.com/blowfishpro/B9PartSwitch/blob/master/B9PartSwitch/Extensions/PartExtensions.cs
+		/// Resource list / flow graph notifications are coalesced via <see cref="ResourceChangeBatch"/> (#934).
 		public static PartResource AddResource(Part p, string res_name, double amount, double capacity, bool addToExisting = false)
 		{
 			var reslib = PartResourceLibrary.Instance.resourceDefinitions;
@@ -2992,7 +2993,7 @@ namespace KERBALISM
 				resource.SetInfo(resourceDefinition);
 				resource.maxAmount = capacity;
 				resource.amount = amount;
-				resource.flowState = true;
+				ResourceChangeBatch.SetFlowState(resource, true);
 				resource.isTweakable = resourceDefinition.isTweakable;
 				resource.isVisible = resourceDefinition.isVisible;
 				resource.hideFlow = false;
@@ -3002,12 +3003,12 @@ namespace KERBALISM
 				simulationResource.simulationResource = true;
 				p.SimulationResources?.dict.Add(resourceDefinition.name.GetHashCode(), simulationResource);
 
-				// flow mode is a property that call some code using SimulationResource in its setter.
-				// consequently it must be set after simulationResource is registered to avoid the following log error spam :
-				// [PartSet]: Failed to add Resource XXXXX to Simulation PartSet:XX as corresponding Part XXXX SimulationResource was not found.
-				resource.flowMode = PartResource.FlowMode.Both;
-
-				GameEvents.onPartResourceListChange.Fire(p);
+				// flowMode/flowState setters fire GameEvents that rebuild the vessel flow graph.
+				// Write silently and coalesce notifications (Kerbalism#934).
+				// flowMode must be set after simulationResource is registered to avoid:
+				// [PartSet]: Failed to add Resource XXXXX to Simulation PartSet...
+				ResourceChangeBatch.SetFlowMode(resource, PartResource.FlowMode.Both);
+				ResourceChangeBatch.NotifyListChanged(p);
 			}
 			else
 			{
@@ -3050,7 +3051,7 @@ namespace KERBALISM
 				p.Resources.dict.Remove(resource.info.id);
 				p.SimulationResources?.dict.Remove(resource.info.id);
 
-				GameEvents.onPartResourceListChange.Fire(p);
+				ResourceChangeBatch.NotifyListChanged(p);
 				return;
 			}
 
@@ -3079,7 +3080,7 @@ namespace KERBALISM
 			p.Resources.dict.Remove(resource.info.id);
 			p.SimulationResources?.dict.Remove(resource.info.id);
 
-			GameEvents.onPartResourceListChange.Fire(p);
+			ResourceChangeBatch.NotifyListChanged(p);
 		}
 
 		///<summary>note: the resource must exist</summary>
@@ -3120,9 +3121,7 @@ namespace KERBALISM
 			// if the resource is not in the part, do nothing
 			if (p.Resources.Contains( res_name ))
 			{
-				// set flow state
-				var res = p.Resources[res_name];
-				res.flowState = enable;
+				ResourceChangeBatch.SetFlowState(p.Resources[res_name], enable);
 			} else {
 				Lib.LogDebugStack("Resource " + res_name + " not in part " + p.name);
 			}
