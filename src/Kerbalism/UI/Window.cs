@@ -152,7 +152,9 @@ namespace KERBALISM
 					: HighLogic.Skin.verticalScrollbar;
 				scroll_pos = GUILayout.BeginScrollView(
 					scroll_pos,
-					HighLogic.Skin.horizontalScrollbar,
+					false,
+					false,
+					GUIStyle.none,
 					verticalScrollbar);
 				panel.Render();
 				GUILayout.EndScrollView();
