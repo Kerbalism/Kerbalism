@@ -1,6 +1,6 @@
 ## v3.43 for KSP 1.12.x
 
- - 2026-08-22
+ - 2026-09-27
 
  ### Changes since the last release
  * Added: Allow more background vessels to be processed per tick (#1199, @siimav)
