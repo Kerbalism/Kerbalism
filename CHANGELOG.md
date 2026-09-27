@@ -1,3 +1,17 @@
+## v3.43 for KSP 1.12.x
+
+ - 2026-08-22
+
+ ### Changes since the last release
+ * Added: Allow more background vessels to be processed per tick (#1199, @siimav)
+ * Fixed: Fix infinite loop in resource recipe execution (#1201, @Pzixel)
+ * Fixed: Fix unloaded SystemHeat fission reactors melting down (#1200,#1208 @Aebestach)
+ * Changed: Update Kill method to work better with Bureaucracy... (#1206, @R-T-B)
+ * Changed: Prefix experiment titles with acronyms and fix misleading names (#1209, @Aebestach)
+ * Optimized: Several subsystems have been optimzed to use KSPCF's FastModuleLookup functions (#1197, @Aebestach)
+ * Optimized: Several "small but together signifigant" optimizations (#1192,1193,#1195, @siimav)
+ 
+
 ## v3.42 for KSP 1.12.x
 
  - 2026-08-22
