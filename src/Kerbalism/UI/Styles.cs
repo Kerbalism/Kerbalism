@@ -71,7 +71,7 @@ namespace KERBALISM
 				fixedHeight = ScaleFloat(16.0f)
 			};
 
-			// Opt-in row container for selectable content whose label may wrap.
+			// Opt-in row container for content that grows with wrapped text (log entries).
 			entry_container_wrap = new GUIStyle
 			{
 				stretchWidth = true
@@ -119,6 +119,19 @@ namespace KERBALISM
 				normal = { textColor = Color.white }
 			};
 
+			// Left column of a wrapping row (category stays on one line, top-aligned).
+			entry_label_wrap = new GUIStyle(entry_label_nowrap)
+			{
+				alignment = TextAnchor.UpperLeft
+			};
+
+			// Right column of a wrapping row (message can use multiple lines).
+			entry_value_wrap = new GUIStyle(entry_value)
+			{
+				wordWrap = true,
+				alignment = TextAnchor.UpperLeft
+			};
+
 			// desc row container
 			desc_container = new GUIStyle
 			{
@@ -129,6 +142,7 @@ namespace KERBALISM
 			// entry multi-line description
 			desc = new GUIStyle(entry_label)
 			{
+				wordWrap = true,
 				fontStyle = FontStyle.Italic,
 				alignment = TextAnchor.UpperLeft,
 				margin =
@@ -269,11 +283,13 @@ namespace KERBALISM
 		public static GUIStyle section_container;         // container for a section subtitle
 		public static GUIStyle section_text;              // text for a section subtitle
 		public static GUIStyle entry_container;           // container for a row
-		public static GUIStyle entry_container_wrap;      // selectable row container that allows wrapped labels
+		public static GUIStyle entry_container_wrap;      // row container that grows with wrapped text
 		public static GUIStyle vertical_scrollbar;         // compact scrollbar for IMGUI popup windows
 		public static GUIStyle entry_label;               // left content for a row
 		public static GUIStyle entry_label_nowrap;        // left content for a row that doesn't wrap
+		public static GUIStyle entry_label_wrap;          // left content for a wrapping row
 		public static GUIStyle entry_value;               // right content for a row
+		public static GUIStyle entry_value_wrap;          // right content for a wrapping row
 		public static GUIStyle desc_container;            // multi-line description container
 		public static GUIStyle desc;                      // multi-line description content
 		public static GUIStyle left_icon;                 // an icon on the left

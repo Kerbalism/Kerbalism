@@ -117,13 +117,15 @@ namespace KERBALISM
 				else Render_filter();
 			}
 
-			// start scrolling view
-			scroll_pos = GUILayout.BeginScrollView(scroll_pos, HighLogic.Skin.horizontalScrollbar, HighLogic.Skin.verticalScrollbar);
-
-			// render panel content
+			// Never show a horizontal bar: long labels must wrap inside the column.
+			// Vertical bar only appears when content overflows (LOG wrap, long vessel lists).
+			scroll_pos = GUILayout.BeginScrollView(
+				scroll_pos,
+				false,
+				false,
+				GUIStyle.none,
+				HighLogic.Skin.verticalScrollbar);
 			panel.Render();
-
-			// end scroll view
 			GUILayout.EndScrollView();
 
 			// in planetarium / space center, put the menu at bottom
@@ -144,11 +146,11 @@ namespace KERBALISM
 
 		public float Width()
 		{
-			//if ((page == MonitorPage.data || page == MonitorPage.log || selected_id == Guid.Empty) && !Lib.IsFlight())
-			//	return Styles.ScaleWidthFloat(465.0f);
-			//return Styles.ScaleWidthFloat(355.0f);
+			// LOG asks for a wider panel so long transmission lines wrap fewer times.
+			// Other pages stay at the compact applauncher width.
+			if (page == MonitorPage.log && selected_id != Guid.Empty)
+				return Math.Max(Styles.ScaleWidthFloat(370.0f), panel.Width());
 			return Styles.ScaleWidthFloat(370.0f);
-			//return Styles.ScaleWidthFloat(405.0f);
 		}
 
 		public float Height()
