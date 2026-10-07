@@ -90,9 +90,21 @@ namespace KERBALISM
 
 		private float shieldingCost;
 
-		private bool AtmoFlowState { get => atmosphereRes.flowState; set => atmosphereRes.flowState = value; }
-		private bool WasteAtmoFlowState { get => wasteAtmosphereRes.flowState; set => wasteAtmosphereRes.flowState = value; }
-		private bool ShieldingFlowState { get => shieldingRes.flowState; set => shieldingRes.flowState = value; }
+		private bool AtmoFlowState
+		{
+			get => atmosphereRes.flowState;
+			set => ResourceChangeBatch.SetFlowState(atmosphereRes, value);
+		}
+		private bool WasteAtmoFlowState
+		{
+			get => wasteAtmosphereRes.flowState;
+			set => ResourceChangeBatch.SetFlowState(wasteAtmosphereRes, value);
+		}
+		private bool ShieldingFlowState
+		{
+			get => shieldingRes.flowState;
+			set => ResourceChangeBatch.SetFlowState(shieldingRes, value);
+		}
 
 		private bool IsDeployable => deployAnimator.IsDefined;
 		private bool IsFullyDeployed => perctDeployed == 1.0;
@@ -220,6 +232,12 @@ namespace KERBALISM
             // don't break tutorial scenarios
             if (Lib.DisableScenario(this)) return;
 
+			using (ResourceChangeBatch.Begin())
+				OnStartBatched(state);
+		}
+
+		private void OnStartBatched(StartState state)
+		{
             // check if has Connected Living Space mod
             hasCLS = Lib.HasAssembly("ConnectedLivingSpace");
 
