@@ -414,8 +414,10 @@ namespace KERBALISM
 				double alignment = useCachedAlignment
 					? intakeAlignment
 					: (intakeTransform != null
-						? Math.Max(Vector3d.Dot(worldVelocity, intakeTransform.forward), 0d)
-						: Math.Max(worldVelocity.magnitude, 0d));
+						? Vector3d.Dot(worldVelocity, intakeTransform.forward)
+						: 1d);
+				// Match SpaceDust's clamped raw velocity dot product to avoid applying speed twice.
+				alignment = Math.Min(Math.Max(alignment, 0d), 1d);
 				object intakeVelocityScale = IntegrationReflection.GetField<object>(harvester, "IntakeVelocityScale");
 				return (worldVelocity.magnitude * alignment * IntegrationReflection.EvaluateFloatCurve(intakeVelocityScale, (float)mach, 1f) + intakeSpeedStatic) * intakeArea;
 			}
