@@ -221,7 +221,7 @@ namespace KERBALISM
                 // suns without a solar cycle configuration default to a cycle of 6 years
                 // (set to 0 if you really want none)
                 if (solar_cycle < 0)
-                    solar_cycle = Lib.HoursInDay * 3600 * Lib.DaysInYear * 6;
+                    solar_cycle = Lib.YearSeconds * 6;
 
                 // add a rather nominal surface radiation for suns that have no config
                 // for comparison: the stock kerbin sun has a surface radiation of 47 rad/h, which gives 0.01 rad/h near Kerbin
@@ -782,14 +782,12 @@ namespace KERBALISM
             if (Storm.InProgress(v))
             {
                 // inside a magnetopause (except heliosphere), blackout the signal
-                // outside, add storm radiations modulated by sun visibility
+                // outside, add storm radiations from every active CME (multi-star aware)
                 if (magnetosphere) blackout = true;
                 else
                 {
                     var vd = v.KerbalismData();
-
-                    var activity = Info(vd.EnvMainSun.SunData.body).SolarActivity(false) / 2.0;
-                    var strength = PreferencesRadiation.Instance.StormRadiation * sunlight * (activity + 0.5);
+                    var strength = Storm.RadiationStrength(v, vd);
 
                     radiation += strength;
                     shieldedRadiation += vd.EnvHabitatInfo.AverageHabitatRadiation(strength);

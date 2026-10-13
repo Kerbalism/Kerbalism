@@ -330,7 +330,15 @@ namespace KERBALISM
 					foreach (Part p in part.symmetryCounterparts)
 					{
 						// get the Configure module
-						Configure c = p.FindModulesImplementing<Configure>().Find(k => k.title == title);
+						Configure c = null;
+						foreach (Configure k in p.FindModulesImplementingReadOnly<Configure>())
+						{
+							if (k.title == title)
+							{
+								c = k;
+								break;
+							}
+						}
 
 						// both modules will share configuration
 						c.selected = selected;
@@ -509,9 +517,12 @@ namespace KERBALISM
 				//specs.Add(Lib.BuildString("<color=#00ffff>", tech_title, ":</color>"));
 
 				// add setup titles
+				// Keep title and tech as separate entries: Specs() is also reused as
+				// nested Configure details, which Panel renders as fixed-height rows.
 				foreach (string setup_title in setup_titles)
 				{
-					specs.Add(Lib.BuildString("• <b>", setup_title, "</b>\n   ", Local.Module_Configure_techAt.Format(Lib.Color(tech_title, Lib.Kolor.Science))));
+					specs.Add(Lib.BuildString("• <b>", setup_title, "</b>"));
+					specs.Add(Lib.BuildString("   ", Local.Module_Configure_techAt.Format(Lib.Color(tech_title, Lib.Kolor.Science))));
 				}
 			}
 
@@ -602,7 +613,9 @@ namespace KERBALISM
 			// set metadata
 			p.Title(Lib.BuildString(Local.Module_Configure , " " , "<color=#cccccc>", Lib.Ellipsis(Localizer.Format(title), Styles.ScaleStringLength(40)), "</color>"));//Configure
 			p.Width(Styles.ScaleWidthFloat(300.0f));
-			p.UseCompactScrollbar();
+			// Grow to show every configure option (including "None") when possible;
+			// only use a vertical scrollbar if the full panel exceeds screen height.
+			p.ScrollOnlyOnOverflow();
 		}
 
 		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
@@ -628,11 +641,12 @@ namespace KERBALISM
 			}
 
 			int capturedSlot = selected_i;
+			// Keep the same non-pinned flow as the collapsed details view so Height()
+			// agrees with layout (avoids bottom-row flicker while dragging).
 			p.AddSection(
 				titleText,
 				isExpanded ? string.Empty : setupDesc,
-				click: canReconfigure ? (Action)(() => Toggle_expansion(capturedSlot)) : null,
-				pin: isExpanded);
+				click: canReconfigure ? (Action)(() => Toggle_expansion(capturedSlot)) : null);
 
 			if (isExpanded)
 			{
@@ -914,7 +928,7 @@ namespace KERBALISM
 				// add specs to details
 				foreach (Specifics.Entry e in specs.entries)
 				{
-					details.Add(new Detail(e.label, e.value));
+					Add_detail_rows(details, e.label, e.value);
 				}
 			}
 
@@ -942,6 +956,47 @@ namespace KERBALISM
 				if (mass > double.Epsilon) details.Add(new Detail(Local.Module_mass, Lib.HumanReadableMass(mass)));//"mass"
 				if (cost > double.Epsilon) details.Add(new Detail(Local.Module_cost, Lib.HumanReadableCost(cost)));//"cost"
 			}
+		}
+
+		// Panel rows are fixed-height; split embedded newlines so nested ISpecifics
+		// labels cannot draw a second line on top of the following entry.
+		// Only split when the newline is outside rich-text tags, otherwise
+		// `<color>title\n</color>value` would leak markup as literal text.
+		static void Add_detail_rows(List<Detail> details, string label, string value)
+		{
+			if (string.IsNullOrEmpty(label) || label.IndexOf('\n') < 0)
+			{
+				details.Add(new Detail(label, value));
+				return;
+			}
+
+			int tagDepth = 0;
+			int start = 0;
+			bool first = true;
+			for (int i = 0; i < label.Length; ++i)
+			{
+				char c = label[i];
+				if (c == '<')
+				{
+					bool closing = i + 1 < label.Length && label[i + 1] == '/';
+					if (closing)
+					{
+						if (tagDepth > 0) tagDepth--;
+					}
+					else
+					{
+						tagDepth++;
+					}
+				}
+				else if (c == '\n' && tagDepth == 0)
+				{
+					details.Add(new Detail(label.Substring(start, i - start), first ? value : string.Empty));
+					first = false;
+					start = i + 1;
+				}
+			}
+
+			details.Add(new Detail(label.Substring(start), first ? value : string.Empty));
 		}
 
 		public class Detail

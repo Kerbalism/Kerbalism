@@ -9,6 +9,8 @@ namespace KERBALISM
 	{
 		// config
 		[KSPField] public string active;                          // name of animation to play when enabling/disabling
+		// Stable MM-safe id for Configure MODULE matching (id_field = emitterId). Prefer this over id_index when a part has multiple Emitters.
+		[KSPField] public string emitterId = string.Empty;
 
 		[KSPField(isPersistant = true)] public string title = string.Empty;     // GUI name of the status action in the PAW
 		[KSPField(isPersistant = true)] public bool toggle;						// true if the effect can be toggled on/off
@@ -23,6 +25,10 @@ namespace KERBALISM
 		// animations
 		Animator active_anim;
 		bool radiation_impact_calculated = false;
+		bool pawUiInitialized;
+		bool lastPawRunning;
+		double lastPawRadiation;
+		string lastPawPartTitle = string.Empty;
 
 		// pseudo-ctor
 		public override void OnStart(StartState state)
@@ -83,7 +89,7 @@ namespace KERBALISM
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 				foreach (var p in parts)
 				{
-					var habitat = p.FindModuleImplementing<Habitat>();
+					var habitat = p.FindModuleImplementingFast<Habitat>();
 					if (habitat != null) habitats.Add(habitat);
 				}
 			}
@@ -137,8 +143,19 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			Status = running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none;//"none"
-			Events["Toggle"].guiName = Lib.StatusToggle(part.partInfo.title, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED);
+			string partTitle = part.partInfo.title;
+			if (pawUiInitialized
+				&& lastPawRunning == running
+				&& lastPawRadiation.Equals(radiation)
+				&& lastPawPartTitle == partTitle)
+				return;
+
+			Lib.SetPAWValue(ref Status, running ? Lib.HumanReadableRadiation(Math.Abs(radiation)) : Local.Emitter_none);//"none"
+			Lib.SetEventGuiName(Events["Toggle"], Lib.StatusToggle(partTitle, running ? Local.Generic_ACTIVE : Local.Generic_DISABLED));
+			pawUiInitialized = true;
+			lastPawRunning = running;
+			lastPawRadiation = radiation;
+			lastPawPartTitle = partTitle;
 		}
 
 		public void FixedUpdate()
@@ -218,12 +235,7 @@ namespace KERBALISM
 			Specifics specs = new Specifics();
 			specs.Add(radiation >= 0.0 ? Local.Emitter_Emitted : Local.Emitter_ActiveShielding, Lib.HumanReadableRadiation(Math.Abs(radiation)));
 			if (ec_rate > double.Epsilon)
-			{
-				if (Settings.UseSIUnits)
-					specs.Add(Local.Deploy_actualCost, Lib.SIRate(ec_rate, Lib.ECResID));
-				else
-					specs.Add("EC/s", Lib.HumanReadableRate(ec_rate));
-			}
+				specs.Add(Local.Deploy_actualCost, Lib.HumanOrSIRate(ec_rate, Lib.ECResID));
 			return specs;
 		}
 

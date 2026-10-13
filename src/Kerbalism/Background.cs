@@ -292,7 +292,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "generatorIsActive"))
 			{
 				// create and commit recipe
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockConverter);
+				ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.StockConverter);
 				foreach (ModuleResource ir in generator.resHandler.inputResources)
 				{
 					recipe.AddInput(ir.name, ir.rate * elapsed_s);
@@ -301,7 +301,6 @@ namespace KERBALISM
 				{
 					recipe.AddOutput(or.name, or.rate * elapsed_s, true);
 				}
-				resources.AddRecipe(recipe);
 			}
 		}
 
@@ -346,7 +345,7 @@ namespace KERBALISM
 					  : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
 
 					// create and commit recipe
-					ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockConverter);
+					ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.StockConverter);
 					foreach (var ir in converter.inputList)
 					{
 						recipe.AddInput(ir.ResourceName, ir.Ratio * exp_bonus * elapsed_s);
@@ -355,7 +354,6 @@ namespace KERBALISM
 					{
 						recipe.AddOutput(or.ResourceName, or.Ratio * exp_bonus * elapsed_s, or.DumpExcess);
 					}
-					resources.AddRecipe(recipe);
 				}
 
 				// undo stock behavior by forcing last_update_time to now
@@ -412,13 +410,12 @@ namespace KERBALISM
 					if (abundance > harvester.HarvestThreshold)
 					{
 						// create and commit recipe
-						ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockDrill);
+						ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.StockDrill);
 						foreach (var ir in harvester.inputList)
 						{
 							recipe.AddInput(ir.ResourceName, ir.Ratio * elapsed_s);
 						}
 						recipe.AddOutput(harvester.ResourceName, abundance * harvester.Efficiency * exp_bonus * elapsed_s, true);
-						resources.AddRecipe(recipe);
 					}
 				}
 
@@ -521,7 +518,7 @@ namespace KERBALISM
 
 			double power = Lib.ReflectionValue<float>(radioisotope_generator, "BasePower");
 			double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
-			double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay * Lib.DaysInYear);
+			double mission_time = v.missionTime / Lib.YearSeconds;
 			double remaining = Math.Pow(2.0, (-mission_time) / half_life);
 			ec.Produce(power * remaining * elapsed_s, ResourceBroker.RTG);
 		}

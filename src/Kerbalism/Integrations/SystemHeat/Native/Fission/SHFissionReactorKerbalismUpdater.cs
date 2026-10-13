@@ -159,7 +159,7 @@ namespace KERBALISM
 						if (!updater.resourcesListParsed)
 							updater.ParseResourcesList(proto_part);
 
-						ResourceRecipe recipe = new ResourceRecipe(KERBALISM.ResourceBroker.GetOrCreate(
+						ResourceRecipe recipe = resources.AddRecipe(KERBALISM.ResourceBroker.GetOrCreate(
 							brokerName,
 							KERBALISM.ResourceBroker.BrokerCategory.Converter,
 							brokerTitle));
@@ -187,7 +187,6 @@ namespace KERBALISM
 						}
 						if (ecGeneration > 0)
 							recipe.AddOutput("ElectricCharge", ecGeneration * elapsed_s, dump: true);
-						resources.AddRecipe(recipe);
 					}
 					if (needToStopReactor)
 						Lib.Proto.Set(reactor, "Enabled", false);

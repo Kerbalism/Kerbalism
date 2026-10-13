@@ -113,7 +113,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		public static float BodyMultiplier(this ScienceSituation situation, CelestialBody body)
+		public static float BodyMultiplier(this ScienceSituation situation, CelestialBody body, CBAttributeMapSO.MapAttribute biome = null)
 		{
 			float result = 0f;
 			switch (situation)
@@ -130,6 +130,7 @@ namespace KERBALISM
 					result = body.scienceValues.FlyingHighDataValue; break;
 				case ScienceSituation.BodyGlobal:
 				case ScienceSituation.Space:
+					result = Lib.IsSun(body) ? body.scienceValues.InSpaceHighDataValue : body.scienceValues.InSpaceLowDataValue; break;
 				case ScienceSituation.InSpaceLow:
 					result = body.scienceValues.InSpaceLowDataValue; break;
 				case ScienceSituation.InSpaceHigh:
@@ -140,6 +141,14 @@ namespace KERBALISM
 			{
 				Lib.Log("Science: invalid/unknown situation " + situation.ToString(), Lib.LogLevel.Error);
 				return 1f; // returning 0 will result in NaN values
+			}
+
+			if (biome != null)
+			{
+				if (biome.value > 0f)
+				{
+					result *= biome.value;
+				}
 			}
 			return result;
 		}

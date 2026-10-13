@@ -97,13 +97,7 @@ namespace KERBALISM
 					// get next sample to analyze
 					current_sample = NextSample(vessel);
 
-					double rate = analysis_rate;
-					if(researcher_cs) {
-						int bonus = researcher_cs.Bonus(part.protoModuleCrew);
-						double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
-						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
-						rate *= crew_gain;
-					}
+					double rate = EffectiveRate(researcher_cs, part.protoModuleCrew);
 
 					// if there is a sample to analyze
 					if (current_sample != null)
@@ -142,13 +136,7 @@ namespace KERBALISM
 				background_researcher_cs = new CrewSpecs(lab.researcher);
 				if (!background_researcher_cs || background_researcher_cs.Check(p.protoModuleCrew))
 				{
-					double rate = lab.analysis_rate;
-					if(background_researcher_cs) {
-						int bonus = background_researcher_cs.Bonus(p.protoModuleCrew);
-						double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
-						crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
-						rate *= crew_gain;
-					}
+					double rate = lab.EffectiveRate(background_researcher_cs, p.protoModuleCrew);
 
 					// get sample to analyze
 					background_sample = NextSample(v);
@@ -232,21 +220,91 @@ namespace KERBALISM
 
 		public string GetContractObjectiveType() { return "Laboratory"; }
 
+		private double EffectiveRate(CrewSpecs specs, List<ProtoCrewMember> crew)
+		{
+			double rate = analysis_rate;
+			if (specs)
+			{
+				int bonus = specs.Bonus(crew);
+				double crew_gain = 1 + bonus * Settings.LaboratoryCrewLevelBonus;
+				crew_gain = Lib.Clamp(crew_gain, 1, Settings.MaxLaborartoryBonus);
+				rate *= crew_gain;
+			}
+			return rate;
+		}
+
+		/// <summary>
+		/// Combined analysis rate of all powered, staffed labs currently running on the vessel.
+		/// </summary>
+		private static double GetVesselAnalysisRate(Vessel v)
+		{
+			if (v == null) return 0.0;
+
+			ResourceInfo ec = ResourceCache.GetResource(v, "ElectricCharge");
+			if (ec.Amount <= double.Epsilon) return 0.0;
+
+			double rate = 0.0;
+			if (v.loaded)
+			{
+				foreach (Laboratory lab in v.FindPartModulesImplementing<Laboratory>())
+				{
+					if (!lab.isEnabled) continue;
+					if (!lab.running) continue;
+					if (lab.researcher_cs && !lab.researcher_cs.Check(lab.part.protoModuleCrew)) continue;
+					rate += lab.EffectiveRate(lab.researcher_cs, lab.part.protoModuleCrew);
+				}
+			}
+			else if (v.protoVessel != null)
+			{
+				foreach (var module in Background.Background_PMs(v))
+				{
+					if (module.type != Background.Module_type.Laboratory) continue;
+					if (!Lib.Proto.GetBool(module.m, "running")) continue;
+
+					Laboratory lab = module.module_prefab as Laboratory;
+					if (lab == null) continue;
+
+					CrewSpecs specs = new CrewSpecs(lab.researcher);
+					if (specs && !specs.Check(module.p.protoModuleCrew)) continue;
+					rate += lab.EffectiveRate(specs, module.p.protoModuleCrew);
+				}
+			}
+			return rate;
+		}
+
+		/// <summary>
+		/// Get the sample currently being analyzed and its estimated completion time.
+		/// </summary>
+		public static bool TryGetAnalysisETA(Vessel v, out Sample sample, out double eta)
+		{
+			sample = v == null ? null : NextAnalyzableSample(v);
+			eta = double.NaN;
+			if (sample == null) return false;
+
+			double rate = GetVesselAnalysisRate(v);
+			if (rate <= double.Epsilon) return false;
+
+			eta = sample.size / rate;
+			return !double.IsNaN(eta) && !double.IsInfinity(eta);
+		}
+
+		private static Sample NextAnalyzableSample(Vessel v)
+		{
+			foreach (var drive in Drive.GetDrives(v, true))
+			{
+				foreach (Sample sample in drive.samples.Values)
+				{
+					if (sample.analyze) return sample;
+				}
+			}
+			return null;
+		}
+
 		// get next sample to analyze, return null if there isn't a sample
 		private static SubjectData NextSample(Vessel v)
 		{
-			foreach(var drive in Drive.GetDrives(v, true))
-			{
-				// for each sample
-				foreach (Sample sample in drive.samples.Values)
-				{
-					// if flagged for analysis
-					if (sample.analyze) return sample.subjectData;
-				}
-			}
-
-			// there was no sample to analyze
-			return null;
+			Sample sample = NextAnalyzableSample(v);
+			return sample == null ? null : sample.subjectData;
 		}
 
 		// analyze a sample

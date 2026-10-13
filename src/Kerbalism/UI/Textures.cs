@@ -35,9 +35,6 @@ namespace KERBALISM
 		internal static Texture2D file_scicolor;
 		internal static Texture2D sample_scicolor;
 
-		internal static Texture2D category_normal;
-		internal static Texture2D category_selected;
-
 		internal static Texture2D sun_black;
 		internal static Texture2D sun_white;
 		internal static Texture2D solar_panel;
@@ -55,6 +52,7 @@ namespace KERBALISM
 		internal static Texture2D wrench_red;
 
 		internal static Texture2D signal_white;
+		internal static Texture2D signal_cyan;
 		internal static Texture2D signal_yellow;
 		internal static Texture2D signal_red;
 
@@ -179,9 +177,6 @@ namespace KERBALISM
 			file_scicolor = GetTexture("icons8-file-scicolor");
 			sample_scicolor = GetTexture("icons8-sample-scicolor");
 
-			category_normal = GetTexture("category-normal");
-			category_selected = GetTexture("category-selected");
-
 			sun_black = GetTexture("sun-black");
 			sun_white = GetTexture("sun-white");
 			solar_panel = GetTexture("solar-panel");
@@ -199,6 +194,7 @@ namespace KERBALISM
 			wrench_red = GetTexture("wrench-red");
 
 			signal_white = GetTexture("signal-white");
+			signal_cyan = GetTexture("signal-cyan");
 			signal_yellow = GetTexture("signal-yellow");
 			signal_red = GetTexture("signal-red");
 

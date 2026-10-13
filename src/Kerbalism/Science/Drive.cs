@@ -288,6 +288,7 @@ namespace KERBALISM
 				{
 					file.size -= size;
 					file.subjectData.RemoveDataCollectedInFlight(size);
+
 					if (file.size < double.Epsilon)
 					{
 						filesList.Add(file.subjectData);

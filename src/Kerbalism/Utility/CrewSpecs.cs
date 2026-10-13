@@ -185,6 +185,20 @@ namespace KERBALISM
 			else return Lib.BuildString(LocalizeTraitList(trait), (level == 0 ? string.Empty : " (" + Local.SCIENCEARCHIVE_info_level + " " + level + ")"));//"level:"
 		}
 
+		/// <summary>
+		/// Return the stricter crew requirement used to repair a critical failure.
+		/// Anyone becomes an engineer, and explicit trait requirements gain one
+		/// experience level up to the stock maximum of five.
+		/// </summary>
+		public CrewSpecs ElevatedForCritical()
+		{
+			if (!enabled) return new CrewSpecs(string.Empty);
+			if (trait.Length == 0) return new CrewSpecs("Engineer");
+
+			uint elevatedLevel = Math.Min(level + 1, 5);
+			return new CrewSpecs(Lib.BuildString(trait, "@", elevatedLevel.ToString()));
+		}
+
 		// can check if enabled by bool comparison
 		public static implicit operator bool(CrewSpecs ct)
 		{

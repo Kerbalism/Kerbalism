@@ -1,0 +1,214 @@
+site_name: Kerbalism
+site_description: Life support, radiation, reliability and science-over-time for Kerbal Space Program
+site_url: https://kerbalism.github.io/Kerbalism/
+repo_url: https://github.com/Kerbalism/Kerbalism
+repo_name: Kerbalism
+edit_uri: ""
+copyright: Kerbalism contributors — Unlicense (public domain)
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  custom_dir: overrides
+  features:
+    # instant nav can couple page scroll with footer/TOC overlays; keep full reloads
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to system preference
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    logo: material/satellite-variant
+    repo: fontawesome/brands/github
+    admonition:
+      note: material/satellite-variant
+      tip: material/rocket-launch
+      warning: material/alert
+      danger: material/skull
+
+plugins:
+  - search:
+      lang:
+        - en
+        - zh
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+          site_name: Kerbalism
+          site_description: Kerbal Space Program 的生命维持、辐射、可靠性与持续科研模组文档
+          nav_translations:
+            Home: 首页
+            FAQ: 常见问题
+            About: 关于
+            Mod support: 模组兼容
+            Links: 链接
+            Play guide: 游玩指南
+            Overview: 概览
+            "Tutorial: Going to the Mun": "教程：前往 Mun"
+            "Tutorial: Doing science": "教程：做科研"
+            User interface (GUI): 用户界面 (GUI)
+            Life support: 生命维持
+            Greenhouse balance: 温室质量平衡
+            Habitat: 居住舱
+            Environment & radiation: 环境与辐射
+            Processes and resources: 流程与资源
+            Science: 科研
+            Signal: 通信
+            Reliability: 可靠性
+            Automation: 自动化
+            Parts: 部件
+            Technical guide: 技术指南
+            Settings: 设置
+            Profile: Profile 配置
+            MM patch injection: MM 补丁注入
+            Background simulation: 后台模拟
+            Radiation: 辐射
+            Supporting Science Mods: 科研模组支持
+            "C# API": C# API
+            PartModules: PartModules
+            Crew Specifications: 乘员规格
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.caret
+  - pymdownx.tilde
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Kerbalism/Kerbalism
+      name: GitHub
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/3JAE2JE
+      name: Discord
+
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/palette.css
+
+extra_javascript:
+  - javascripts/repo-stats.js
+
+nav:
+  - Home: index.md
+  - FAQ: faq.md
+  - Mod support: mod-support.md
+  - Links: links.md
+  - Play guide:
+      - Overview: play-guide/index.md
+      - "Tutorial: Going to the Mun": play-guide/basic-tutorial.md
+      - "Tutorial: Doing science": play-guide/science-tutorial.md
+      - User interface (GUI): play-guide/gui.md
+      - Life support: play-guide/life-support.md
+      - Greenhouse balance: play-guide/greenhouse-balance.md
+      - Habitat: play-guide/habitat.md
+      - Environment & radiation: play-guide/environment.md
+      - Processes and resources: play-guide/resources.md
+      - Science: play-guide/science.md
+      - Signal: play-guide/signal.md
+      - Reliability: play-guide/reliability.md
+      - Automation: play-guide/automation.md
+      - Parts: play-guide/parts.md
+  - Technical guide:
+      - Overview: tech-guide/index.md
+      - Settings: tech-guide/settings.md
+      - Profile: tech-guide/profile.md
+      - MM patch injection: tech-guide/mm-patch-injection.md
+      - Background simulation: tech-guide/background-simulation.md
+      - Radiation: tech-guide/radiation.md
+      - Supporting Science Mods: tech-guide/supporting-science-mods.md
+      - "C# API": tech-guide/csharp-api.md
+      - PartModules:
+          - Overview: tech-guide/part-modules/index.md
+          - Crew Specifications: tech-guide/part-modules/crew-specifications.md
+          - Comfort: tech-guide/part-modules/comfort.md
+          - Configure: tech-guide/part-modules/configure.md
+          - Emitter: tech-guide/part-modules/emitter.md
+          - ECDrainViaPM: tech-guide/part-modules/ecdrainviapm.md
+          - Experiment: tech-guide/part-modules/experiment.md
+          - GravityRing: tech-guide/part-modules/gravityring.md
+          - Greenhouse: tech-guide/part-modules/greenhouse.md
+          - Habitat: tech-guide/part-modules/habitat.md
+          - HardDrive: tech-guide/part-modules/harddrive.md
+          - Harvester: tech-guide/part-modules/harvester.md
+          - Laboratory: tech-guide/part-modules/laboratory.md
+          - PassiveShield: tech-guide/part-modules/passiveshield.md
+          - PlannerController: tech-guide/part-modules/plannercontroller.md
+          - ProcessController: tech-guide/part-modules/processcontroller.md
+          - Reliability: tech-guide/part-modules/reliability.md
+          - Sensor: tech-guide/part-modules/sensor.md
+          - SCANsat: tech-guide/part-modules/scansat.md
+          - SolarPanelFixer: tech-guide/part-modules/solarpanelfixer.md
+  - About: about.md

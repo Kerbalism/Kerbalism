@@ -311,7 +311,7 @@ Kerbalism uses [KSPBuildTools](https://github.com/KSPModdingLibs/KSPBuildTools) 
 5. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) (and other dependencies) into that KSP install via CKAN or manually.
 6. Build from the repository root:
 
-       dotnet build -c Release src/Kerbalism/Kerbalism.csproj
+       dotnet build -c Release Kerbalism.sln
 
 The compiled `Kerbalism.dll` is written to `GameData/Kerbalism/`. Live-install deployment only runs when `Kerbalism_DeployToKsp` is `true`.
 
@@ -405,7 +405,7 @@ You can enable/disable the display of any calls not called in the last frame wit
 
   - Complete the `CHANGELOG.md` file, and fill out the release date field. Make sure to credit all contributors.
   - Adjust the compatible KSP version numbers in `Kerbalism.version`. Actually test if they work in all the KSP version claimed compatible.
-  - Bump the version number in `Kerbalism.version` and the `<Version>` property in `src/Kerbalism/Kerbalism.csproj` according the the versioning rules [below](#versioning).
+  - Bump `<KerbalismPackageVersion>` in `Directory.Build.props` (shared by Kerbalism and KerbalismEngineFailures). Rebuild so `.version` files regenerate; follow the versioning rules [below](#versioning).
   - Check with Git that your working directory is clean. No Changes are allowed, everything must be committed.
   - Build the Project in release mode
   - Clean out the `GameData` folder of your KSP install, only the ´Squad` folder should remain.

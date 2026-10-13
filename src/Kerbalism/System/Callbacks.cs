@@ -73,9 +73,24 @@ namespace KERBALISM
 		}
 	}
 
+	// Create an OnAttemptBoard event that allows preventing boarding a vessel from EVA
+	// Called before anything (experiments/inventory...) has been transferred to the boarded vessel
+	[HarmonyPatch(typeof(KerbalEVA))]
+	[HarmonyPatch("BoardPart")]
+	class KerbalEVA_BoardPart
+	{
+		static bool Prefix(KerbalEVA __instance, Part p)
+		{
+			// continue to BoardPart() if AttemptBoard returns true
+			return Kerbalism.Callbacks.AttemptBoard(__instance, p);
+		}
+	}
+
 	public sealed class Callbacks
 	{
 		public static EventData<Part, Configure> onConfigure = new EventData<Part, Configure>("onConfigure");
+
+		private static bool ignoreNextBoardAttemptDriveCheck = false;
 
 		public Callbacks()
 		{
@@ -100,11 +115,12 @@ namespace KERBALISM
 			// survive load/unload transitions : Vessel.Unload() replaces the protoVessel instance
 			// (so cached snapshot references would write to dead objects), and loading a vessel
 			// recreates all PartModules. None of the vessel-modified events fire on these transitions.
-			GameEvents.onVesselLoaded.Add((v) => Cache.PurgeVesselCaches(v));
+			GameEvents.onVesselLoaded.Add((v) => { Cache.PurgeVesselCaches(v); SystemHeatBackgroundThermal.OnVesselLoaded(v); });
 			GameEvents.onVesselUnloaded.Add((v) => Cache.PurgeVesselCaches(v));
+			// Capture SystemHeat loop / fission proto while parts are still live, before pack.
+			GameEvents.onVesselGoOnRails.Add(this.OnVesselGoOnRailsCapture);
 
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
-			GameEvents.onGUIEditorToolbarReady.Add(this.AddEditorCategory);
 
 			GameEvents.onGUIAdministrationFacilitySpawn.Add(() => visible = false);
 			GameEvents.onGUIAdministrationFacilityDespawn.Add(() => visible = true);
@@ -141,6 +157,8 @@ namespace KERBALISM
 		void OnGameStateSave(ConfigNode node)
 		{
 			ScienceDB.PrepareUnknownSubjectsForSave();
+			if (HighLogic.LoadedSceneIsFlight)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
 		}
 
 		void OnGameStateSaved(Game game)
@@ -175,6 +193,11 @@ namespace KERBALISM
 		{
 			if (HighLogic.LoadedSceneIsFlight)
 				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
+
+		private void OnVesselGoOnRailsCapture(Vessel v)
+		{
+			SystemHeatBackgroundThermal.CaptureLoadedTemperatures(v);
 		}
 
 		// Called when two vessels are about to be merged, while their state is not yet changed.
@@ -368,7 +391,7 @@ namespace KERBALISM
             // the need for handling where the EVA propellant comes from (there is no more magic refill in stock).
             // However, stock doesn't provide any way to refill the jetpack, so we still handle that.
 
-            KerbalEVA kerbalEVA = evaKerbalPart.FindModuleImplementing<KerbalEVA>();
+            KerbalEVA kerbalEVA = evaKerbalPart.FindModuleImplementingFast<KerbalEVA>();
             List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
             if (kerbalEVA.ModuleInventoryPartReference != null)
             {
@@ -418,6 +441,86 @@ namespace KERBALISM
         }
 
 
+		/// <summary>
+		/// Stock-alike confirmation before boarding when the target vessel cannot store all EVA science.
+		/// Backported from Kerbalism 4 (#673).
+		/// </summary>
+		public bool AttemptBoard(KerbalEVA instance, Part targetPart)
+		{
+			if (!Features.Science || instance == null || targetPart == null || instance.vessel == null || targetPart.vessel == null)
+			{
+				ignoreNextBoardAttemptDriveCheck = false;
+				return true;
+			}
+
+			if (!ignoreNextBoardAttemptDriveCheck)
+			{
+				double filesSize = 0.0;
+				double fileCapacity = 0.0;
+				int samplesSize = 0;
+				int samplesCapacity = 0;
+				bool unlimitedFileCapacity = false;
+				bool unlimitedSampleCapacity = false;
+
+				foreach (Drive drive in Drive.GetDrives(instance.vessel, true))
+				{
+					filesSize += drive.FilesSize();
+					samplesSize += drive.SamplesSize();
+				}
+
+				if (filesSize <= double.Epsilon && samplesSize <= 0)
+				{
+					ignoreNextBoardAttemptDriveCheck = false;
+					return true;
+				}
+
+				foreach (Drive drive in Drive.GetDrives(targetPart.vessel))
+				{
+					double availableFiles = drive.FileCapacityAvailable();
+					if (availableFiles >= double.MaxValue / 2.0)
+						unlimitedFileCapacity = true;
+					else
+						fileCapacity += availableFiles;
+
+					double availableSamples = drive.SampleCapacityAvailable();
+					if (availableSamples >= double.MaxValue / 2.0)
+						unlimitedSampleCapacity = true;
+					else
+						samplesCapacity += Lib.SampleSizeToSlots(availableSamples);
+				}
+
+				bool filesDontFit = !unlimitedFileCapacity && filesSize > fileCapacity;
+				bool samplesDontFit = !unlimitedSampleCapacity && samplesSize > samplesCapacity;
+
+				if (filesDontFit || samplesDontFit)
+				{
+					string message = Lib.BuildString(
+						Local.CallBackMsg_EvaBoardNoSpace.Format(targetPart.vessel.vesselName, instance.vessel.vesselName),
+						"\n\n",
+						Local.CallBackMsg_EvaBoardFiles, " : ", Lib.HumanReadableDataSize(filesSize),
+						" - ", Local.CallBackMsg_EvaBoardStorageCapacity, " : ", Lib.HumanReadableDataSize(fileCapacity), "\n",
+						Local.CallBackMsg_EvaBoardSamples, " : ", Lib.HumanReadableSampleSize(samplesSize),
+						" - ", Local.CallBackMsg_EvaBoardStorageCapacity, " : ", Lib.HumanReadableSampleSize(samplesCapacity), "\n\n",
+						Local.CallBackMsg_EvaBoardDataLoss);
+
+					Lib.Popup(
+						Localizer.Format("#autoLOC_116007"), // Cannot store Experiments
+						message,
+						new DialogGUIButton(Localizer.Format("#autoLOC_116008"), () => // Board Anyway\n(Dump Experiments)
+						{
+							ignoreNextBoardAttemptDriveCheck = true;
+							instance.BoardPart(targetPart);
+						}),
+						new DialogGUIButton(Localizer.Format("#autoLOC_116009"), () => { })); // Cancel
+
+					return false;
+				}
+			}
+
+			ignoreNextBoardAttemptDriveCheck = false;
+			return true;
+		}
+
 		void FromEVA(GameEvents.FromToAction<Part, Part> data)
 		{
 			// contract configurator calls this event with both parts being the same when it adds a passenger
@@ -437,7 +540,7 @@ namespace KERBALISM
 			string evaPropName = Lib.EvaPropellantName();
 			if (evaPropName != "EVA Propellant")
 			{
-				KerbalEVA kerbalEVA = data.from.FindModuleImplementing<KerbalEVA>();
+				KerbalEVA kerbalEVA = data.from.FindModuleImplementingFast<KerbalEVA>();
 				List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
 				if (kerbalEVA.ModuleInventoryPartReference != null)
 				{
@@ -580,16 +683,6 @@ namespace KERBALISM
 				Drive.DeleteDrivesData(v);
 		}
 
-		void AddEditorCategory()
-		{
-			if (PartLoader.LoadedPartsList.Find(k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0) != null)
-			{
-				RUI.Icons.Selectable.Icon icon = new RUI.Icons.Selectable.Icon("Kerbalism", Textures.category_normal, Textures.category_selected);
-				PartCategorizer.Category category = PartCategorizer.Instance.filters.Find(k => string.Equals(k.button.categoryName, "filter by function", StringComparison.OrdinalIgnoreCase));
-				PartCategorizer.AddCustomSubcategoryFilter(category, "Kerbalism", "Kerbalism", icon, k => k.tags.IndexOf("_kerbalism", StringComparison.Ordinal) >= 0);
-			}
-		}
-
 		void TechResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
 		{
 			if (data.target != RDTech.OperationResult.Successful)
@@ -604,7 +697,7 @@ namespace KERBALISM
 				if (p.partPrefab.Modules.Count == 0)
 					continue;
 
-				foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
+				foreach (Configure cfg in p.partPrefab.FindModulesImplementingReadOnly<Configure>())
 				{
 					foreach (ConfigureSetup setup in cfg.Setups())
 					{

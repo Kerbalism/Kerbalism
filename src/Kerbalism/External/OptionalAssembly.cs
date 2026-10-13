@@ -7,7 +7,8 @@ namespace KERBALISM
 {
 	internal sealed class OptionalAssembly
 	{
-		private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+		private const BindingFlags DeclaredFlags =
+			BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
 		private readonly Dictionary<string, Type> typeCache = new Dictionary<string, Type>();
 		private readonly Dictionary<string, FieldInfo> fieldCache = new Dictionary<string, FieldInfo>();
@@ -52,7 +53,14 @@ namespace KERBALISM
 			FieldInfo field;
 			if (!fieldCache.TryGetValue(key, out field))
 			{
-				field = type.GetField(name, Flags);
+				// Walk inheritance: private fields on base types (e.g. ModulePETAnimation.deployState)
+				// are invisible to Type.GetField on the derived type.
+				for (Type current = type; current != null; current = current.BaseType)
+				{
+					field = current.GetField(name, DeclaredFlags);
+					if (field != null)
+						break;
+				}
 				fieldCache[key] = field;
 			}
 			return field;
@@ -67,7 +75,12 @@ namespace KERBALISM
 			PropertyInfo property;
 			if (!propertyCache.TryGetValue(key, out property))
 			{
-				property = type.GetProperty(name, Flags);
+				for (Type current = type; current != null; current = current.BaseType)
+				{
+					property = current.GetProperty(name, DeclaredFlags);
+					if (property != null)
+						break;
+				}
 				propertyCache[key] = property;
 			}
 			return property;
@@ -82,7 +95,14 @@ namespace KERBALISM
 			MethodInfo method;
 			if (!methodCache.TryGetValue(key, out method))
 			{
-				method = parameters == null ? type.GetMethod(name, Flags) : type.GetMethod(name, Flags, null, parameters, null);
+				for (Type current = type; current != null; current = current.BaseType)
+				{
+					method = parameters == null
+						? current.GetMethod(name, DeclaredFlags)
+						: current.GetMethod(name, DeclaredFlags, null, parameters, null);
+					if (method != null)
+						break;
+				}
 				methodCache[key] = method;
 			}
 			return method;

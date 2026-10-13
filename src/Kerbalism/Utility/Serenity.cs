@@ -49,7 +49,7 @@ namespace KERBALISM
 					return null; // deployables are 1-part vessels
 				foreach (Part part in v.parts)
 				{
-					var result = part.FindModuleImplementing<ModuleGroundExpControl>();
+					var result = part.FindModuleImplementingFast<ModuleGroundExpControl>();
 					if (result != null)
 						return result;
 				}
@@ -59,7 +59,7 @@ namespace KERBALISM
 				foreach (ProtoPartSnapshot p in v.protoVessel.protoPartSnapshots)
 				{
 					Part part_prefab = PartLoader.getPartInfoByName(p.partName).partPrefab;
-					var result = part_prefab.FindModuleImplementing<ModuleGroundExpControl>();
+					var result = part_prefab.FindModuleImplementingFast<ModuleGroundExpControl>();
 					if (result != null)
 						return result;
 				}

@@ -124,8 +124,19 @@ namespace KERBALISM
 		// ensure unloadedDoOnce is true for unloaded vessels
 		private static void CommNetVessel_OnNetworkPreUpdate_Prefix(CommNetVessel __instance, ref bool ___unloadedDoOnce)
 		{
-			if (!__instance.Vessel.loaded && __instance.CanComm)
+			if (__instance.Vessel.loaded)
+				return;
+
+			// Stock doesn't update unloaded vessels after canComm becomes false. Force an update
+			// only when a vessel disabled by Kerbalism has power again, so it can rejoin CommNet.
+			if (__instance.CanComm
+				|| (__instance.Vessel.TryGetVesselData(out VesselData vd)
+					&& vd.CommNetPowerDisabled
+					&& vd.IsSimulated
+					&& Lib.IsPowered(__instance.Vessel)))
+			{
 				___unloadedDoOnce = true;
+			}
 		}
 
 
@@ -137,11 +148,39 @@ namespace KERBALISM
 		}
 
 
-		// apply storm radiation factor to the comm strength multiplier used by stock for plasma blackout
-		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance, ref bool ___inPlasma, ref double ___plasmaMult)
+		// prevent unpowered vessels from remaining in CommNet, and apply storm radiation
+		// factor to the comm strength multiplier used by stock for plasma blackout
+		private static void CommNetVessel_OnNetworkPreUpdate_Postfix(CommNetVessel __instance, ref bool ___canComm, ref bool ___inPlasma, ref double ___plasmaMult)
 		{
-			if (!__instance.CanComm || !__instance.Vessel.TryGetVesselData(out VesselData vd))
+			if (!__instance.Vessel.TryGetVesselData(out VesselData vd))
 				return;
+
+			// Stock doesn't consume resources for unloaded vessels, so it never notices when
+			// Kerbalism background simulation drains their EC. Keep the CommNet node in sync
+			// with Kerbalism's resource cache so an unpowered vessel can't act as a relay.
+			if (vd.IsSimulated && !Lib.IsPowered(__instance.Vessel))
+			{
+				// Remember only vessels we ourselves took offline for power, so a later
+				// restore does not force canComm on ships that were already unable to comm.
+				if (___canComm)
+					vd.CommNetPowerDisabled = true;
+
+				___canComm = false;
+				return;
+			}
+
+			// Power is back. Stock often leaves unloaded canComm false after we forced it
+			// off, even when unloadedDoOnce triggers UpdateComm. Explicitly restore it so
+			// the vessel can rejoin CommNet without being focused (#1162).
+			if (vd.CommNetPowerDisabled)
+			{
+				___canComm = true;
+				vd.CommNetPowerDisabled = false;
+			}
+			else if (!___canComm)
+			{
+				return;
+			}
 
 			if (vd.EnvStormRadiation > 0.0)
 			{
