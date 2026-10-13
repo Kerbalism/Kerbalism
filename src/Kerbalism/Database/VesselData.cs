@@ -807,7 +807,7 @@ namespace KERBALISM
 			Profiler.BeginSample("VesselData.Ctor");
 
 			ExistsInFlight = true;	// vessel exists
-			IsSimulated = true;	// will be evaluated in next fixedupdate
+			IsSimulated = false;	// will be evaluated in next fixedupdate
 
 			Vessel = vessel;
 			VesselId = Vessel.id;
@@ -837,7 +837,7 @@ namespace KERBALISM
 		{
 			Profiler.BeginSample("VesselData.Ctor");
 			ExistsInFlight = false;
-			IsSimulated = true;
+			IsSimulated = false;
 
 			VesselId = protoVessel.vesselID;
 
