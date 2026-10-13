@@ -3,7 +3,6 @@
  - 2026-09-27
 
  ### Changes since the last release
- * Changed: Always freeze in-space solar-panel exposure while unloaded or in analytic warp; old saves use their latest cached exposure or 100%, and the difficulty toggle is removed (#1214)
  * Added: Allow more background vessels to be processed per tick (#1199, @siimav)
  * Fixed: Fix infinite loop in resource recipe execution (#1201, @Pzixel)
  * Fixed: Fix unloaded SystemHeat fission reactors melting down (#1200,#1208 @Aebestach)
