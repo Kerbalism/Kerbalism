@@ -643,6 +643,10 @@ namespace KERBALISM
 			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
 		}
 
+		// ResourceUpdate's arguments, reused every physics step (not persisted)
+		private readonly Dictionary<string, double> resourceUpdateAvailable = new Dictionary<string, double>();
+		private readonly List<KeyValuePair<string, double>> resourceUpdateRequests = new List<KeyValuePair<string, double>>();
+
 		/// <summary>
 		/// Call ResourceUpdate on all part modules that have that method
 		/// </summary>
@@ -669,10 +673,11 @@ namespace KERBALISM
 
 			List<ResourceInfo> allResources = resources.GetAllResources(Vessel); // there might be some performance to be gained by caching the list of all resource
 
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			Dictionary<string, double> availableResources = resourceUpdateAvailable;
+			availableResources.Clear();
 			foreach (var ri in allResources)
 				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+			List<KeyValuePair<string, double>> resourceChangeRequests = resourceUpdateRequests;
 
 			foreach(var resourceUpdateDelegate in resourceUpdateDelegates)
 			{
