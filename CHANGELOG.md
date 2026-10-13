@@ -3,6 +3,7 @@
  - 2026-09-27
 
  ### Changes since the last release
+ * Fixed: CryoTanks resource-unit conversions, liquid-hydrogen fuel-cell output, methane/algae mass balance, and overlapping USI FTT hydrogen setups (#1112, #1120, #1213, @DangerNoodle9000, @Aebestach)
  * Added: Allow more background vessels to be processed per tick (#1199, @siimav)
  * Fixed: Fix infinite loop in resource recipe execution (#1201, @Pzixel)
  * Fixed: Fix unloaded SystemHeat fission reactors melting down (#1200,#1208 @Aebestach)

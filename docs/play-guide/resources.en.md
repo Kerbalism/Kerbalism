@@ -70,6 +70,18 @@ Fuel cells can be configured to use a number of resources to produce *ElectricCh
 | H2+O2 | Hydrogen and Oxygen | Water |
 | Monoprop+O2 | MonoPropellant and Oxygen | Water and Nitrogen |
 
+## Cryogenic processes
+
+With CryoTanks installed, chemical plants can liquefy or vaporize hydrogen and methane. Phase changes conserve mass: 1 unit of liquid hydrogen corresponds to about 788.10 units of Hydrogen, and 1 unit of liquid methane to about 593.60 units of Methane, using the CRP resource definitions. Both directions consume ElectricCharge. The phase-change processes receive the same engineer bonus as electrolysis and methanation.
+
+CO2 Methanation and the legacy SE-RWGS process directly produce LqdMethane and Water. Their power demand includes methane liquefaction, so existing liquid-methane production chains do not need another process slot. The separate methane liquefier and vaporizer are optional. Gas buffers provided by the phase-change setups start empty.
+
+The LH2 Oxygen Fuel Cell consumes liquid hydrogen and gaseous Oxygen. It produces the same power and Water as the gas-hydrogen fuel cell on the same part. Liquid hydrogen changes the storage requirements, not the fuel cell's power rating. The default profile uses Oxidizer as a peroxide proxy; it is not interchangeable with the Oxygen consumed by these fuel cells.
+
+The Algae Bioreactor remains available for existing craft. Its simplified carbohydrate model conserves mass across CarbonDioxide, WasteWater, Food, Oxygen and Water. At capacity 1 it supplies one Kerbal's base Food demand, before the engineer bonus, and consumes 1.8 EC/s for lighting and pumps.
+
+USI FTT uses the same hydrogen conversion and fuel-cell rates. Installing both mods adds one set of selectable hydrogen processes. Existing process names and liquid-methane connections are retained, but vessels relying on the former excessive fuel-cell output or incorrect resource yields will need rebalancing. These configurations do not constitute a complete thermodynamic or SystemHeat model.
+
 ## Mining stations
 
 You will need two things to produce Liquid Fuel and Oxidizer on a mining station: CO2 and Hydrogen. CO2 can be extracted from ore or from the atmosphere, if it has any in it (hint: Duna does). Hydrogen can be gained from Water that you have to find somewhere.
