@@ -26,9 +26,7 @@ namespace KERBALISM
 			public PartResource Resource;
 			public Part Part;
 			public bool FromState;
-			public bool ToState;
 			public PartResource.FlowMode FromMode;
-			public PartResource.FlowMode ToMode;
 		}
 
 		private sealed class BatchScope : IDisposable
@@ -100,8 +98,7 @@ namespace KERBALISM
 				Kind = ChangeKind.FlowState,
 				Resource = resource,
 				Part = resource.part,
-				FromState = previous,
-				ToState = flowState
+				FromState = previous
 			});
 		}
 
@@ -129,8 +126,7 @@ namespace KERBALISM
 					Kind = ChangeKind.FlowMode,
 					Resource = resource,
 					Part = resource.part,
-					FromMode = current is PartResource.FlowMode previousMode ? previousMode : resource.flowMode,
-					ToMode = flowMode
+					FromMode = current is PartResource.FlowMode previousMode ? previousMode : resource.flowMode
 				});
 				return;
 			}
@@ -275,9 +271,10 @@ namespace KERBALISM
 			if (editorShip != null)
 				AddSuppressedPartSets(editorShip);
 
-			// Replay every original event, in order, so third-party listeners retain the
-			// stock API semantics. Harmony prefixes below skip only the costly stock
-			// PartSet/Vessel handlers during this replay.
+			// Replay every notification, in order, using the resource's current value.
+			// The writes have already happened; restoring historical values here would
+			// undo changes made after a startup scope ended. Harmony prefixes skip
+			// only the costly stock PartSet/Vessel handlers during this replay.
 			replaying = true;
 			try
 			{
@@ -372,21 +369,21 @@ namespace KERBALISM
 				case ChangeKind.FlowState:
 					if (change.Resource == null)
 						return;
-					change.Resource._flowState = change.ToState;
-					SyncSimulationResourceFlowState(change.Resource, change.ToState);
+					bool flowState = change.Resource.flowState;
+					SyncSimulationResourceFlowState(change.Resource, flowState);
 					GameEvents.onPartResourceFlowStateChange.Fire(
 						new GameEvents.HostedFromToAction<PartResource, bool>(
-							change.Resource, change.FromState, change.ToState));
+							change.Resource, change.FromState, flowState));
 					return;
 
 				case ChangeKind.FlowMode:
 					if (change.Resource == null || !TryGetFlowModeField(out FieldInfo field))
 						return;
-					field.SetValue(change.Resource, change.ToMode);
-					SyncSimulationResourceFlowMode(change.Resource, field, change.ToMode);
+					PartResource.FlowMode flowMode = change.Resource.flowMode;
+					SyncSimulationResourceFlowMode(change.Resource, field, flowMode);
 					GameEvents.onPartResourceFlowModeChange.Fire(
 						new GameEvents.HostedFromToAction<PartResource, PartResource.FlowMode>(
-							change.Resource, change.FromMode, change.ToMode));
+							change.Resource, change.FromMode, flowMode));
 					return;
 
 				case ChangeKind.ResourceList:
