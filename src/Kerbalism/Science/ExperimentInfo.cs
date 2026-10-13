@@ -517,18 +517,32 @@ namespace KERBALISM
 				return isAllowed;
 			}
 
+			public void AddTo(Specifics specs)
+			{
+				if (bodiesAllowed.Count > 0)
+				{
+					specs.Add(Lib.Color(Local.Experimentinfo_Bodiesallowed, Lib.Kolor.Cyan, true));//Bodies allowed:
+					specs.Add(JoinTitles(bodiesAllowed));
+				}
+
+				if (bodiesNotAllowed.Count > 0)
+				{
+					specs.Add(Lib.Color(Local.Experimentinfo_Bodiesnotallowed, Lib.Kolor.Cyan, true));//Bodies not allowed:
+					specs.Add(JoinTitles(bodiesNotAllowed));
+				}
+			}
+
 			public string ConditionsToString()
 			{
 				ExpInfoSB.Length = 0;
 
 				if (bodiesAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesallowed + "\n", Lib.Kolor.Cyan, true));//Bodies allowed:
-					for (int i = bodiesAllowed.Count - 1; i >= 0; i--)
-					{
-						ExpInfoSB.Append(bodiesAllowed[i].Title);
-						if (i > 0) ExpInfoSB.Append(", ");
-					}
+					// Keep the newline outside the color tags so the string can be
+					// split into Panel rows without breaking rich-text markup.
+					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesallowed, Lib.Kolor.Cyan, true));//Bodies allowed:
+					ExpInfoSB.Append("\n");
+					ExpInfoSB.Append(JoinTitles(bodiesAllowed));
 
 					if (bodiesNotAllowed.Count > 0)
 						ExpInfoSB.Append("\n");
@@ -536,15 +550,26 @@ namespace KERBALISM
 
 				if (bodiesNotAllowed.Count > 0)
 				{
-					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesnotallowed + "\n", Lib.Kolor.Cyan, true));//Bodies not allowed:
-					for (int i = bodiesNotAllowed.Count - 1; i >= 0; i--)
-					{
-						ExpInfoSB.Append(bodiesNotAllowed[i].Title);
-						if (i > 0) ExpInfoSB.Append(", ");
-					}
+					ExpInfoSB.Append(Lib.Color(Local.Experimentinfo_Bodiesnotallowed, Lib.Kolor.Cyan, true));//Bodies not allowed:
+					ExpInfoSB.Append("\n");
+					ExpInfoSB.Append(JoinTitles(bodiesNotAllowed));
 				}
 
 				return ExpInfoSB.ToString();
+			}
+
+			static string JoinTitles(List<BodyCondition> conditions)
+			{
+				if (conditions.Count == 1)
+					return conditions[0].Title;
+
+				var sb = new StringBuilder();
+				for (int i = conditions.Count - 1; i >= 0; i--)
+				{
+					sb.Append(conditions[i].Title);
+					if (i > 0) sb.Append(", ");
+				}
+				return sb.ToString();
 			}
 
 			private abstract class BodyCondition

@@ -4,7 +4,7 @@
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>Kerbalism</AssemblyName>
     <RootNamespace>KERBALISM</RootNamespace>
-    <TargetFramework>net481</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
 
     <Description>Hundreds of Kerbals were killed in the making of this mod.</Description>
     <Product>Kerbalism</Product>
@@ -39,6 +39,11 @@
     <ModReference Include="0Harmony">
       <DLLPath>GameData/000_Harmony/0Harmony.dll</DLLPath>
       <CKANIdentifier>Harmony2</CKANIdentifier>
+      <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
+    </ModReference>
+    <ModReference Include="KSPCommunityFixes">
+      <DLLPath>GameData/KSPCommunityFixes/Plugins/KSPCommunityFixes.dll</DLLPath>
+      <CKANIdentifier>KSPCommunityFixes</CKANIdentifier>
       <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
     </ModReference>
   </ItemGroup>

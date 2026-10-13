@@ -3175,7 +3175,7 @@ namespace KERBALISM
 			Part p = PartLoader.getPartInfoByName( "kerbalEVA" ).partPrefab;
 
 			// then get the KerbalEVA module prefab
-			KerbalEVA m = p.FindModuleImplementing<KerbalEVA>();
+			KerbalEVA m = p.FindModuleImplementingFast<KerbalEVA>();
 
 			// finally, return the propellant name
 			return m.propellantResourceName;

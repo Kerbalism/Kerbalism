@@ -19,7 +19,7 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				SpaceDustHarvesterKerbalismUpdater updater = part.FindModuleImplementing<SpaceDustHarvesterKerbalismUpdater>();
+				SpaceDustHarvesterKerbalismUpdater updater = part.FindModuleImplementingFast<SpaceDustHarvesterKerbalismUpdater>();
 				if (updater == null)
 					continue;
 

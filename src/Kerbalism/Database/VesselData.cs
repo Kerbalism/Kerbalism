@@ -95,6 +95,12 @@ namespace KERBALISM
 
 		public Dictionary<Process, DumpSpecs.ActiveValve> dumpValves;
 
+		/// <summary>
+		/// SystemHeat background thermal calibration, by loop id. Captured on the first background step after
+		/// the vessel unloads, cleared when it loads again (SystemHeat owns the loops while loaded).
+		/// </summary>
+		public Dictionary<int, SystemHeatLoopCalibration> systemHeatLoops;
+
 		// persist that so we don't have to do an expensive check every time
 		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
 
@@ -148,11 +154,14 @@ namespace KERBALISM
 		/// <summary> [environment] total flux at vessel position</summary>
 		public double EnvTotalFlux => totalFlux; double totalFlux;
 
-		/// <summary> [environment] temperature ar vessel position</summary>
-		public double EnvTemperature => temperature; double temperature;
+		/// <summary> [environment] temperature at vessel position</summary>
+		public double EnvTemperature => envTemperature; double envTemperature;
 
-		/// <summary> [environment] difference between environment temperature and survival temperature</summary>//
-		public double EnvTempDiff => tempDiff; double tempDiff;
+		/// <summary>
+		/// [environment] difference between environment temperature and survival temperature
+		/// Use VesselSurvivalTempDiff instead when possible since it accounts for vessel geometry and is more accurate.
+		/// </summary>//
+		public double EnvTempDiff => envSurvivalTempDiff; double envSurvivalTempDiff;
 
 		/// <summary> [environment] radiation at vessel position</summary>
 		public double EnvRadiation => radiation; double radiation;
@@ -488,6 +497,9 @@ namespace KERBALISM
 		/// </summary>
 		public double VesselTemperature => vesselTemperature; double vesselTemperature;
 
+		/// <summary> Difference between vessel temperature and survival temperature</summary>
+		public double VesselSurvivalTempDiff => vesselSurvivalTempDiff; double vesselSurvivalTempDiff;
+
 		/// <summary> Solar power absorbed by the vessel hull in W. Zero if geometry data not yet cached.</summary>
 		public double AbsorbedSolarFlux => absorbedSolarFlux; double absorbedSolarFlux;
 
@@ -631,6 +643,10 @@ namespace KERBALISM
 			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
 		}
 
+		// ResourceUpdate's arguments, reused every physics step (not persisted)
+		private readonly Dictionary<string, double> resourceUpdateAvailable = new Dictionary<string, double>();
+		private readonly List<KeyValuePair<string, double>> resourceUpdateRequests = new List<KeyValuePair<string, double>>();
+
 		/// <summary>
 		/// Call ResourceUpdate on all part modules that have that method
 		/// </summary>
@@ -657,10 +673,11 @@ namespace KERBALISM
 
 			List<ResourceInfo> allResources = resources.GetAllResources(Vessel); // there might be some performance to be gained by caching the list of all resource
 
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			Dictionary<string, double> availableResources = resourceUpdateAvailable;
+			availableResources.Clear();
 			foreach (var ri in allResources)
 				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+			List<KeyValuePair<string, double>> resourceChangeRequests = resourceUpdateRequests;
 
 			foreach(var resourceUpdateDelegate in resourceUpdateDelegates)
 			{
@@ -760,6 +777,7 @@ namespace KERBALISM
 			// reset a few things on the docked to vessel
 			toVD.supplies.Clear();
 			toVD.scansat_id.Clear();
+			toVD.systemHeatLoops.Clear();
 
 			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
 			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
@@ -794,7 +812,7 @@ namespace KERBALISM
 			Profiler.BeginSample("VesselData.Ctor");
 
 			ExistsInFlight = true;	// vessel exists
-			IsSimulated = true;	// will be evaluated in next fixedupdate
+			IsSimulated = false;	// will be evaluated in next fixedupdate
 
 			Vessel = vessel;
 			VesselId = Vessel.id;
@@ -824,7 +842,7 @@ namespace KERBALISM
 		{
 			Profiler.BeginSample("VesselData.Ctor");
 			ExistsInFlight = false;
-			IsSimulated = true;
+			IsSimulated = false;
 
 			VesselId = protoVessel.vesselID;
 
@@ -879,6 +897,7 @@ namespace KERBALISM
 			supplies = new Dictionary<string, SupplyData>();
 			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
 			scansat_id = new List<uint>();
+			systemHeatLoops = new Dictionary<int, SystemHeatLoopCalibration>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 
@@ -1043,6 +1062,18 @@ namespace KERBALISM
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
 
+			systemHeatLoops = new Dictionary<int, SystemHeatLoopCalibration>();
+			ConfigNode systemHeatNode = node.GetNode("SystemHeatLoops");
+			if (systemHeatNode != null)
+			{
+				foreach (ConfigNode.Value loopValue in systemHeatNode.values)
+				{
+					if (int.TryParse(loopValue.name, out int loopId)
+						&& SystemHeatLoopCalibration.TryDeserialize(loopValue.value, out SystemHeatLoopCalibration calibration))
+						systemHeatLoops[loopId] = calibration;
+				}
+			}
+
 			ConfigNode partsNode = new ConfigNode();
 			if (node.TryGetNode("parts", ref partsNode))
 			{
@@ -1133,6 +1164,13 @@ namespace KERBALISM
 			foreach (uint id in scansat_id)
 			{
 				node.AddValue("scansat_id", id.ToString());
+			}
+
+			if (systemHeatLoops != null && systemHeatLoops.Count > 0)
+			{
+				ConfigNode systemHeatNode = node.AddNode("SystemHeatLoops");
+				foreach (KeyValuePair<int, SystemHeatLoopCalibration> loop in systemHeatLoops)
+					systemHeatNode.AddValue(loop.Key.ToString(), loop.Value.Serialize());
 			}
 
 			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
@@ -1477,8 +1515,7 @@ namespace KERBALISM
 
 			// temperature at vessel position
 			Profiler.BeginSample("Temperature");
-			temperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
-			tempDiff = Sim.TempDiff(EnvTemperature, Vessel.mainBody, EnvLanded);
+			envTemperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
 
 			// update thermal geometry cache whenever loaded — occlusion multipliers and drag cube
 			// projections are purely geometric and kept current by KSP regardless of sunlight state
@@ -1516,9 +1553,12 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselTemperature = temperature;
+				vesselTemperature = envTemperature;
 				absorbedSolarFlux = absorbedAlbedoFlux = absorbedBodyFlux = absorbedTotalFlux = 0.0;
 			}
+
+			envSurvivalTempDiff = Sim.TempDiff(envTemperature, Vessel.mainBody, EnvLanded);
+			vesselSurvivalTempDiff = Sim.TempDiff(vesselTemperature, Vessel.mainBody, EnvLanded);
 			Profiler.EndSample();
 
 			// radiation

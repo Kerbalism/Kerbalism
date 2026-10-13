@@ -338,7 +338,7 @@ namespace KERBALISM
 			if (prefab != null)
 			{
 				PartModule prefabRadiator = FindPrefabRadiatorModule(prefab)
-					?? prefab.FindModuleImplementing<SystemHeatRadiatorKerbalism>();
+					?? prefab.FindModuleImplementingFast<SystemHeatRadiatorKerbalism>();
 				FloatCurve prefabCurve = IntegrationReflection.GetField<FloatCurve>(prefabRadiator, "temperatureCurve");
 				if (prefabCurve != null)
 					source = prefabCurve;

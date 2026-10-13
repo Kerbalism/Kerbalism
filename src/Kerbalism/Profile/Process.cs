@@ -104,7 +104,7 @@ namespace KERBALISM
 			// only execute processes if necessary
 			if (Math.Abs(k) < double.Epsilon) return;
 
-			ResourceRecipe recipe = new ResourceRecipe(broker);
+			ResourceRecipe recipe = resources.AddRecipe(broker);
 
 			if (!vd.dumpValves.TryGetValue(this, out DumpSpecs.ActiveValve dumpValve))
 			{
@@ -127,7 +127,6 @@ namespace KERBALISM
 				// fails: modifier = zerog,_SickbayRDU
 				recipe.AddCure(p.Key, p.Value * k * elapsed_s, modifiers[0]);
 			}
-			resources.AddRecipe(recipe);
 		}
 
 		public void Execute(Vessel v, VesselData vd, VesselResources resources, double elapsed_s)

@@ -284,7 +284,7 @@ namespace KERBALISM
 
 			VesselResources resources = KERBALISM.ResourceCache.Get(v);
 			bool needToStopReactor = false;
-			ResourceRecipe recipe = new ResourceRecipe(KERBALISM.ResourceBroker.GetOrCreate(
+			ResourceRecipe recipe = resources.AddRecipe(KERBALISM.ResourceBroker.GetOrCreate(
 				brokerName,
 				KERBALISM.ResourceBroker.BrokerCategory.Converter,
 				brokerTitle));
@@ -302,8 +302,6 @@ namespace KERBALISM
 			float ecGeneration = powerGeneration * throttle;
 			if (ecGeneration > 0f)
 				recipe.AddOutput("ElectricCharge", ecGeneration * elapsed_s, dump: true);
-
-			resources.AddRecipe(recipe);
 
 			if (needToStopReactor)
 			{

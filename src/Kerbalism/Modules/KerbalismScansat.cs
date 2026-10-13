@@ -240,9 +240,10 @@ namespace KERBALISM
 				SCANsat.StopScanner(vessel, scanner, part_prefab);
 				storageDisabled = true;
 				powerDisabled = false;
-				Message.Post(
-					Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true),
-					Local.Scansat_Scannerhalted_text.Format("<b>" + vessel.vesselName + "</b>"));
+				if (vd.cfg_ec)
+					Message.Post(
+						Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true),
+						Local.Scansat_Scannerhalted_text.Format("<b>" + vessel.vesselName + "</b>"));
 			}
 
 			Lib.Proto.Set(m, "power_disabled", powerDisabled);
@@ -327,12 +328,12 @@ namespace KERBALISM
 			storageHalted = true;
 			if (loaded != null)
 			{
-				loaded.HaltForStorage();
+				loaded.HaltForStorage(vd);
 				loaded.Issue = Local.Module_Experiment_issue11;
 			}
 		}
 
-		private void HaltForStorage()
+		private void HaltForStorage(VesselData vd)
 		{
 			if (scanner == null)
 				return;
@@ -341,9 +342,10 @@ namespace KERBALISM
 			power_disabled = false;
 			SCANsat.StopScan(scanner);
 			IsScanning = SCANsat.IsScanning(scanner);
-			Message.Post(
-				Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true),
-				Local.Scansat_Scannerhalted_text.Format("<b>" + vessel.vesselName + "</b>"));
+			if (vd.cfg_ec)
+				Message.Post(
+					Lib.Color(Local.Scansat_Scannerhalted, Lib.Kolor.Red, true),
+					Local.Scansat_Scannerhalted_text.Format("<b>" + vessel.vesselName + "</b>"));
 		}
 
 		private static bool HasResumeDriveSpace(VesselData vd)

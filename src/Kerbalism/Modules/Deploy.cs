@@ -36,7 +36,13 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this) || !Lib.IsFlight()) return;
 
 			// cache list of modules
-			module = part.FindModulesImplementing<PartModule>().FindLast(k => k.moduleName == type);
+			module = null;
+			for (int i = 0; i < part.Modules.Count; i++)
+			{
+				PartModule m = part.Modules[i];
+				if (m != null && m.moduleName == type)
+					module = m;
+			}
 
 			// get energy from cache
 			resources = ResourceCache.GetResource(vessel, "ElectricCharge");

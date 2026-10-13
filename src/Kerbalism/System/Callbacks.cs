@@ -115,8 +115,10 @@ namespace KERBALISM
 			// survive load/unload transitions : Vessel.Unload() replaces the protoVessel instance
 			// (so cached snapshot references would write to dead objects), and loading a vessel
 			// recreates all PartModules. None of the vessel-modified events fire on these transitions.
-			GameEvents.onVesselLoaded.Add((v) => Cache.PurgeVesselCaches(v));
+			GameEvents.onVesselLoaded.Add((v) => { Cache.PurgeVesselCaches(v); SystemHeatBackgroundThermal.OnVesselLoaded(v); });
 			GameEvents.onVesselUnloaded.Add((v) => Cache.PurgeVesselCaches(v));
+			// Capture SystemHeat loop / fission proto while parts are still live, before pack.
+			GameEvents.onVesselGoOnRails.Add(this.OnVesselGoOnRailsCapture);
 
 			GameEvents.OnTechnologyResearched.Add(this.TechResearched);
 
@@ -155,6 +157,8 @@ namespace KERBALISM
 		void OnGameStateSave(ConfigNode node)
 		{
 			ScienceDB.PrepareUnknownSubjectsForSave();
+			if (HighLogic.LoadedSceneIsFlight)
+				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
 		}
 
 		void OnGameStateSaved(Game game)
@@ -189,6 +193,11 @@ namespace KERBALISM
 		{
 			if (HighLogic.LoadedSceneIsFlight)
 				SystemHeatBackgroundThermal.CaptureAllLoadedFissionReactors();
+		}
+
+		private void OnVesselGoOnRailsCapture(Vessel v)
+		{
+			SystemHeatBackgroundThermal.CaptureLoadedTemperatures(v);
 		}
 
 		// Called when two vessels are about to be merged, while their state is not yet changed.
@@ -382,7 +391,7 @@ namespace KERBALISM
             // the need for handling where the EVA propellant comes from (there is no more magic refill in stock).
             // However, stock doesn't provide any way to refill the jetpack, so we still handle that.
 
-            KerbalEVA kerbalEVA = evaKerbalPart.FindModuleImplementing<KerbalEVA>();
+            KerbalEVA kerbalEVA = evaKerbalPart.FindModuleImplementingFast<KerbalEVA>();
             List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
             if (kerbalEVA.ModuleInventoryPartReference != null)
             {
@@ -531,7 +540,7 @@ namespace KERBALISM
 			string evaPropName = Lib.EvaPropellantName();
 			if (evaPropName != "EVA Propellant")
 			{
-				KerbalEVA kerbalEVA = data.from.FindModuleImplementing<KerbalEVA>();
+				KerbalEVA kerbalEVA = data.from.FindModuleImplementingFast<KerbalEVA>();
 				List<ProtoPartResourceSnapshot> propContainers = new List<ProtoPartResourceSnapshot>();
 				if (kerbalEVA.ModuleInventoryPartReference != null)
 				{
@@ -688,7 +697,7 @@ namespace KERBALISM
 				if (p.partPrefab.Modules.Count == 0)
 					continue;
 
-				foreach (Configure cfg in p.partPrefab.FindModulesImplementing<Configure>())
+				foreach (Configure cfg in p.partPrefab.FindModulesImplementingReadOnly<Configure>())
 				{
 					foreach (ConfigureSetup setup in cfg.Setups())
 					{

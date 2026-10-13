@@ -223,7 +223,7 @@ namespace KERBALISM
 
 			if (Lib.IsFlight())
 			{
-				foreach (var hd in part.FindModulesImplementing<HardDrive>())
+				foreach (HardDrive hd in part.FindModulesImplementingReadOnly<HardDrive>())
 				{
 					if (hd.experiment_id == experiment_id) privateHdId = part.flightID;
 				}
@@ -283,7 +283,8 @@ namespace KERBALISM
 			if (Lib.IsFlight())
 			{
 				VesselData vd = vessel.KerbalismData();
-				if (!vd.IsSimulated) return;
+				if (!vd.IsSimulated)
+					return;
 
 				if (prepare_cs == null || didPrepare || (hide_when_unavailable && status != ExpStatus.Issue))
 				{
@@ -325,7 +326,7 @@ namespace KERBALISM
 			}
 		}
 
-		public virtual void FixedUpdate()
+		public void ForegroundFixedUpdate()
 		{
 			Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 
@@ -351,6 +352,7 @@ namespace KERBALISM
 				if (subject == null)
 				{
 					vd.IsSimulated = vd.CheckIfSimulated();
+					Profiler.EndSample();
 					return;
 				}
 				Profiler.EndSample();
@@ -364,10 +366,12 @@ namespace KERBALISM
 				if (subject == null)
 				{
 					vd.IsSimulated = vd.CheckIfSimulated();
+					Profiler.EndSample();
 					return;
 				}
-				Profiler.EndSample();
+
 				Toggle();
+				Profiler.EndSample();
 				return;
 			}
 
@@ -389,9 +393,11 @@ namespace KERBALISM
 				null);
 			Profiler.EndSample();
 
+			Profiler.BeginSample("Experiment.FixedUpdate.Notify");
 			var newStatus = GetStatus(expState, subject, issue);
 			API.OnExperimentStateChanged.Notify(vessel, experiment_id, status, newStatus);
 			status = newStatus;
+			Profiler.EndSample();
 
 			Profiler.EndSample();
 		}
@@ -1213,7 +1219,7 @@ namespace KERBALISM
 			if (expInfo.ExpBodyConditions.HasConditions)
 			{
 				specs.Add(string.Empty);
-				specs.Add(expInfo.ExpBodyConditions.ConditionsToString());
+				expInfo.ExpBodyConditions.AddTo(specs);
 			}
 
 			specs.Add(string.Empty);
@@ -1479,7 +1485,7 @@ namespace KERBALISM
 			experiments.Clear();
 			foreach(var part in construct.Parts)
 			{
-				foreach (var experiment in part.FindModulesImplementing<Experiment>())
+				foreach (Experiment experiment in part.FindModulesImplementingReadOnly<Experiment>())
 				{
 					if (!experiment.enabled) experiment.State = Experiment.RunningState.Stopped;
 					if (experiment.Running && !AllowStart(experiment))
