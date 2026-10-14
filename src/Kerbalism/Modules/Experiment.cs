@@ -328,6 +328,11 @@ namespace KERBALISM
 
 		public void ForegroundFixedUpdate()
 		{
+			ForegroundFixedUpdate(Kerbalism.elapsed_s);
+		}
+
+		internal void ForegroundFixedUpdate(double elapsedSeconds)
+		{
 			Profiler.BeginSample("Kerbalism.Experiment.FixedUpdate");
 
 			// basic sanity checks
@@ -385,7 +390,7 @@ namespace KERBALISM
 				ResourceDefs,
 				ExpInfo,
 				expState,
-				Kerbalism.elapsed_s,
+				elapsedSeconds,
 				ref situationId,
 				ref remainingSampleMass,
 				out subject,
@@ -576,7 +581,15 @@ namespace KERBALISM
 
 			// Loaded instance: use Part. Unloaded background: use ProtoPartSnapshot for SunPointingMax.
 			Part reqPart = (prefab.part != null && prefab.part.vessel == v) ? prefab.part : null;
-			double reqScalar = prefab.Requirements.TestRequirements(v, reqPart, prefab.pointing_axis, protoPart, distributeBodyBiomes);
+			double reqScalar = prefab.Requirements.TestRequirements(v, reqPart, prefab.pointing_axis, protoPart,
+				distributeBodyBiomes || vd.ResourceUpdateInterval != null);
+			if (!distributeBodyBiomes && vd.ResourceUpdateInterval != null)
+			{
+				SubStepGeometrySample sample = vd.ResourceUpdateInterval.Samples[0];
+				reqScalar *= prefab.Requirements.TestSampleRequirements(sample.Altitude,
+					v.mainBody.atmosphere ? v.mainBody.atmosphereDepth : 0.0,
+					vd.ResourceUpdateInterval.SunlightFactorAt(0));
+			}
 			if (reqScalar == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
@@ -713,7 +726,8 @@ namespace KERBALISM
 			interval = null;
 			if (expInfo.IsSample)
 				return false;
-			if (!SubStepSimulation.RequiresIntervalSampling(elapsedSeconds))
+			if (v.KerbalismData().ResourceUpdateInterval == null
+				&& !SubStepSimulation.RequiresIntervalSampling(elapsedSeconds))
 				return false;
 			if (Lib.Landed(v) || v.orbitDriver?.orbit == null || v.mainBody?.BiomeMap == null)
 				return false;
@@ -724,8 +738,8 @@ namespace KERBALISM
 				|| !expInfo.ExpBodyConditions.IsBodyAllowed(v.mainBody))
 				return false;
 
-			interval = SubStepSimulation.GetOrCreate(v, elapsedSeconds);
-			return interval.IsValid && interval.Samples.Count > 1;
+			interval = v.KerbalismData().ResourceUpdateInterval ?? SubStepSimulation.GetOrCreate(v, elapsedSeconds);
+			return interval.IsValid && interval.Samples.Count > 0;
 		}
 
 		/// <summary>

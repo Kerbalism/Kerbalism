@@ -85,6 +85,11 @@ namespace KERBALISM
 
 		public Situation GetExperimentSituation(ExperimentInfo expInfo)
 		{
+			if (vd.ResourceUpdateInterval != null && !vd.EnvLanded)
+			{
+				SubStepGeometrySample sample = vd.ResourceUpdateInterval.Samples[0];
+				return GetExperimentSituationAt(expInfo, sample.Altitude, sample.Latitude, sample.Longitude);
+			}
 			ScienceSituation expSituation = ScienceSituation.None;
 
 			foreach (ScienceSituation situation in situations)

@@ -3,7 +3,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public class KerbalismScansat : PartModule
+	public class KerbalismScansat : PartModule, ISubStepResourceUpdate
 	{
 		[KSPField] public string experimentType = string.Empty;
 		[KSPField] public double ec_rate = 0.0;
@@ -51,6 +51,12 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(Kerbalism.elapsed_s);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			if (!Features.Science || vessel == null || !vessel.loaded)
 				return;
 
@@ -74,7 +80,7 @@ namespace KERBALISM
 			{
 				if (ec_rate > double.Epsilon)
 				{
-					double ecNeed = ec_rate * TimeWarp.fixedDeltaTime;
+					double ecNeed = ec_rate * elapsedSeconds;
 					double ecAvailable = Math.Max(0.0, ec.Amount + ec.Deferred);
 					if (ecAvailable + double.Epsilon < ecNeed * 0.9)
 					{

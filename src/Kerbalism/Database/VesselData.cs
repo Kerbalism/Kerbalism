@@ -242,6 +242,8 @@ namespace KERBALISM
 
 		/// <summary>Shared interval used by the current environment evaluation.</summary>
 		public SubStepIntervalResult SubStepInterval => subStepInterval; SubStepIntervalResult subStepInterval;
+		internal SubStepIntervalResult ResourceUpdateInterval { get; set; }
+		internal double SimulationTime => ResourceUpdateInterval?.EndUT ?? Planetarium.GetUniversalTime();
 
 		internal void SetSubStepInterval(SubStepIntervalResult interval)
 		{
@@ -313,9 +315,8 @@ namespace KERBALISM
 				vd.sunsInfo = new List<SunInfo>(Sim.suns.Count);
 				vd.solarFluxTotal = 0.0;
 				vd.rawSolarFluxTotal = 0.0;
-				SubStepIntervalResult subStepInterval = vd.isAnalytic
-					? SubStepSimulation.GetOrCreate(v, elapsedSeconds)
-					: null;
+				SubStepIntervalResult subStepInterval = vd.ResourceUpdateInterval
+					?? (vd.isAnalytic ? SubStepSimulation.GetOrCreate(v, elapsedSeconds) : null);
 				vd.SetSubStepInterval(subStepInterval);
 
 				foreach (Sim.SunData sunData in Sim.suns)
@@ -650,7 +651,7 @@ namespace KERBALISM
 				return;
 			}
 			
-			EvaluateEnvironment(secSinceLastEval);
+			EvaluateEnvironment(ResourceUpdateInterval?.ElapsedSeconds ?? secSinceLastEval);
 			EvaluateStatus(secSinceLastEval);
 			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
@@ -662,6 +663,22 @@ namespace KERBALISM
 		private void UpdateTransmitBufferDrive(double elapsedSec)
 		{
 			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
+		}
+
+		internal void RestoreEnvironment(SubStepIntervalResult interval, double radiationDose, double habitatDose)
+		{
+			ResourceUpdateInterval = interval;
+			try
+			{
+				EvaluateEnvironment(interval.ElapsedSeconds, false);
+				radiation = radiationDose / interval.ElapsedSeconds;
+				shieldedRadiation = habitatDose / interval.ElapsedSeconds;
+				powered = Lib.IsPowered(Vessel);
+			}
+			finally
+			{
+				ResourceUpdateInterval = null;
+			}
 		}
 
 		// ResourceUpdate's arguments, reused every physics step (not persisted)
@@ -1489,11 +1506,11 @@ namespace KERBALISM
 		#endregion
 
 		#region environment evaluation
-		private void EvaluateEnvironment(double elapsedSeconds)
+		private void EvaluateEnvironment(double elapsedSeconds, bool integrateRadiation = true)
 		{
 			Profiler.BeginSample("EvaluateEnvironment");
-			// we use analytic mode if more than 2 minutes of game time has passed since last evaluation (~ x6000 timewarp speed)
-			bool newAnalytic = elapsedSeconds > 120.0;
+			// Shared resource steps use their sampled geometry; legacy evaluation becomes analytic after two minutes.
+			bool newAnalytic = ResourceUpdateInterval != null || elapsedSeconds > 120.0;
 			if (newAnalytic != isAnalytic)
 			{
 				// Do not display a value computed with the other mode's semantics while
@@ -1588,6 +1605,20 @@ namespace KERBALISM
 
 			bool new_innerBelt, new_outerBelt, new_magnetosphere;
 			radiation = Radiation.Compute(Vessel, position, EnvGammaTransparency, mainSun.SunlightFactor, out blackout, out new_magnetosphere, out new_innerBelt, out new_outerBelt, out interstellar, out shieldedRadiation);
+			if (integrateRadiation && subStepInterval != null && subStepInterval.IsValid)
+			{
+				double dose = 0.0;
+				double habitatDose = 0.0;
+				for (int i = 0; i < subStepInterval.Samples.Count; i++)
+				{
+					double sampleRadiation = Radiation.Compute(Vessel, subStepInterval, i, out double sampleShielded);
+					double duration = subStepInterval.Samples[i].Duration;
+					dose += sampleRadiation * duration;
+					habitatDose += sampleShielded * duration;
+				}
+				radiation = dose / subStepInterval.ElapsedSeconds;
+				shieldedRadiation = habitatDose / subStepInterval.ElapsedSeconds;
+			}
 
 			if (new_innerBelt != innerBelt || new_outerBelt != outerBelt || new_magnetosphere != magnetosphere)
 			{

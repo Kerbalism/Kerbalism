@@ -39,6 +39,8 @@ namespace KERBALISM
 
 			if (!module.part.HasModuleImplementingFast<PETTurbineFixer>())
 				return true;
+			if (SubStepSimulation.UsesLoadedResourceSteps)
+				return false;
 
 			try
 			{

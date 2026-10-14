@@ -29,7 +29,7 @@ namespace KERBALISM
 	// - We don't have any support for the animations, the target module must be able to keep handling them despite our hacks.
 	// - Depending on how "hackable" the target module is, we use different approaches :
 	//   either we disable the monobehavior and call the methods manually, or if possible we let it run and we just get/set what we need
-	public class SolarPanelFixer : PartModule
+	public class SolarPanelFixer : PartModule, ISubStepResourceUpdate
 	{
 		#region Declarations
 		/// <summary>Unit to show in the UI, this is the only configurable field for this module. Default is actually set in OnLoad and if a rateUnit is set for ElectricCharge and this is not specified, the rateUnit will be used instead.</summary>
@@ -434,6 +434,14 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			// At large timesteps the vessel scheduler accounts for every exposure step.
+			if (SubStepSimulation.UsesLoadedResourceSteps)
+				return;
+			SubStepUpdate(Kerbalism.elapsed_s);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			Profiler.BeginSample("Kerbalism.SolarPanelFixer.FixedUpdate");
 			// sanity check
 			if (SolarPanel == null)
@@ -691,7 +699,7 @@ namespace KERBALISM
 			ResourceInfo res = ResourceCache.GetResource(vessel, resourceName);
 
 			// produce resource
-			res.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
+			res.Produce(currentOutput * elapsedSeconds, ResourceBroker.SolarPanel);
 			Profiler.EndSample();
 		}
 
@@ -1328,7 +1336,7 @@ namespace KERBALISM
 						Vector3d sampledSurfaceNormal = currentSurfaceNormal;
 						if (landed)
 						{
-							double angleDegrees = (interval.EndUT - sample.UT) * v.mainBody.rotPeriodRecip * 360.0;
+							double angleDegrees = (interval.ReferenceUT - sample.UT) * v.mainBody.rotPeriodRecip * 360.0;
 							QuaternionD bodyRotation = QuaternionD.AngleAxis(angleDegrees, rotationAxis);
 							sampledPivot = bodyRotation * sampledPivot;
 							sampledNormal = bodyRotation * sampledNormal;

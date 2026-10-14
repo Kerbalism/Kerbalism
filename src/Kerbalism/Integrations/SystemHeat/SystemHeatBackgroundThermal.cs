@@ -243,7 +243,7 @@ namespace KERBALISM
 			if (!Active || v == null || v.loaded || elapsed_s <= 0f)
 				return;
 
-			if (lastRunTime.TryGetValue(v.id, out double last) && last == Planetarium.GetUniversalTime())
+			if (lastRunTime.TryGetValue(v.id, out double last) && last == v.KerbalismData().SimulationTime)
 				return;
 
 			SyncAllFrozenFissionReactors(v, elapsed_s);
@@ -297,7 +297,7 @@ namespace KERBALISM
 			if (!Active || v == null || elapsed_s <= 0.0 || v.loaded)
 				return;
 
-			double now = Planetarium.GetUniversalTime();
+			double now = v.KerbalismData().SimulationTime;
 			if (lastRunTime.TryGetValue(v.id, out double last) && last == now)
 				return;
 			lastRunTime[v.id] = now;

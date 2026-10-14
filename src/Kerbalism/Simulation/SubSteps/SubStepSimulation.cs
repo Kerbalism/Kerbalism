@@ -8,6 +8,11 @@ using UnityEngine.Profiling;
 
 namespace KERBALISM
 {
+	internal interface ISubStepResourceUpdate
+	{
+		void SubStepUpdate(double elapsedSeconds);
+	}
+
 	/// <summary>
 	/// Shared, duration-weighted vessel/body position infrastructure.
 	/// KSP state is snapshotted on the main thread; all orbital position work is
@@ -16,6 +21,8 @@ namespace KERBALISM
 	public static class SubStepSimulation
 	{
 		public const double DefaultMaxStepSeconds = 30.0;
+		internal static bool UsesLoadedResourceSteps => HighLogic.LoadedSceneIsFlight
+			&& RequiresIntervalSampling(TimeWarp.fixedDeltaTime);
 		private const int MaxSamplesPerBatch = 128;
 		private const double TimeMatchTolerance = 1e-5;
 
@@ -496,7 +503,7 @@ namespace KERBALISM
 
 					for (int sunIndex = 0; sunIndex < sunCount; sunIndex++)
 					{
-						bool expectedVisible = ReferenceSunVisible(
+						bool expectedVisible = IsBodyVisibleAtUT(
 							vessel, expected, Sim.suns[sunIndex].body, bodies, ut);
 						int sampleVesselIndex = timeIndex * vesselCount + vesselIndex;
 						SubStepSunNative actualSun = sunResults[sampleVesselIndex * sunCount + sunIndex];
@@ -537,7 +544,7 @@ namespace KERBALISM
 			return bodyPosition + QuaternionD.AngleAxis(angleDegrees, polarAxis) * surface;
 		}
 
-		private static bool ReferenceSunVisible(Vessel vessel, Vector3d vesselPosition,
+		internal static bool IsBodyVisibleAtUT(Vessel vessel, Vector3d vesselPosition,
 			CelestialBody sun, List<CelestialBody> bodies, double ut)
 		{
 			Vector3d sunPosition = sun.orbit == null ? sun.position : sun.getTruePositionAtUT(ut);

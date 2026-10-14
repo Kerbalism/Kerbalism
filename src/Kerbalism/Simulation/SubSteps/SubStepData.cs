@@ -77,6 +77,7 @@ namespace KERBALISM
 		public Guid VesselId { get; }
 		public double StartUT { get; }
 		public double EndUT { get; }
+		internal double ReferenceUT { get; private set; }
 		public double ElapsedSeconds => EndUT - StartUT;
 		public string FallbackReason { get; }
 		public bool IsValid => string.IsNullOrEmpty(FallbackReason) && Samples.Count > 0;
@@ -88,6 +89,7 @@ namespace KERBALISM
 			VesselId = vesselId;
 			StartUT = startUT;
 			EndUT = endUT;
+			ReferenceUT = endUT;
 			Samples = Array.AsReadOnly(samples ?? Array.Empty<SubStepGeometrySample>());
 			this.suns = suns ?? new Dictionary<int, SubStepSunResult>();
 			FallbackReason = fallbackReason;
@@ -96,6 +98,31 @@ namespace KERBALISM
 		public bool TryGetSun(int bodyIndex, out SubStepSunResult result)
 		{
 			return suns.TryGetValue(bodyIndex, out result);
+		}
+
+		/// <summary>One chronological exposure step, retaining the snapshot's orientation reference.</summary>
+		internal SubStepIntervalResult GetSampleInterval(int sampleIndex)
+		{
+			SubStepGeometrySample sample = Samples[sampleIndex];
+			Dictionary<int, SubStepSunResult> stepSuns = new Dictionary<int, SubStepSunResult>(suns.Count);
+			foreach (KeyValuePair<int, SubStepSunResult> entry in suns)
+			{
+				SubStepSunSample sun = entry.Value.Samples[sampleIndex];
+				stepSuns.Add(entry.Key, new SubStepSunResult
+				{
+					BodyIndex = entry.Key,
+					EndpointDirection = sun.Direction,
+					EndpointDistance = sun.Distance,
+					SunlightFactor = sun.Visible ? 1.0 : 0.0,
+					AtmosphericFactor = sun.AtmosphericFactor,
+					AverageRawFlux = sun.RawFlux,
+					AverageDirectFlux = sun.DirectFlux,
+					Samples = Array.AsReadOnly(new[] { sun })
+				});
+			}
+			double startUT = sample.UT - sample.Duration * 0.5;
+			return new SubStepIntervalResult(VesselId, startUT, startUT + sample.Duration,
+				new[] { sample }, stepSuns, null) { ReferenceUT = this.ReferenceUT };
 		}
 
 		internal double SunlightFactorAt(int sampleIndex)
@@ -110,6 +137,11 @@ namespace KERBALISM
 					visibleFlux += sample.RawFlux;
 			}
 			return rawFlux > 0.0 ? visibleFlux / rawFlux : 0.0;
+		}
+
+		internal SubStepSunSample GetSunSample(int bodyIndex, int sampleIndex)
+		{
+			return suns[bodyIndex].Samples[sampleIndex];
 		}
 
 		internal static SubStepIntervalResult Invalid(Vessel vessel, double startUT, double endUT, string reason)

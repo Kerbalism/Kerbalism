@@ -9,7 +9,7 @@ using UnityEngine.SocialPlatforms;
 
 namespace KERBALISM
 {
-    public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier
+    public class Habitat : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, ISubStepResourceUpdate
 	{
 		public const string AtmoResName = "Atmosphere";
 		public const string WasteAtmoResName = "WasteAtmosphere";
@@ -936,6 +936,15 @@ namespace KERBALISM
 			BackgroundSetStateDisabled(hab);
 		}
 
+		public void SubStepUpdate(double elapsedSeconds)
+		{
+			if (state != State.evaKerbal || !kerbalEVA.lampOn)
+				return;
+			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
+			if (ec.Capacity > 0.0 && Settings.HeadLampsCost > 0.0)
+				ec.Consume(Settings.HeadLampsCost * elapsedSeconds, ResourceBroker.Light);
+		}
+
 		private void EVAUpdate()
 		{
 			ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
@@ -946,7 +955,7 @@ namespace KERBALISM
 			if (ec.Capacity > 0.0 && Settings.HeadLampsCost > 0.0)
 			{
 				// consume EC for the headlamps
-				if (kerbalEVA.lampOn)
+				if (kerbalEVA.lampOn && !SubStepSimulation.UsesLoadedResourceSteps)
 					ec.Consume(Settings.HeadLampsCost * TimeWarp.fixedDeltaTime, ResourceBroker.Light);
 
 				if (ec.Amount > 0.0)

@@ -264,9 +264,14 @@ namespace KERBALISM
         /// <summary> Returns the magnetopause radiation level, accounting for solar activity cycles </summary>
         public double RadiationPause()
         {
+            return RadiationPause(Planetarium.GetUniversalTime());
+        }
+
+        internal double RadiationPause(double universalTime)
+        {
             if (solar_cycle > 0)
             {
-                return radiation_pause + radiation_pause * 0.2 * SolarActivity();
+                return radiation_pause + radiation_pause * 0.2 * SolarActivityAtUT(universalTime);
             }
             return radiation_pause;
         }
@@ -274,9 +279,14 @@ namespace KERBALISM
         /// <summary> Return a number [-0.15 .. 1.05] that represents current solar activity, clamped to [0 .. 1] if clamp is true </summary>
         public double SolarActivity(bool clamp = true)
         {
+            return SolarActivityAtUT(Planetarium.GetUniversalTime(), clamp);
+        }
+
+        internal double SolarActivityAtUT(double universalTime, bool clamp = true)
+        {
             if (solar_cycle <= 0) return 0;
 
-            var t = (solar_cycle_offset + Planetarium.GetUniversalTime()) / solar_cycle * 2 * Math.PI; // Math.Sin/Cos works with radians
+            var t = (solar_cycle_offset + universalTime) / solar_cycle * 2 * Math.PI; // Math.Sin/Cos works with radians
 
             // this gives a pseudo-erratic curve, see https://www.desmos.com/calculator/q5flvzvxia
             // in range -0.15 .. 1.05
@@ -421,15 +431,26 @@ namespace KERBALISM
         //   the galactic rotation vector is used as x-axis instead
         public static Space Gsm_space(RadiationBody rb, bool tilted)
         {
+            return Gsm_space(rb, tilted, null);
+        }
+
+        private static Vector3d BodyPositionAtUT(CelestialBody body, double? universalTime)
+        {
+            return universalTime.HasValue && body.orbit != null
+                ? body.getTruePositionAtUT(universalTime.Value) : body.position;
+        }
+
+        private static Space Gsm_space(RadiationBody rb, bool tilted, double? universalTime)
+        {
             CelestialBody body = rb.body;
             CelestialBody reference = FlightGlobals.Bodies[rb.reference];
 
             Space gsm;
-            gsm.origin = ScaledSpace.LocalToScaledSpace(body.position);
+            gsm.origin = ScaledSpace.LocalToScaledSpace(BodyPositionAtUT(body, universalTime));
             gsm.scale = ScaledSpace.InverseScaleFactor * (float)body.Radius;
             if (body != reference)
             {
-                gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(reference.position) - gsm.origin).normalized;
+                gsm.x_axis = ((Vector3)ScaledSpace.LocalToScaledSpace(BodyPositionAtUT(reference, universalTime)) - gsm.origin).normalized;
                 if (!tilted)
                 {
                     gsm.y_axis = body.RotationAxis; //< initial guess
@@ -468,6 +489,12 @@ namespace KERBALISM
                     Vector3 pole = rb.geomagnetic_pole;
                     Quaternion rotation = body.scaledBody.transform.rotation;
                     gsm.y_axis = (rotation * pole).normalized;
+                    if (universalTime.HasValue)
+                    {
+                        double angle = (Planetarium.GetUniversalTime() - universalTime.Value) * body.rotPeriodRecip * 360.0;
+                        Vector3d axis = body.BodyFrame.Rotation.swizzle * Vector3d.up;
+                        gsm.y_axis = (Vector3)(QuaternionD.AngleAxis(angle, axis) * (Vector3d)gsm.y_axis);
+                    }
 
                     gsm.z_axis = Vector3.Cross(gsm.x_axis, gsm.y_axis).normalized;
                     gsm.x_axis = Vector3.Cross(gsm.y_axis, gsm.z_axis).normalized; //< orthonormalize
@@ -624,7 +651,7 @@ namespace KERBALISM
         }
 
         /// <summary> Returns the radiation emitted by the body at the center, adjusted by solar activity cycle </summary>
-        private static double RadiationR0(RadiationBody rb)
+        private static double RadiationR0(RadiationBody rb, double? universalTime = null)
         {
             // for easier configuration, the radiation model sets the radiation on the surface of the body.
             // from there, it decreases according to the inverse square law with distance from the surface.
@@ -635,7 +662,7 @@ namespace KERBALISM
 
             if (rb.solar_cycle > 0)
             {
-                var activity = rb.SolarActivity() * 0.3;
+                var activity = (universalTime.HasValue ? rb.SolarActivityAtUT(universalTime.Value) : rb.SolarActivity()) * 0.3;
                 r0 = r0 + r0 * activity;
             }
 
@@ -645,6 +672,22 @@ namespace KERBALISM
         // return the total environent radiation at position specified
         public static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout,
                                      out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar, out double shieldedRadiation)
+        {
+            return Compute(v, position, gamma_transparency, sunlight, out blackout, out magnetosphere,
+                out inner_belt, out outer_belt, out interstellar, out shieldedRadiation, null, 0);
+        }
+
+        internal static double Compute(Vessel v, SubStepIntervalResult interval, int sampleIndex, out double shieldedRadiation)
+        {
+            SubStepGeometrySample sample = interval.Samples[sampleIndex];
+            return Compute(v, sample.Position, Sim.GammaTransparency(v.mainBody, sample.Altitude),
+                interval.SunlightFactorAt(sampleIndex), out _, out _, out _, out _, out _, out shieldedRadiation,
+                interval, sampleIndex);
+        }
+
+        private static double Compute(Vessel v, Vector3d position, double gamma_transparency, double sunlight, out bool blackout,
+                                     out bool magnetosphere, out bool inner_belt, out bool outer_belt, out bool interstellar,
+                                     out double shieldedRadiation, SubStepIntervalResult interval, int sampleIndex)
         {
             // prepare out parameters
             blackout = false;
@@ -656,6 +699,9 @@ namespace KERBALISM
 
             // no-op when Radiation is disabled
             if (!Features.Radiation) return 0.0;
+
+            double? universalTime = interval == null ? (double?)null : interval.Samples[sampleIndex].UT;
+            double altitude = interval == null ? v.altitude : interval.Samples[sampleIndex].Altitude;
 
             // store stuff
             Space gsm;
@@ -675,7 +721,7 @@ namespace KERBALISM
                 RadiationModel mf = rb.model;
 
                 // activity is [-0.15..1.05]
-                var activity = rb.SolarActivity(false);
+                var activity = universalTime.HasValue ? rb.SolarActivityAtUT(universalTime.Value, false) : rb.SolarActivity(false);
 
                 if (mf.Has_field())
                 {
@@ -683,7 +729,7 @@ namespace KERBALISM
                     var scaled_position = ScaledSpace.LocalToScaledSpace(position);
 
                     // generate radii-normalized GSM space
-                    gsm = Gsm_space(rb, true);
+                    gsm = Gsm_space(rb, true, universalTime);
 
                     // move the point in GSM space
                     p = gsm.Transform_in(scaled_position);
@@ -711,11 +757,12 @@ namespace KERBALISM
                     }
                     if (mf.has_pause)
                     {
-                        gsm = Gsm_space(rb, false);
+                        gsm = Gsm_space(rb, false, universalTime);
                         p = gsm.Transform_in(scaled_position);
                         D = mf.Pause_func(p);
 
-                        radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * rb.RadiationPause();
+                        double pause = universalTime.HasValue ? rb.RadiationPause(universalTime.Value) : rb.RadiationPause();
+                        radiation += Lib.Clamp(D / -0.1332f, 0.0f, 1.0f) * pause;
 
                         magnetosphere |= D < 0.0f && !Lib.IsSun(rb.body); //< ignore heliopause
                         interstellar |= D > 0.0f && Lib.IsSun(rb.body); //< outside heliopause
@@ -724,11 +771,18 @@ namespace KERBALISM
 
                 if (rb.radiation_surface > 0 && body != v.mainBody)
                 {
-                    Vector3d direction;
                     double distance;
-					if (Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out direction, out distance))
+                    bool visible;
+                    if (universalTime.HasValue)
+                    {
+                        distance = (BodyPositionAtUT(body, universalTime) - position).magnitude - body.Radius;
+                        visible = SubStepSimulation.IsBodyVisibleAtUT(v, position, body, FlightGlobals.Bodies, universalTime.Value);
+                    }
+                    else
+                        visible = Sim.IsBodyVisible(v, position, body, v.KerbalismData().EnvVisibleBodies, out _, out distance);
+					if (visible)
 					{
-						var r0 = RadiationR0(rb);
+						var r0 = RadiationR0(rb, universalTime);
 						var r1 = DistanceRadiation(r0, distance);
 
 						// clamp to max. surface radiation. when loading on a rescaled system, the vessel can appear to be within the sun for a few ticks
@@ -765,10 +819,10 @@ namespace KERBALISM
 			if (v.loaded) Lib.Log("Radiation " + v + " after gamma: " + Lib.HumanReadableRadiation(radiation) + " transparency: " + gamma_transparency);
 #endif
 			// add surface radiation of the body itself
-			if(Lib.IsSun(v.mainBody) && v.altitude < v.mainBody.Radius)
-			if(v.altitude > v.mainBody.Radius)
+			if(Lib.IsSun(v.mainBody) && altitude < v.mainBody.Radius)
+			if(altitude > v.mainBody.Radius)
 			{
-				radiation += DistanceRadiation(RadiationR0(Info(v.mainBody)), v.altitude);
+				radiation += DistanceRadiation(RadiationR0(Info(v.mainBody), universalTime), altitude);
 
 			}
 
@@ -779,7 +833,7 @@ namespace KERBALISM
 			shieldedRadiation = radiation;
 
             // if there is a storm in progress
-            if (Storm.InProgress(v))
+            if (universalTime.HasValue ? Storm.InProgress(v, universalTime.Value) : Storm.InProgress(v))
             {
                 // inside a magnetopause (except heliosphere), blackout the signal
                 // outside, add storm radiations from every active CME (multi-star aware)
@@ -787,7 +841,7 @@ namespace KERBALISM
                 else
                 {
                     var vd = v.KerbalismData();
-                    var strength = Storm.RadiationStrength(v, vd);
+                    var strength = Storm.RadiationStrength(v, vd, interval, sampleIndex);
 
                     radiation += strength;
                     shieldedRadiation += vd.EnvHabitatInfo.AverageHabitatRadiation(strength);

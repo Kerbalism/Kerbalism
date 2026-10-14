@@ -332,56 +332,7 @@ namespace KERBALISM
 				// if loaded
 				if (v.loaded)
 				{
-					Profiler.BeginSample("Loaded.VesselDataEval");
-					// update the vessel info
-					vd.Evaluate(false, elapsed_s);
-					Profiler.EndSample();
-
-					// get most used resource
-					ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
-
-					Profiler.BeginSample("Loaded.Radiation");
-					// show belt warnings
-					Radiation.BeltWarnings(v, vd);
-
-					// update storm data
-					Storm.Update(v, vd, elapsed_s);
-					Profiler.EndSample();
-
-					Profiler.BeginSample("Loaded.Comms");
-					CommsMessages.Update(v, vd, elapsed_s);
-					Profiler.EndSample();
-
-					Profiler.BeginSample("Loaded.Experiment");
-					foreach(Experiment e in PartModuleCache.GetModules<Experiment>(v))
-					{
-						if (e.isEnabled)
-							e.ForegroundFixedUpdate();
-					}
-					Profiler.EndSample();
-
-					Profiler.BeginSample("Loaded.Science");
-					// transmit science data
-					Science.Update(v, vd, ec, elapsed_s);
-					Profiler.EndSample();
-
-					Profiler.BeginSample("Loaded.Profile");
-					// apply rules
-					Profile.Execute(v, vd, resources, elapsed_s);
-					Profiler.EndSample();
-
-					Profiler.BeginSample("Loaded.ResourceUpdate");
-					// part module resource updates
-					vd.ResourceUpdate(resources, elapsed_s);
-					Profiler.EndSample(); 
-
-					Profiler.BeginSample("Loaded.Resource");
-					// apply deferred requests
-					resources.Sync(v, vd, elapsed_s);
-					Profiler.EndSample();
-
-					// call automation scripts
-					vd.computer.Automate(v, vd, resources);
+					UpdateVessel(v, vd, resources, elapsed_s);
 
 					// remove from unloaded data container
 					unloaded.Remove(vd.VesselId);
@@ -420,56 +371,7 @@ namespace KERBALISM
 				VesselData vd = step.vessel.KerbalismData();
 				VesselResources resources = ResourceCache.Get(step.vessel);
 
-				//Profiler.BeginSample("Unloaded.VesselDataEval");
-				// update the vessel info (high timewarp speeds reevaluation)
-				vd.Evaluate(false, step.time);
-				//Profiler.EndSample();
-
-				// get most used resource
-				ResourceInfo step_ec = resources.GetResource(step.vessel, "ElectricCharge");
-
-				Profiler.BeginSample("Unloaded.Radiation");
-				// show belt warnings
-				Radiation.BeltWarnings(step.vessel, vd);
-
-				// update storm data
-				Storm.Update(step.vessel, vd, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.Comms");
-				CommsMessages.Update(step.vessel, vd, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.Background");
-				// simulate modules in background
-				Background.Update(step.vessel, vd, resources, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.SystemHeat");
-				SystemHeatBackgroundThermal.TryRun(step.vessel, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.FissionReactor");
-				SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(step.vessel, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.Profile");
-				// apply rules
-				Profile.Execute(step.vessel, vd, resources, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.Science");
-				// transmit science	data
-				Science.Update(step.vessel, vd, step_ec, step.time);
-				Profiler.EndSample();
-
-				Profiler.BeginSample("Unloaded.Resource");
-				// apply deferred requests
-				resources.Sync(step.vessel, vd, step.time);
-				Profiler.EndSample();
-
-				// call automation scripts
-				vd.computer.Automate(step.vessel, vd, resources);
+				UpdateVessel(step.vessel, vd, resources, step.time);
 
 				// remove from unloaded data container
 				unloaded.Remove(vd.VesselId);
@@ -485,6 +387,152 @@ namespace KERBALISM
 				sd.time = 0.0;
 				storm_index = (storm_index + 1) % storm_bodies.Count;
 				Profiler.EndSample();
+			}
+		}
+
+		private static void UpdateVessel(Vessel v, VesselData vd, VesselResources resources, double elapsedSeconds)
+		{
+			SubStepIntervalResult interval = SubStepSimulation.RequiresIntervalSampling(elapsedSeconds)
+				? SubStepSimulation.GetOrCreate(v, elapsedSeconds) : null;
+			if (interval == null || !interval.IsValid)
+			{
+				UpdateVesselStep(v, vd, resources, elapsedSeconds);
+				return;
+			}
+
+			double dose = 0.0;
+			double habitatDose = 0.0;
+			Profiler.BeginSample("Vessel.SubStepResources");
+			try
+			{
+				// Advance the complete resource chain in chronological exposure steps.
+				// A step never spans more than the geometry sampling interval.
+				for (int i = 0; i < interval.Samples.Count; i++)
+				{
+					vd.ResourceUpdateInterval = interval.GetSampleInterval(i);
+					double duration = interval.Samples[i].Duration;
+					UpdateVesselStep(v, vd, resources, duration);
+					dose += vd.EnvRadiation * duration;
+					habitatDose += vd.EnvHabitatRadiation * duration;
+				}
+			}
+			finally
+			{
+				vd.ResourceUpdateInterval = null;
+				Profiler.EndSample();
+			}
+			vd.RestoreEnvironment(interval, dose, habitatDose);
+			UpdateVesselMessages(v, vd, elapsedSeconds);
+		}
+
+		private static void UpdateVesselMessages(Vessel v, VesselData vd, double elapsedSeconds)
+		{
+			Profiler.BeginSample(v.loaded ? "Loaded.Radiation" : "Unloaded.Radiation");
+			Radiation.BeltWarnings(v, vd);
+			Storm.Update(v, vd, elapsedSeconds);
+			Profiler.EndSample();
+			Profiler.BeginSample(v.loaded ? "Loaded.Comms" : "Unloaded.Comms");
+			CommsMessages.Update(v, vd, elapsedSeconds);
+			Profiler.EndSample();
+		}
+
+		private static void UpdateVesselStep(Vessel v, VesselData vd, VesselResources resources, double stepSeconds)
+		{
+			if (v.loaded)
+			{
+				Profiler.BeginSample("Loaded.VesselDataEval");
+				// update the vessel info
+				vd.Evaluate(vd.ResourceUpdateInterval != null, stepSeconds);
+				Profiler.EndSample();
+
+				// get most used resource
+				ResourceInfo ec = resources.GetResource(v, "ElectricCharge");
+
+				if (vd.ResourceUpdateInterval == null)
+					UpdateVesselMessages(v, vd, stepSeconds);
+
+				if (SubStepSimulation.UsesLoadedResourceSteps)
+					foreach (ISubStepResourceUpdate update in PartModuleCache.GetModules<ISubStepResourceUpdate>(v))
+					{
+						PartModule module = (PartModule)update;
+						if (module.isEnabled && module.enabled)
+							update.SubStepUpdate(stepSeconds);
+					}
+
+				Profiler.BeginSample("Loaded.Experiment");
+				foreach(Experiment e in PartModuleCache.GetModules<Experiment>(v))
+				{
+					if (e.isEnabled)
+						e.ForegroundFixedUpdate(stepSeconds);
+				}
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Loaded.Science");
+				// transmit science data
+				Science.Update(v, vd, ec, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Loaded.Profile");
+				// apply rules
+				Profile.Execute(v, vd, resources, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Loaded.ResourceUpdate");
+				// part module resource updates
+				vd.ResourceUpdate(resources, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Loaded.Resource");
+				// apply deferred requests
+				resources.Sync(v, vd, stepSeconds);
+				Profiler.EndSample();
+
+				// call automation scripts
+				vd.computer.Automate(v, vd, resources);
+			}
+			else
+			{
+				//Profiler.BeginSample("Unloaded.VesselDataEval");
+				// update the vessel info (high timewarp speeds reevaluation)
+				vd.Evaluate(vd.ResourceUpdateInterval != null, stepSeconds);
+				//Profiler.EndSample();
+
+				// get most used resource
+				ResourceInfo step_ec = resources.GetResource(v, "ElectricCharge");
+
+				if (vd.ResourceUpdateInterval == null)
+					UpdateVesselMessages(v, vd, stepSeconds);
+
+				Profiler.BeginSample("Unloaded.Background");
+				// simulate modules in background
+				Background.Update(v, vd, resources, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.SystemHeat");
+				SystemHeatBackgroundThermal.TryRun(v, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.FissionReactor");
+				SystemHeatBackgroundThermal.PrepareFrozenFissionReactors(v, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.Profile");
+				// apply rules
+				Profile.Execute(v, vd, resources, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.Science");
+				// transmit science	data
+				Science.Update(v, vd, step_ec, stepSeconds);
+				Profiler.EndSample();
+
+				Profiler.BeginSample("Unloaded.Resource");
+				// apply deferred requests
+				resources.Sync(v, vd, stepSeconds);
+				Profiler.EndSample();
+
+				// call automation scripts
+				vd.computer.Automate(v, vd, resources);
 			}
 		}
 

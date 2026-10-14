@@ -29,7 +29,9 @@ namespace KERBALISM
 
 		public string ResourceUpdate(Dictionary<string, double> availableResources, List<KeyValuePair<string, double>> resourceChangeRequest)
 		{
-			// Loaded production is injected at PET's UpdateResourceHandler Harmony hook,
+			if (SubStepSimulation.UsesLoadedResourceSteps)
+				PETTurbineResourceSim.AddRate(resourceChangeRequest, PETTurbineResourceSim.GetLoadedRate(TurbineModule, vessel));
+			// Outside substepping, production is injected at PET's UpdateResourceHandler Harmony hook,
 			// after PET has calculated the wind efficiency used by its PAW.
 			return PETTurbineResourceSim.BrokerId;
 		}
