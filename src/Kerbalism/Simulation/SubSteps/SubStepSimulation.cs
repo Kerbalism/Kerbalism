@@ -16,7 +16,7 @@ namespace KERBALISM
 	public static class SubStepSimulation
 	{
 		public const double DefaultMaxStepSeconds = 30.0;
-		private const int MaxSamplesPerInterval = 128;
+		private const int MaxSamplesPerBatch = 128;
 		private const double TimeMatchTolerance = 1e-5;
 
 		private sealed class VesselCache
@@ -29,6 +29,8 @@ namespace KERBALISM
 		{
 			public Vessel Vessel;
 			public SubStepVesselNative Snapshot;
+			public SubStepGeometrySample[] Samples;
+			public SubStepSunSample[][] SunSamples;
 		}
 
 		private static readonly Dictionary<Guid, VesselCache> cache = new Dictionary<Guid, VesselCache>();
@@ -41,7 +43,6 @@ namespace KERBALISM
 		private static NativeArray<SubStepSunNative> sunResultBuffer;
 
 		public static int LastBodyPositionEvaluations { get; private set; }
-		public static double LastCoarseningRatio { get; private set; }
 		public static double LastJobsMilliseconds { get; private set; }
 		public static double LastCompleteWaitMilliseconds { get; private set; }
 
@@ -53,9 +54,10 @@ namespace KERBALISM
 		public static void Clear()
 		{
 			cache.Clear();
+			foreach (VesselData vd in DB.VesselDatas)
+				vd.SetSubStepInterval(null);
 			DisposeBuffers();
 			LastBodyPositionEvaluations = 0;
-			LastCoarseningRatio = 1.0;
 			LastJobsMilliseconds = 0.0;
 			LastCompleteWaitMilliseconds = 0.0;
 		}
@@ -123,10 +125,7 @@ namespace KERBALISM
 			if (vessel == null)
 				return SubStepIntervalResult.Invalid(null, startUT, endUT, "null vessel");
 			if (elapsedSeconds <= 0.0)
-			{
-				vessel.KerbalismData().SetSubStepInterval(null);
 				return SubStepIntervalResult.Invalid(vessel, startUT, endUT, "empty interval");
-			}
 
 			if (TryGetCached(vessel.id, startUT, endUT, out SubStepIntervalResult cached))
 				return cached;
@@ -207,7 +206,6 @@ namespace KERBALISM
 			for (int i = 0; i < vessels.Count; i++)
 			{
 				Vessel vessel = vessels[i];
-				vessel?.KerbalismData().SetSubStepInterval(null);
 				if (TryCreateVesselSnapshot(vessel, bodySlots, startUT, endUT,
 					out SubStepVesselNative snapshot, out string reason))
 				{
@@ -225,15 +223,16 @@ namespace KERBALISM
 				return;
 			}
 
-			int sampleCount = Math.Min(MaxSamplesPerInterval,
-				Math.Max(1, (int)Math.Ceiling(elapsed / DefaultMaxStepSeconds)));
+			// Bound each sample's duration: capping the whole interval's sample
+			// count can repeatedly sample the same orbital phase after long gaps.
+			int sampleCount = Math.Max(1, (int)Math.Ceiling(elapsed / DefaultMaxStepSeconds));
 			double sampleDuration = elapsed / sampleCount;
+			int batchCapacity = Math.Min(MaxSamplesPerBatch, sampleCount);
 			int vesselCount = requests.Count;
 			int bodyCount = orderedBodies.Count;
 			int sunCount = Sim.suns.Count;
 
 			LastBodyPositionEvaluations = sampleCount * bodyCount;
-			LastCoarseningRatio = sampleDuration / DefaultMaxStepSeconds;
 			LastJobsMilliseconds = 0.0;
 			LastCompleteWaitMilliseconds = 0.0;
 			JobHandle outstandingHandle = default;
@@ -241,13 +240,13 @@ namespace KERBALISM
 
 			try
 			{
-				EnsureCapacity(ref timeBuffer, sampleCount);
+				EnsureCapacity(ref timeBuffer, batchCapacity);
 				EnsureCapacity(ref bodySnapshotBuffer, bodyCount);
 				EnsureCapacity(ref vesselSnapshotBuffer, vesselCount);
 				EnsureCapacity(ref starSnapshotBuffer, sunCount);
-				EnsureCapacity(ref bodyPositionBuffer, sampleCount * bodyCount);
-				EnsureCapacity(ref vesselGeometryBuffer, sampleCount * vesselCount);
-				EnsureCapacity(ref sunResultBuffer, sampleCount * vesselCount * sunCount);
+				EnsureCapacity(ref bodyPositionBuffer, batchCapacity * bodyCount);
+				EnsureCapacity(ref vesselGeometryBuffer, batchCapacity * vesselCount);
+				EnsureCapacity(ref sunResultBuffer, batchCapacity * vesselCount * sunCount);
 
 				NativeArray<SubStepTimeNative> times = timeBuffer;
 				NativeArray<SubStepBodyNative> bodySnapshots = bodySnapshotBuffer;
@@ -257,17 +256,6 @@ namespace KERBALISM
 				NativeArray<SubStepVesselGeometryNative> vesselGeometry = vesselGeometryBuffer;
 				NativeArray<SubStepSunNative> sunResults = sunResultBuffer;
 
-				for (int i = 0; i < sampleCount; i++)
-				{
-					double sampleStart = startUT + i * sampleDuration;
-					double duration = i == sampleCount - 1 ? endUT - sampleStart : sampleDuration;
-					times[i] = new SubStepTimeNative
-					{
-						UT = sampleStart + 0.5 * duration,
-						Duration = duration
-					};
-				}
-
 				for (int i = 0; i < bodyCount; i++)
 				{
 					bodySnapshots[i] = CreateBodySnapshot(orderedBodies[i], bodySlots, endUT);
@@ -276,7 +264,13 @@ namespace KERBALISM
 				}
 
 				for (int i = 0; i < vesselCount; i++)
+				{
 					vesselSnapshots[i] = requests[i].Snapshot;
+					requests[i].Samples = new SubStepGeometrySample[sampleCount];
+					requests[i].SunSamples = new SubStepSunSample[sunCount][];
+					for (int sunIndex = 0; sunIndex < sunCount; sunIndex++)
+						requests[i].SunSamples[sunIndex] = new SubStepSunSample[sampleCount];
+				}
 
 				for (int i = 0; i < sunCount; i++)
 				{
@@ -293,65 +287,82 @@ namespace KERBALISM
 				}
 
 				System.Diagnostics.Stopwatch jobsTimer = Settings.SubStepSimulationLogging
-					? System.Diagnostics.Stopwatch.StartNew() : null;
-				JobHandle bodyHandle = new SubStepBodyPositionJob
-				{
-					Times = times,
-					Bodies = bodySnapshots,
-					BodyCount = bodyCount,
-					Positions = bodyPositions
-				}.Schedule(sampleCount, 1);
-				outstandingHandle = bodyHandle;
-				hasOutstandingHandle = true;
-
-				JobHandle vesselHandle = new SubStepVesselPositionJob
-				{
-					Times = times,
-					Bodies = bodySnapshots,
-					Vessels = vesselSnapshots,
-					BodyPositions = bodyPositions,
-					BodyCount = bodyCount,
-					VesselCount = vesselCount,
-					Geometry = vesselGeometry
-				}.Schedule(sampleCount * vesselCount, 32, bodyHandle);
-				outstandingHandle = vesselHandle;
-
-				JobHandle solarHandle = new SubStepSolarVisibilityJob
-				{
-					Bodies = bodySnapshots,
-					Vessels = vesselSnapshots,
-					BodyPositions = bodyPositions,
-					VesselGeometry = vesselGeometry,
-					Stars = starSnapshots,
-					VesselCount = vesselCount,
-					BodyCount = bodyCount,
-					SunCount = sunCount,
-					Results = sunResults
-				}.Schedule(sampleCount * vesselCount * sunCount, 32, vesselHandle);
-				outstandingHandle = solarHandle;
-
+					? new System.Diagnostics.Stopwatch() : null;
 				System.Diagnostics.Stopwatch completeWaitTimer = Settings.SubStepSimulationLogging
-					? System.Diagnostics.Stopwatch.StartNew() : null;
-				solarHandle.Complete();
-				hasOutstandingHandle = false;
+					? new System.Diagnostics.Stopwatch() : null;
+				for (int sampleOffset = 0; sampleOffset < sampleCount; sampleOffset += MaxSamplesPerBatch)
+				{
+					int batchCount = Math.Min(MaxSamplesPerBatch, sampleCount - sampleOffset);
+					for (int i = 0; i < batchCount; i++)
+					{
+						int sampleIndex = sampleOffset + i;
+						double sampleStart = startUT + sampleIndex * sampleDuration;
+						double duration = sampleIndex == sampleCount - 1 ? endUT - sampleStart : sampleDuration;
+						times[i] = new SubStepTimeNative
+						{
+							UT = sampleStart + 0.5 * duration,
+							Duration = duration
+						};
+					}
+
+					jobsTimer?.Start();
+					JobHandle bodyHandle = new SubStepBodyPositionJob
+					{
+						Times = times,
+						Bodies = bodySnapshots,
+						BodyCount = bodyCount,
+						Positions = bodyPositions
+					}.Schedule(batchCount, 1);
+					outstandingHandle = bodyHandle;
+					hasOutstandingHandle = true;
+
+					JobHandle vesselHandle = new SubStepVesselPositionJob
+					{
+						Times = times,
+						Bodies = bodySnapshots,
+						Vessels = vesselSnapshots,
+						BodyPositions = bodyPositions,
+						BodyCount = bodyCount,
+						VesselCount = vesselCount,
+						Geometry = vesselGeometry
+					}.Schedule(batchCount * vesselCount, 32, bodyHandle);
+					outstandingHandle = vesselHandle;
+
+					JobHandle solarHandle = new SubStepSolarVisibilityJob
+					{
+						Bodies = bodySnapshots,
+						Vessels = vesselSnapshots,
+						BodyPositions = bodyPositions,
+						VesselGeometry = vesselGeometry,
+						Stars = starSnapshots,
+						VesselCount = vesselCount,
+						BodyCount = bodyCount,
+						SunCount = sunCount,
+						Results = sunResults
+					}.Schedule(batchCount * vesselCount * sunCount, 32, vesselHandle);
+					outstandingHandle = solarHandle;
+
+					completeWaitTimer?.Start();
+					solarHandle.Complete();
+					hasOutstandingHandle = false;
+					completeWaitTimer?.Stop();
+					jobsTimer?.Stop();
+					ValidateBodyPositions(bodyPositions, batchCount * bodyCount);
+					if (Settings.SubStepSimulationLogging)
+						ValidateBatch(requests, orderedBodies, times, bodyPositions, vesselGeometry,
+							sunResults, endUT, batchCount, vesselCount, sunCount);
+					ReadBatchResults(requests, orderedBodies, times, bodyPositions, vesselGeometry,
+						sunResults, sampleOffset, batchCount, vesselCount, sunCount);
+				}
 				if (Settings.SubStepSimulationLogging)
 				{
-					completeWaitTimer.Stop();
-					jobsTimer.Stop();
 					LastJobsMilliseconds = jobsTimer.Elapsed.TotalMilliseconds;
 					LastCompleteWaitMilliseconds = completeWaitTimer.Elapsed.TotalMilliseconds;
-				}
-				ValidateBodyPositions(bodyPositions, sampleCount * bodyCount);
-				if (Settings.SubStepSimulationLogging)
-				{
-					ValidateBatch(requests, orderedBodies, times, bodyPositions, vesselGeometry,
-						sunResults, endUT, sampleCount, vesselCount, sunCount);
-					Lib.Log("Substeps budget: positions={0}, coarsening={1:F2}x, jobs={2:F3}ms, wait={3:F3}ms",
-						Lib.LogLevel.Message, LastBodyPositionEvaluations, LastCoarseningRatio,
+					Lib.Log("Substeps budget: positions={0}, samples={1}, step={2:F3}s, jobs={3:F3}ms, wait={4:F3}ms",
+						Lib.LogLevel.Message, LastBodyPositionEvaluations, sampleCount, sampleDuration,
 						LastJobsMilliseconds, LastCompleteWaitMilliseconds);
 				}
-				BuildManagedResults(requests, orderedBodies, times, bodyPositions, vesselGeometry,
-					sunResults, startUT, endUT, sampleCount, vesselCount, sunCount);
+				BuildManagedResults(requests, startUT, endUT, sunCount);
 			}
 			catch (Exception e)
 			{
@@ -378,7 +389,6 @@ namespace KERBALISM
 
 		private static void StoreInvalid(Vessel vessel, double startUT, double endUT, string reason)
 		{
-			vessel?.KerbalismData().SetSubStepInterval(null);
 			Store(SubStepIntervalResult.Invalid(vessel, startUT, endUT, reason));
 		}
 
@@ -568,36 +578,60 @@ namespace KERBALISM
 			return degrees;
 		}
 
-		private static void BuildManagedResults(List<VesselRequest> requests, List<CelestialBody> bodies,
+		private static void ReadBatchResults(List<VesselRequest> requests, List<CelestialBody> bodies,
 			NativeArray<SubStepTimeNative> times,
 			NativeArray<double3> bodyPositions, NativeArray<SubStepVesselGeometryNative> vesselGeometry,
-			NativeArray<SubStepSunNative> sunResults, double startUT, double endUT,
+			NativeArray<SubStepSunNative> sunResults, int sampleOffset,
 			int sampleCount, int vesselCount, int sunCount)
 		{
-			double elapsed = endUT - startUT;
 			for (int vesselIndex = 0; vesselIndex < vesselCount; vesselIndex++)
 			{
-				Vessel vessel = requests[vesselIndex].Vessel;
+				VesselRequest request = requests[vesselIndex];
+				if (request.Samples == null)
+					continue;
 				if (!HasFiniteVesselResults(vesselGeometry, sunResults, vesselIndex, vesselCount, sampleCount, sunCount))
 				{
 					// Body positions are shared, but a failed vessel conic must not
 					// discard the other vessels' completed intervals.
-					const string reason = "non-finite vessel or solar geometry";
-					StoreInvalid(vessel, startUT, endUT, reason);
+					request.Samples = null;
 					continue;
 				}
-				SubStepGeometrySample[] samples = new SubStepGeometrySample[sampleCount];
+				int mainBodySlot = request.Snapshot.MainBody;
+				CelestialBody mainBody = bodies[mainBodySlot];
 				for (int timeIndex = 0; timeIndex < sampleCount; timeIndex++)
 				{
-					SubStepVesselGeometryNative geometry = vesselGeometry[timeIndex * vesselCount + vesselIndex];
-					samples[timeIndex] = new SubStepGeometrySample(times[timeIndex].UT, times[timeIndex].Duration,
+					int sampleVesselIndex = timeIndex * vesselCount + vesselIndex;
+					SubStepVesselGeometryNative geometry = vesselGeometry[sampleVesselIndex];
+					SubStepTimeNative time = times[timeIndex];
+					request.Samples[sampleOffset + timeIndex] = new SubStepGeometrySample(time.UT, time.Duration,
 						ToVector(geometry.Position), geometry.Latitude, geometry.Longitude, geometry.Altitude);
+					double3 radial = geometry.Position - bodyPositions[timeIndex * bodies.Count + mainBodySlot];
+					for (int sunIndex = 0; sunIndex < sunCount; sunIndex++)
+					{
+						SubStepSunNative nativeSun = sunResults[sampleVesselIndex * sunCount + sunIndex];
+						double atmoFactor = AtmosphereFactor(mainBody, geometry.Altitude, radial, nativeSun.Direction);
+						request.SunSamples[sunIndex][sampleOffset + timeIndex] = new SubStepSunSample(
+							time.UT, time.Duration, ToVector(nativeSun.Direction), nativeSun.CenterDistance,
+							nativeSun.Visible != 0, atmoFactor, nativeSun.RawFlux);
+					}
 				}
+			}
+		}
 
+		private static void BuildManagedResults(List<VesselRequest> requests, double startUT, double endUT, int sunCount)
+		{
+			double elapsed = endUT - startUT;
+			for (int vesselIndex = 0; vesselIndex < requests.Count; vesselIndex++)
+			{
+				VesselRequest request = requests[vesselIndex];
+				Vessel vessel = request.Vessel;
+				if (request.Samples == null)
+				{
+					StoreInvalid(vessel, startUT, endUT, "non-finite vessel or solar geometry");
+					continue;
+				}
 				Dictionary<int, SubStepSunResult> suns = new Dictionary<int, SubStepSunResult>(sunCount);
 				Vector3d endpointPosition = Lib.VesselPosition(vessel);
-				int mainBodySlot = requests[vesselIndex].Snapshot.MainBody;
-				CelestialBody mainBody = bodies[mainBodySlot];
 
 				for (int sunIndex = 0; sunIndex < sunCount; sunIndex++)
 				{
@@ -606,27 +640,16 @@ namespace KERBALISM
 					double atmoDuration = 0.0;
 					double integratedRawFlux = 0.0;
 					double integratedFlux = 0.0;
-					SubStepSunSample[] starSamples = new SubStepSunSample[sampleCount];
+					SubStepSunSample[] starSamples = request.SunSamples[sunIndex];
 
-					for (int timeIndex = 0; timeIndex < sampleCount; timeIndex++)
+					for (int timeIndex = 0; timeIndex < starSamples.Length; timeIndex++)
 					{
-						int sampleVesselIndex = timeIndex * vesselCount + vesselIndex;
-						SubStepSunNative nativeSun = sunResults[sampleVesselIndex * sunCount + sunIndex];
-						double duration = times[timeIndex].Duration;
-						double rawFlux = nativeSun.RawFlux;
-						SubStepVesselGeometryNative geometry = vesselGeometry[sampleVesselIndex];
-						double3 radial = geometry.Position - bodyPositions[timeIndex * bodies.Count + mainBodySlot];
-						double atmoFactor = AtmosphereFactor(mainBody, geometry.Altitude, radial, nativeSun.Direction);
-						atmoDuration += duration * atmoFactor;
-						integratedRawFlux += duration * rawFlux;
-						if (nativeSun.Visible != 0)
-						{
-							visibleDuration += duration;
-							integratedFlux += duration * rawFlux * atmoFactor;
-						}
-						starSamples[timeIndex] = new SubStepSunSample(
-							times[timeIndex].UT, duration, ToVector(nativeSun.Direction), nativeSun.CenterDistance,
-							nativeSun.Visible != 0, atmoFactor, rawFlux);
+						SubStepSunSample sample = starSamples[timeIndex];
+						atmoDuration += sample.Duration * sample.AtmosphericFactor;
+						integratedRawFlux += sample.Duration * sample.RawFlux;
+						integratedFlux += sample.Duration * sample.DirectFlux;
+						if (sample.Visible)
+							visibleDuration += sample.Duration;
 					}
 
 					Lib.DirectionAndDistance(endpointPosition, sunData.body, out Vector3d direction, out double distance);
@@ -644,8 +667,7 @@ namespace KERBALISM
 				}
 
 				SubStepIntervalResult result = new SubStepIntervalResult(
-					vessel.id, startUT, endUT, samples, suns, null);
-				vessel.KerbalismData().SetSubStepInterval(result);
+					vessel.id, startUT, endUT, request.Samples, suns, null);
 				Store(result);
 			}
 		}

@@ -240,7 +240,7 @@ namespace KERBALISM
 
 		public VesselSituations VesselSituations => vesselSituations; VesselSituations vesselSituations;
 
-		/// <summary>Most recently completed shared elapsed-interval geometry result.</summary>
+		/// <summary>Shared interval used by the current environment evaluation.</summary>
 		public SubStepIntervalResult SubStepInterval => subStepInterval; SubStepIntervalResult subStepInterval;
 
 		internal void SetSubStepInterval(SubStepIntervalResult interval)
@@ -313,11 +313,10 @@ namespace KERBALISM
 				vd.sunsInfo = new List<SunInfo>(Sim.suns.Count);
 				vd.solarFluxTotal = 0.0;
 				vd.rawSolarFluxTotal = 0.0;
-				if (!vd.isAnalytic)
-					vd.SetSubStepInterval(null);
 				SubStepIntervalResult subStepInterval = vd.isAnalytic
 					? SubStepSimulation.GetOrCreate(v, elapsedSeconds)
 					: null;
+				vd.SetSubStepInterval(subStepInterval);
 
 				foreach (Sim.SunData sunData in Sim.suns)
 				{

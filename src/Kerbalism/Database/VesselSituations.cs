@@ -140,9 +140,13 @@ namespace KERBALISM
 			{
 				foreach (VirtualBiome virtualBiome in virtualBiomes)
 				{
-					if (expInfo.VirtualBiomes.Contains(virtualBiome))
+					VirtualBiome sampleBiome = virtualBiome;
+					if (sampleBiome == VirtualBiome.NorthernHemisphere || sampleBiome == VirtualBiome.SouthernHemisphere)
+						sampleBiome = latitude > 0.0 ? VirtualBiome.NorthernHemisphere : VirtualBiome.SouthernHemisphere;
+
+					if (expInfo.VirtualBiomes.Contains(sampleBiome))
 					{
-						expBiomeIndex = (int)virtualBiome;
+						expBiomeIndex = (int)sampleBiome;
 						break;
 					}
 				}
