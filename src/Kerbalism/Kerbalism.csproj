@@ -41,6 +41,34 @@
       <CKANIdentifier>Harmony2</CKANIdentifier>
       <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
     </ModReference>
+    <ModReference Include="KSPBurst">
+      <DLLPath>GameData/000_KSPBurst/Plugins/KSPBurst.dll</DLLPath>
+      <!-- CI needs only the runtime assemblies; players need the full compiler package. -->
+      <CKANIdentifier>KSPBurst-Lite</CKANIdentifier>
+      <CKANVersion>v1.7.4.11</CKANVersion>
+      <KSPAssemblyVersion>1.7.4</KSPAssemblyVersion>
+    </ModReference>
+    <!--
+      These are runtime assemblies supplied by KSPBurst, not KSP mods with their
+      own KSPAssembly attributes. Keep them as plain references so KSPBuildTools
+      doesn't emit invalid KSPAssemblyDependency attributes for them.
+    -->
+    <Reference Include="Unity.Burst">
+      <HintPath>$(KSPBT_GameRoot)/GameData/000_KSPBurst/Plugins/Unity.Burst.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>$(KSPBT_GameRoot)/GameData/000_KSPBurst/Plugins/Unity.Collections.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Jobs">
+      <HintPath>$(KSPBT_GameRoot)/GameData/000_KSPBurst/Plugins/Unity.Jobs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>$(KSPBT_GameRoot)/GameData/000_KSPBurst/Plugins/Unity.Mathematics.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <ModReference Include="KSPCommunityFixes">
       <DLLPath>GameData/KSPCommunityFixes/Plugins/KSPCommunityFixes.dll</DLLPath>
       <CKANIdentifier>KSPCommunityFixes</CKANIdentifier>

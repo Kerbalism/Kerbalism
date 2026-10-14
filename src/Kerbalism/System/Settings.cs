@@ -133,6 +133,7 @@ namespace KERBALISM
 
 			// debug / logging
 			VolumeAndSurfaceLogging = Lib.ConfigValue(cfg, "VolumeAndSurfaceLogging", false);
+			SubStepSimulationLogging = Lib.ConfigValue(cfg, "SubStepSimulationLogging", false);
 
 			loaded = true;
 		}
@@ -246,6 +247,7 @@ namespace KERBALISM
 
 		// debug / logging
 		public static bool VolumeAndSurfaceLogging;
+		public static bool SubStepSimulationLogging;
 
 		public static bool loaded { get; private set; } = false;
 	}

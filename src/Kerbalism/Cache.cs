@@ -12,6 +12,7 @@ namespace KERBALISM
 			vesselObjects = new Dictionary<Guid, Dictionary<string, object>>();
 			PartModuleCache.Clear();
 			ProtoPartModuleCache.Clear();
+			SubStepSimulation.Clear();
 		}
 
 
@@ -20,6 +21,7 @@ namespace KERBALISM
 			vesselObjects.Clear();
 			PartModuleCache.Clear();
 			ProtoPartModuleCache.Clear();
+			SubStepSimulation.Clear();
 		}
 
 		/// <summary>
@@ -32,6 +34,7 @@ namespace KERBALISM
 			vesselObjects.Remove(id);
 			PartModuleCache.Purge(id);
 			ProtoPartModuleCache.Purge(id);
+			SubStepSimulation.Invalidate(id);
 		}
 
 		/// <summary>
@@ -44,6 +47,7 @@ namespace KERBALISM
 			vesselObjects.Remove(id);
 			PartModuleCache.Purge(id);
 			ProtoPartModuleCache.Purge(id);
+			SubStepSimulation.Invalidate(id);
 		}
 
 		/// <summary>
@@ -55,6 +59,7 @@ namespace KERBALISM
 			vesselObjects.Clear();
 			PartModuleCache.Clear();
 			ProtoPartModuleCache.Clear();
+			SubStepSimulation.Clear();
 			Message.all_logs.Clear();
 		}
 

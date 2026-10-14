@@ -29,7 +29,7 @@ namespace KERBALISM
 	// - We don't have any support for the animations, the target module must be able to keep handling them despite our hacks.
 	// - Depending on how "hackable" the target module is, we use different approaches :
 	//   either we disable the monobehavior and call the methods manually, or if possible we let it run and we just get/set what we need
-	public class SolarPanelFixer : PartModule
+	public class SolarPanelFixer : PartModule, ISubStepResourceUpdate
 	{
 		#region Declarations
 		/// <summary>Unit to show in the UI, this is the only configurable field for this module. Default is actually set in OnLoad and if a rateUnit is set for ElectricCharge and this is not specified, the rateUnit will be used instead.</summary>
@@ -434,6 +434,14 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			// At large timesteps the vessel scheduler accounts for every exposure step.
+			if (SubStepSimulation.UsesLoadedResourceSteps)
+				return;
+			SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			Profiler.BeginSample("Kerbalism.SolarPanelFixer.FixedUpdate");
 			// sanity check
 			if (SolarPanel == null)
@@ -691,7 +699,7 @@ namespace KERBALISM
 			ResourceInfo res = ResourceCache.GetResource(vessel, resourceName);
 
 			// produce resource
-			res.Produce(currentOutput * Kerbalism.elapsed_s, ResourceBroker.SolarPanel);
+			res.Produce(currentOutput * elapsedSeconds, ResourceBroker.SolarPanel);
 			Profiler.EndSample();
 		}
 
@@ -1265,6 +1273,103 @@ namespace KERBALISM
 		}
 
 		/// <summary>
+		/// Apply panel orientation to the same shared samples that produced
+		/// visibility and atmospheric flux. This preserves the correlation
+		/// between daylight, incidence angle and attenuation.
+		/// </summary>
+		static bool TryCalculateSubStepPanelPower(Vessel v, List<VesselData.SunInfo> suns,
+			VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking,
+			bool hasOrientation, Vector3d trackingPivotWorld, Vector3d panelNormalWorld,
+			out double actualPower, out double theoreticalMaxPower)
+		{
+			actualPower = 0.0;
+			theoreticalMaxPower = 0.0;
+			SubStepIntervalResult interval = mainSun?.Interval;
+			if (interval == null || !interval.IsValid
+				|| !ReferenceEquals(v.KerbalismData().SubStepInterval, interval)
+				|| Sim.SolarFluxAtHome <= double.Epsilon)
+				return false;
+
+			if (!interval.TryGetSun(mainSun.SunData.bodyIndex, out SubStepSunResult mainSunResult))
+				return false;
+
+			bool landed = Lib.Landed(v);
+			Vector3d rotationAxis = landed
+				? v.mainBody.BodyFrame.Rotation.swizzle * Vector3d.up
+				: Vector3d.zero;
+			Vector3d currentSurfaceNormal = landed
+				? (Lib.VesselPosition(v) - v.mainBody.position).normalized
+				: Vector3d.zero;
+			double maxCosine = GetTheoreticalMaxCosineFactor(panelType);
+			double integratedActual = 0.0;
+			double integratedTheoretical = 0.0;
+
+			for (int sunIndex = 0; sunIndex < suns.Count; sunIndex++)
+			{
+				VesselData.SunInfo sun = suns[sunIndex];
+				if (!ReferenceEquals(sun.Interval, interval)
+					|| !interval.TryGetSun(sun.SunData.bodyIndex, out SubStepSunResult sunResult))
+					return false;
+
+				bool isMainSun = sun == mainSun;
+				for (int sampleIndex = 0; sampleIndex < sunResult.Samples.Count; sampleIndex++)
+				{
+					SubStepSunSample sample = sunResult.Samples[sampleIndex];
+					double unshadowedFlux = sample.RawFlux * sample.AtmosphericFactor;
+					integratedTheoretical += sample.Duration * unshadowedFlux * maxCosine;
+					if (sample.DirectFlux <= 0.0)
+						continue;
+
+					double effectiveCosine;
+					if (panelType == ModuleDeployableSolarPanel.PanelType.SPHERICAL)
+					{
+						effectiveCosine = 0.25;
+					}
+					else if (panelType == ModuleDeployableSolarPanel.PanelType.CYLINDRICAL)
+					{
+						effectiveCosine = 1.0 / Math.PI;
+					}
+					else
+					{
+						Vector3d sampledPivot = trackingPivotWorld;
+						Vector3d sampledNormal = panelNormalWorld;
+						Vector3d sampledSurfaceNormal = currentSurfaceNormal;
+						if (landed)
+						{
+							double angleDegrees = (interval.ReferenceUT - sample.UT) * v.mainBody.rotPeriodRecip * 360.0;
+							QuaternionD bodyRotation = QuaternionD.AngleAxis(angleDegrees, rotationAxis);
+							sampledPivot = bodyRotation * sampledPivot;
+							sampledNormal = bodyRotation * sampledNormal;
+							sampledSurfaceNormal = bodyRotation * sampledSurfaceNormal;
+						}
+
+						Vector3d sampledMainDirection = mainSunResult.Samples[sampleIndex].Direction;
+						if (landed && !isTracking && (!hasOrientation || sampledNormal.sqrMagnitude <= 1e-12))
+						{
+							// Old saves without an orientation cache use a horizontal
+							// panel fallback, evaluated at this exact daylight sample.
+							effectiveCosine = Math.Max(0.0,
+								Vector3d.Dot(sample.Direction.normalized, sampledSurfaceNormal.normalized));
+						}
+						else
+						{
+							effectiveCosine = GetAnalyticFlatCosineFactor(
+								sample.Direction, sampledMainDirection, isMainSun, isTracking,
+								hasOrientation, sampledPivot, sampledNormal, sampledSurfaceNormal, false);
+						}
+					}
+
+					integratedActual += sample.Duration * sample.DirectFlux * effectiveCosine;
+				}
+			}
+
+			double denominator = interval.ElapsedSeconds * Sim.SolarFluxAtHome;
+			actualPower = integratedActual / denominator;
+			theoreticalMaxPower = integratedTheoretical / denominator;
+			return true;
+		}
+
+		/// <summary>
 		/// Sum of every star's unobscured, atmosphere-adjusted ideal panel response.
 		/// Body shadow and panel orientation belong only in the actual-power numerator.
 		/// </summary>
@@ -1317,6 +1422,11 @@ namespace KERBALISM
 		/// </summary>
 		public static double CalculateMultiStarPowerAnalytic(Vessel v, List<VesselData.SunInfo> suns, VesselData.SunInfo mainSun, ModuleDeployableSolarPanel.PanelType panelType, bool isTracking, out double theoreticalMaxPower, bool hasOrientation = false, Vector3d trackingPivotWorld = default, Vector3d panelNormalWorld = default)
 		{
+			if (TryCalculateSubStepPanelPower(v, suns, mainSun, panelType, isTracking,
+				hasOrientation, trackingPivotWorld, panelNormalWorld,
+				out double subStepPower, out theoreticalMaxPower))
+				return subStepPower;
+
 			// Landing/Splashdown Status Handling
 			if (Lib.Landed(v))
 			{

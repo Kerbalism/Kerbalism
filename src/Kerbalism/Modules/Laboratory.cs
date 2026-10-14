@@ -7,7 +7,7 @@ using KSP.Localization;
 namespace KERBALISM
 {
 
-	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Laboratory: PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, ISubStepResourceUpdate
 	{
 		// config
 		[KSPField] public double ec_rate;						// ec consumed per-second
@@ -85,6 +85,12 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
 
@@ -104,14 +110,14 @@ namespace KERBALISM
 					{
 						// consume EC
 						ec = ResourceCache.GetResource(vessel, "ElectricCharge");
-						ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.Laboratory);
+						ec.Consume(ec_rate * elapsedSeconds, ResourceBroker.Laboratory);
 
 						// if there was ec
 						// - comparing against amount in previous simulation step
 						if (ec.Amount > double.Epsilon)
 						{
 							// analyze the sample
-							status = Analyze(vessel, current_sample, rate * Kerbalism.elapsed_s);
+							status = Analyze(vessel, current_sample, rate * elapsedSeconds);
 							running = status == Status.RUNNING;
 						}
 						// if there was no ec

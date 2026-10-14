@@ -186,7 +186,7 @@ namespace KERBALISM
 				return true;
 			}
 
-			double chargeRequest = chargeRate * TimeWarp.fixedDeltaTime;
+			double chargeRequest = chargeRate * v.KerbalismData().ResourceUpdateElapsedSeconds;
 			ec.Consume(chargeRequest, KERBALISM.ResourceBroker.GetOrCreate(brokerName, KERBALISM.ResourceBroker.BrokerCategory.Converter, brokerTitle));
 
 			float chargeGoal = FarFutureTechnologies.Get(reactor, "ChargeGoal", 0f);

@@ -8,7 +8,7 @@ namespace KERBALISM
 {
 
 
-	public class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule
+	public class Harvester : PartModule, IAnimatedModule, IModuleInfo, ISpecifics, IContractObjectiveModule, ISubStepResourceUpdate
 	{
 		// config
 		[KSPField] public string title = string.Empty;            // name to show on ui
@@ -208,11 +208,22 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			if (Lib.IsEditor()) return;
+			if (vessel.KerbalismData().ResourceUpdateInterval != null)
+			{
+				HarvestSource source = IsSpaceObjectType(type) ? FindSpaceObjectSource(vessel, this) : null;
+				issue = DetectIssue(SampleAbundance(vessel, this, source), source);
+			}
 
 			if (deployed && running && (issue.Length == 0))
 			{
-				ResourceUpdate(vessel, this, min_abundance, Kerbalism.elapsed_s);
+				ResourceUpdate(vessel, this, min_abundance, elapsedSeconds);
 			}
 		}
 

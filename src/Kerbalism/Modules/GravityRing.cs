@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	public class GravityRing : PartModule, ISpecifics
+	public class GravityRing : PartModule, ISpecifics, ISubStepResourceUpdate
 	{
 		// config
 		[KSPField] public double ec_rate;                                  // ec consumed per-second when deployed
@@ -229,6 +229,12 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
 
@@ -239,7 +245,7 @@ namespace KERBALISM
 				ResourceInfo ec = ResourceCache.GetResource(vessel, "ElectricCharge");
 
 				// consume ec
-				ec.Consume(ec_rate * Kerbalism.elapsed_s, ResourceBroker.GravityRing);
+				ec.Consume(ec_rate * elapsedSeconds, ResourceBroker.GravityRing);
 			}
 		}
 

@@ -81,7 +81,7 @@ namespace KERBALISM
 			dischargeActual = Mathf.Clamp(dischargeActual, dischargeRate * dischargeMin, dischargeRate);
 			NearFutureElectrical.Set(capacitor, "dischargeActual", dischargeActual);
 
-			float dt = TimeWarp.fixedDeltaTime;
+			double dt = v.KerbalismData().ResourceUpdateElapsedSeconds;
 			KERBALISM.ResourceBroker broker = KERBALISM.ResourceBroker.GetOrCreate(brokerName, KERBALISM.ResourceBroker.BrokerCategory.Converter, brokerTitle);
 
 			if (IsDischarging(capacitor))

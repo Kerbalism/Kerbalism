@@ -308,12 +308,19 @@ Kerbalism uses [KSPBuildTools](https://github.com/KSPModdingLibs/KSPBuildTools) 
 2. Copy `Kerbalism.props.user.example` to `Kerbalism.props.user` in the repository root.
 3. Edit `Kerbalism.props.user` and set `KSPBT_GameRoot` to your KSP 1.12 install path.
 4. Optionally set `Kerbalism_DeployToKsp` to `true` if you want the build to copy `GameData/Kerbalism` and `GameData/KerbalismConfig` into that install (off by default).
-5. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) (and other dependencies) into that KSP install via CKAN or manually.
+5. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) (and other dependencies), plus the full
+   [KSPBurst](https://github.com/KSPModdingLibs/KSPBurst) compiler package into
+   that KSP install via CKAN or manually. `KSPBurst-Lite` supplies the runtime
+   assemblies but cannot verify Burst compilation and is not sufficient for
+   release testing.
 6. Build from the repository root:
 
        dotnet build -c Release Kerbalism.sln
 
 The compiled `Kerbalism.dll` is written to `GameData/Kerbalism/`. Live-install deployment only runs when `Kerbalism_DeployToKsp` is `true`.
+On the first KSP launch after rebuilding Kerbalism, confirm that KSPBurst finds
+and compiles `Kerbalism.dll`; compiler output is written under
+`Logs/KSPBurst/` and in `KSP.log`.
 
 Open `Kerbalism.slnx` in Visual Studio or Rider for IDE debugging.
 

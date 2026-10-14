@@ -443,14 +443,29 @@ namespace KERBALISM
 		/// <summary>Extra storm radiation rate (rad/s) from all active CMEs affecting the vessel.</summary>
 		public static double RadiationStrength(Vessel v, VesselData vd)
 		{
+			return RadiationStrength(v, vd, null, 0);
+		}
+
+		internal static double RadiationStrength(Vessel v, VesselData vd, SubStepIntervalResult interval, int sampleIndex)
+		{
 			if (v == null || vd == null || !Features.SpaceWeather)
 				return 0.0;
 
 			double total = 0.0;
+			double sampleFlux = 0.0;
+			if (interval != null)
+				foreach (VesselData.SunInfo sun in vd.EnvSunsInfo)
+					sampleFlux += interval.GetSunSample(sun.SunData.bodyIndex, sampleIndex).RawFlux;
 			foreach (KeyValuePair<CelestialBody, StormData> kv in GetAffectingStorms(v))
 			{
-				if (kv.Value == null || kv.Value.storm_state != 2)
+				if (kv.Value == null || (interval == null && kv.Value.storm_state != 2))
 					continue;
+				if (interval != null)
+				{
+					double ut = interval.Samples[sampleIndex].UT;
+					if (ut < kv.Value.storm_time || ut >= kv.Value.storm_time + kv.Value.storm_duration)
+						continue;
+				}
 
 				CelestialBody star = kv.Key;
 				double sunlight = 1.0;
@@ -464,6 +479,12 @@ namespace KERBALISM
 						{
 							sunlight = sunInfo.SunlightFactor;
 							fluxWeight = sunInfo.FluxProportion;
+							if (interval != null)
+							{
+								SubStepSunSample sample = interval.GetSunSample(sunInfo.SunData.bodyIndex, sampleIndex);
+								sunlight = sample.Visible ? 1.0 : 0.0;
+								fluxWeight = sampleFlux > 0.0 ? sample.RawFlux / sampleFlux : 0.0;
+							}
 							break;
 						}
 					}
@@ -473,7 +494,8 @@ namespace KERBALISM
 					sunlight = vd.EnvMainSun.SunlightFactor;
 				}
 
-				double activity = Radiation.Info(star).SolarActivity(false) / 2.0;
+				double activity = (interval == null ? Radiation.Info(star).SolarActivity(false)
+					: Radiation.Info(star).SolarActivityAtUT(interval.Samples[sampleIndex].UT, false)) / 2.0;
 				total += PreferencesRadiation.Instance.StormRadiation * sunlight * fluxWeight * (activity + 0.5);
 			}
 
@@ -559,6 +581,15 @@ namespace KERBALISM
 				if (kv.Value != null && kv.Value.storm_state == 2)
 					return true;
 			}
+			return false;
+		}
+
+		internal static bool InProgress(Vessel v, double universalTime)
+		{
+			foreach (KeyValuePair<CelestialBody, StormData> kv in GetAffectingStorms(v))
+				if (kv.Value != null && universalTime >= kv.Value.storm_time
+					&& universalTime < kv.Value.storm_time + kv.Value.storm_duration)
+					return true;
 			return false;
 		}
 	}

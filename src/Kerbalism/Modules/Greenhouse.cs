@@ -7,7 +7,7 @@ namespace KERBALISM
 {
 
 
-	public class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable
+	public class Greenhouse : PartModule, IModuleInfo, ISpecifics, IContractObjectiveModule, IConfigurable, ISubStepResourceUpdate
 	{
 		// config
 		[KSPField] public string crop_resource;         // name of resource produced continuously
@@ -134,6 +134,12 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
 
@@ -147,7 +153,7 @@ namespace KERBALISM
 				this,
 				vd,
 				resources,
-				Kerbalism.elapsed_s,
+				elapsedSeconds,
 				ref natural,
 				ref artificial,
 				ref issue);

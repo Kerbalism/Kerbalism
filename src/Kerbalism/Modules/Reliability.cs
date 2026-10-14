@@ -6,7 +6,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, IPartMassModifier
+	public class Reliability : PartModule, ISpecifics, IModuleInfo, IPartCostModifier, IPartMassModifier, ISubStepResourceUpdate
 	{
 		// config
 		[KSPField(isPersistant = true)] public string type;                 // component name
@@ -261,10 +261,16 @@ namespace KERBALISM
 
 		public void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			// do nothing in the editor
 			if (Lib.IsEditor()) return;
 
-			var now = Planetarium.GetUniversalTime();
+			var now = vessel.KerbalismData().SimulationTime;
 
 			// if it has not malfunctioned
 			if (!broken && mtbf > 0 && PreferencesReliability.Instance.mtbfFailures)
@@ -281,7 +287,7 @@ namespace KERBALISM
 #endif
 				}
 
-				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, Kerbalism.elapsed_s, rated_radiation, radiation_decay_rate);
+				var decay = RadiationDecay(quality, vessel.KerbalismData().EnvRadiation, elapsedSeconds, rated_radiation, radiation_decay_rate);
 				next -= decay;
 			}
 		}
@@ -297,7 +303,7 @@ namespace KERBALISM
 			// get time of next failure
 			double next = Lib.Proto.GetDouble(m, "next");
 			bool quality = Lib.Proto.GetBool(m, "quality");
-			var now = Planetarium.GetUniversalTime();
+			var now = v.KerbalismData().SimulationTime;
 
 			// calculate epoch of failure if necessary
 			if (next <= 0)

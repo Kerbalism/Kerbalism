@@ -5,7 +5,7 @@ using KSP.Localization;
 
 namespace KERBALISM
 {
-	public class Deploy : PartModule
+	public class Deploy : PartModule, ISubStepResourceUpdate
 	{
 		[KSPField] public string type;                      // component name
 		[KSPField] public double extra_Cost = 0;            // extra energy cost to keep the part active
@@ -103,7 +103,19 @@ namespace KERBALISM
 
 		public virtual void FixedUpdate()
 		{
+			if (!SubStepSimulation.UsesLoadedResourceSteps)
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
 			if (!Lib.IsFlight() || module == null) return;
+			if (vessel.KerbalismData().ResourceUpdateInterval != null)
+			{
+				hasEnergy = resources.Amount > double.Epsilon;
+				if (!isBroken)
+					isConsuming = hasEnergy && GetIsConsuming();
+			}
 
 			if (isBroken)
 			{
@@ -122,7 +134,7 @@ namespace KERBALISM
 			}
 
 			// If isConsuming
-			if (isConsuming && resources != null) resources.Consume(actualCost * Kerbalism.elapsed_s, ResourceBroker.Deploy);
+			if (isConsuming && resources != null) resources.Consume(actualCost * elapsedSeconds, ResourceBroker.Deploy);
 		}
 
 		public virtual bool GetIsConsuming()

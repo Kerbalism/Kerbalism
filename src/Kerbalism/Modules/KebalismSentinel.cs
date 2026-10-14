@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace KERBALISM
 {
-	public class KerbalismSentinel : SentinelModule, IContractObjectiveModule
+	public class KerbalismSentinel : SentinelModule, IContractObjectiveModule, ISubStepResourceUpdate
 	{
 		// ec consumed per-second
 		[KSPField] public double ec_rate = 0.0;
@@ -111,6 +111,18 @@ namespace KERBALISM
 
 		private static bool FixedUpdatePrefix(KerbalismSentinel __instance)
 		{
+			if (SubStepSimulation.UsesLoadedResourceSteps)
+				return !__instance.isTrackingEnabled || __instance.isTracking;
+			return UpdateTracking(__instance, SubStepSimulation.FixedStepSeconds);
+		}
+
+		public void SubStepUpdate(double elapsedSeconds)
+		{
+			UpdateTracking(this, elapsedSeconds);
+		}
+
+		private static bool UpdateTracking(KerbalismSentinel __instance, double elapsedSeconds)
+		{
 			if (__instance.isTrackingEnabled)
 			{
 				VesselData vd = __instance.vessel.KerbalismData();
@@ -122,7 +134,7 @@ namespace KERBALISM
 				}
 
 				ResourceInfo ec = ResourceCache.GetResource(__instance.vessel, "ElectricCharge");
-				ec.Consume(__instance.ec_rate * Kerbalism.elapsed_s, ResourceBroker.Scanner);
+				ec.Consume(__instance.ec_rate * elapsedSeconds, ResourceBroker.Scanner);
 
 				if (ec.Amount <= double.Epsilon)
 				{

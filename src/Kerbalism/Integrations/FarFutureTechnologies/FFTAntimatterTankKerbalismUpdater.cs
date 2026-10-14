@@ -92,7 +92,7 @@ namespace KERBALISM
 			bool containmentEnabled = GetContainmentEnabled(tank);
 			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(vessel, "ElectricCharge");
 			ResourceBroker broker = KERBALISM.ResourceBroker.GetOrCreate(brokerName, KERBALISM.ResourceBroker.BrokerCategory.VesselSystem, brokerTitle);
-			double elapsed_s = TimeWarp.fixedDeltaTime;
+			double elapsed_s = vessel.KerbalismData().ResourceUpdateElapsedSeconds;
 
 			if (!containmentEnabled && hasAntimatter && ec.Amount >= containmentCost)
 			{

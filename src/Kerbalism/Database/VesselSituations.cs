@@ -85,6 +85,11 @@ namespace KERBALISM
 
 		public Situation GetExperimentSituation(ExperimentInfo expInfo)
 		{
+			if (vd.ResourceUpdateInterval != null && !vd.EnvLanded)
+			{
+				SubStepGeometrySample sample = vd.ResourceUpdateInterval.Samples[0];
+				return GetExperimentSituationAt(expInfo, sample.Altitude, sample.Latitude, sample.Longitude);
+			}
 			ScienceSituation expSituation = ScienceSituation.None;
 
 			foreach (ScienceSituation situation in situations)
@@ -104,6 +109,49 @@ namespace KERBALISM
 					if (expInfo.VirtualBiomes.Contains(virtualBiome))
 					{
 						expBiomeIndex = (int)virtualBiome;
+						break;
+					}
+				}
+			}
+
+			return new Situation(body.flightGlobalsIndex, expSituation, expBiomeIndex);
+		}
+
+		/// <summary>
+		/// Resolve an orbital experiment situation at an arbitrary substep
+		/// position. Non-geometric virtual biomes intentionally keep their
+		/// endpoint evaluation; this overload is primarily for body biome
+		/// integration over a ground track.
+		/// </summary>
+		public Situation GetExperimentSituationAt(ExperimentInfo expInfo, double altitude, double latitude, double longitude)
+		{
+			if (altitude < 0.0 || (body.atmosphere && altitude < body.atmosphereDepth))
+				return null;
+
+			ScienceSituation specific = altitude > body.scienceValues.spaceAltitudeThreshold
+				? ScienceSituation.InSpaceHigh
+				: ScienceSituation.InSpaceLow;
+			ScienceSituation expSituation = ScienceSituation.None;
+
+			if (specific.IsAvailableForExperiment(expInfo))
+				expSituation = specific;
+			else if (ScienceSituation.Space.IsAvailableForExperiment(expInfo))
+				expSituation = ScienceSituation.Space;
+			else if (ScienceSituation.BodyGlobal.IsAvailableForExperiment(expInfo))
+				expSituation = ScienceSituation.BodyGlobal;
+
+			int expBiomeIndex = GetBiomeIndex(body, latitude, longitude);
+			if (expSituation.IsVirtualBiomesRelevantForExperiment(expInfo))
+			{
+				foreach (VirtualBiome virtualBiome in virtualBiomes)
+				{
+					VirtualBiome sampleBiome = virtualBiome;
+					if (sampleBiome == VirtualBiome.NorthernHemisphere || sampleBiome == VirtualBiome.SouthernHemisphere)
+						sampleBiome = latitude > 0.0 ? VirtualBiome.NorthernHemisphere : VirtualBiome.SouthernHemisphere;
+
+					if (expInfo.VirtualBiomes.Contains(sampleBiome))
+					{
+						expBiomeIndex = (int)sampleBiome;
 						break;
 					}
 				}
@@ -214,12 +262,19 @@ namespace KERBALISM
 
 		public static int GetBiomeIndex(Vessel vessel)
 		{
-			CBAttributeMapSO biomeMap = vessel.mainBody.BiomeMap;
+			double latitude = (vessel.latitude + 180.0 + 90.0) % 180.0 - 90.0;
+			return GetBiomeIndex(vessel.mainBody, latitude, vessel.longitude);
+		}
+
+		public static int GetBiomeIndex(CelestialBody body, double latitude, double longitude)
+		{
+			CBAttributeMapSO biomeMap = body.BiomeMap;
 			if (biomeMap == null)
 				return -1;
 
-			double lat = ((vessel.latitude + 180.0 + 90.0) % 180.0 - 90.0) * UtilMath.Deg2Rad; // clamp and convert to radians
-			double lon = ((vessel.longitude + 360.0 + 180.0) % 360.0 - 180.0) * UtilMath.Deg2Rad; // clamp and convert to radians
+			// Latitude isn't periodic: wrapping +90 to -90 can select the opposite pole.
+			double lat = Lib.Clamp(latitude, -90.0, 90.0) * UtilMath.Deg2Rad;
+			double lon = ((longitude + 360.0 + 180.0) % 360.0 - 180.0) * UtilMath.Deg2Rad; // clamp and convert to radians
 			CBAttributeMapSO.MapAttribute biome = biomeMap.GetAtt(lat, lon);
 			for (int i = biomeMap.Attributes.Length; i-- > 0;)
 				if (biomeMap.Attributes[i] == biome)

@@ -240,6 +240,17 @@ namespace KERBALISM
 
 		public VesselSituations VesselSituations => vesselSituations; VesselSituations vesselSituations;
 
+		/// <summary>Shared interval used by the current environment evaluation.</summary>
+		public SubStepIntervalResult SubStepInterval => subStepInterval; SubStepIntervalResult subStepInterval;
+		internal SubStepIntervalResult ResourceUpdateInterval { get; set; }
+		internal double ResourceUpdateElapsedSeconds { get; private set; }
+		internal double SimulationTime => ResourceUpdateInterval?.EndUT ?? Planetarium.GetUniversalTime();
+
+		internal void SetSubStepInterval(SubStepIntervalResult interval)
+		{
+			subStepInterval = interval;
+		}
+
 		public class SunInfo
 		{
 			/// <summary> reference to the sun/star</summary>
@@ -270,9 +281,12 @@ namespace KERBALISM
 
 			/// <summary>
 			/// scalar for solar flux absorbtion by atmosphere at vessel position, not meant to be used directly (use solar_flux instead)
-			/// <para/> if integrated over orbit (analytic evaluation), average atmospheric absorption factor over the daylight period (not the whole day)
+			/// <para/> if integrated over an interval, average atmospheric absorption over the whole interval
 			/// </summary>
 			public double AtmoFactor => atmoFactor; double atmoFactor;
+
+			/// <summary>The exact shared interval used to populate this sun, if any.</summary>
+			internal SubStepIntervalResult Interval { get; private set; }
 
 			/// <summary> proportion of this sun flux in the total flux at the vessel position (ignoring atmoshere and occlusion) </summary>
 			public double FluxProportion => fluxProportion; double fluxProportion;
@@ -302,35 +316,41 @@ namespace KERBALISM
 				vd.sunsInfo = new List<SunInfo>(Sim.suns.Count);
 				vd.solarFluxTotal = 0.0;
 				vd.rawSolarFluxTotal = 0.0;
+				SubStepIntervalResult subStepInterval = vd.ResourceUpdateInterval
+					?? (vd.isAnalytic ? SubStepSimulation.GetOrCreate(v, elapsedSeconds) : null);
+				vd.SetSubStepInterval(subStepInterval);
 
 				foreach (Sim.SunData sunData in Sim.suns)
 				{
 					SunInfo sunInfo = new SunInfo(sunData);
+					bool hasIntegratedFlux = false;
 
 					if (vd.isAnalytic)
 					{
-						// get sun direction and distance
-						Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
-
-						if (Settings.UseSamplingSunFactor)
-							// sampling estimation of the portion of orbit that is in sunlight
-							// until we will calculate again
-							sunInfo.sunlightFactor = Sim.SampleSunFactor(v, elapsedSeconds, sunData.body);
-
+						if (subStepInterval != null && subStepInterval.IsValid
+							&& subStepInterval.TryGetSun(sunData.bodyIndex, out SubStepSunResult integratedSun))
+						{
+							sunInfo.direction = integratedSun.EndpointDirection;
+							sunInfo.distance = integratedSun.EndpointDistance;
+							sunInfo.sunlightFactor = integratedSun.SunlightFactor;
+							sunInfo.atmoFactor = integratedSun.AtmosphericFactor;
+							sunInfo.rawSolarFlux = integratedSun.AverageRawFlux;
+							sunInfo.solarFlux = integratedSun.AverageDirectFlux;
+							sunInfo.Interval = subStepInterval;
+							hasIntegratedFlux = true;
+						}
 						else
-							// analytical estimation of the portion of orbit that was in sunlight.
-							// it has some limitations, see the comments on Sim.EclipseFraction
-							sunInfo.sunlightFactor = 1.0 - Sim.EclipseFraction(v, sunData.body, sunInfo.direction);
-
-
-						// get atmospheric absorbtion
-						// for atmospheric bodies whose rotation period is less than 120 hours,
-						// determine analytic atmospheric absorption over a single body revolution instead
-						// of using a discrete value that would be unreliable at large timesteps :
-						if (vd.inAtmosphere)
-							sunInfo.atmoFactor = Sim.AtmosphereFactorAnalytic(v.mainBody, vesselPosition, sunInfo.direction);
-						else
-							sunInfo.atmoFactor = 1.0;
+						{
+							// Degrade to the previous analytic estimators when the elapsed
+							// trajectory can't be reconstructed (SOI changes, invalid orbit...).
+							Lib.DirectionAndDistance(vesselPosition, sunInfo.sunData.body, out sunInfo.direction, out sunInfo.distance);
+							sunInfo.sunlightFactor = Settings.UseSamplingSunFactor
+								? Sim.SampleSunFactor(v, elapsedSeconds, sunData.body)
+								: 1.0 - Sim.EclipseFraction(v, sunData.body, sunInfo.direction);
+							sunInfo.atmoFactor = vd.inAtmosphere
+								? Sim.AtmosphereFactorAnalytic(v.mainBody, vesselPosition, sunInfo.direction)
+								: 1.0;
+						}
 					}
 					else
 					{
@@ -341,8 +361,11 @@ namespace KERBALISM
 					}
 
 					// get resulting solar flux in W/m²
-					sunInfo.rawSolarFlux = sunInfo.sunData.SolarFlux(sunInfo.distance);
-					sunInfo.solarFlux = sunInfo.rawSolarFlux * sunInfo.sunlightFactor * sunInfo.atmoFactor;
+					if (!hasIntegratedFlux)
+					{
+						sunInfo.rawSolarFlux = sunInfo.sunData.SolarFlux(sunInfo.distance);
+						sunInfo.solarFlux = sunInfo.rawSolarFlux * sunInfo.sunlightFactor * sunInfo.atmoFactor;
+					}
 					// increment total flux from all stars
 					vd.rawSolarFluxTotal += sunInfo.rawSolarFlux;
 					vd.solarFluxTotal += sunInfo.solarFlux;
@@ -469,8 +492,9 @@ namespace KERBALISM
 			if (nominalRate <= 0.0) return;
 			if (highWarpAnalytic)
 			{
-				solarPanelsHighWarpActualPower += actualPowerFactor * nominalRate;
-				solarPanelsHighWarpMaxPower += theoreticalMaxPowerFactor * nominalRate;
+				double duration = ResourceUpdateInterval?.ElapsedSeconds ?? 1.0;
+				solarPanelsHighWarpActualPower += actualPowerFactor * nominalRate * duration;
+				solarPanelsHighWarpMaxPower += theoreticalMaxPowerFactor * nominalRate * duration;
 				solarPanelsHighWarpReportCount++;
 			}
 			else
@@ -629,7 +653,7 @@ namespace KERBALISM
 				return;
 			}
 			
-			EvaluateEnvironment(secSinceLastEval);
+			EvaluateEnvironment(ResourceUpdateInterval?.ElapsedSeconds ?? secSinceLastEval);
 			EvaluateStatus(secSinceLastEval);
 			UpdateTransmitBufferDrive(elapsedSeconds);
 			secSinceLastEval = 0.0;
@@ -643,6 +667,23 @@ namespace KERBALISM
 			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
 		}
 
+		internal void RestoreEnvironment(SubStepIntervalResult interval, double radiationDose, double habitatDose)
+		{
+			ResourceUpdateInterval = interval;
+			try
+			{
+				EvaluateEnvironment(interval.ElapsedSeconds, false);
+				radiation = radiationDose / interval.ElapsedSeconds;
+				shieldedRadiation = habitatDose / interval.ElapsedSeconds;
+				powered = Lib.IsPowered(Vessel);
+				UpdateSolarPanelExposure();
+			}
+			finally
+			{
+				ResourceUpdateInterval = null;
+			}
+		}
+
 		// ResourceUpdate's arguments, reused every physics step (not persisted)
 		private readonly Dictionary<string, double> resourceUpdateAvailable = new Dictionary<string, double>();
 		private readonly List<KeyValuePair<string, double>> resourceUpdateRequests = new List<KeyValuePair<string, double>>();
@@ -654,6 +695,7 @@ namespace KERBALISM
 		{
 			// only do this for loaded vessels. unloaded vessels will be handled in Background.cs
 			if (!Vessel.loaded) return;
+			ResourceUpdateElapsedSeconds = elapsed_s;
 
 			if(resourceUpdateDelegates == null)
 			{
@@ -1394,6 +1436,14 @@ namespace KERBALISM
 			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 			Profiler.EndSample();
 
+			if (ResourceUpdateInterval == null)
+				UpdateSolarPanelExposure();
+
+            Profiler.EndSample();
+        }
+
+		private void UpdateSolarPanelExposure()
+		{
 			// Solar panel telemetry:
 			// - loaded realtime: current multi-star actual/ideal power
 			// - unloaded low-speed: current-position/current-orientation background result
@@ -1429,6 +1479,11 @@ namespace KERBALISM
 				}
 			}
 
+			ResetSolarPanelReports();
+		}
+
+		internal void ResetSolarPanelReports()
+		{
 			solarPanelsBackgroundActualPower = 0.0;
 			solarPanelsBackgroundMaxPower = 0.0;
 			solarPanelsBackgroundReportCount = 0;
@@ -1438,9 +1493,7 @@ namespace KERBALISM
 			solarPanelsLiveActualPower = 0.0;
 			solarPanelsLiveMaxPower = 0.0;
 			solarPanelsLiveReportCount = 0;
-
-            Profiler.EndSample();
-        }
+		}
 
 		private bool HasDeployedSolarPanels()
 		{
@@ -1468,11 +1521,11 @@ namespace KERBALISM
 		#endregion
 
 		#region environment evaluation
-		private void EvaluateEnvironment(double elapsedSeconds)
+		private void EvaluateEnvironment(double elapsedSeconds, bool integrateRadiation = true)
 		{
 			Profiler.BeginSample("EvaluateEnvironment");
-			// we use analytic mode if more than 2 minutes of game time has passed since last evaluation (~ x6000 timewarp speed)
-			bool newAnalytic = elapsedSeconds > 120.0;
+			// Shared resource steps use their sampled geometry; legacy evaluation becomes analytic after two minutes.
+			bool newAnalytic = ResourceUpdateInterval != null || elapsedSeconds > 120.0;
 			if (newAnalytic != isAnalytic)
 			{
 				// Do not display a value computed with the other mode's semantics while
@@ -1567,6 +1620,20 @@ namespace KERBALISM
 
 			bool new_innerBelt, new_outerBelt, new_magnetosphere;
 			radiation = Radiation.Compute(Vessel, position, EnvGammaTransparency, mainSun.SunlightFactor, out blackout, out new_magnetosphere, out new_innerBelt, out new_outerBelt, out interstellar, out shieldedRadiation);
+			if (integrateRadiation && subStepInterval != null && subStepInterval.IsValid)
+			{
+				double dose = 0.0;
+				double habitatDose = 0.0;
+				for (int i = 0; i < subStepInterval.Samples.Count; i++)
+				{
+					double sampleRadiation = Radiation.Compute(Vessel, subStepInterval, i, out double sampleShielded);
+					double duration = subStepInterval.Samples[i].Duration;
+					dose += sampleRadiation * duration;
+					habitatDose += sampleShielded * duration;
+				}
+				radiation = dose / subStepInterval.ElapsedSeconds;
+				shieldedRadiation = habitatDose / subStepInterval.ElapsedSeconds;
+			}
 
 			if (new_innerBelt != innerBelt || new_outerBelt != outerBelt || new_magnetosphere != magnetosphere)
 			{
