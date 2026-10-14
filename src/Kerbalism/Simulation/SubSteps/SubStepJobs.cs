@@ -82,19 +82,34 @@ namespace KERBALISM
 				return double.NaN;
 			}
 
-			double hyperbolic = Asinh(meanAnomaly / eccentricity);
-			for (int i = 0; i < 32; i++)
+			// Solve the positive half of the odd hyperbolic Kepler equation.
+			// Near e = 1, an unconstrained Newton step can overshoot by orders
+			// of magnitude; retain a bracket just as for elliptical orbits.
+			double magnitude = math.abs(meanAnomaly);
+			double hyperbolic = Asinh(magnitude / eccentricity);
+			double lowerHyperbolic = 0.0;
+			double upperHyperbolic = math.max(1.0, hyperbolic);
+			while (eccentricity * math.sinh(upperHyperbolic) - upperHyperbolic < magnitude)
+				upperHyperbolic *= 2.0;
+
+			for (int i = 0; i < 48; i++)
 			{
 				double sinh = math.sinh(hyperbolic);
 				double cosh = math.cosh(hyperbolic);
-				double residual = eccentricity * sinh - hyperbolic - meanAnomaly;
+				double residual = eccentricity * sinh - hyperbolic - magnitude;
 				double derivative = eccentricity * cosh - 1.0;
-				if (!IsFinite(residual) || !IsFinite(derivative) || math.abs(derivative) < 1e-14)
-					return double.NaN;
 				double delta = residual / derivative;
-				hyperbolic -= delta;
 				if (math.abs(delta) < 1e-12)
-					return hyperbolic;
+					return meanAnomaly < 0.0 ? -hyperbolic : hyperbolic;
+
+				if (residual > 0.0)
+					upperHyperbolic = hyperbolic;
+				else
+					lowerHyperbolic = hyperbolic;
+				double candidate = hyperbolic - delta;
+				hyperbolic = candidate > lowerHyperbolic && candidate < upperHyperbolic && IsFinite(candidate)
+					? candidate
+					: (lowerHyperbolic + upperHyperbolic) * 0.5;
 			}
 			return double.NaN;
 		}
@@ -198,6 +213,7 @@ namespace KERBALISM
 	{
 		[ReadOnly] public NativeArray<SubStepTimeNative> Times;
 		[ReadOnly] public NativeArray<SubStepBodyNative> Bodies;
+		public int BodyCount;
 		// Each Execute owns one complete time slice. It reads parent entries
 		// written earlier in that same slice, so the default per-index safety
 		// restriction is intentionally disabled.
@@ -206,7 +222,7 @@ namespace KERBALISM
 		public void Execute(int timeIndex)
 		{
 			double ut = Times[timeIndex].UT;
-			int bodyCount = Bodies.Length;
+			int bodyCount = BodyCount;
 			int offset = timeIndex * bodyCount;
 			for (int bodyIndex = 0; bodyIndex < bodyCount; bodyIndex++)
 			{
@@ -225,17 +241,19 @@ namespace KERBALISM
 		[ReadOnly] public NativeArray<SubStepBodyNative> Bodies;
 		[ReadOnly] public NativeArray<SubStepVesselNative> Vessels;
 		[ReadOnly] public NativeArray<double3> BodyPositions;
+		public int BodyCount;
+		public int VesselCount;
 		[WriteOnly] public NativeArray<SubStepVesselGeometryNative> Geometry;
 
 		public void Execute(int index)
 		{
-			int vesselCount = Vessels.Length;
+			int vesselCount = VesselCount;
 			int timeIndex = index / vesselCount;
 			int vesselIndex = index - timeIndex * vesselCount;
 			SubStepVesselNative vessel = Vessels[vesselIndex];
 			SubStepBodyNative body = Bodies[vessel.MainBody];
 			double ut = Times[timeIndex].UT;
-			double3 bodyPosition = BodyPositions[timeIndex * Bodies.Length + vessel.MainBody];
+			double3 bodyPosition = BodyPositions[timeIndex * BodyCount + vessel.MainBody];
 
 			double3 relative;
 			double latitude;
@@ -284,16 +302,18 @@ namespace KERBALISM
 		[ReadOnly] public NativeArray<SubStepVesselGeometryNative> VesselGeometry;
 		[ReadOnly] public NativeArray<SubStepStarNative> Stars;
 		[ReadOnly] public int VesselCount;
+		public int BodyCount;
+		public int SunCount;
 		[WriteOnly] public NativeArray<SubStepSunNative> Results;
 
 		public void Execute(int index)
 		{
-			int sunCount = Stars.Length;
+			int sunCount = SunCount;
 			int sampleVesselIndex = index / sunCount;
 			int sunIndex = index - sampleVesselIndex * sunCount;
 			int timeIndex = sampleVesselIndex / VesselCount;
 			int vesselIndex = sampleVesselIndex - timeIndex * VesselCount;
-			int bodyOffset = timeIndex * Bodies.Length;
+			int bodyOffset = timeIndex * BodyCount;
 			SubStepStarNative star = Stars[sunIndex];
 			int sunBody = star.BodyIndex;
 			SubStepVesselNative vessel = Vessels[vesselIndex];
@@ -308,7 +328,7 @@ namespace KERBALISM
 			double rayLength = math.max(0.0, centerDistance - Bodies[sunBody].Radius);
 			bool visible = centerDistance > 0.0;
 
-			for (int bodyIndex = 0; visible && bodyIndex < Bodies.Length; bodyIndex++)
+			for (int bodyIndex = 0; visible && bodyIndex < BodyCount; bodyIndex++)
 			{
 				if (bodyIndex == sunBody || Bodies[bodyIndex].Radius <= 0.0)
 					continue;

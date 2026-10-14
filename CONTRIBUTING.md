@@ -308,7 +308,8 @@ Kerbalism uses [KSPBuildTools](https://github.com/KSPModdingLibs/KSPBuildTools) 
 2. Copy `Kerbalism.props.user.example` to `Kerbalism.props.user` in the repository root.
 3. Edit `Kerbalism.props.user` and set `KSPBT_GameRoot` to your KSP 1.12 install path.
 4. Optionally set `Kerbalism_DeployToKsp` to `true` if you want the build to copy `GameData/Kerbalism` and `GameData/KerbalismConfig` into that install (off by default).
-5. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP) and the full
+5. Install [Harmony2](https://github.com/KSPModdingLibs/HarmonyKSP),
+   [KSPCommunityFixes](https://github.com/KSPModdingLibs/KSPCommunityFixes) and the full
    [KSPBurst](https://github.com/KSPModdingLibs/KSPBurst) compiler package into
    that KSP install via CKAN or manually. `KSPBurst-Lite` supplies the runtime
    assemblies but cannot verify Burst compilation and is not sufficient for
@@ -322,7 +323,30 @@ On the first KSP launch after rebuilding Kerbalism, confirm that KSPBurst finds
 and compiles `Kerbalism.dll`; compiler output is written under
 `Logs/KSPBurst/` and in `KSP.log`.
 
-Open `Kerbalism.slnx` in Visual Studio or Rider for IDE debugging.
+Open `Kerbalism.sln` in Visual Studio or Rider for IDE debugging.
+
+This branch requires KSPBurst v1.7.4.11. Before publishing a release, add the
+`KSPBurst` dependency to Kerbalism's external NetKAN metadata (minimum version
+`v1.7.4.11`); the metadata is no longer maintained in this repository.
+
+### Substep regression checks
+
+Run each script in a fresh PowerShell 7 process from the repository root:
+
+```powershell
+pwsh -NoProfile -File tests/SubStepGeometry/run.ps1 -MathAssembly '<KSP>/GameData/000_KSPBurst/Plugins/Unity.Mathematics.dll'
+pwsh -NoProfile -File tests/SolarPanelGeometry/run.ps1
+pwsh -NoProfile -File tests/ScienceSubSteps/run.ps1
+```
+
+These checks compile the current production methods, with small fixtures for
+KSP state and managed job buffers. They cover conics, signed rotation, orbit
+patch boundaries, multi-star visibility, buffer reuse, landed solar fallback,
+and science allocation with resource and storage limits. They do not exercise
+Unity's scheduler or Burst compilation. In-game validation should still cover
+high-warp loading/unloading, an actual SOI transition, Principia fallback and
+KSPBurst compiler logs. Use `SubStepSimulationLogging` to compare sampled
+positions with stock orbit calls and inspect job timing and sample coarsening.
 
 ### Debugging
 

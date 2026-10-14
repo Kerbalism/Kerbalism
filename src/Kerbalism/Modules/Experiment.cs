@@ -445,11 +445,12 @@ namespace KERBALISM
 
 			string issue;
 			SubjectData subjectData;
+			double backgroundProdFactor;
 
 			Profiler.BeginSample("Experiment.BackgroundUpdate.RunningUpdate");
 			try
 			{
-				double prodFactor = RunningUpdate(
+				backgroundProdFactor = RunningUpdate(
 					v, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded, // "this" is the prefab
 					ec,
 					resources,
@@ -474,7 +475,7 @@ namespace KERBALISM
 			Lib.Proto.Set(m, "situationId", situationId);
 			Lib.Proto.Set(m, "status", newStatus);
 			Lib.Proto.Set(m, "issue", issue);
-			Lib.Proto.Set(m, "prodFactor", prodFactor);
+			Lib.Proto.Set(m, "prodFactor", backgroundProdFactor);
 
 			if (expInfo.SampleMass > 0.0)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
@@ -576,7 +577,7 @@ namespace KERBALISM
 
 			// Loaded instance: use Part. Unloaded background: use ProtoPartSnapshot for SunPointingMax.
 			Part reqPart = (prefab.part != null && prefab.part.vessel == v) ? prefab.part : null;
-			double reqScalar = prefab.Requirements.TestRequirements(v, reqPart, prefab.pointing_axis, protoPart);
+			double reqScalar = prefab.Requirements.TestRequirements(v, reqPart, prefab.pointing_axis, protoPart, distributeBodyBiomes);
 			if (reqScalar == 0.0)
 			{
 				mainIssue = Local.Module_Experiment_issue9;//"unmet requirement"
@@ -647,28 +648,7 @@ namespace KERBALISM
 			// Forced may ignore remaining science value, but never store more than one full result on this vessel (#832)
 			if (expState == RunningState.Forced)
 			{
-				double stored = 0.0;
-				foreach (Drive vesselDrive in Drive.GetDrives(vd, true))
-				{
-					if (!expInfo.IsSample)
-					{
-						if (vesselDrive.files.TryGetValue(subjectData, out File storedFile))
-							stored += storedFile.size;
-					}
-					else if (vesselDrive.samples.TryGetValue(subjectData, out Sample storedSample))
-					{
-						stored += storedSample.size;
-					}
-				}
-
-				if (!expInfo.IsSample
-					&& vd.TransmitBufferDrive != null
-					&& vd.TransmitBufferDrive.files.TryGetValue(subjectData, out File bufferedFile))
-				{
-					stored += bufferedFile.size;
-				}
-
-				chunkSize = Math.Min(chunkSize, Math.Max(0.0, expInfo.DataSize - stored));
+				chunkSize = Math.Min(chunkSize, ForcedRemainingData(vd, expInfo, subjectData));
 				if (chunkSize <= 0.0)
 					return 0.0;
 			}
@@ -763,10 +743,10 @@ namespace KERBALISM
 			out string mainIssue)
 		{
 			mainIssue = string.Empty;
-			List<SubjectDuration> allocations = new List<SubjectDuration>();
 			List<SubjectDuration> orderedSegments = new List<SubjectDuration>();
-			Dictionary<string, int> allocationIndex = new Dictionary<string, int>();
 			bool resetBoundaryReached = false;
+			bool requirementsUnmet = false;
+			double allocatedDuration = 0.0;
 
 			for (int i = 0; i < interval.Samples.Count; i++)
 			{
@@ -787,30 +767,31 @@ namespace KERBALISM
 					}
 				}
 
-				if (allocationIndex.TryGetValue(subject.Id, out int index))
+				double sampleScalar = prefab.Requirements.TestSampleRequirements(sample.Altitude,
+					v.mainBody.atmosphere ? v.mainBody.atmosphereDepth : 0.0, interval.SunlightFactorAt(i));
+				if (sampleScalar <= 0.0)
 				{
-					allocations[index].Duration += sample.Duration;
+					requirementsUnmet = true;
+					continue;
 				}
-				else
-				{
-					allocationIndex.Add(subject.Id, allocations.Count);
-					allocations.Add(new SubjectDuration { Subject = subject, Duration = sample.Duration });
-				}
+				double duration = sample.Duration * sampleScalar;
+				allocatedDuration += duration;
 
 				if (orderedSegments.Count > 0
 					&& orderedSegments[orderedSegments.Count - 1].Subject.Id == subject.Id)
 				{
-					orderedSegments[orderedSegments.Count - 1].Duration += sample.Duration;
+					orderedSegments[orderedSegments.Count - 1].Duration += duration;
 				}
 				else
 				{
-					orderedSegments.Add(new SubjectDuration { Subject = subject, Duration = sample.Duration });
+					orderedSegments.Add(new SubjectDuration { Subject = subject, Duration = duration });
 				}
 			}
 
-			if (allocations.Count == 0)
+			if (orderedSegments.Count == 0)
 			{
-				mainIssue = Local.Module_Experiment_issue1;
+				mainIssue = resetBoundaryReached ? Local.Module_Experiment_issue3
+					: requirementsUnmet ? Local.Module_Experiment_issue9 : Local.Module_Experiment_issue1;
 				return 0.0;
 			}
 
@@ -820,16 +801,14 @@ namespace KERBALISM
 			{
 				SubjectDuration segment = orderedSegments[i];
 				double requestedData = segment.Duration * prefab.data_rate * requirementScalar;
-				if (expState != RunningState.Forced)
+				if (!subjectRemainingData.TryGetValue(segment.Subject.Id, out double remainingData))
 				{
-					if (!subjectRemainingData.TryGetValue(segment.Subject.Id, out double remainingData))
-					{
-						remainingData = segment.Subject.ScienceRemainingToCollect / segment.Subject.SciencePerMB;
-						subjectRemainingData.Add(segment.Subject.Id, remainingData);
-					}
-					requestedData = Math.Min(requestedData, remainingData);
-					subjectRemainingData[segment.Subject.Id] = Math.Max(0.0, remainingData - requestedData);
+					remainingData = expState == RunningState.Forced
+						? ForcedRemainingData(vd, expInfo, segment.Subject)
+						: segment.Subject.ScienceRemainingToCollect / segment.Subject.SciencePerMB;
 				}
+				requestedData = Math.Min(requestedData, remainingData);
+				subjectRemainingData[segment.Subject.Id] = Math.Max(0.0, remainingData - requestedData);
 				segment.ProductiveDuration = Math.Max(0.0, requestedData / prefab.data_rate);
 				productiveSeconds += segment.ProductiveDuration;
 			}
@@ -911,15 +890,33 @@ namespace KERBALISM
 				mainIssue = Local.Module_Experiment_issue3;
 			if (Settings.SubStepSimulationLogging)
 			{
-				double allocatedDuration = 0.0;
-				for (int i = 0; i < allocations.Count; i++)
-					allocatedDuration += allocations[i].Duration;
 				Lib.Log("Substep science: experiment={0}, subjects={1}, allocated={2:F3}s/{3:F3}s, data={4:F6}, resourceSeconds={5:F3}",
-					Lib.LogLevel.Message, expInfo.ExperimentId, allocations.Count, allocatedDuration,
+					Lib.LogLevel.Message, expInfo.ExperimentId, subjectRemainingData.Count, allocatedDuration,
 					elapsedSeconds, recordedTotal, consumedSeconds);
 			}
 
 			return recordedTotal / chunkSizeMax;
+		}
+
+		private static double ForcedRemainingData(VesselData vd, ExperimentInfo expInfo, SubjectData subject)
+		{
+			double stored = 0.0;
+			foreach (Drive drive in Drive.GetDrives(vd, true))
+			{
+				if (!expInfo.IsSample)
+				{
+					if (drive.files.TryGetValue(subject, out File file))
+						stored += file.size;
+				}
+				else if (drive.samples.TryGetValue(subject, out Sample sample))
+				{
+					stored += sample.size;
+				}
+			}
+			if (!expInfo.IsSample && vd.TransmitBufferDrive != null
+				&& vd.TransmitBufferDrive.files.TryGetValue(subject, out File bufferedFile))
+				stored += bufferedFile.size;
+			return Math.Max(0.0, expInfo.DataSize - stored);
 		}
 
 		private static void RecordExperimentData(ExperimentInfo expInfo, SubjectData subjectData,

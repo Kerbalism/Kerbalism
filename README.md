@@ -26,7 +26,7 @@ For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 **Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]
 **License** : [Unlicense] (public domain)
 **KSP version** : 1.12.x
-**Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
+**Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes], [KSPBurst]
 
 **[Mod compatibility]** - [Changelog]
 
@@ -46,6 +46,7 @@ Optional :
 - [Module Manager]
 - [HarmonyKSP]
 - [KSPCommunityFixes]
+- [KSPBurst] v1.7.4.11 or later (full compiler package)
 - [CommunityResourcePack] (required by **KerbalismConfig** only, third-party config packs might not require it) 
 
 **Configuration packs**
@@ -122,6 +123,7 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 [CommunityResourcePack]: https://github.com/BobPalmer/CommunityResourcePack/releases
 [HarmonyKSP]: https://github.com/KSPModdingLibs/HarmonyKSP/releases
 [KSPCommunityFixes]: https://github.com/KSPModdingLibs/KSPCommunityFixes/releases
+[KSPBurst]: https://github.com/KSPModdingLibs/KSPBurst/releases
 [CKAN]: https://forum.kerbalspaceprogram.com/index.php?/topic/197082-ckan
 [Unlicense]: https://github.com/Kerbalism/Kerbalism/blob/master/LICENSE
 

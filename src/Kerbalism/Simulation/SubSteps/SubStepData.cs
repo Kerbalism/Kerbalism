@@ -105,6 +105,20 @@ namespace KERBALISM
 			return suns.TryGetValue(bodyIndex, out result);
 		}
 
+		internal double SunlightFactorAt(int sampleIndex)
+		{
+			double rawFlux = 0.0;
+			double visibleFlux = 0.0;
+			foreach (SubStepSunResult sun in suns.Values)
+			{
+				SubStepSunSample sample = sun.Samples[sampleIndex];
+				rawFlux += sample.RawFlux;
+				if (sample.Visible)
+					visibleFlux += sample.RawFlux;
+			}
+			return rawFlux > 0.0 ? visibleFlux / rawFlux : 0.0;
+		}
+
 		internal static SubStepIntervalResult Invalid(Vessel vessel, double startUT, double endUT, int generation, string reason)
 		{
 			return new SubStepIntervalResult(vessel == null ? Guid.Empty : vessel.id, startUT, endUT, generation,

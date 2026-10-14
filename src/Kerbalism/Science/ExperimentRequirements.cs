@@ -147,6 +147,12 @@ namespace KERBALISM
 
 		public double TestRequirements(Vessel v, Part part = null, string pointingAxis = null, ProtoPartSnapshot protoPart = null)
 		{
+			return TestRequirements(v, part, pointingAxis, protoPart, false);
+		}
+
+		// Geometric requirements are evaluated together with each biome sample.
+		internal double TestRequirements(Vessel v, Part part, string pointingAxis, ProtoPartSnapshot protoPart, bool useSubSteps)
+		{
 			Profiler.BeginSample("ExperimentRequirements.TestRequirements");
 			VesselData vd = v.KerbalismData();
 			BeginEvalContext(part, protoPart, pointingAxis);
@@ -154,6 +160,8 @@ namespace KERBALISM
 
 			for (int i = 0; i < Requires.Length; i++)
 			{
+				if (useSubSteps && IsSampledRequirement(Requires[i].require))
+					continue;
 				double reqResult = EvaluateRequirement(v, vd, Requires[i]);
 				if (reqResult == 0.0)
 				{
@@ -166,6 +174,36 @@ namespace KERBALISM
 
 			EndEvalContext();
 			Profiler.EndSample();
+			return result;
+		}
+
+		private static bool IsSampledRequirement(Require require)
+		{
+			return require == Require.AltitudeMin || require == Require.AltitudeMax
+				|| require == Require.AtmosphereAltMin || require == Require.AtmosphereAltMax
+				|| require == Require.Sunlight || require == Require.Shadow;
+		}
+
+		internal double TestSampleRequirements(double altitude, double atmosphereDepth, double sunlightFactor)
+		{
+			double result = 1.0;
+			for (int i = 0; i < Requires.Length; i++)
+			{
+				RequireDef req = Requires[i];
+				switch (req.require)
+				{
+					case Require.AltitudeMin: if (altitude < (double)req.value) return 0.0; break;
+					case Require.AltitudeMax: if (altitude > (double)req.value) return 0.0; break;
+					case Require.AtmosphereAltMin:
+						if (atmosphereDepth <= 0.0 || altitude / atmosphereDepth < (double)req.value) return 0.0;
+						break;
+					case Require.AtmosphereAltMax:
+						if (atmosphereDepth <= 0.0 || altitude / atmosphereDepth > (double)req.value) return 0.0;
+						break;
+					case Require.Sunlight: result *= sunlightFactor; break;
+					case Require.Shadow: result *= 1.0 - sunlightFactor; break;
+				}
+			}
 			return result;
 		}
 

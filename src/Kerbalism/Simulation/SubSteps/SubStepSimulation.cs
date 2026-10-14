@@ -272,13 +272,13 @@ namespace KERBALISM
 
 			try
 			{
-				EnsureExactLength(ref timeBuffer, sampleCount);
-				EnsureExactLength(ref bodySnapshotBuffer, bodyCount);
-				EnsureExactLength(ref vesselSnapshotBuffer, vesselCount);
-				EnsureExactLength(ref starSnapshotBuffer, sunCount);
-				EnsureExactLength(ref bodyPositionBuffer, sampleCount * bodyCount);
-				EnsureExactLength(ref vesselGeometryBuffer, sampleCount * vesselCount);
-				EnsureExactLength(ref sunResultBuffer, sampleCount * vesselCount * sunCount);
+				EnsureCapacity(ref timeBuffer, sampleCount);
+				EnsureCapacity(ref bodySnapshotBuffer, bodyCount);
+				EnsureCapacity(ref vesselSnapshotBuffer, vesselCount);
+				EnsureCapacity(ref starSnapshotBuffer, sunCount);
+				EnsureCapacity(ref bodyPositionBuffer, sampleCount * bodyCount);
+				EnsureCapacity(ref vesselGeometryBuffer, sampleCount * vesselCount);
+				EnsureCapacity(ref sunResultBuffer, sampleCount * vesselCount * sunCount);
 
 				NativeArray<SubStepTimeNative> times = timeBuffer;
 				NativeArray<SubStepBodyNative> bodySnapshots = bodySnapshotBuffer;
@@ -328,6 +328,7 @@ namespace KERBALISM
 				{
 					Times = times,
 					Bodies = bodySnapshots,
+					BodyCount = bodyCount,
 					Positions = bodyPositions
 				}.Schedule(sampleCount, 1);
 				outstandingHandle = bodyHandle;
@@ -339,6 +340,8 @@ namespace KERBALISM
 					Bodies = bodySnapshots,
 					Vessels = vesselSnapshots,
 					BodyPositions = bodyPositions,
+					BodyCount = bodyCount,
+					VesselCount = vesselCount,
 					Geometry = vesselGeometry
 				}.Schedule(sampleCount * vesselCount, 32, bodyHandle);
 				outstandingHandle = vesselHandle;
@@ -351,6 +354,8 @@ namespace KERBALISM
 					VesselGeometry = vesselGeometry,
 					Stars = starSnapshots,
 					VesselCount = vesselCount,
+					BodyCount = bodyCount,
+					SunCount = sunCount,
 					Results = sunResults
 				}.Schedule(sampleCount * vesselCount * sunCount, 32, vesselHandle);
 				outstandingHandle = solarHandle;
@@ -362,7 +367,7 @@ namespace KERBALISM
 				jobsTimer.Stop();
 				LastJobsMilliseconds = jobsTimer.Elapsed.TotalMilliseconds;
 				LastCompleteWaitMilliseconds = completeWaitTimer.Elapsed.TotalMilliseconds;
-				ValidateFiniteResults(bodyPositions, vesselGeometry, sunResults);
+				ValidateBodyPositions(bodyPositions, sampleCount * bodyCount);
 				if (Settings.SubStepSimulationLogging)
 				{
 					ValidateBatch(requests, orderedBodies, times, bodyPositions, vesselGeometry,
@@ -404,23 +409,31 @@ namespace KERBALISM
 			Store(SubStepIntervalResult.Invalid(vessel, startUT, endUT, generation, reason));
 		}
 
-		private static void ValidateFiniteResults(NativeArray<double3> bodyPositions,
-			NativeArray<SubStepVesselGeometryNative> vesselGeometry, NativeArray<SubStepSunNative> sunResults)
+		private static void ValidateBodyPositions(NativeArray<double3> bodyPositions, int positionCount)
 		{
-			for (int i = 0; i < bodyPositions.Length; i++)
+			for (int i = 0; i < positionCount; i++)
 				if (!math.all(math.isfinite(bodyPositions[i])))
 					throw new InvalidOperationException("non-finite body geometry");
-			for (int i = 0; i < vesselGeometry.Length; i++)
+		}
+
+		private static bool HasFiniteVesselResults(NativeArray<SubStepVesselGeometryNative> vesselGeometry,
+			NativeArray<SubStepSunNative> sunResults, int vesselIndex, int vesselCount, int sampleCount, int sunCount)
+		{
+			for (int timeIndex = 0; timeIndex < sampleCount; timeIndex++)
 			{
-				SubStepVesselGeometryNative geometry = vesselGeometry[i];
+				int sampleVesselIndex = timeIndex * vesselCount + vesselIndex;
+				SubStepVesselGeometryNative geometry = vesselGeometry[sampleVesselIndex];
 				if (!math.all(math.isfinite(geometry.Position)) || !IsFinite(geometry.Latitude)
 					|| !IsFinite(geometry.Longitude) || !IsFinite(geometry.Altitude))
-					throw new InvalidOperationException("non-finite vessel geometry");
+					return false;
+				for (int sunIndex = 0; sunIndex < sunCount; sunIndex++)
+				{
+					SubStepSunNative sun = sunResults[sampleVesselIndex * sunCount + sunIndex];
+					if (!math.all(math.isfinite(sun.Direction)) || !IsFinite(sun.CenterDistance) || !IsFinite(sun.RawFlux))
+						return false;
+				}
 			}
-			for (int i = 0; i < sunResults.Length; i++)
-				if (!math.all(math.isfinite(sunResults[i].Direction))
-					|| !IsFinite(sunResults[i].CenterDistance) || !IsFinite(sunResults[i].RawFlux))
-					throw new InvalidOperationException("non-finite solar geometry");
+			return true;
 		}
 
 		private static bool IsFinite(double value)
@@ -428,13 +441,14 @@ namespace KERBALISM
 			return !double.IsNaN(value) && !double.IsInfinity(value);
 		}
 
-		private static void EnsureExactLength<T>(ref NativeArray<T> buffer, int length) where T : struct
+		private static void EnsureCapacity<T>(ref NativeArray<T> buffer, int length) where T : struct
 		{
-			if (buffer.IsCreated && buffer.Length == length)
+			if (buffer.IsCreated && buffer.Length >= length)
 				return;
+			int capacity = buffer.IsCreated ? Math.Max(length, buffer.Length * 2) : length;
 			if (buffer.IsCreated)
 				buffer.Dispose();
-			buffer = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+			buffer = new NativeArray<T>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 		}
 
 		private static void ValidateBatch(List<VesselRequest> requests, List<CelestialBody> bodies,
@@ -472,6 +486,8 @@ namespace KERBALISM
 
 				for (int vesselIndex = 0; vesselIndex < vesselCount; vesselIndex++)
 				{
+					if (!HasFiniteVesselResults(vesselGeometry, sunResults, vesselIndex, vesselCount, sampleCount, sunCount))
+						continue;
 					Vessel vessel = requests[vesselIndex].Vessel;
 					Vector3d expected = ReferenceVesselPosition(vessel, ut, endUT);
 					SubStepVesselGeometryNative actual = vesselGeometry[timeIndex * vesselCount + vesselIndex];
@@ -486,7 +502,7 @@ namespace KERBALISM
 					maxAltitudeError = Math.Max(maxAltitudeError, Math.Abs(expectedAltitude - actual.Altitude));
 
 					Vector3d polarAxis = vessel.mainBody.BodyFrame.Rotation.swizzle * Vector3d.up;
-					double angleDegrees = (ut - endUT) * vessel.mainBody.angularV * (180.0 / Math.PI);
+					double angleDegrees = (ut - endUT) * vessel.mainBody.rotPeriodRecip * 360.0;
 					Vector3d relativeAtCurrentRotation = QuaternionD.AngleAxis(angleDegrees, polarAxis) * expectedRelative;
 					Vector3d currentFramePosition = vessel.mainBody.position + relativeAtCurrentRotation;
 					double expectedLatitude = vessel.mainBody.GetLatitude(currentFramePosition);
@@ -589,6 +605,15 @@ namespace KERBALISM
 			for (int vesselIndex = 0; vesselIndex < vesselCount; vesselIndex++)
 			{
 				Vessel vessel = requests[vesselIndex].Vessel;
+				if (!HasFiniteVesselResults(vesselGeometry, sunResults, vesselIndex, vesselCount, sampleCount, sunCount))
+				{
+					// Body positions are shared, but a failed vessel conic must not
+					// discard the other vessels' completed intervals.
+					const string reason = "non-finite vessel or solar geometry";
+					LastFallbackReason = reason;
+					StoreInvalid(vessel, startUT, endUT, reason);
+					continue;
+				}
 				SubStepGeometrySample[] samples = new SubStepGeometrySample[sampleCount];
 				for (int timeIndex = 0; timeIndex < sampleCount; timeIndex++)
 				{
@@ -738,7 +763,7 @@ namespace KERBALISM
 				Orbit = parent >= 0 ? CreateOrbitSnapshot(orbit, parent) : default,
 				Radius = body.Radius,
 				AtmosphereDepth = body.atmosphereDepth,
-				AngularVelocity = body.angularV,
+				AngularVelocity = 2.0 * Math.PI * body.rotPeriodRecip,
 				ReferenceUT = referenceUT,
 				RootPosition = ToDouble3(body.position),
 				North = ToDouble3(north),
