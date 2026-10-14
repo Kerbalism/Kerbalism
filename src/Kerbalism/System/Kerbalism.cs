@@ -277,7 +277,7 @@ namespace KERBALISM
 				return;
 
 			// convert elapsed time to double only once
-			double fixedDeltaTime = TimeWarp.fixedDeltaTime;
+			double fixedDeltaTime = SubStepSimulation.FixedStepSeconds;
 
 			// and detect warp blending
 			if (Math.Abs(fixedDeltaTime - elapsed_s) < 0.001)
@@ -402,6 +402,7 @@ namespace KERBALISM
 
 			double dose = 0.0;
 			double habitatDose = 0.0;
+			vd.ResetSolarPanelReports();
 			Profiler.BeginSample("Vessel.SubStepResources");
 			try
 			{

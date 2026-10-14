@@ -243,6 +243,7 @@ namespace KERBALISM
 		/// <summary>Shared interval used by the current environment evaluation.</summary>
 		public SubStepIntervalResult SubStepInterval => subStepInterval; SubStepIntervalResult subStepInterval;
 		internal SubStepIntervalResult ResourceUpdateInterval { get; set; }
+		internal double ResourceUpdateElapsedSeconds { get; private set; }
 		internal double SimulationTime => ResourceUpdateInterval?.EndUT ?? Planetarium.GetUniversalTime();
 
 		internal void SetSubStepInterval(SubStepIntervalResult interval)
@@ -491,8 +492,9 @@ namespace KERBALISM
 			if (nominalRate <= 0.0) return;
 			if (highWarpAnalytic)
 			{
-				solarPanelsHighWarpActualPower += actualPowerFactor * nominalRate;
-				solarPanelsHighWarpMaxPower += theoreticalMaxPowerFactor * nominalRate;
+				double duration = ResourceUpdateInterval?.ElapsedSeconds ?? 1.0;
+				solarPanelsHighWarpActualPower += actualPowerFactor * nominalRate * duration;
+				solarPanelsHighWarpMaxPower += theoreticalMaxPowerFactor * nominalRate * duration;
 				solarPanelsHighWarpReportCount++;
 			}
 			else
@@ -674,6 +676,7 @@ namespace KERBALISM
 				radiation = radiationDose / interval.ElapsedSeconds;
 				shieldedRadiation = habitatDose / interval.ElapsedSeconds;
 				powered = Lib.IsPowered(Vessel);
+				UpdateSolarPanelExposure();
 			}
 			finally
 			{
@@ -692,6 +695,7 @@ namespace KERBALISM
 		{
 			// only do this for loaded vessels. unloaded vessels will be handled in Background.cs
 			if (!Vessel.loaded) return;
+			ResourceUpdateElapsedSeconds = elapsed_s;
 
 			if(resourceUpdateDelegates == null)
 			{
@@ -1432,6 +1436,14 @@ namespace KERBALISM
 			Drive.GetCapacity(this, out drivesFreeSpace, out drivesCapacity);
 			Profiler.EndSample();
 
+			if (ResourceUpdateInterval == null)
+				UpdateSolarPanelExposure();
+
+            Profiler.EndSample();
+        }
+
+		private void UpdateSolarPanelExposure()
+		{
 			// Solar panel telemetry:
 			// - loaded realtime: current multi-star actual/ideal power
 			// - unloaded low-speed: current-position/current-orientation background result
@@ -1467,6 +1479,11 @@ namespace KERBALISM
 				}
 			}
 
+			ResetSolarPanelReports();
+		}
+
+		internal void ResetSolarPanelReports()
+		{
 			solarPanelsBackgroundActualPower = 0.0;
 			solarPanelsBackgroundMaxPower = 0.0;
 			solarPanelsBackgroundReportCount = 0;
@@ -1476,9 +1493,7 @@ namespace KERBALISM
 			solarPanelsLiveActualPower = 0.0;
 			solarPanelsLiveMaxPower = 0.0;
 			solarPanelsLiveReportCount = 0;
-
-            Profiler.EndSample();
-        }
+		}
 
 		private bool HasDeployedSolarPanels()
 		{

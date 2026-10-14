@@ -129,7 +129,7 @@ namespace KERBALISM
 
 			KERBALISM.ResourceBroker broker = KERBALISM.ResourceBroker.GetOrCreate(BrokerName, KERBALISM.ResourceBroker.BrokerCategory.VesselSystem, BrokerTitle);
 			ResourceInfo ec = KERBALISM.ResourceCache.GetResource(v, "ElectricCharge");
-			double dt = TimeWarp.fixedDeltaTime;
+			double dt = v.KerbalismData().ResourceUpdateElapsedSeconds;
 			bool coolingEnabled = CryoTanks.GetCoolingEnabled(cryoModule);
 			double ecRate = EstimateCoolingEcRate(cryoModule, cryoModule.part);
 

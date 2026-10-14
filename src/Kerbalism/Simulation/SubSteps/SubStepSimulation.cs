@@ -21,8 +21,26 @@ namespace KERBALISM
 	public static class SubStepSimulation
 	{
 		public const double DefaultMaxStepSeconds = 30.0;
+		private static float fixedStepTime = float.NaN;
+		private static double fixedStepSeconds;
+
+		// Modules can run before or after the vessel scheduler. Keep both on
+		// the same timestep even if a warning changes warp during this tick.
+		internal static double FixedStepSeconds
+		{
+			get
+			{
+				if (fixedStepTime != Time.fixedTime)
+				{
+					fixedStepTime = Time.fixedTime;
+					fixedStepSeconds = TimeWarp.fixedDeltaTime;
+				}
+				return fixedStepSeconds;
+			}
+		}
+
 		internal static bool UsesLoadedResourceSteps => HighLogic.LoadedSceneIsFlight
-			&& RequiresIntervalSampling(TimeWarp.fixedDeltaTime);
+			&& RequiresIntervalSampling(FixedStepSeconds);
 		private const int MaxSamplesPerBatch = 128;
 		private const double TimeMatchTolerance = 1e-5;
 
@@ -55,6 +73,7 @@ namespace KERBALISM
 
 		public static void Init()
 		{
+			fixedStepTime = float.NaN;
 			Clear();
 		}
 
