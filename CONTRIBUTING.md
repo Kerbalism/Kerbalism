@@ -324,9 +324,6 @@ and compiles `Kerbalism.dll`; compiler output is written under
 
 Open `Kerbalism.slnx` in Visual Studio or Rider for IDE debugging.
 
-Before publishing a release, add the `KSPBurst` dependency to Kerbalism's
-external NetKAN metadata; the metadata is no longer maintained in this repository.
-
 ### Debugging
 
 Note that the following steps are specific to Windows and Visual Studio 2017+.
