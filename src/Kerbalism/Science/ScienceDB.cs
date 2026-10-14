@@ -455,8 +455,36 @@ namespace KERBALISM
 					GetSubjectDataFromStockId(stockSubject.id, stockSubject);
 		}
 
+		/// <summary>
+		/// UnknownSubjectData may mirror in-flight science onto the stock subject at runtime (#880).
+		/// Strip that before the game persists RnD subjects so only recovered/transmitted science is saved.
+		/// </summary>
+		public static void PrepareUnknownSubjectsForSave()
+		{
+			foreach (SubjectData subjectData in unknownSubjectDatas.Values)
+			{
+				if (subjectData is UnknownSubjectData unknown)
+					unknown.PrepareStockSubjectForSave();
+			}
+		}
+
+		/// <summary>
+		/// Re-apply retrieved + in-flight science onto stock subjects after a save.
+		/// </summary>
+		public static void SyncUnknownSubjectsCommittedScience()
+		{
+			foreach (SubjectData subjectData in unknownSubjectDatas.Values)
+			{
+				if (subjectData is UnknownSubjectData unknown)
+					unknown.SyncStockSubjectCommittedScience();
+			}
+		}
+
 		public static void Save(ConfigNode node)
 		{
+			// Belt-and-suspenders with onGameStateSave: never persist in-flight commit as retrieved.
+			PrepareUnknownSubjectsForSave();
+
 			// RnD subjects don't exists in sandbox, so we have our own subject persistence
 			if (!Science.GameHasRnD)
 			{
@@ -721,16 +749,28 @@ namespace KERBALISM
 				}
 			}
 
+			ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(situation);
+
+			// DMOS asteroid subjects use a fake body name ("Asteroid") that is not in FlightGlobals.Bodies
+			// (e.g. "dmlaserblastscan@AsteroidSrfLandedCarbonaceous14393197"). Handle via UnknownSituation (#885).
 			if (subjectBody == null)
 			{
-				// TODO : DMOS asteroid experiments are doing : "magScan@AsteroidInSpaceLowCarbonaceous7051371", those subjects will be discarded entirely here
-				// because the body "Asteroid" doesn't exists, consequently it's impossible to create the Situation object.
-				// To handle that, maybe we could implement a derived class "UnknownSituation" from Situation that can handle a completely random subject format
-				Lib.Log("Could not parse the SubjectData from subjectId '" + stockSubjectId + "' : the body '" + bodyAndBiome[0] + "' doesn't exist");
-				return null;
+				if (scienceSituation == ScienceSituation.None)
+				{
+					Lib.Log("Could not parse the SubjectData from subjectId '" + stockSubjectId + "' : the body '" + bodyAndBiome[0] + "' doesn't exist and situation is invalid");
+					return null;
+				}
+
+				string unknownBiomeName = bodyAndBiome.Length == 2 ? bodyAndBiome[1] : string.Empty;
+				UnknownSituation unknownSituation = new UnknownSituation(bodyAndBiome[0], scienceSituation, unknownBiomeName);
+				// The custom biome is already represented by UnknownSituation. Passing it again as
+				// extraSituationInfo would duplicate it in SituationTitle and BiomeTitle.
+				UnknownSubjectData unknownAsteroidSubject = new UnknownSubjectData(expInfo, unknownSituation, stockSubjectId, RnDSubject);
+				unknownSubjectDatas.Add(stockSubjectId, unknownAsteroidSubject);
+				expBodiesSituationsBiomesSubject.AddSubject(expInfo, UnknownSituation.UnknownBodyIndex, scienceSituation, -1, unknownAsteroidSubject);
+				return unknownAsteroidSubject;
 			}
 
-			ScienceSituation scienceSituation = ScienceSituationUtils.ScienceSituationDeserialize(situation);
 
 			int biomeIndex = -1;
 			if (bodyAndBiome.Length == 2 && ScienceSituationUtils.IsBodyBiomesRelevantForExperiment(scienceSituation, expInfo) && subjectBody.BiomeMap != null)
@@ -770,6 +810,13 @@ namespace KERBALISM
 			// if the subject is a "doable" subject, we should have it in the DB.
 			if (extraSituationInfo == null)
 				subjectData = GetSubjectData(expInfo, vesselSituation);
+
+			// Never credit a different stock subject than the one carried by the ScienceData.
+			// Some mods build subjects whose id is not Kerbalism's canonical body+situation id
+			// (CactEye #880: ...InSpaceHighVisualObservation<body>). Collapsing those onto the
+			// generic subject leaves the mod's own RnD entry at science=0 forever.
+			if (subjectData != null && subjectData.StockSubjectId != stockSubjectId)
+				subjectData = null;
 
 			// else create the subjectdata. this can happen either because :
 			// - it's a subject using the stock "extra id" system (asteroid samples)

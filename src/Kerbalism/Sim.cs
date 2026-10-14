@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -10,6 +11,12 @@ namespace KERBALISM
 		public static void Init()
 		{
 			Sim.SolarFluxAtHome = 0.0;
+			suns.Clear();
+			homeBody = null;
+			homeStar = null;
+			au = 0.0;
+			auSource = "unset";
+
 			// Search for "LightShifter" components, added by Kopernicus to bodies that are stars
 			foreach (CelestialBody body in FlightGlobals.Bodies)
 			{
@@ -23,7 +30,6 @@ namespace KERBALISM
 					{
 						double starFluxAtHome = Lib.ReflectionValue<double>(c, "solarLuminosity");
 						suns.Add(new SunData(body.flightGlobalsIndex, starFluxAtHome));
-						
 					}
 				}
 			}
@@ -34,8 +40,10 @@ namespace KERBALISM
 				suns.Add(new SunData(0, PhysicsGlobals.SolarLuminosityAtHome));
 			}
 
-			// calculate each sun total flux (must be done after the "suns" list is populated
-			CelestialBody home = FlightGlobals.GetHomeBody();
+			// Resolve home star / AU before converting pack "flux at 1 AU" into total luminosity (#829 / #1080)
+			ResolveHomeSystem();
+
+			// calculate each sun total flux (must be done after the "suns" list is populated and AU is known)
 			foreach (SunData sd in suns)
 			{
 				sd.InitSolarFluxTotal();
@@ -44,7 +52,7 @@ namespace KERBALISM
 				// that is higher than what is defined in PhysicsGlobals.SolarLuminosityAtHome.
 				// Can't remember what case exactly, if that code is causing issues,
 				// remove it and just always use PhysicsGlobals.SolarLuminosityAtHome
-				double distance = (home.position - sd.body.position).magnitude;
+				double distance = (HomeBody.position - sd.body.position).magnitude;
 				double sunSolarFluxAtHome = sd.SolarFlux(distance, false);
 				if (sunSolarFluxAtHome > 0.1)
 				{
@@ -596,10 +604,23 @@ namespace KERBALISM
 				this.solarFluxAtAU = solarFluxAtAU;
 			}
 
-			// This must be called after "suns" SunData list is populated (because it use AU > Lib.IsSun)
+			// This must be called after home-system AU is resolved (#829 / #1080)
 			public void InitSolarFluxTotal()
 			{
 				this.solarFluxTotal = solarFluxAtAU * AU * AU * Math.PI * 4.0;
+			}
+
+			/// <summary>
+			/// Relative flux ranking proxy that does not require solarFluxTotal.
+			/// Safe to use while resolving HomeStar before InitSolarFluxTotal().
+			/// </summary>
+			public double FluxProxyAtDistance(double distanceFromCenter)
+			{
+				if (distanceFromCenter < 1.0)
+					distanceFromCenter = 1.0;
+				if (solarFluxTotal > 0.0)
+					return SolarFlux(distanceFromCenter, false);
+				return solarFluxAtAU / (distanceFromCenter * distanceFromCenter);
 			}
 
 			/// <summary>Luminosity in W/m² at the given distance from this sun/star</summary>
@@ -761,18 +782,246 @@ namespace KERBALISM
 		static readonly BodyCache bodyCache = new BodyCache();
 
 		static double au = 0.0;
-		/// <summary> Distance between the home body and its main sun</summary>
+		static string auSource = "unset";
+		static CelestialBody homeBody;
+		static CelestialBody homeStar;
+
+		/// <summary>Configured home world (FlightGlobals.GetHomeBody).</summary>
+		public static CelestialBody HomeBody
+		{
+			get
+			{
+				EnsureHomeSystem();
+				return homeBody;
+			}
+		}
+
+		/// <summary>Lighting home star used as the 1 AU reference (#829 / #1080).</summary>
+		public static CelestialBody HomeStar
+		{
+			get
+			{
+				EnsureHomeSystem();
+				return homeStar;
+			}
+		}
+
+		/// <summary>
+		/// Orbital scale distance between the home world and its lighting home star (1 AU).
+		/// Prefer SMA / Kopernicus pack values over instantaneous world positions.
+		/// </summary>
 		public static double AU
 		{
 			get
 			{
-				if (au == 0.0)
-				{
-					CelestialBody home = FlightGlobals.GetHomeBody();
-					au = (home.position - Lib.GetParentSun(home).position).magnitude;
-				}
+				EnsureHomeSystem();
 				return au;
 			}
+		}
+
+		/// <summary>How AU was resolved (for logs / diagnostics).</summary>
+		public static string AUSource
+		{
+			get
+			{
+				EnsureHomeSystem();
+				return auSource;
+			}
+		}
+
+		static void EnsureHomeSystem()
+		{
+			if (au > 0.0 && homeBody != null && homeStar != null)
+				return;
+			if (suns.Count == 0)
+			{
+				// Very early access before Init: stock-safe defaults
+				homeBody = FlightGlobals.GetHomeBody();
+				homeStar = FlightGlobals.Bodies[0];
+				au = homeBody != null && homeBody.orbit != null && homeBody.orbit.semiMajorAxis > 0.0
+					? homeBody.orbit.semiMajorAxis
+					: 13599840256.0;
+				auSource = "pre-init-fallback";
+				return;
+			}
+			ResolveHomeSystem();
+		}
+
+		/// <summary>
+		/// Resolve HomeBody / HomeStar / AU once suns are known.
+		/// AU is the scale Kopernicus luminosity is defined against (flux at 1 AU).
+		/// </summary>
+		static void ResolveHomeSystem()
+		{
+			homeBody = FlightGlobals.GetHomeBody();
+			homeStar = ResolveHomeStar(homeBody);
+			au = ResolveAU(homeBody, homeStar, out auSource);
+			Lib.Log($"Home system: body={homeBody.bodyName}, star={homeStar.bodyName}, AU={au.ToString("F0")} m (source={auSource})");
+		}
+
+		static CelestialBody ResolveHomeStar(CelestialBody home)
+		{
+			if (home == null)
+				return suns.Count > 0 ? suns[0].body : FlightGlobals.Bodies[0];
+
+			// 1) Kopernicus lighting local star (handles multi-star / PostSpawnOrbit hierarchies)
+			if (TryGetKopernicusLocalStar(home, out CelestialBody kopStar) && Lib.IsSun(kopStar))
+				return kopStar;
+
+			// 2) Climb referenceBody until a known LightShifter / stock sun
+			CelestialBody refBody = home;
+			if (Lib.IsSun(refBody))
+				return refBody;
+			refBody = home.referenceBody;
+			int remainingBodies = FlightGlobals.Bodies.Count + 1;
+			while (refBody != null && remainingBodies-- > 0)
+			{
+				if (Lib.IsSun(refBody))
+					return refBody;
+				refBody = refBody.referenceBody;
+			}
+
+			// 3) Brightest known star at the home world (never silently assume Bodies[0])
+			CelestialBody brightest = BrightestSunAt(home.position);
+			if (brightest != null)
+			{
+				Lib.Log($"HomeStar: referenceBody climb found no sun; using brightest star at home ({brightest.bodyName})", Lib.LogLevel.Warning);
+				return brightest;
+			}
+
+			Lib.Log("HomeStar: falling back to Bodies[0]", Lib.LogLevel.Warning);
+			return FlightGlobals.Bodies[0];
+		}
+
+		static double ResolveAU(CelestialBody home, CelestialBody star, out string source)
+		{
+			// 1) Kopernicus HomeBodySMA — same quantity Kopernicus uses for SolarLuminosityAtHome
+			if (TryGetKopernicusHomeBodySMA(out double homeBodySma) && homeBodySma > 0.0)
+			{
+				source = "Kopernicus.HomeBodySMA";
+				return homeBodySma;
+			}
+
+			// 2) SMA of the body in the home hierarchy that directly orbits the home star.
+			// Kopernicus Light.sunAU is intentionally not used here: it only scales brightnessCurve visuals.
+			if (TryGetDirectOrbitSMAAroundStar(home, star, out double sma) && sma > 0.0)
+			{
+				source = "orbit.semiMajorAxis";
+				return sma;
+			}
+
+			// 3) Last resort: instantaneous world distance (eccentricity / timing sensitive)
+			double instantaneous = (home.position - star.position).magnitude;
+			if (instantaneous > 0.0)
+			{
+				source = "instantaneous-position";
+				Lib.Log($"AU: using instantaneous home-star distance {instantaneous.ToString("F0")} m", Lib.LogLevel.Warning);
+				return instantaneous;
+			}
+
+			source = "stock-default";
+			return 13599840256.0;
+		}
+
+		static bool TryGetDirectOrbitSMAAroundStar(CelestialBody home, CelestialBody star, out double sma)
+		{
+			sma = 0.0;
+			if (home == null || star == null)
+				return false;
+
+			CelestialBody body = home;
+			int remainingBodies = FlightGlobals.Bodies.Count + 1;
+			while (body != null && body != star && remainingBodies-- > 0)
+			{
+				if (body.referenceBody == star && body.orbit != null && body.orbit.semiMajorAxis > 0.0)
+				{
+					sma = body.orbit.semiMajorAxis;
+					return true;
+				}
+				body = body.referenceBody;
+			}
+
+			// Home itself may orbit the star
+			if (home.orbit != null && home.orbit.referenceBody == star && home.orbit.semiMajorAxis > 0.0)
+			{
+				sma = home.orbit.semiMajorAxis;
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>Star with the highest flux proxy at a world position.</summary>
+		public static CelestialBody BrightestSunAt(Vector3d worldPos)
+		{
+			if (suns.Count == 0)
+				return null;
+
+			CelestialBody best = null;
+			double bestFlux = double.NegativeInfinity;
+			foreach (SunData sd in suns)
+			{
+				double dist = Vector3d.Distance(worldPos, sd.body.position);
+				double flux = sd.FluxProxyAtDistance(dist);
+				if (flux > bestFlux)
+				{
+					bestFlux = flux;
+					best = sd.body;
+				}
+			}
+			return best;
+		}
+
+		static bool TryGetKopernicusLocalStar(CelestialBody body, out CelestialBody star)
+		{
+			star = null;
+			try
+			{
+				foreach (var a in AssemblyLoader.loadedAssemblies)
+				{
+					if (!string.Equals(a.name, "Kopernicus", StringComparison.OrdinalIgnoreCase))
+						continue;
+					Type t = a.assembly.GetType("Kopernicus.Components.KopernicusStar");
+					if (t == null)
+						continue;
+					MethodInfo mi = t.GetMethod("GetLocalStar", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(CelestialBody) }, null);
+					if (mi == null)
+						continue;
+					star = mi.Invoke(null, new object[] { body }) as CelestialBody;
+					return star != null;
+				}
+			}
+			catch (Exception e)
+			{
+				Lib.Log("Kopernicus GetLocalStar reflection failed: " + e.Message, Lib.LogLevel.Warning);
+			}
+			return false;
+		}
+
+		static bool TryGetKopernicusHomeBodySMA(out double sma)
+		{
+			sma = 0.0;
+			try
+			{
+				foreach (var a in AssemblyLoader.loadedAssemblies)
+				{
+					if (!string.Equals(a.name, "Kopernicus", StringComparison.OrdinalIgnoreCase))
+						continue;
+					Type t = a.assembly.GetType("Kopernicus.Components.KopernicusStar");
+					if (t == null)
+						continue;
+					FieldInfo fi = t.GetField("HomeBodySMA", BindingFlags.Public | BindingFlags.Static);
+					if (fi == null)
+						continue;
+					sma = Convert.ToDouble(fi.GetValue(null));
+					return sma > 0.0;
+				}
+			}
+			catch (Exception e)
+			{
+				Lib.Log("Kopernicus HomeBodySMA reflection failed: " + e.Message, Lib.LogLevel.Warning);
+			}
+			return false;
 		}
 
 		// get distance from the sun
@@ -1504,24 +1753,29 @@ namespace KERBALISM
 		public static double Graviolis(Vessel v)
 		{
 			double dist = Vector3d.Distance(v.GetWorldPos3D(), Lib.GetParentSun(v.mainBody).position);
-			double au = dist / FlightGlobals.GetHomeBody().orbit.semiMajorAxis;
-			return 1.0 - Math.Min(AU, 1.0); // 0 at 1AU -> 1 at sun position
+			double distanceAU = dist / AU;
+			return 1.0 - Math.Min(distanceAU, 1.0); // 0 at 1AU -> 1 at sun position
 		}
 		#endregion
 
 		#region SIGNAL
-		// Fallback used when auto-calc fails (DSN cannot reach 2 AU, etc). Matches pre-comms-refactor stock ~6.
+		// Fallback used when auto-calc fails (DSN cannot reach a usable calibration point, etc). Matches pre-comms-refactor stock ~6.
 		private const double DefaultDataRateDampingExponent = 6.0;
 		private const double DefaultDataRateDampingExponentRT = 2.4;
+		// Strength must be comfortably inside (0,1) so Math.Log is well-conditioned (#1031 / #721).
+		private const double MinCalibrationStrength = 1e-3;
+		private const double MaxCalibrationStrength = 0.999;
 
-		private static double dampingExponent = 0;
+		private static double dampingExponentCommNet = 0;
+		private static double dampingExponentRT = 0;
+
 		public static double DataRateDampingExponent
 		{
 			get
 			{
 				// NaN != 0 is true, so explicitly reject a cached failed calculation
-				if (dampingExponent != 0 && !double.IsNaN(dampingExponent) && !double.IsInfinity(dampingExponent))
-					return dampingExponent;
+				if (dampingExponentCommNet != 0 && !double.IsNaN(dampingExponentCommNet) && !double.IsInfinity(dampingExponentCommNet))
+					return dampingExponentCommNet;
 
 				if (Settings.DampingExponentOverride != 0)
 					return Settings.DampingExponentOverride;
@@ -1551,40 +1805,35 @@ namespace KERBALISM
 				// The problem is, we don't know which solar system we'll be in, and how big it will be.
 				// Popular systems like JNSQ are 2.7 times bigger than stock, RSS is 10 times bigger.
 				// So we try to find a damping exponent that gives good results for the solar system we're in,
-				// based on the distance of the home planet to the sun (1 AU).
+				// based on the distance of the home planet to the sun (1 AU). When 2 AU is beyond DSN
+				// range we walk the calibration point inward instead of immediately falling back (#1080).
 
-				// range of DSN at max. level
-				var maxDsnRange = GameVariables.Instance.GetDSNRange(1f);
-
-				// signal strength at ~ average earth - mars distance
-				var strengthAt2AU = SignalStrength(maxDsnRange, 2 * AU);
-
-				// For our estimation, we assume a base rate similar to the stock communotron 88-88
-				var baseRate = 0.48;
-
-				// At 2 AU, this is the rate we want to get out of it
+				double maxDsnRange = GameVariables.Instance.GetDSNRange(1f);
+				const double preferredAuMultiple = 2.0;
+				const double baseRate = 0.48;
 				// Value selected so we match pre-comms refactor damping exponent of ~6 in stock
-				var desiredRateAt2AU = 0.3925;
+				const double desiredRateAtPreferred = 0.3925;
 
-				// Math.Log(x, base) requires base in (0, 1) U (1, +inf). strengthAt2AU is in [0, 1];
-				// when DSN cannot reach 2 AU, strength is 0 and Log -> NaN (see #1031, also #721).
-				bool canCalculateExponent = strengthAt2AU > 0.0 && strengthAt2AU < 1.0;
-				if (canCalculateExponent)
-					dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
-				else
-					dampingExponent = DefaultDataRateDampingExponent;
-
-				if (!canCalculateExponent || double.IsNaN(dampingExponent) || double.IsInfinity(dampingExponent) || dampingExponent <= 0.0)
+				if (!TryCalibrateDampingExponent(
+					maxDsnRange,
+					preferredAuMultiple,
+					baseRate,
+					desiredRateAtPreferred,
+					DefaultDataRateDampingExponent,
+					out dampingExponentCommNet,
+					out double calDistance,
+					out double strength,
+					out string calSource))
 				{
-					Lib.Log($"DataRateDampingExponent calc failed (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")}), using fallback {DefaultDataRateDampingExponent}");
-					dampingExponent = DefaultDataRateDampingExponent;
+					Lib.Log($"DataRateDampingExponent calc failed (max. DSN range: {maxDsnRange.ToString("F0")}, AU: {AU.ToString("F0")}, homeStar: {HomeStar.bodyName}, source: {calSource}), using fallback {DefaultDataRateDampingExponent}");
+					dampingExponentCommNet = DefaultDataRateDampingExponent;
 				}
 				else
 				{
-					Lib.Log($"Calculated DataRateDampingExponent: {dampingExponent.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, strength at 2 AU: {strengthAt2AU.ToString("F3")})");
+					Lib.Log($"Calculated DataRateDampingExponent: {dampingExponentCommNet.ToString("F4")} (max. DSN range: {maxDsnRange.ToString("F0")}, cal: {(calDistance / AU).ToString("F2")} AU / {calDistance.ToString("F0")} m, strength: {strength.ToString("F4")}, AU: {AU.ToString("F0")} via {AUSource}, homeStar: {HomeStar.bodyName}, {calSource})");
 				}
 
-				return dampingExponent;
+				return dampingExponentCommNet;
 			}
 		}
 
@@ -1592,8 +1841,8 @@ namespace KERBALISM
 		{
 			get
 			{
-				if (dampingExponent != 0 && !double.IsNaN(dampingExponent) && !double.IsInfinity(dampingExponent))
-					return dampingExponent;
+				if (dampingExponentRT != 0 && !double.IsNaN(dampingExponentRT) && !double.IsInfinity(dampingExponentRT))
+					return dampingExponentRT;
 
 				if (Settings.DampingExponentOverride != 0)
 					return Settings.DampingExponentOverride;
@@ -1622,35 +1871,99 @@ namespace KERBALISM
 
 				// For our estimation, we assume a base reach similar to the Reflectron KR-14 that has
 				// similar specs to Mars Reconnaissance Orbiter
-				double testRange = 60000000000.0; // 60Gm
+				const double testRange = 60000000000.0; // 60Gm
+				// signal strength at ~ farthest earth - mars distance, Duna is at 2.53 au with stock ksp solar system
+				const double preferredAuMultiple = 2.53;
+				const double baseRate = 0.4815;
+				const double desiredRateAtPreferred = 0.05;
 
-				// signal strength at ~ farthest earth - mars distance, Duna is at 2.53 au with stock ksp solar sytem
-				double strengthAt2AU = SignalStrength(testRange, 2.53 * AU);	// 34.4 Gm w stock solar system
-
-				// For our estimation, we assume a base rate similar to the Reflectron KR-14
-				double baseRate = 0.4815;
-
-				// At 2 AU, this is the rate we want to get out of it
-				double desiredRateAt2AU = 0.05;
-
-				// dataRate = baseRate * (strengthAt2AU ^ exponent)
-				// so...
-				// exponent = log_strengthAt2AU(dataRate / baseRate)
-				bool canCalculateExponent = strengthAt2AU > 0.0 && strengthAt2AU < 1.0;
-				if (canCalculateExponent)
-					dampingExponent = Math.Log(desiredRateAt2AU / baseRate, strengthAt2AU);
-				else
-					dampingExponent = DefaultDataRateDampingExponentRT;
-
-				// 2.4 seems good for RemoteTech (#914); same failure mode as CommNet (#1031)
-				if (!canCalculateExponent || double.IsNaN(dampingExponent) || double.IsInfinity(dampingExponent) || dampingExponent <= 0.0)
+				if (!TryCalibrateDampingExponent(
+					testRange,
+					preferredAuMultiple,
+					baseRate,
+					desiredRateAtPreferred,
+					DefaultDataRateDampingExponentRT,
+					out dampingExponentRT,
+					out double calDistance,
+					out double strength,
+					out string calSource))
 				{
-					Lib.Log($"DataRateDampingExponentRT calc failed (strength at 2.53 AU: {strengthAt2AU.ToString("F3")}), using fallback {DefaultDataRateDampingExponentRT}");
-					dampingExponent = DefaultDataRateDampingExponentRT;
+					// 2.4 seems good for RemoteTech (#914); same failure mode as CommNet (#1031)
+					Lib.Log($"DataRateDampingExponentRT calc failed (AU: {AU.ToString("F0")}, homeStar: {HomeStar.bodyName}, source: {calSource}), using fallback {DefaultDataRateDampingExponentRT}");
+					dampingExponentRT = DefaultDataRateDampingExponentRT;
+				}
+				else
+				{
+					Lib.Log($"Calculated DataRateDampingExponentRT: {dampingExponentRT.ToString("F4")} (cal: {(calDistance / AU).ToString("F2")} AU, strength: {strength.ToString("F4")}, AU: {AU.ToString("F0")} via {AUSource}, {calSource})");
 				}
 
-				return dampingExponent;
+				return dampingExponentRT;
 			}
+		}
+
+		/// <summary>
+		/// Invert rate = baseRate * strength(distance)^k at an adaptive calibration distance (#1080).
+		/// Prefers preferredAuMultiple * AU; if strength is unusable there, walks inward and scales the
+		/// target attenuation so closer calibration points do not collapse k toward zero.
+		/// </summary>
+		static bool TryCalibrateDampingExponent(
+			double maxRange,
+			double preferredAuMultiple,
+			double baseRate,
+			double desiredRateAtPreferred,
+			double fallback,
+			out double exponent,
+			out double calDistance,
+			out double strength,
+			out string source)
+		{
+			exponent = fallback;
+			calDistance = preferredAuMultiple * AU;
+			strength = 0.0;
+			source = "none";
+
+			if (AU <= 0.0 || maxRange <= 0.0 || baseRate <= 0.0 || desiredRateAtPreferred <= 0.0)
+			{
+				source = "invalid-inputs";
+				return false;
+			}
+
+			double desiredRatioAtPreferred = desiredRateAtPreferred / baseRate;
+			if (desiredRatioAtPreferred <= 0.0 || desiredRatioAtPreferred >= 1.0)
+			{
+				source = "invalid-desired-ratio";
+				return false;
+			}
+
+			// Preferred point first (stock / JNSQ path), then progressively closer AU multiples.
+			double[] auMultiples = { preferredAuMultiple, 1.5, 1.0, 0.75, 0.5, 0.25 };
+			foreach (double multiple in auMultiples)
+			{
+				if (multiple > preferredAuMultiple)
+					continue;
+
+				calDistance = multiple * AU;
+				if (calDistance <= 0.0 || calDistance >= maxRange)
+					continue;
+
+				strength = SignalStrength(maxRange, calDistance);
+				if (strength < MinCalibrationStrength || strength > MaxCalibrationStrength)
+					continue;
+
+				// At the preferred multiple keep the historical target rate. Closer points use a milder
+				// target attenuation (ratio -> 1 as multiple -> 0) so k stays meaningful.
+				double t = multiple / preferredAuMultiple;
+				double desiredRatio = Math.Pow(desiredRatioAtPreferred, t);
+				exponent = Math.Log(desiredRatio, strength);
+				if (double.IsNaN(exponent) || double.IsInfinity(exponent) || exponent <= 0.0)
+					continue;
+
+				source = multiple == preferredAuMultiple ? "preferred-AU" : $"adaptive-{multiple.ToString("F2")}xAU";
+				return true;
+			}
+
+			source = "no-usable-strength";
+			return false;
 		}
 
 		public static double SignalStrength(double maxRange, double distance)

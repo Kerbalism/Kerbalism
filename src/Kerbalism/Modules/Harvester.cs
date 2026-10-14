@@ -109,7 +109,7 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this)) return;
 
 			// assume deployed if there is no animator
-			deployed |= part.FindModuleImplementing<ModuleAnimationGroup>() == null;
+			deployed |= !part.HasModuleImplementingFast<ModuleAnimationGroup>();
 
 			// setup ui
 			Fields["Abundance"].guiName = Local.Harvester_abundance.Format(Lib.GetResourceDisplayName(resource));
@@ -192,7 +192,7 @@ namespace KERBALISM
 
 			if (amount <= double.Epsilon) return;
 
-			ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.Harvester);
+			ResourceRecipe recipe = ResourceCache.AddRecipe(v, ResourceBroker.Harvester);
 			recipe.AddInput("ElectricCharge", harvester.ec_rate * elapsed_s);
 			recipe.AddOutput(
 				harvester.resource,
@@ -204,8 +204,6 @@ namespace KERBALISM
 				recipe.AddExecutionLimiter(k => source.Limit(amount, k));
 				recipe.AddExecutionCallback(k => source.Consume(amount * k));
 			}
-
-			ResourceCache.AddRecipe(v, recipe);
 		}
 
 		public void FixedUpdate()

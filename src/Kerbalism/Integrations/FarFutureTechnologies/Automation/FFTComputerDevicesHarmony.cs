@@ -52,7 +52,7 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				FFTFusionEngineKerbalismUpdater engineUpdater = part.FindModuleImplementing<FFTFusionEngineKerbalismUpdater>();
+				FFTFusionEngineKerbalismUpdater engineUpdater = part.FindModuleImplementingFast<FFTFusionEngineKerbalismUpdater>();
 				if (engineUpdater != null)
 				{
 					PartModule engine = engineUpdater.FindEngineModule(part, engineUpdater.engineModuleID);
@@ -61,7 +61,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				FFTFusionReactorKerbalismUpdater reactorUpdater = part.FindModuleImplementing<FFTFusionReactorKerbalismUpdater>();
+				FFTFusionReactorKerbalismUpdater reactorUpdater = part.FindModuleImplementingFast<FFTFusionReactorKerbalismUpdater>();
 				if (reactorUpdater == null)
 					continue;
 

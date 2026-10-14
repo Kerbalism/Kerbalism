@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using KERBALISM.Planner;
 
 
@@ -10,6 +9,9 @@ namespace KERBALISM
 
 	public static class Modifiers
 	{
+		/// <summary>Prefix for multiplicative inverse of a resource amount: inv:Water → 1/Water.Amount</summary>
+		public const string InversePrefix = "inv:";
+
 		///<summary> Modifiers Evaluate method used for the Monitors background and current vessel simulation </summary>
 		public static double Evaluate(Vessel v, VesselData vd, VesselResources resources, List<string> modifiers)
 		{
@@ -35,7 +37,7 @@ namespace KERBALISM
 						break;
 
 					case "temperature":
-						k *= vd.EnvTempDiff;
+						k *= vd.VesselSurvivalTempDiff;
 						break;
 
 					case "radiation":
@@ -75,7 +77,7 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= resources.GetResource(v, mod).Amount;
+						k *= ResourceAmountFactor(mod, v, resources);
 						break;
 				}
 			}
@@ -148,11 +150,42 @@ namespace KERBALISM
 						break;
 
 					default:
-						k *= sim.Resource(mod).amount;
+						k *= ResourceAmountFactor(mod, sim);
 						break;
 				}
 			}
 			return k;
+		}
+
+		/// <summary>
+		/// Resource amount, or 1/amount when prefixed with <see cref="InversePrefix"/>.
+		/// Zero (or near-zero) amount yields 0 for the inverse, so rates stay finite.
+		/// </summary>
+		static double ResourceAmountFactor(string mod, Vessel v, VesselResources resources)
+		{
+			if (!mod.StartsWith(InversePrefix, StringComparison.Ordinal))
+				return resources.GetResource(v, mod).Amount;
+
+			string resource = mod.Substring(InversePrefix.Length);
+			if (resource.Length == 0)
+				return 0.0;
+
+			double amount = resources.GetResource(v, resource).Amount;
+			return amount > double.Epsilon ? 1.0 / amount : 0.0;
+		}
+
+		/// <summary> planner variant of <see cref="ResourceAmountFactor(string, Vessel, VesselResources)"/> </summary>
+		static double ResourceAmountFactor(string mod, ResourceSimulator sim)
+		{
+			if (!mod.StartsWith(InversePrefix, StringComparison.Ordinal))
+				return sim.Resource(mod).amount;
+
+			string resource = mod.Substring(InversePrefix.Length);
+			if (resource.Length == 0)
+				return 0.0;
+
+			double amount = sim.Resource(resource).amount;
+			return amount > double.Epsilon ? 1.0 / amount : 0.0;
 		}
 	}
 

@@ -37,11 +37,7 @@ namespace KERBALISM
 			/// <summary> deployable is being pressurized by equalizing its pressure with all enabled habitats</summary>
 			waitingForPressureAndEqualizing,
 			/// <summary> special unescapable state for EVA kerbals</summary>
-			evaKerbal,
-			/// <summary> depreciated, kept around for backward compat</summary>
-			pressurizing = 2,
-			/// <summary> depreciated, kept around for backward compat</summary>
-			depressurizing = 0
+			evaKerbal
 		}
 
 		// volume / surface cache
@@ -146,7 +142,7 @@ namespace KERBALISM
 				// Find deploy/retract animations, either here on in the gravityring module
 				// then set the part to the deployed state before doing the volume/surface calcs
 				// if part has Gravity Ring, find it.
-				gravityRing = part.FindModuleImplementing<GravityRing>();
+				gravityRing = part.FindModuleImplementingFast<GravityRing>();
 				hasGravityRing = gravityRing != null;
 
 				// create animators and set the model to the deployed state
@@ -228,7 +224,7 @@ namespace KERBALISM
             hasCLS = Lib.HasAssembly("ConnectedLivingSpace");
 
             // if part has Gravity Ring, find it.
-            gravityRing = part.FindModuleImplementing<GravityRing>();
+            gravityRing = part.FindModuleImplementingFast<GravityRing>();
 			hasGravityRing = gravityRing != null;
 
 			// if gravity ring has a deploy animation, use it
@@ -248,7 +244,7 @@ namespace KERBALISM
 
 			if (volume <= 0.0 || surface <= 0.0)
 			{
-				Habitat prefab = part.partInfo.partPrefab.FindModuleImplementing<Habitat>();
+				Habitat prefab = part.partInfo.partPrefab.FindModuleImplementingFast<Habitat>();
 				if (volume <= 0.0) volume = prefab.volume;
 				if (surface <= 0.0) surface = prefab.surface;
 			}
@@ -715,7 +711,7 @@ namespace KERBALISM
 
 		private void SetStateEVAKerbal()
 		{
-			kerbalEVA = part.FindModuleImplementing<KerbalEVA>();
+			kerbalEVA = part.FindModuleImplementingFast<KerbalEVA>();
 			AtmoFlowState = true;
 			WasteAtmoFlowState = true;
 			ShieldingFlowState = true;
@@ -880,7 +876,7 @@ namespace KERBALISM
 			if (!string.IsNullOrEmpty(prefab.inflate))
 				return true;
 
-			GravityRing ring = prefab.part.FindModuleImplementing<GravityRing>();
+			GravityRing ring = prefab.part.FindModuleImplementingFast<GravityRing>();
 			return ring != null && !string.IsNullOrEmpty(ring.deploy);
 		}
 
@@ -1147,7 +1143,7 @@ namespace KERBALISM
 					continue;
 
 				Part prefab = ap.partPrefab;
-				Habitat habitat = prefab.FindModuleImplementing<Habitat>();
+				Habitat habitat = prefab.FindModuleImplementingFast<Habitat>();
 
 				// backward compatibility (and failsafe) : EVA Kerbals didn't have
 				// the module on previous versions, ensure it is added

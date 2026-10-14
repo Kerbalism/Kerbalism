@@ -198,9 +198,6 @@ namespace KERBALISM
 				// for each module
 				foreach (ProtoPartModuleSnapshot m in p.modules)
 				{
-					// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
-					if (m.moduleName == "WarpFixer") MigrateWarpFixer(v, part_prefab, p, m);
-
 					// get the module prefab
 					// if the prefab doesn't contain this module, skip it
 					PartModule module_prefab = Lib.ModulePrefab(part_prefab.Modules, m.moduleName, PD);
@@ -295,7 +292,7 @@ namespace KERBALISM
 			if (Lib.Proto.GetBool(m, "generatorIsActive"))
 			{
 				// create and commit recipe
-				ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockConverter);
+				ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.StockConverter);
 				foreach (ModuleResource ir in generator.resHandler.inputResources)
 				{
 					recipe.AddInput(ir.name, ir.rate * elapsed_s);
@@ -304,7 +301,6 @@ namespace KERBALISM
 				{
 					recipe.AddOutput(or.name, or.rate * elapsed_s, true);
 				}
-				resources.AddRecipe(recipe);
 			}
 		}
 
@@ -349,7 +345,7 @@ namespace KERBALISM
 					  : converter.EfficiencyBonus * (converter.SpecialistBonusBase + (converter.SpecialistEfficiencyFactor * (exp_level + 1)));
 
 					// create and commit recipe
-					ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockConverter);
+					ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.StockConverter);
 					foreach (var ir in converter.inputList)
 					{
 						recipe.AddInput(ir.ResourceName, ir.Ratio * exp_bonus * elapsed_s);
@@ -358,7 +354,6 @@ namespace KERBALISM
 					{
 						recipe.AddOutput(or.ResourceName, or.Ratio * exp_bonus * elapsed_s, or.DumpExcess);
 					}
-					resources.AddRecipe(recipe);
 				}
 
 				// undo stock behavior by forcing last_update_time to now
@@ -415,13 +410,12 @@ namespace KERBALISM
 					if (abundance > harvester.HarvestThreshold)
 					{
 						// create and commit recipe
-						ResourceRecipe recipe = new ResourceRecipe(ResourceBroker.StockDrill);
+						ResourceRecipe recipe = resources.AddRecipe(ResourceBroker.StockDrill);
 						foreach (var ir in harvester.inputList)
 						{
 							recipe.AddInput(ir.ResourceName, ir.Ratio * elapsed_s);
 						}
 						recipe.AddOutput(harvester.ResourceName, abundance * harvester.Efficiency * exp_bonus * elapsed_s, true);
-						resources.AddRecipe(recipe);
 					}
 				}
 
@@ -524,7 +518,7 @@ namespace KERBALISM
 
 			double power = Lib.ReflectionValue<float>(radioisotope_generator, "BasePower");
 			double half_life = Lib.ReflectionValue<float>(radioisotope_generator, "HalfLife");
-			double mission_time = v.missionTime / (3600.0 * Lib.HoursInDay * Lib.DaysInYear);
+			double mission_time = v.missionTime / Lib.YearSeconds;
 			double remaining = Math.Pow(2.0, (-mission_time) / half_life);
 			ec.Produce(power * remaining * elapsed_s, ResourceBroker.RTG);
 		}
@@ -591,53 +585,6 @@ namespace KERBALISM
 				ResourceInfo fuel = resources.GetResource(v, fuel_name);
 				fuel.Consume(proto_fuel.amount * (1.0 - Math.Pow(1.0 - boiloff_rate, elapsed_s)), ResourceBroker.Boiloff);
 			}
-		}
-
-		// TODO : this is to migrate pre-3.1 saves using WarpFixer to the new SolarPanelFixer. At some point in the future we can remove this code.
-		static void MigrateWarpFixer(Vessel v, Part prefab, ProtoPartSnapshot p, ProtoPartModuleSnapshot m)
-		{
-			ModuleDeployableSolarPanel panelModule = prefab.FindModuleImplementing<ModuleDeployableSolarPanel>();
-			ProtoPartModuleSnapshot protoPanelModule = p.modules.Find(pm => pm.moduleName == "ModuleDeployableSolarPanel");
-
-			if (panelModule == null || protoPanelModule == null)
-			{
-				Lib.Log("Vessel " + v.name + " has solar panels that can't be converted automatically following Kerbalism 3.1 update. Load it to fix the issue.");
-				return;
-			}
-
-			SolarPanelFixer.PanelState state = SolarPanelFixer.PanelState.Unknown;
-			string panelStateStr = Lib.Proto.GetString(protoPanelModule, "deployState");
-
-			if (!Enum.IsDefined(typeof(ModuleDeployablePart.DeployState), panelStateStr)) return;
-			ModuleDeployablePart.DeployState panelState = (ModuleDeployablePart.DeployState)Enum.Parse(typeof(ModuleDeployablePart.DeployState), panelStateStr);
-
-			if (panelState == ModuleDeployablePart.DeployState.BROKEN)
-				state = SolarPanelFixer.PanelState.Broken;
-			else if (!panelModule.isTracking)
-			{
-				state = SolarPanelFixer.PanelState.Static;
-			}
-			else
-			{
-				switch (panelState)
-				{
-					case ModuleDeployablePart.DeployState.EXTENDED:
-						if (!panelModule.retractable)
-							state = SolarPanelFixer.PanelState.ExtendedFixed;
-						else
-							state = SolarPanelFixer.PanelState.Extended;
-						break;
-					case ModuleDeployablePart.DeployState.RETRACTED: state = SolarPanelFixer.PanelState.Retracted; break;
-					case ModuleDeployablePart.DeployState.RETRACTING: state = SolarPanelFixer.PanelState.Retracting; break;
-					case ModuleDeployablePart.DeployState.EXTENDING: state = SolarPanelFixer.PanelState.Extending; break;
-					default: state = SolarPanelFixer.PanelState.Unknown; break;
-				}
-			}
-
-			m.moduleName = "SolarPanelFixer";
-			Lib.Proto.Set(m, "state", state);
-			Lib.Proto.Set(m, "launchUT", Planetarium.GetUniversalTime());
-			Lib.Proto.Set(m, "nominalRate", panelModule.chargeRate);
 		}
 	}
 } // KERBALISM

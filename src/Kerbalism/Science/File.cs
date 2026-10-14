@@ -1,5 +1,3 @@
-using System;
-
 namespace KERBALISM
 {
 	public sealed class File
@@ -12,10 +10,6 @@ namespace KERBALISM
 
 		/// <summary> will be true if the file was created by the hijacker. Force the stock crediting formula to be applied on recovery</summary>
 		public bool useStockCrediting;
-
-		//public double scienceValueRatio;
-		//public double ScienceMaxValue => Math.Max((subjectData.ScienceMaxValue * scienceValueRatio) - subjectData.ScienceRetrievedInKSC, 0.0);
-		//public double SciencePerMB => subjectData.SciencePerMB * scienceValueRatio;
 
 		public SubjectData subjectData;
 
@@ -61,27 +55,7 @@ namespace KERBALISM
 			string resultText = Lib.ConfigValue(node, "resultText", "");
 			bool useStockCrediting = Lib.ConfigValue(node, "useStockCrediting", false);
 
-			return new File(subjectData, size, useStockCrediting, resultText);
-		}
-
-		// this is a fallback loading method for pre 3.1 / pre build 7212 files saved used the stock subject id
-		public static File LoadOldFormat(string stockSubjectId, ConfigNode node)
-		{
-			SubjectData subjectData = ScienceDB.GetSubjectDataFromStockId(stockSubjectId);
-
-			if (subjectData == null)
-				return null;
-
-			double size = Lib.ConfigValue(node, "size", 0.0);
-			if (double.IsNaN(size))
-			{
-				Lib.LogStack($"File has a NaN size on load : {subjectData.DebugStateInfo}", Lib.LogLevel.Error);
-				return null;
-			}
-
-			string resultText = Lib.ConfigValue(node, "resultText", "");
-			bool useStockCrediting = Lib.ConfigValue(node, "useStockCrediting", false);
-
+			// Legacy deferred-map scan_chunks / scanCoverage blobs are ignored; size is enough.
 			return new File(subjectData, size, useStockCrediting, resultText);
 		}
 

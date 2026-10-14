@@ -8,7 +8,7 @@ body:
       value: |
         Use this for compatibility patches, missing part support, or integration issues with another mod.
 
-        Check the [Mod Support wiki](https://github.com/Kerbalism/Kerbalism/wiki/Home-~-Mod-Support) first.
+        Check the [Mod support](https://kerbalism.github.io/Kerbalism/mod-support/) docs first.
         Config PRs are especially welcome.
 
   - type: input
@@ -61,7 +61,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I checked the Mod Support wiki / existing issues
+        - label: I checked the Mod support docs / existing issues
           required: true
         - label: I am willing to help test (or contribute a config PR if I can)
           required: false

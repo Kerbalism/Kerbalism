@@ -193,7 +193,8 @@ namespace KERBALISM
 
 					// delete empty files that aren't being transmitted
 					// note : this won't work in case the same subject is split over multiple files (on different drives)
-					if (f.size <= 0.0 && (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
+					if (f.size <= 0.0
+						&& (!warpCache.files.ContainsKey(f.subjectData) || warpCache.files[f.subjectData].size <= 0.0))
 					{
 						filesToRemove.Add(f.subjectData);
 						continue;
@@ -243,14 +244,14 @@ namespace KERBALISM
 		{
 			// first try to get a stock experiment module with the right experiment id
 			// - this support parts with multiple experiment modules, like eva kerbal
-			foreach (ModuleScienceExperiment exp in p.FindModulesImplementing<ModuleScienceExperiment>())
+			foreach (ModuleScienceExperiment exp in p.FindModulesImplementingReadOnly<ModuleScienceExperiment>())
 			{
 				if (exp.experimentID == experiment_id) return exp;
 			}
 
 			// if none was found, default to the first module implementing the science data container interface
 			// - this support third-party modules that implement IScienceDataContainer, but don't derive from ModuleScienceExperiment
-			return p.FindModuleImplementing<IScienceDataContainer>();
+			return p.FindModuleImplementingFast<IScienceDataContainer>();
 		}
 
 		/// <summary>

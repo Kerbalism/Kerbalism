@@ -11,24 +11,24 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 - **Life support** : Kerbals consume food, water and oxygen and will die if they aren't provided. Various processes can be added to recycle or produce those resources in situ.
 - **Stress** : Without adequate living space, atmospheric pressure and comforts, Kerbals will get stressed and start making mission-threatening mistakes.
 - **Radiation** : Kerbalism simulate the space radiation environment and radiation from local sources. A vessel must be adequately shielded and mission planning must be adjusted to avoid the most deadly places like planetary radiation belts.
-- **Reliability** : Components have a limited operational lifetime and will fail over time. Engines have a limited amount of ignitions and a limited burn time.
+- **Reliability** : Components have a limited operational lifetime and will fail over time. Optional **KerbalismEngineFailures** adds engine ignitions, burn-time limits and turn-on failures.
 - **ISRU** : Instead of the easy "ore to everything" stock system, producing and processing resources in situ uses a semi-realistic set of extraction and conversion rules.
 - **Science over time** : Experiments produce data over time, up to several years. This data is also transmitted over time, making science collection a relaxing background mechanism instead of the stock click-spammy system. Kerbalism also replace the stock labs "infinite science", rebalance existing experiments and add many probe, satellite and late-game manned experiments.
 - **Background processing** : All vessels are simulated continuously, not only the currently active one. Life support, resource processing, experiments and data transmission are simulated in the background while keeping a low performance overhead.
 - **Vessels management** : All vessels can be monitored and controlled to some extent from a centralized user interface available in all scenes.
 - **Mission planning** : The editor user interface allow to evaluate your vessel design against various environments and provide extended information about all aspects of the mod.
 
-For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
+For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 
-## Current version: 3.40
+## Current version: 3.43
  
-**Download** : **[Github releases]** - **[CKAN]**  
-**Docs & support** : **[Github wiki]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
-**License** : [Unlicense] (public domain)  
-**KSP version** : 1.12.x  
+**Download** : **[Github releases]** - **[CKAN]**
+**Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]
+**License** : [Unlicense] (public domain)
+**KSP version** : 1.12.x
 **Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
 
-**[Mod compatibility]** - [Changelog] - [Dev Builds]
+**[Mod compatibility]** - [Changelog]
 
 ## Download and installation
 
@@ -36,8 +36,10 @@ For more detailed information, go to the **[Github wiki]** and the **[FAQ]**.
 
 Two packages are required :
 - **Kerbalism** is the core plugin, always required.
-- **KerbalismConfig** is the official configuration pack.\
-  It can be be replaced by other packs distributed elsewhere.
+- **KerbalismConfig** is the official configuration pack, but it can be be replaced by other packs distributed elsewhere.
+
+Optional :
+- **KerbalismEngineFailures** adds engine ignition counts, rated burn time and turn-on failures. Recommended by CKAN with official KerbalismConfig. Conflicts with TestFlight / RO / RP-1.
 
 **Requirements**
 
@@ -62,28 +64,26 @@ Don't combine packs unless there is explicit instructions to do so.
 
 ## Important notice
 
-Kerbalism hasn't been under full active developement since many years now. Despite various minor bugs and shortcomings, the mod is still functional and can be quite fun to play with.
-However, do note that due to the lack of maintainance, there are a lot of compatibility issues with the wider modding ecosystem.  R-T-B is maintaining it now and doing his best, but the reality is there are probably more integration bugs than he has time to fix.  So PR's are most welcome.
+There may be compatibility issues with some mods. R-T-B is maintaining it now and doing his best. PRs are most welcome.
 
-In the current state of things, **Kerbalism is best played in a very lightly modded game**.
-
-In particular, mods introducing mechanisms or features that greatly differ from the stock ones are very likely to cause issues.
-This notably include most "future scope" mods like KSPIE, Near Future Tech, Far Future Tech, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
-Many large part packs are also improperly supported, BDB notably, but a few others too.
+Mods introducing mechanisms or features that greatly differ from the stock ones are more likely to cause issues.
+This notably include most "future scope" mods like KSPIE, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
 
 ## Mod compatibility and support
 
-The **[mod compatibility]** page is quite outdated, but can still help to avoid some issues.
+The **[mod compatibility]** page may contain outdated information, but can still help to avoid some issues.
 
 Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
 
+**SystemHeat users**: Kerbalism's SystemHeat extras (`KerbalismSystemHeatCore` / `KerbalismSystemHeatCompat`) are exclusive. Do **not** also install the upstream SystemHeat extras (`SystemHeatFissionEngines`, `SystemHeatFissionReactors`, `SystemHeatIonEngines`, `SystemHeatConverters`, `SystemHeatHarvesters`, `SystemHeatCryoTanks` / `SystemHeatBoiloff`, or the legacy `Kerbalism-SystemHeat`). Mixing both will double-patch parts. See [Extras/README.md](Extras/README.md) for details.
+
 ## Documentation, help and bug-reporting
 
-- **Tutorials and documentation** are available at the **[Github wiki]**
+- **Tutorials and documentation** are available in the **[Documentation]** (MkDocs; English / 中文)
 
 - Need **help** ?
 
-  Ask on **[Discord]** or in the **[KSP forums thread]**\
+  Ask on **[Discord]**\
   Also see [this short YouTube video](https://www.youtube.com/watch?v=eW9pW_839sw) about useful UI tips.
 
 - You **found a bug** ?
@@ -92,13 +92,14 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 - You want to **report a bug** ?
   - Install the [KSPBugReport] plugin and generate a bug report with it. Support requests that don't provide full logs and KSP database dumps are often ignored.
-  - Report it on [Github issues] (preferred) or in the [KSP forums thread] (we don't go there often).
+  - Report it on [Discord] (preferred) or on [Github issues].
 
 - You want to **contribute** or add support for your mod ?
-  - Check the technical guide on the wiki
+  - Check the technical guide in the [Documentation]
   - Pull requests are welcome, especially for mod support configs. For code contributions, it is recommended to talk to us on [Discord] before engaging anything.
   - Read the [contributing] documentation
   - To build the plugin from the source code, see [CONTRIBUTING.md](CONTRIBUTING.md#setup-guide)
+  - To preview docs locally: `pip install -r requirements.txt` then `mkdocs serve`
 
 ## Disclaimer and license
 
@@ -106,10 +107,10 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 
 
 [Github releases]: https://github.com/Kerbalism/Kerbalism/releases
-[Github wiki]: https://github.com/Kerbalism/Kerbalism/wiki
+[Documentation]: https://kerbalism.github.io/Kerbalism/
 [GitHub issues]: https://github.com/Kerbalism/Kerbalism/issues
 [Dev Builds]: https://github.com/Kerbalism/DevBuilds/releases
-[Mod Compatibility]: https://github.com/Kerbalism/Kerbalism/wiki/Home-~-Mod-Support
+[Mod Compatibility]: https://kerbalism.github.io/Kerbalism/mod-support/
 [Changelog]: https://github.com/Kerbalism/Kerbalism/blob/master/CHANGELOG.md
 [Contributing]: https://github.com/Kerbalism/Kerbalism/blob/master/CONTRIBUTING.md
 [System/API.cs]: https://github.com/Kerbalism/Kerbalism/blob/master/src/System/API.cs
@@ -126,5 +127,4 @@ This mod is released under the [Unlicense], which mean it's in the public domain
 
 [KerbalismBanner]: https://github.com/Kerbalism/Kerbalism/raw/master/misc/img/banner.png
 
-[New and Noteworthy]: https://github.com/Kerbalism/Kerbalism/wiki/New-And-Noteworthy
-[FAQ]: https://github.com/Kerbalism/Kerbalism/wiki/FAQ
+[FAQ]: https://kerbalism.github.io/Kerbalism/faq/

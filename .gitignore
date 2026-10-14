@@ -25,6 +25,7 @@ bld/
 [Ll]og/
 
 Kerbalism.dll
+KerbalismEngineFailures.dll
 AssemblyInfo.cs-E
 
 # Visual Studio 2015/2017 cache/options directory
@@ -381,5 +382,10 @@ SciTE*.properties
 
 # KSPBuildTools local config (copy from Kerbalism.props.user.example)
 *.props.user
+
+# MkDocs
+/site/
+.cache/
+.venv/
 
 

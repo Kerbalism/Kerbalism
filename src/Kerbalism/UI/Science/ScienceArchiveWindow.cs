@@ -251,6 +251,12 @@ namespace KERBALISM
 					{
 						vesselExpInfos.Add(experiment.ExpInfo);
 					}
+					else if (partModule is KerbalismScansat scansat)
+					{
+						ExperimentInfo scansatInfo = scansat.ExpInfo ?? ScienceDB.GetExperimentInfo(scansat.experimentType);
+						if (scansatInfo != null)
+							vesselExpInfos.Add(scansatInfo);
+					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{
 						if (stockExperiment.experimentID == "ROCScience")
@@ -375,6 +381,13 @@ namespace KERBALISM
 							researchedExpInfos.Add(experiment.ExpInfo);
 						}
 						
+					}
+					else if (partModule is KerbalismScansat scansatModule)
+					{
+						ExperimentInfo expInfo = scansatModule.ExpInfo
+							?? ScienceDB.GetExperimentInfo(scansatModule.experimentType);
+						if (expInfo != null)
+							researchedExpInfos.Add(expInfo);
 					}
 					else if (partModule is ModuleScienceExperiment stockExperiment)
 					{

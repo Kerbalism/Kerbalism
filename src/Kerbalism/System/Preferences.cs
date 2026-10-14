@@ -12,29 +12,20 @@ namespace KERBALISM
 		[GameParameters.CustomParameterUI("#KERBALISM_HighlightMalfunctions", toolTip = "#KERBALISM_HighlightMalfunctions_desc")]//Highlight Malfunctions--Highlight failed parts in flight
 		public bool highlights = true;
 
-		[GameParameters.CustomParameterUI("#KERBALISM_PartMalfunctions", toolTip = "#KERBALISM_PartMalfunctions_desc")]//Part Malfunctions--Allow engine failures based on part age and mean time between failures
+		[GameParameters.CustomParameterUI("#KERBALISM_PartMalfunctions", toolTip = "#KERBALISM_PartMalfunctions_desc")]//Part Malfunctions--Allow part failures based on part age and mean time between failures (MTBF)
 		public bool mtbfFailures = true;
 
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_CriticalFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_CriticalFailureRate_desc")]//Critical Failure Rate---Proportion of malfunctions that lead to critical failures
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_CriticalFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_CriticalFailureRate_desc")]//Critical Failure Chance--Chance that a breakdown becomes a critical (red) failure instead of a normal (yellow) malfunction
 		public float criticalChance = 0.25f;
 
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_FixableFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FixableFailureRate_desc")]//Fixable Failure Rate--Proportion of malfunctions that can be fixed remotely
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_FixableFailureRate", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FixableFailureRate_desc")]//Unmanned Safe Mode--On unmanned vessels, chance that a malfunction is automatically cleared instead of breaking the part
 		public float safeModeChance = 0.5f;
 
-		[GameParameters.CustomParameterUI("#KERBALISM_IncentiveRedundancy", toolTip = "#KERBALISM_IncentiveRedundancy_desc")]//Incentive Redundancy--Each malfunction will increase the MTBF\nof components in the same redundancy group
+		[GameParameters.CustomParameterUI("#KERBALISM_IncentiveRedundancy", toolTip = "#KERBALISM_IncentiveRedundancy_desc")]//Redundancy Bonus--When a part malfunctions, other parts in the same redundancy group get increased MTBF
 		public bool incentiveRedundancy = true;
-
-		[GameParameters.CustomParameterUI("#KERBALISM_EngineMalfunctions", toolTip = "#KERBALISM_EngineMalfunctions_desc")]//Engine Malfunctions--Allow engine failures on ignition and exceeded burn durations
-		public bool engineFailures = true;
 
 		[GameParameters.CustomParameterUI("#KERBALISM_RequireRepairKits", toolTip = "#KERBALISM_RequireRepairKits_desc")]//Require Repair Kits--Require Repair Kits to repair parts
 		public bool requireRepairKits = true;
-
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_EngineIgnitionFailureChance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "#KERBALISM_EngineIgnitionFailureChance_desc")]//Engine Ignition Failure Chance--Adjust the probability of engine failures on ignition
-		public float ignitionFailureChance = 1.0f;
-
-		[GameParameters.CustomFloatParameterUI("#KERBALISM_EngineBurnFailureChance", asPercentage = true, minValue = 0, maxValue = 3, displayFormat = "F2", toolTip = "#KERBALISM_EngineBurnFailureChance_desc")]//Engine Burn Failure Chance--Adjust the probability of an engine failure caused by excessive burn time
-		public float engineOperationFailureChance = 1.0f;
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
@@ -47,36 +38,24 @@ namespace KERBALISM
 				case GameParameters.Preset.Easy:
 					criticalChance = 0.15f;
 					safeModeChance = 0.6f;
-					ignitionFailureChance = 0.5f;
-					engineOperationFailureChance = 0.5f;
-					engineFailures = false;
 					mtbfFailures = false;
 					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Normal:
 					criticalChance = 0.25f;
 					safeModeChance = 0.5f;
-					ignitionFailureChance = 0.75f;
-					engineOperationFailureChance = 0.75f;
-					engineFailures = true;
 					mtbfFailures = true;
 					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Moderate:
 					criticalChance = 0.3f;
 					safeModeChance = 0.45f;
-					ignitionFailureChance = 0.8f;
-					engineOperationFailureChance = 0.8f;
-					engineFailures = true;
 					mtbfFailures = true;
 					requireRepairKits = false;
 					break;
 				case GameParameters.Preset.Hard:
 					criticalChance = 0.35f;
 					safeModeChance = 0.4f;
-					ignitionFailureChance = 1f;
-					engineOperationFailureChance = 1f;
-					engineFailures = true;
 					mtbfFailures = true;
 					requireRepairKits = false;
 					break;
@@ -256,11 +235,26 @@ namespace KERBALISM
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_StressBreakdownProbability", asPercentage = true, minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_StressBreakdownProbability_desc")]//Stress Breakdown Probability--Probability of one stress induced mistake per year
 		public float stressBreakdownRate = 0.25f;
 
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_StressExperienceBonus", asPercentage = true, minValue = 0, maxValue = 0.5f, displayFormat = "F2", toolTip = "#KERBALISM_StressExperienceBonus_desc")]//Stress Experience Bonus--Stress resistance gained per experience level
+		public float stressExperienceBonus = 0.1f;
+
 		[GameParameters.CustomIntParameterUI("#KERBALISM_IdealLivingSpace", minValue = 5, maxValue = 200, toolTip = "#KERBALISM_IdealLivingSpace_desc")]//Ideal Living Space--Ideal living space per-capita in m^3
 		public int livingSpace = Settings.ComfortLivingSpace;
 
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_FirmGroundFactor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_FirmGroundFactor_desc")]//Firm Ground Factor--Having something to walk on
 		public float firmGround = Settings.ComfortFirmGround;
+
+		[GameParameters.CustomParameterUI("#KERBALISM_SpinFirmGround", toolTip = "#KERBALISM_SpinFirmGround_desc")]//Vessel Spin Firm Ground--Grant firm ground when enough crew seats meet the artificial-gravity threshold while the vessel spins
+		public bool spinFirmGround = Settings.ComfortSpinFirmGround;
+
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMinArtificialG", minValue = 0.05f, maxValue = 1f, displayFormat = "F2", toolTip = "#KERBALISM_SpinMinArtificialG_desc")]//Minimum Spin Gravity--Minimum artificial gravity in g for a seat to count toward firm ground
+		public float spinMinArtificialG = Settings.ComfortSpinMinArtificialG;
+
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinMaxRpm", minValue = 0.5f, maxValue = 10f, displayFormat = "F1", toolTip = "#KERBALISM_SpinMaxRpm_desc")]//Maximum Spin Rate--Maximum vessel spin rate in RPM (limits Coriolis discomfort)
+		public float spinMaxRpm = Settings.ComfortSpinMaxRpm;
+
+		[GameParameters.CustomFloatParameterUI("#KERBALISM_SpinCrewCoverage", asPercentage = true, minValue = 0.5f, maxValue = 1f, displayFormat = "F2", toolTip = "#KERBALISM_SpinCrewCoverage_desc")]//Spin Seat Coverage--Fraction of aboard crew that must have a qualifying high-g seat
+		public float spinCrewCoverage = Settings.ComfortSpinCrewCoverage;
 
 		[GameParameters.CustomFloatParameterUI("#KERBALISM_ExerciseFactor", minValue = 0, maxValue = 1, displayFormat = "F2", toolTip = "#KERBALISM_ExerciseFactor_desc")]//Exercise Factor--Having a treadmill
 		public float exercise = Settings.ComfortExercise;
@@ -325,6 +319,8 @@ namespace KERBALISM
 					if (HighLogic.CurrentGame != null)
 					{ instance = HighLogic.CurrentGame.Parameters.CustomParams<PreferencesComfort>(); }
 				}
+				if (instance != null)
+					instance.SanitizeSpinParameters();
 				return instance;
 			}
 		}
@@ -332,7 +328,26 @@ namespace KERBALISM
 		public override void OnLoad(ConfigNode node)
 		{
 			base.OnLoad(node);
+			SanitizeSpinParameters();
 			instance = null;
+		}
+
+		private void SanitizeSpinParameters()
+		{
+			if (float.IsNaN(spinMinArtificialG)
+				|| float.IsInfinity(spinMinArtificialG)
+				|| spinMinArtificialG <= 0.0f)
+				spinMinArtificialG = Settings.ComfortSpinMinArtificialG;
+			if (float.IsNaN(spinMaxRpm)
+				|| float.IsInfinity(spinMaxRpm)
+				|| spinMaxRpm <= 0.0f)
+				spinMaxRpm = Settings.ComfortSpinMaxRpm;
+			if (float.IsNaN(spinCrewCoverage)
+				|| float.IsInfinity(spinCrewCoverage)
+				|| spinCrewCoverage <= 0.0f)
+				spinCrewCoverage = Settings.ComfortSpinCrewCoverage;
+			else if (spinCrewCoverage > 1.0f)
+				spinCrewCoverage = 1.0f;
 		}
 	}
 
@@ -423,6 +438,58 @@ namespace KERBALISM
 		{
 			base.OnLoad(node);
 			instance = null;
+		}
+	}
+
+	public class PreferencesGeneral : GameParameters.CustomParameterNode
+	{
+		[GameParameters.CustomParameterUI("#KERBALISM_FreezeUnloadedSolarPanelExposure", toolTip = "#KERBALISM_FreezeUnloadedSolarPanelExposure_desc")]//Freeze Unloaded Solar Exposure--In-space vessels keep sunlit solar-panel exposure from the last realtime evaluation (loaded high-warp or unloaded). Low-warp shadow still zeros output; analytic still applies the orbit sunlight fraction. Disable to recalculate panel facing while unloaded or in analytic warp.
+		public bool freezeUnloadedSolarPanelExposure = true;
+
+		[GameParameters.CustomIntParameterUI("#KERBALISM_BackgroundVesselsFlight", minValue = 1, maxValue = 32, toolTip = "#KERBALISM_BackgroundVesselsFlight_desc")]//BG vessel evaluations / frame (flight)--Maximum number of unloaded vessels that get background processing on each physics tick while in flight.\nExtra vessels are only processed once they have piled up more than two minutes of unsimulated time, so this does nothing at low time warp.\nRaising it improves accuracy during fast warp, at the cost of framerate.
+		public int backgroundVesselsFlight = 2;
+
+		[GameParameters.CustomIntParameterUI("#KERBALISM_BackgroundVesselsOtherScenes", minValue = 1, maxValue = 64, toolTip = "#KERBALISM_BackgroundVesselsOtherScenes_desc")]//BG vessel evaluations / frame (others)--Maximum number of unloaded vessels that get background processing on each physics tick in the Space Center, Tracking Station and Editor.\nExtra vessels are only processed once they have piled up more than two minutes of unsimulated time, so this does nothing at low time warp.\nThese scenes have far more CPU headroom than flight, so a higher value is safe.
+		public int backgroundVesselsOtherScenes = 4;
+
+		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
+
+		public override bool HasPresets { get { return true; } }
+
+		public override void SetDifficultyPreset(GameParameters.Preset preset)
+		{
+			switch (preset)
+			{
+				case GameParameters.Preset.Easy:
+				case GameParameters.Preset.Normal:
+					freezeUnloadedSolarPanelExposure = true;
+					break;
+				case GameParameters.Preset.Moderate:
+				case GameParameters.Preset.Hard:
+					freezeUnloadedSolarPanelExposure = false;
+					break;
+				default:
+					break;
+			}
+		}
+
+		public override string DisplaySection { get { return Local.Preferences_Section2; } }
+
+		public override string Section { get { return Local.Preferences_Section2; } }
+
+		public override int SectionOrder { get { return 2; } }
+
+		public override string Title { get { return Local.Preferences_General; } }//"General"
+
+		// Do not cache across difficulty-dialog Accept: KSP may replace the parameter node.
+		public static PreferencesGeneral Instance
+		{
+			get
+			{
+				if (HighLogic.CurrentGame == null)
+					return null;
+				return HighLogic.CurrentGame.Parameters.CustomParams<PreferencesGeneral>();
+			}
 		}
 	}
 }

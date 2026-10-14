@@ -24,6 +24,7 @@ namespace KERBALISM.Planner
 
 			// set default body index to home
 			body_index = FlightGlobals.GetHomeBodyIndex();
+			ApplyBodyOrbitDefaults(FlightGlobals.Bodies[body_index]);
 
 			// resource panels
 			// - add all resources defined in the Profiles Supply configs except EC
@@ -126,7 +127,7 @@ namespace KERBALISM.Planner
 			if (manifest == null)
 				return;
 
-			// check for number of crew change
+			// Capacity coverage only depends on crew count, not which cabin each Kerbal occupies.
 			if (vessel_analyzer.crew_count != manifest.CrewCount)
 				enforceUpdate = true;
 
@@ -144,7 +145,7 @@ namespace KERBALISM.Planner
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 
 				// analyze using the settings from the panels user input
-				env_analyzer.Analyze(FlightGlobals.Bodies[body_index], altitude_mults[situation_index], sunlight);
+				env_analyzer.Analyze(FlightGlobals.Bodies[body_index], orbital_altitude_m, sunlight);
 				vessel_analyzer.Analyze(parts, resource_sim, env_analyzer);
 				resource_sim.Analyze(parts, env_analyzer, vessel_analyzer);
 
@@ -230,14 +231,12 @@ namespace KERBALISM.Planner
 				GUILayout.Label(new GUIContent(Lib.BodyDisplayName(FlightGlobals.Bodies[body_index]), Local.Planner_Targetbody), leftmenu_style);//"Target body"
 				if (Lib.IsClicked())
 				{
-					var sorted_index = sorted_body_indices.IndexOf(body_index);
-					body_index = sorted_body_indices[(sorted_index + 1) % sorted_body_indices.Count];
+					CycleBody(+1);
 					enforceUpdate = true;
 				}
 				else if (Lib.IsClicked(1))
 				{
-					var sorted_index = sorted_body_indices.IndexOf(body_index);
-					body_index = sorted_body_indices[(sorted_index - 1) % sorted_body_indices.Count];
+					CycleBody(-1);
 					enforceUpdate = true;
 				}
 
@@ -252,11 +251,11 @@ namespace KERBALISM.Planner
 				{ sunlight = (SunlightState)(((int)sunlight + 1) % Enum.GetValues(typeof(SunlightState)).Length); enforceUpdate = true; }
 
 				// situation selector
-				GUILayout.Label(new GUIContent(situations[situation_index], Local.Planner_Targetsituation), rightmenu_style);//"Target situation"
+				GUILayout.Label(new GUIContent(SituationLabel(situation_index), Local.Planner_Targetsituation), rightmenu_style);//"Target situation"
 				if (Lib.IsClicked())
-				{ situation_index = (situation_index + 1) % situations.Length; enforceUpdate = true; }
+				{ CycleSituation(+1); enforceUpdate = true; }
 				else if (Lib.IsClicked(1))
-				{ situation_index = (situation_index == 0 ? situations.Length : situation_index) - 1; enforceUpdate = true; }
+				{ CycleSituation(-1); enforceUpdate = true; }
 
 				// end header
 				GUILayout.EndHorizontal();
@@ -305,7 +304,7 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_temperature, Lib.HumanReadableTemp(env_analyzer.temperature), env_analyzer.body.atmosphere && env_analyzer.landed ? Local.Planner_atmospheric : flux_tooltip);//"temperature""atmospheric"
 			p.AddContent(Local.Planner_difference, Lib.HumanReadableTemp(env_analyzer.temp_diff), Local.Planner_difference_desc);//"difference""difference between external and survival temperature"
 			p.AddContent(Local.Planner_atmosphere, env_analyzer.body.atmosphere ? Local.Planner_atmosphere_yes : Local.Planner_atmosphere_no, atmosphere_tooltip);//"atmosphere""yes""no"
-			p.AddContent(Local.Planner_shadowtime, shadowtime_str, Local.Planner_shadowtime_desc);//"shadow time""the time in shadow\nduring the orbit"
+			p.AddContent(Local.Planner_shadowtime, shadowtime_str, Local.Planner_shadowtime_desc);//"shadow time"
 		}
 
 		///<summary> Add electric charge sub-panel, including tooltips </summary>
@@ -316,6 +315,8 @@ namespace KERBALISM.Planner
 
 			// create tooltip
 			string tooltip = res.Tooltip();
+			double charge_time = res.ChargeTime();
+			string charge_str = double.IsNaN(charge_time) ? Local.Generic_NONE : Lib.HumanReadableDuration(charge_time);
 
 			// render the panel section
 			p.AddSection(Local.Planner_ELECTRICCHARGE);//"ELECTRIC CHARGE"
@@ -323,6 +324,113 @@ namespace KERBALISM.Planner
 			p.AddContent(Local.Planner_consumed, Lib.HumanOrSIRate(res.consumed, Lib.ECResID), tooltip);//"consumed"
 			p.AddContent(Local.Planner_produced, Lib.HumanOrSIRate(res.produced, Lib.ECResID), tooltip);//"produced"
 			p.AddContent(Local.Planner_duration, Lib.HumanReadableDuration(res.Lifetime()));//"duration"
+			p.AddContent(Local.Planner_fullcharge, charge_str, Local.Planner_fullcharge_desc);//"full charge"
+
+			CelestialBody body = FlightGlobals.Bodies[body_index];
+			if (!body.isStar)
+			{
+				string orbit_str = (orbital_altitude_m / 1000.0).ToString("F0") + " km";
+				p.AddContent(Local.Planner_vesselorbitalt, orbit_str, Local.Planner_vesselorbitalt_desc,
+					() => { StepOrbitalAltitude(+1); enforceUpdate = true; },
+					null,
+					() => { StepOrbitalAltitude(-1); enforceUpdate = true; });
+			}
+		}
+
+		private static bool ShiftHeld()
+		{
+			return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+		}
+
+		private static void CycleBody(int direction)
+		{
+			int count = sorted_body_indices.Count;
+			if (count <= 0)
+				return;
+
+			int sorted_index = sorted_body_indices.IndexOf(body_index);
+			if (sorted_index < 0)
+				sorted_index = 0;
+			sorted_index = ((sorted_index + direction) % count + count) % count;
+			body_index = sorted_body_indices[sorted_index];
+			ApplyBodyOrbitDefaults(FlightGlobals.Bodies[body_index]);
+		}
+
+		private static string SituationLabel(int index)
+		{
+			if (index == custom_situation_index)
+				return Local.Planner_Custom;
+			if (index >= 0 && index < preset_situations.Length)
+				return preset_situations[index];
+			return Local.Planner_Custom;
+		}
+
+		private static void CycleSituation(int direction)
+		{
+			// Cycle only among altitude presets; Custom is entered by editing orbital altitude
+			int preset_count = altitude_mults.Length;
+			if (situation_index >= preset_count)
+				situation_index = direction > 0 ? 0 : preset_count - 1;
+			else
+				situation_index = ((situation_index + direction) % preset_count + preset_count) % preset_count;
+			ApplySituationAltitudePreset();
+		}
+
+		private static double PresetAltitude(CelestialBody body, int preset_index)
+		{
+			double alt = body.Radius * altitude_mults[preset_index];
+			if (!body.isStar && body.sphereOfInfluence > 0.0)
+				alt = Math.Min(alt, Math.Max(0.0, body.sphereOfInfluence - body.Radius));
+			return alt;
+		}
+
+		private static void ApplySituationAltitudePreset()
+		{
+			if (situation_index < 0 || situation_index >= altitude_mults.Length)
+				return;
+			orbital_altitude_m = PresetAltitude(FlightGlobals.Bodies[body_index], situation_index);
+		}
+
+		private static void SyncSituationIndexFromAltitude()
+		{
+			CelestialBody body = FlightGlobals.Bodies[body_index];
+			const double tolerance_m = 1.0;
+			for (int i = 0; i < altitude_mults.Length; ++i)
+			{
+				if (Math.Abs(orbital_altitude_m - PresetAltitude(body, i)) <= tolerance_m)
+				{
+					situation_index = i;
+					return;
+				}
+			}
+			situation_index = custom_situation_index;
+		}
+
+		private static void ApplyBodyOrbitDefaults(CelestialBody body)
+		{
+			if (body.isStar)
+			{
+				orbital_altitude_m = 0.0;
+				situation_index = 0;
+				return;
+			}
+
+			double default_alt = body.atmosphereDepth + 10000.0;
+			double max_alt = Math.Max(0.0, body.sphereOfInfluence - body.Radius);
+			orbital_altitude_m = Lib.Clamp(default_alt, 0.0, max_alt);
+			SyncSituationIndexFromAltitude();
+		}
+
+		private static void StepOrbitalAltitude(int direction)
+		{
+			CelestialBody body = FlightGlobals.Bodies[body_index];
+			if (body.isStar)
+				return;
+
+			double step_m = (ShiftHeld() ? 50.0 : 5.0) * 1000.0; // km
+			double max_alt = Math.Max(0.0, body.sphereOfInfluence - body.Radius);
+			orbital_altitude_m = Lib.Clamp(orbital_altitude_m + direction * step_m, 0.0, max_alt);
+			SyncSituationIndexFromAltitude();
 		}
 
 		///<summary> Add supply resource sub-panel, including tooltips </summary>
@@ -376,7 +484,10 @@ namespace KERBALISM.Planner
 			// render comfort data
 			if (rule.modifiers.Contains("comfort"))
 			{
-				p.AddContent(Local.Planner_comfort, vessel_analyzer.comforts.Summary(), vessel_analyzer.comforts.Tooltip());//"comfort"
+				// The planner renders its design estimate on a dedicated row below, so hide
+				// the flight-only persisted spin snapshot from the generic comfort tooltip.
+				p.AddContent(Local.Planner_comfort, vessel_analyzer.comforts.Summary(), vessel_analyzer.comforts.Tooltip(false));//"comfort"
+				AddSpinEstimateContent(p);
 			}
 			else
 			{
@@ -399,6 +510,51 @@ namespace KERBALISM.Planner
 			// render life estimate
 			double mod = Modifiers.Evaluate(env_analyzer, vessel_analyzer, resource_sim, rule.modifiers);
 			p.AddContent(Local.Planner_lifeestimate, Lib.HumanReadableDuration(rule.fatal_threshold / (rule.degeneration * mod)));//"duration"
+		}
+
+		///<summary> Show whether the editor ship can meet spin firm-ground thresholds at max RPM.</summary>
+		private static void AddSpinEstimateContent(Panel p)
+		{
+			if (!PreferencesComfort.Instance.spinFirmGround)
+				return;
+
+			SpinComfort.EditorEstimate spin = vessel_analyzer.spinEstimate;
+			string value;
+			string tooltip;
+
+			if (!spin.available)
+			{
+				value = Local.Comfort_spin_na;
+				tooltip = Local.Planner_spin_unavailable;
+			}
+			else if (spin.crewPartCount == 0)
+			{
+				value = Local.Comfort_spin_na;
+				tooltip = Local.Planner_spin_nocrewparts;
+			}
+			else
+			{
+				string yes = Lib.BuildString("<b><color=#00ff00>", Local.Generic_YES, "</color></b>");
+				string no = Lib.BuildString("<b><color=#ffaa00>", Local.Generic_NO, "</color></b>");
+				value = spin.qualifies ? yes : no;
+				tooltip = Lib.BuildString
+				(
+					"<align=left />",
+					Local.Planner_spin_tip_intro, "\n",
+					Local.Planner_spin_seats, "\t<b>",
+					spin.qualifyingCapacity.ToString(), " / ", spin.seatsNeeded.ToString(), "</b>\n",
+					Local.Planner_spin_marginal_radius, "\t<b>", spin.marginalRadius.ToString("F1"), " m</b>\n",
+					Local.Planner_spin_gee_at_max, "\t<b>", spin.geeAtMaxRpm.ToString("F2"), " g</b>\n",
+					Local.Planner_spin_rpm_needed, "\t<b>",
+					double.IsInfinity(spin.rpmRequired) ? "∞" : spin.rpmRequired.ToString("F2"),
+					" rpm</b>\n",
+					Local.Planner_spin_thresholds, "\t<b>",
+					spin.requiredGee.ToString("F2"), " g / ≤ ", spin.maxRpm.ToString("F1"),
+					" rpm / ≥ ", (spin.coverageRatio * 100.0f).ToString("F0"), "%</b>"
+				);
+			}
+
+			p.AddContent(Local.Comfort_spin, value, tooltip);
 		}
 
 		///<summary> Add radiation sub-panel, including tooltips </summary>
@@ -581,9 +737,10 @@ namespace KERBALISM.Planner
 #endregion
 
 #region FIELDS_PROPERTIES
-		// store situations and altitude multipliers
-		private static readonly string[] situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
+		// altitude presets; Custom is used when orbital altitude does not match any preset
+		private static readonly string[] preset_situations = { "Landed", "Low Orbit", "Orbit", "High Orbit" };
 		private static readonly double[] altitude_mults = { 0.0, 0.33, 1.0, 3.0 };
+		private const int custom_situation_index = 4;
 
 		// styles
 		private static GUIStyle devbuild_style;
@@ -607,6 +764,7 @@ namespace KERBALISM.Planner
 		private static int body_index;
 		private static List<int> sorted_body_indices = new List<int>();
 		private static int situation_index = 2;     // orbit
+		private static double orbital_altitude_m;           // meters above body
 		public enum SunlightState { SunlightNominal = 0, SunlightSimulated = 1, Shadow = 2 }
 		private static SunlightState sunlight = SunlightState.SunlightSimulated;
 		public static SunlightState Sunlight => sunlight;

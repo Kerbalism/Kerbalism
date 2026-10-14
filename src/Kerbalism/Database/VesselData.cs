@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 
 namespace KERBALISM
@@ -84,15 +85,40 @@ namespace KERBALISM
 
 		public bool msg_signal;       // message flag: link status
 		public bool msg_belt;         // message flag: crossing radiation belt
+		/// <summary>Legacy primary storm slot (mirrored from stormDataByStar for save compat).</summary>
 		public StormData stormData;
+		/// <summary>Per-source-star CME state for vessels in a star SOI (multi-star packs).</summary>
+		public Dictionary<string, StormData> stormDataByStar;
 		private Dictionary<string, SupplyData> supplies; // supplies data
 		public List<uint> scansat_id; // used to remember scansat sensors that were disabled
 		public double scienceTransmitted;
 
 		public Dictionary<Process, DumpSpecs.ActiveValve> dumpValves;
 
+		/// <summary>
+		/// SystemHeat background thermal calibration, by loop id. Captured on the first background step after
+		/// the vessel unloads, cleared when it loads again (SystemHeat owns the loops while loaded).
+		/// </summary>
+		public Dictionary<int, SystemHeatLoopCalibration> systemHeatLoops;
+
 		// persist that so we don't have to do an expensive check every time
 		public bool IsSerenityGroundController => isSerenityGroundController; bool isSerenityGroundController;
+
+		/// <summary>
+		/// Last readable loaded/unpacked spin sample. Kept across packing/unloading so background
+		/// comfort evaluation can reuse qualifying seat capacity / rpm without reconstructing vessel physics.
+		/// </summary>
+		public bool EnvSpinSnapshotValid => spinSnapshotValid; bool spinSnapshotValid;
+		public int EnvSpinQualifyingCapacity => spinQualifyingCapacity; int spinQualifyingCapacity;
+		private float spinSampleMinArtificialG;
+		public double EnvSpinRpm => spinRpm; double spinRpm;
+
+		// Loaded-only spin stability tracking. Never persisted: a vessel must demonstrate
+		// stable rotation again after being unpacked before a new snapshot is accepted.
+		private bool spinStabilityInitialized;
+		private Vector3 spinPreviousAxis;
+		private double spinPreviousRpm;
+		private double spinStableSeconds;
 		#endregion
 
 		#region evaluated environment properties
@@ -128,11 +154,14 @@ namespace KERBALISM
 		/// <summary> [environment] total flux at vessel position</summary>
 		public double EnvTotalFlux => totalFlux; double totalFlux;
 
-		/// <summary> [environment] temperature ar vessel position</summary>
-		public double EnvTemperature => temperature; double temperature;
+		/// <summary> [environment] temperature at vessel position</summary>
+		public double EnvTemperature => envTemperature; double envTemperature;
 
-		/// <summary> [environment] difference between environment temperature and survival temperature</summary>//
-		public double EnvTempDiff => tempDiff; double tempDiff;
+		/// <summary>
+		/// [environment] difference between environment temperature and survival temperature
+		/// Use VesselSurvivalTempDiff instead when possible since it accounts for vessel geometry and is more accurate.
+		/// </summary>//
+		public double EnvTempDiff => envSurvivalTempDiff; double envSurvivalTempDiff;
 
 		/// <summary> [environment] radiation at vessel position</summary>
 		public double EnvRadiation => radiation; double radiation;
@@ -412,6 +441,13 @@ namespace KERBALISM
 		/// <summary>true if vessel is powered</summary>
 		public bool Powered => powered; bool powered;
 
+		/// <summary>
+		/// True while Kerbalism has forced stock CommNet canComm off due to no EC.
+		/// Cleared when power returns; also used to restore canComm and force an
+		/// unloaded CommNet refresh so the vessel can rejoin without being focused.
+		/// </summary>
+		public bool CommNetPowerDisabled;
+
 		/// <summary>free data storage available data capacity of all public drives</summary>
 		public double DrivesFreeSpace => drivesFreeSpace; double drivesFreeSpace = 0.0;
 
@@ -482,6 +518,9 @@ namespace KERBALISM
 		/// Falls back to EnvTemperature if no geometry data is available yet.
 		/// </summary>
 		public double VesselTemperature => vesselTemperature; double vesselTemperature;
+
+		/// <summary> Difference between vessel temperature and survival temperature</summary>
+		public double VesselSurvivalTempDiff => vesselSurvivalTempDiff; double vesselSurvivalTempDiff;
 
 		/// <summary> Solar power absorbed by the vessel hull in W. Zero if geometry data not yet cached.</summary>
 		public double AbsorbedSolarFlux => absorbedSolarFlux; double absorbedSolarFlux;
@@ -626,6 +665,10 @@ namespace KERBALISM
 			TransmitBufferDrive.dataCapacity = deviceTransmit ? connection.rate * elapsedSec : 0.0;
 		}
 
+		// ResourceUpdate's arguments, reused every physics step (not persisted)
+		private readonly Dictionary<string, double> resourceUpdateAvailable = new Dictionary<string, double>();
+		private readonly List<KeyValuePair<string, double>> resourceUpdateRequests = new List<KeyValuePair<string, double>>();
+
 		/// <summary>
 		/// Call ResourceUpdate on all part modules that have that method
 		/// </summary>
@@ -652,10 +695,11 @@ namespace KERBALISM
 
 			List<ResourceInfo> allResources = resources.GetAllResources(Vessel); // there might be some performance to be gained by caching the list of all resource
 
-			Dictionary<string, double> availableResources = new Dictionary<string, double>();
+			Dictionary<string, double> availableResources = resourceUpdateAvailable;
+			availableResources.Clear();
 			foreach (var ri in allResources)
 				availableResources[ri.ResourceName] = ri.Amount;
-			List<KeyValuePair<string, double>> resourceChangeRequests = new List<KeyValuePair<string, double>>();
+			List<KeyValuePair<string, double>> resourceChangeRequests = resourceUpdateRequests;
 
 			foreach(var resourceUpdateDelegate in resourceUpdateDelegates)
 			{
@@ -755,6 +799,7 @@ namespace KERBALISM
 			// reset a few things on the docked to vessel
 			toVD.supplies.Clear();
 			toVD.scansat_id.Clear();
+			toVD.systemHeatLoops.Clear();
 
 			Lib.LogDebug("Coupling complete to   vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, toVessel.vesselName, toVD.parts.Count, toVessel.parts.Count);
 			Lib.LogDebug("Coupling complete from vessel, vd.partcount={1}, v.partcount={2} ({0})", Lib.LogLevel.Message, fromVessel.vesselName, fromVD.parts.Count, fromVessel.parts.Count);
@@ -789,7 +834,7 @@ namespace KERBALISM
 			Profiler.BeginSample("VesselData.Ctor");
 
 			ExistsInFlight = true;	// vessel exists
-			IsSimulated = true;	// will be evaluated in next fixedupdate
+			IsSimulated = false;	// will be evaluated in next fixedupdate
 
 			Vessel = vessel;
 			VesselId = Vessel.id;
@@ -819,7 +864,7 @@ namespace KERBALISM
 		{
 			Profiler.BeginSample("VesselData.Ctor");
 			ExistsInFlight = false;
-			IsSimulated = true;
+			IsSimulated = false;
 
 			VesselId = protoVessel.vesselID;
 
@@ -834,7 +879,7 @@ namespace KERBALISM
 			}
 			else
 			{
-				Load(node);
+				Load(node, protoVessel);
 				Lib.LogDebug("VesselData ctor (loaded from database) : id '" + VesselId + "' (" + protoVessel.vesselName + "), part count : " + parts.Count);
 			}
 
@@ -852,25 +897,52 @@ namespace KERBALISM
 			cfg_supply = PreferencesMessages.Instance.supply;
 			cfg_signal = PreferencesMessages.Instance.signal;
 			cfg_malfunction = PreferencesMessages.Instance.malfunction;
-			cfg_storm = Features.SpaceWeather && PreferencesMessages.Instance.storm && Lib.CrewCount(pv) > 0;
+			cfg_storm = Features.SpaceWeather && PreferencesMessages.Instance.storm;
 			cfg_script = PreferencesMessages.Instance.script;
 			cfg_highlights = PreferencesReliability.Instance.highlights;
 			cfg_showlink = true;
 			cfg_show = true;
 			deviceTransmit = true;
 
+			spinSnapshotValid = false;
+			spinQualifyingCapacity = 0;
+			spinSampleMinArtificialG = 0.0f;
+			spinRpm = 0.0;
+
 			// note : we check that at vessel creation and persist it, as the vesselType can be changed by the player
 			isSerenityGroundController = pv != null && pv.vesselType == VesselType.DeployedScienceController;
 
+			stormDataByStar = new Dictionary<string, StormData>();
 			stormData = new StormData(null);
 			habitatInfo = new VesselHabitatInfo(null);
 			computer = new Computer(null);
 			supplies = new Dictionary<string, SupplyData>();
 			dumpValves = new Dictionary<Process, DumpSpecs.ActiveValve>();
 			scansat_id = new List<uint>();
+			systemHeatLoops = new Dictionary<int, SystemHeatLoopCalibration>();
 			filesTransmitted = new List<File>();
 			vesselSituations = new VesselSituations(this);
 
+		}
+
+		/// <summary>Get or create the CME slot for a source star (interplanetary multi-star storms).</summary>
+		public StormData GetStormDataForStar(CelestialBody star)
+		{
+			if (stormDataByStar == null)
+				stormDataByStar = new Dictionary<string, StormData>();
+
+			string key = star != null ? star.bodyName : "Sun";
+			if (!stormDataByStar.TryGetValue(key, out StormData bd))
+			{
+				bd = new StormData(null);
+				stormDataByStar[key] = bd;
+			}
+
+			// Keep legacy slot pointing at a useful primary entry
+			if (stormData == null || stormData.storm_state == 0)
+				stormData = bd;
+
+			return bd;
 		}
 
 		private void InitializeCommHandler()
@@ -880,7 +952,7 @@ namespace KERBALISM
 			CommHandler = CommHandler.GetHandler(this, isSerenityGroundController);
 		}
 
-		private void Load(ConfigNode node)
+		private void Load(ConfigNode node, ProtoVessel protoVessel)
 		{
 			msg_signal = Lib.ConfigValue(node, "msg_signal", false);
 			msg_belt = Lib.ConfigValue(node, "msg_belt", false);
@@ -888,7 +960,7 @@ namespace KERBALISM
 			cfg_supply = Lib.ConfigValue(node, "cfg_supply", PreferencesMessages.Instance.supply);
 			cfg_signal = Lib.ConfigValue(node, "cfg_signal", PreferencesMessages.Instance.signal);
 			cfg_malfunction = Lib.ConfigValue(node, "cfg_malfunction", PreferencesMessages.Instance.malfunction);
-			cfg_storm = Lib.ConfigValue(node, "cfg_storm", PreferencesMessages.Instance.storm);
+			cfg_storm = Lib.ConfigValue(node, "cfg_storm", Features.SpaceWeather && PreferencesMessages.Instance.storm);
 			cfg_script = Lib.ConfigValue(node, "cfg_script", PreferencesMessages.Instance.script);
 			cfg_highlights = Lib.ConfigValue(node, "cfg_highlights", PreferencesReliability.Instance.highlights);
 			cfg_showlink = Lib.ConfigValue(node, "cfg_showlink", true);
@@ -903,13 +975,77 @@ namespace KERBALISM
 			solarPanelsAverageHighWarpExposure = Lib.ConfigValue(node, "solarPanelsAverageAnalyticExposure", -1.0);
 			scienceTransmitted = Lib.ConfigValue(node, "scienceTransmitted", 0.0);
 
+			spinSnapshotValid = Lib.ConfigValue(node, "spinSnapshotValid", false);
+			spinQualifyingCapacity = Lib.ConfigValue(node, "spinQualifyingCapacity", -1);
+			spinSampleMinArtificialG = Lib.ConfigValue(node, "spinSampleMinArtificialG", 0.0f);
+			spinRpm = Lib.ConfigValue(node, "spinRpm", 0.0);
+			// Legacy whole-crew min-g snapshots are incompatible with capacity coverage.
+			if (spinQualifyingCapacity < 0 || node.HasValue("spinMinGee"))
+				InvalidateSpinComfortSnapshot();
+			ValidateSpinComfortSnapshot();
+
 			vesselSurfaceArea = Lib.ConfigValue(node, "vesselSurfaceArea", -1.0);
 			vesselSolarCrossSection = Lib.ConfigValue(node, "vesselSolarCrossSection", -1.0);
 			vesselBodyCrossSection = Lib.ConfigValue(node, "vesselBodyCrossSection", -1.0);
 			vesselBodyCrossSectionOrbitAvg = Lib.ConfigValue(node, "vesselBodyCrossSectionOrbitAvg", -1.0);
 			vesselEmissivity = Lib.ConfigValue(node, "vesselEmissivity", 0.9);
 
-			stormData = new StormData(node.GetNode("StormData"));
+			stormDataByStar = new Dictionary<string, StormData>();
+			ConfigNode byStarNode = node.GetNode("StormDataByStar");
+			if (byStarNode != null)
+			{
+				foreach (ConfigNode starNode in byStarNode.nodes)
+					stormDataByStar[DB.From_safe_key(starNode.name)] = new StormData(starNode);
+			}
+
+			// Migrate legacy single StormData into the per-star map when needed
+			ConfigNode legacyStorm = node.GetNode("StormData");
+			if (legacyStorm != null)
+			{
+				stormData = new StormData(legacyStorm);
+				if (stormDataByStar.Count == 0)
+				{
+					string migrateKey = "Sun";
+					CelestialBody referenceBody = null;
+					if (Vessel != null)
+					{
+						referenceBody = Vessel.mainBody;
+					}
+					else if (protoVessel?.orbitSnapShot != null)
+					{
+						int bodyIndex = protoVessel.orbitSnapShot.ReferenceBodyIndex;
+						if (bodyIndex >= 0 && bodyIndex < FlightGlobals.Bodies.Count)
+							referenceBody = FlightGlobals.Bodies[bodyIndex];
+					}
+
+					CelestialBody sun = Lib.IsSun(referenceBody) ? referenceBody : Lib.GetParentSun(referenceBody);
+					if (sun != null)
+						migrateKey = sun.bodyName;
+					else if (Sim.suns.Count > 0 && Sim.suns[0].body != null)
+						migrateKey = Sim.suns[0].body.bodyName;
+
+					stormDataByStar[migrateKey] = stormData;
+				}
+				else
+				{
+					// The per-star data is authoritative; keep the legacy field as an alias, not a detached copy.
+					foreach (StormData bd in stormDataByStar.Values)
+					{
+						stormData = bd;
+						break;
+					}
+				}
+			}
+			else
+			{
+				stormData = new StormData(null);
+				foreach (StormData bd in stormDataByStar.Values)
+				{
+					stormData = bd;
+					break;
+				}
+			}
+
 			habitatInfo = new VesselHabitatInfo(node.GetNode("SunShielding"));
 			computer = new Computer(node.GetNode("computer"));
 
@@ -948,6 +1084,18 @@ namespace KERBALISM
 				scansat_id.Add(Lib.Parse.ToUInt(s));
 			}
 
+			systemHeatLoops = new Dictionary<int, SystemHeatLoopCalibration>();
+			ConfigNode systemHeatNode = node.GetNode("SystemHeatLoops");
+			if (systemHeatNode != null)
+			{
+				foreach (ConfigNode.Value loopValue in systemHeatNode.values)
+				{
+					if (int.TryParse(loopValue.name, out int loopId)
+						&& SystemHeatLoopCalibration.TryDeserialize(loopValue.value, out SystemHeatLoopCalibration calibration))
+						systemHeatLoops[loopId] = calibration;
+				}
+			}
+
 			ConfigNode partsNode = new ConfigNode();
 			if (node.TryGetNode("parts", ref partsNode))
 			{
@@ -984,6 +1132,12 @@ namespace KERBALISM
 			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageHighWarpExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
 
+			ValidateSpinComfortSnapshot();
+			node.AddValue("spinSnapshotValid", spinSnapshotValid);
+			node.AddValue("spinQualifyingCapacity", spinQualifyingCapacity);
+			node.AddValue("spinSampleMinArtificialG", spinSampleMinArtificialG);
+			node.AddValue("spinRpm", spinRpm);
+
 			node.AddValue("vesselSurfaceArea", vesselSurfaceArea);
 			node.AddValue("vesselSolarCrossSection", vesselSolarCrossSection);
 			node.AddValue("vesselBodyCrossSection", vesselBodyCrossSection);
@@ -991,7 +1145,30 @@ namespace KERBALISM
 			node.AddValue("vesselBodyCrossSectionOrbitAvg", vesselBodyCrossSectionOrbitAvg);
 			node.AddValue("vesselEmissivity", vesselEmissivity);
 
+			// Legacy single node (primary / first star) for older readers
+			if (stormData == null)
+				stormData = new StormData(null);
+			if (Vessel != null
+				&& (Lib.IsSun(Vessel.mainBody) || Lib.IsBarycenter(Vessel.mainBody))
+				&& Storm.TryGetPrimaryStorm(Vessel, out StormData primaryStorm, out _))
+				stormData = primaryStorm;
+			else if (stormDataByStar != null)
+			{
+				foreach (StormData bd in stormDataByStar.Values)
+				{
+					stormData = bd;
+					break;
+				}
+			}
 			stormData.Save(node.AddNode("StormData"));
+
+			if (stormDataByStar != null && stormDataByStar.Count > 0)
+			{
+				ConfigNode byStarSave = node.AddNode("StormDataByStar");
+				foreach (KeyValuePair<string, StormData> kv in stormDataByStar)
+					kv.Value.Save(byStarSave.AddNode(DB.To_safe_key(kv.Key)));
+			}
+
 			computer.Save(node.AddNode("computer"));
 
 			var supplies_node = node.AddNode("supplies");
@@ -1009,6 +1186,13 @@ namespace KERBALISM
 			foreach (uint id in scansat_id)
 			{
 				node.AddValue("scansat_id", id.ToString());
+			}
+
+			if (systemHeatLoops != null && systemHeatLoops.Count > 0)
+			{
+				ConfigNode systemHeatNode = node.AddNode("SystemHeatLoops");
+				foreach (KeyValuePair<int, SystemHeatLoopCalibration> loop in systemHeatLoops)
+					systemHeatNode.AddValue(loop.Key.ToString(), loop.Value.Serialize());
 			}
 
 			EnvHabitatInfo.Save(node.AddNode("SunShielding"));
@@ -1043,6 +1227,126 @@ namespace KERBALISM
 		}
 
 		#region vessel state evaluation
+		/// <summary>
+		/// Refresh the persisted spin sample only when loaded physics is readable.
+		/// Packed / unloaded vessels keep the last valid sample for background comfort.
+		/// </summary>
+		private void UpdateSpinComfortSnapshot(double elapsedSeconds)
+		{
+			if (Vessel == null)
+				return;
+
+			float requiredGee = PreferencesComfort.Instance.spinMinArtificialG;
+			if (!SpinComfort.IsFinite(requiredGee) || requiredGee <= 0.0f)
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+				return;
+			}
+
+			// qualifyingCapacity depends on the g threshold used during sampling.
+			// An unloaded vessel can't be re-sampled, so discard stale results instead.
+			if (spinSnapshotValid
+				&& (!SpinComfort.IsFinite(spinSampleMinArtificialG)
+					|| Math.Abs(spinSampleMinArtificialG - requiredGee) > 1e-6f))
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+			}
+
+			if (!Vessel.loaded || Vessel.packed)
+			{
+				// Keep the last accepted snapshot for background simulation, but require
+				// a fresh two-second stability window the next time physics is unpacked.
+				ResetSpinStability();
+				return;
+			}
+
+			SpinComfort.Sample sample = SpinComfort.Evaluate(
+				Vessel,
+				requiredGee);
+			if (!sample.available)
+				return;
+
+			if (!sample.coherent
+				|| sample.qualifyingCapacity < 0
+				|| !SpinComfort.IsFinite(sample.rpm)
+				|| !SpinComfort.IsFinite(sample.axisWorld))
+			{
+				InvalidateSpinComfortSnapshot();
+				ResetSpinStability();
+				return;
+			}
+
+			spinQualifyingCapacity = sample.qualifyingCapacity;
+			spinSampleMinArtificialG = requiredGee;
+			spinRpm = sample.rpm;
+
+			// A stationary / non-crewable vessel has a valid negative sample and needs no axis check.
+			if (!sample.hasCrewableParts || sample.rpm <= double.Epsilon)
+			{
+				spinSnapshotValid = true;
+				ResetSpinStability();
+				return;
+			}
+
+			double stabilityStep = Lib.Clamp(elapsedSeconds, 0.0, 0.25);
+			if (!spinStabilityInitialized)
+			{
+				spinStabilityInitialized = true;
+				spinPreviousAxis = sample.axisWorld;
+				spinPreviousRpm = sample.rpm;
+				spinStableSeconds = 0.0;
+				spinSnapshotValid = false;
+				return;
+			}
+
+			double axisDelta = Vector3.Angle(spinPreviousAxis, sample.axisWorld);
+			double rpmDelta = Math.Abs(sample.rpm - spinPreviousRpm);
+			double allowedAxisDelta = SpinComfort.MaxStableAxisRateDegrees * stabilityStep;
+			double allowedRpmDelta = Math.Max(
+				SpinComfort.MaxStableAbsoluteRpmRate,
+				spinPreviousRpm * SpinComfort.MaxStableRelativeRpmRate) * stabilityStep;
+
+			if (axisDelta <= allowedAxisDelta && rpmDelta <= allowedRpmDelta)
+				spinStableSeconds += stabilityStep;
+			else
+				spinStableSeconds = 0.0;
+
+			spinPreviousAxis = sample.axisWorld;
+			spinPreviousRpm = sample.rpm;
+			spinSnapshotValid = spinStableSeconds >= SpinComfort.RequiredStableSeconds;
+		}
+
+		private void ValidateSpinComfortSnapshot()
+		{
+			if (spinQualifyingCapacity < 0
+				|| !SpinComfort.IsFinite(spinRpm)
+				|| spinRpm < 0.0
+				|| (spinSnapshotValid
+					&& (!SpinComfort.IsFinite(spinSampleMinArtificialG)
+						|| spinSampleMinArtificialG <= 0.0f)))
+			{
+				InvalidateSpinComfortSnapshot();
+			}
+		}
+
+		private void InvalidateSpinComfortSnapshot()
+		{
+			spinSnapshotValid = false;
+			spinQualifyingCapacity = 0;
+			spinSampleMinArtificialG = 0.0f;
+			spinRpm = 0.0;
+		}
+
+		private void ResetSpinStability()
+		{
+			spinStabilityInitialized = false;
+			spinPreviousAxis = Vector3.zero;
+			spinPreviousRpm = 0.0;
+			spinStableSeconds = 0.0;
+		}
+
 		private void EvaluateStatus(double elapsedSeconds)
 		{
 			Profiler.BeginSample("EvaluateStatus");
@@ -1074,8 +1378,33 @@ namespace KERBALISM
 			habitatInfo.Update(Vessel, this, elapsedSeconds);
 			Profiler.EndSample();
 			evas = (uint)(Settings.LifeSupportAtmoLoss > 0 ? (ResourceCache.GetResource(Vessel, "Nitrogen").Amount - 330) / Settings.LifeSupportAtmoLoss : 0);
+
+			Profiler.BeginSample("SpinComfort");
+			UpdateSpinComfortSnapshot(elapsedSeconds);
+			int spinSeatsNeeded = SpinComfort.SeatsNeeded(
+				(int)crewCount,
+				PreferencesComfort.Instance.spinCrewCoverage);
+			bool spinFirmGround = SpinComfort.Qualifies(
+				spinSnapshotValid,
+				spinQualifyingCapacity,
+				(int)crewCount,
+				spinRpm,
+				PreferencesComfort.Instance.spinFirmGround,
+				PreferencesComfort.Instance.spinCrewCoverage,
+				PreferencesComfort.Instance.spinMaxRpm);
+			Profiler.EndSample();
+
 			Profiler.BeginSample("Comforts");
-			comforts = new Comforts(Vessel, EnvLanded, crewCount > 1, connection.linked && connection.rate > double.Epsilon);
+			comforts = new Comforts(
+				Vessel,
+				EnvLanded,
+				spinFirmGround,
+				spinSnapshotValid,
+				spinQualifyingCapacity,
+				spinSeatsNeeded,
+				spinRpm,
+				crewCount > 1,
+				connection.linked && connection.rate > double.Epsilon);
 			Profiler.EndSample();
 
 			// data about greenhouses
@@ -1208,8 +1537,7 @@ namespace KERBALISM
 
 			// temperature at vessel position
 			Profiler.BeginSample("Temperature");
-			temperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
-			tempDiff = Sim.TempDiff(EnvTemperature, Vessel.mainBody, EnvLanded);
+			envTemperature = Sim.Temperature(Vessel, position, solarFluxTotal, out albedoFlux, out bodyFlux, out totalFlux);
 
 			// update thermal geometry cache whenever loaded — occlusion multipliers and drag cube
 			// projections are purely geometric and kept current by KSP regardless of sunlight state
@@ -1247,9 +1575,12 @@ namespace KERBALISM
 			}
 			else
 			{
-				vesselTemperature = temperature;
+				vesselTemperature = envTemperature;
 				absorbedSolarFlux = absorbedAlbedoFlux = absorbedBodyFlux = absorbedTotalFlux = 0.0;
 			}
+
+			envSurvivalTempDiff = Sim.TempDiff(envTemperature, Vessel.mainBody, EnvLanded);
+			vesselSurvivalTempDiff = Sim.TempDiff(vesselTemperature, Vessel.mainBody, EnvLanded);
 			Profiler.EndSample();
 
 			// radiation
@@ -1272,15 +1603,7 @@ namespace KERBALISM
 			thermosphere = Sim.InsideThermosphere(Vessel);
 			exosphere = Sim.InsideExosphere(Vessel);
 			inStorm = Storm.InProgress(Vessel);
-
-			if(inStorm)
-			{
-				var sunActivity = Radiation.Info(mainSun.SunData.body).SolarActivity(false) / 2.0;
-				stormRadiation = PreferencesRadiation.Instance.StormRadiation * mainSun.SunlightFactor * (sunActivity + 0.5);
-			} else
-			{
-				stormRadiation = 0.0;
-			}
+			stormRadiation = inStorm ? Storm.RadiationStrength(Vessel, this) : 0.0;
 
 			vesselSituations.Update();
 

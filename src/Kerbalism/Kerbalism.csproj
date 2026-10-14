@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>3.40.0</Version>
+    <Version>$(KerbalismPackageVersion)</Version>
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>Kerbalism</AssemblyName>
     <RootNamespace>KERBALISM</RootNamespace>
-    <TargetFramework>net481</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
 
     <Description>Hundreds of Kerbals were killed in the making of this mod.</Description>
     <Product>Kerbalism</Product>
@@ -43,8 +43,7 @@
     </ModReference>
     <ModReference Include="KSPBurst">
       <DLLPath>GameData/000_KSPBurst/Plugins/KSPBurst.dll</DLLPath>
-      <!-- CI only needs the runtime assemblies; release metadata below still
-           requires full KSPBurst so end users get actual Burst compilation. -->
+      <!-- CI needs only the runtime assemblies; players need the full compiler package. -->
       <CKANIdentifier>KSPBurst-Lite</CKANIdentifier>
       <CKANVersion>v1.7.4.11</CKANVersion>
       <KSPAssemblyVersion>1.7.4</KSPAssemblyVersion>
@@ -70,6 +69,11 @@
       <HintPath>$(KSPBT_GameRoot)/GameData/000_KSPBurst/Plugins/Unity.Mathematics.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <ModReference Include="KSPCommunityFixes">
+      <DLLPath>GameData/KSPCommunityFixes/Plugins/KSPCommunityFixes.dll</DLLPath>
+      <CKANIdentifier>KSPCommunityFixes</CKANIdentifier>
+      <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
+    </ModReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -94,13 +98,16 @@
     <PropertyGroup>
       <_KspKerbalismDeployDir>$(KSPBT_GameRoot)/GameData/Kerbalism</_KspKerbalismDeployDir>
       <_KspKerbalismConfigDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismConfig</_KspKerbalismConfigDeployDir>
+      <_KspKerbalismEngineFailuresDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismEngineFailures</_KspKerbalismEngineFailuresDeployDir>
     </PropertyGroup>
     <ItemGroup>
       <_KerbalismDeployFiles Include="$(KSPBT_ModRoot)/**/*" />
       <_KerbalismConfigDeployFiles Include="$(ProjectRootDir)GameData/KerbalismConfig/**/*" />
+      <_KerbalismEngineFailuresDeployFiles Include="$(ProjectRootDir)GameData/KerbalismEngineFailures/**/*" />
     </ItemGroup>
     <Copy SourceFiles="@(_KerbalismDeployFiles)" DestinationFolder="$(_KspKerbalismDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(_KerbalismConfigDeployFiles)" DestinationFolder="$(_KspKerbalismConfigDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" />
-    <Message Text="Deployed GameData/Kerbalism and GameData/KerbalismConfig to $(KSPBT_GameRoot)" Importance="high" />
+    <Copy SourceFiles="@(_KerbalismEngineFailuresDeployFiles)" DestinationFolder="$(_KspKerbalismEngineFailuresDeployDir)/%(RecursiveDir)" SkipUnchangedFiles="true" Condition="Exists('$(ProjectRootDir)GameData/KerbalismEngineFailures')" />
+    <Message Text="Deployed GameData/Kerbalism, KerbalismConfig, and KerbalismEngineFailures to $(KSPBT_GameRoot)" Importance="high" />
   </Target>
 </Project>

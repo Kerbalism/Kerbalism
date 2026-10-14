@@ -12,7 +12,9 @@ namespace KERBALISM
 			if (node == null)
 				return;
 
-			node.TryGetValue("powerGeneration", ref powerGeneration);
+			// FFT FusionReactorMode writes PowerGeneration (PascalCase) in part configs.
+			if (!node.TryGetValue("PowerGeneration", ref powerGeneration))
+				node.TryGetValue("powerGeneration", ref powerGeneration);
 
 			ConfigNode[] inputNodes = node.GetNodes("INPUT_RESOURCE");
 			for (int i = 0; i < inputNodes.Length; i++)

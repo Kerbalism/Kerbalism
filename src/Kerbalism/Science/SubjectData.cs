@@ -44,28 +44,31 @@ namespace KERBALISM
 		public double ScienceCollectedInFlight { get; protected set; }
 
 		/// <summary> total science value of the subject.  </summary>
-		public double ScienceMaxValue => ExpInfo.ScienceCap * Situation.SituationMultiplier; 
+		public virtual double ScienceMaxValue => ExpInfo.ScienceCap * Situation.SituationMultiplier; 
 
 		public double SciencePerMB => ScienceMaxValue / ExpInfo.DataSize;
 
 		/// <summary> science points recovered or transmitted </summary>
 		// Note : this code is a bit convoluted to avoid "never completed" issues due to float <> double conversions
-		public double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science <= 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
-
-		/// <summary> all science points recovered, transmitted or collected in flight </summary>
-		public double ScienceCollectedTotal => ScienceCollectedInFlight + ScienceRetrievedInKSC;
-
-		/// <summary> science value remaining to collect. </summary>
-		public double ScienceRemainingToCollect => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
+		public virtual double ScienceRetrievedInKSC => ExistsInRnD ? (RnDSubject.scienceCap - RnDSubject.science <= 0f) ? ScienceMaxValue : RnDSubject.science : 0.0;
 
 		/// <summary> science value remaining to retrieve. </summary>
 		public double ScienceRemainingToRetrieve => Math.Max(ScienceMaxValue - ScienceRetrievedInKSC, 0.0);
+
+		/// <summary> useful science value collected in flight, excluding redundant force-run data </summary>
+		public double ScienceCollectedInFlightValue => Math.Min(ScienceCollectedInFlight, ScienceRemainingToRetrieve);
+
+		/// <summary> useful science points recovered, transmitted or collected in flight </summary>
+		public double ScienceCollectedTotal => Math.Min(ScienceRetrievedInKSC + ScienceCollectedInFlightValue, ScienceMaxValue);
+
+		/// <summary> science value remaining to collect. </summary>
+		public double ScienceRemainingToCollect => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> science value remaining (accounting for retrieved in KSC and collected in flight) </summary>
 		public double ScienceRemainingTotal => Math.Max(ScienceMaxValue - ScienceCollectedTotal, 0.0);
 
 		/// <summary> percentage [0;1] of science collected. </summary>
-		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : (ScienceCollectedInFlight / ScienceMaxValue) + PercentRetrieved;
+		public double PercentCollectedTotal => ScienceMaxValue == 0.0 ? 0.0 : ScienceCollectedTotal / ScienceMaxValue;
 
 		public string DebugStateInfo => $"{FullTitle} :\nExistsInRnD={ExistsInRnD} - ScienceMaxValue={ScienceMaxValue} - SciencePerMB={SciencePerMB} - ScienceCollectedInFlight={ScienceCollectedInFlight} - RnDSubject.science={RnDSubject?.science}";
 
@@ -188,26 +191,26 @@ namespace KERBALISM
 		}
 
 		/// <summary> add data to the in-flight collected science </summary>
-		public void AddDataCollectedInFlight(double dataAmount)
+		public virtual void AddDataCollectedInFlight(double dataAmount)
 		{
 			ScienceCollectedInFlight += dataAmount * SciencePerMB;
 		}
 
 		/// <summary> remove data from the in-flight collected science </summary>
-		public void RemoveDataCollectedInFlight(double dataAmount)
+		public virtual void RemoveDataCollectedInFlight(double dataAmount)
 		{
 			ScienceCollectedInFlight -= dataAmount * SciencePerMB;
 			if (ScienceCollectedInFlight < 0.0) ScienceCollectedInFlight = 0.0;
 		}
 
 		/// <summary> remove science points from the in-flight collected science </summary>
-		public void RemoveScienceCollectedInFlight(double credits)
+		public virtual void RemoveScienceCollectedInFlight(double credits)
 		{
 			ScienceCollectedInFlight -= credits;
 			if (ScienceCollectedInFlight < 0.0) ScienceCollectedInFlight = 0.0;
 		}
 
-		public void ClearDataCollectedInFlight() => ScienceCollectedInFlight = 0.0;
+		public virtual void ClearDataCollectedInFlight() => ScienceCollectedInFlight = 0.0;
 
 		/// <summary>
 		/// update our subject completion database.
@@ -239,7 +242,7 @@ namespace KERBALISM
 		/// <param name="fromVessel">passed to the OnScienceRecieved gameevent on subject completion. Can be null if not available</param>
 		/// <param name="file">if not null, the "subject completed" completed message will use the result text stored in the file. If null, it will be a generic message</param>
 		/// <returns>The amount of science credited, accounting for the subject + included subjects remaining science value</returns>
-		public double RetrieveScience(double scienceValue, bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
+		public virtual double RetrieveScience(double scienceValue, bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
 		{
 			if (!ExistsInRnD)
 				CreateSubjectInRnD();
@@ -249,12 +252,13 @@ namespace KERBALISM
 			if (!API.preventScienceCrediting)
 				ScienceDB.uncreditedScience += scienceRetrieved;
 
-			// fire subject completed events
-			int timesCompleted = UpdateSubjectCompletion(scienceValue);
+			// Track repeated retrievals, but don't let one oversized force-run result count as multiple completions (#832)
+			double completionValue = Math.Min(scienceValue, ScienceMaxValue);
+			int timesCompleted = UpdateSubjectCompletion(completionValue);
 			if (timesCompleted > 0)
 				OnSubjectCompleted(showMessage, fromVessel, file);
 
-			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceValue), RnDSubject.scienceCap);
+			RnDSubject.science = Math.Min((float)(RnDSubject.science + scienceRetrieved), RnDSubject.scienceCap);
 			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
 
 			if (API.subjectsReceivedEventEnabled)
@@ -297,7 +301,7 @@ namespace KERBALISM
 			else
 				GameEvents.OnScienceRecieved.Fire(TimesCompleted == 1 ? (float)ScienceMaxValue : 0f, RnDSubject, fromVessel, false);
 
-			if (ExpInfo.UnlockResourceSurvey)
+			if (ExpInfo.UnlockResourceSurvey && Situation.Body != null)
 			{
 				ResourceMap.Instance.UnlockPlanet(Situation.Body.flightGlobalsIndex);
 				Message.Post(Localizer.Format("#autoLOC_259361", Situation.BodyTitle) + "</color>");
@@ -348,11 +352,43 @@ namespace KERBALISM
 			RnDSubject = stockSubject;
 			ScienceCollectedInFlight = 0.0;
 
+			// Mods such as CactEye create the stock ScienceSubject before Kerbalism sees the
+			// ScienceData; link to that existing RnD entry instead of waiting for CreateSubjectInRnD.
+			if (RnDSubject == null)
+				CheckRnD();
+
 			TimesCompleted = ExistsInRnD ? (int)(RnDSubject.science / (RnDSubject.scienceCap - Science.scienceLeftForSubjectCompleted)) : 0;
 			PercentRetrieved = ExistsInRnD ? RnDSubject.science / ScienceMaxValue : 0.0;
 		}
 
 		public override string Id => StockSubjectId;
+
+		/// <summary>
+		/// Prefer the stock/RnD scienceCap when present (DMOS asteroid subjects set subjectValue/scienceCap
+		/// themselves; UnknownSituation has no real body multiplier).
+		/// </summary>
+		public override double ScienceMaxValue =>
+			ExistsInRnD && RnDSubject.scienceCap > 0f
+				? RnDSubject.scienceCap
+				: ExpInfo.ScienceCap * Situation.SituationMultiplier;
+
+		/// <summary>
+		/// Kerbalism truth for recovered/transmitted science. Do not read RnDSubject.science here:
+		/// that field may temporarily include in-flight data so external mods cannot re-farm (#880).
+		/// </summary>
+		public override double ScienceRetrievedInKSC
+		{
+			get
+			{
+				if (!ExistsInRnD)
+					return 0.0;
+
+				double retrieved = PercentRetrieved * ScienceMaxValue;
+				if (ScienceMaxValue - retrieved <= Science.scienceLeftForSubjectCompleted)
+					return ScienceMaxValue;
+				return retrieved;
+			}
+		}
 
 		public override string FullTitle =>
 			ExistsInRnD
@@ -370,5 +406,63 @@ namespace KERBALISM
 			: string.IsNullOrEmpty(extraSituationInfo)
 			? Situation.BiomeTitle
 			: Lib.BuildString(Situation.BiomeTitle, " - ", extraSituationInfo);
+
+		public override void AddDataCollectedInFlight(double dataAmount)
+		{
+			base.AddDataCollectedInFlight(dataAmount);
+			SyncStockSubjectCommittedScience();
+		}
+
+		public override void RemoveDataCollectedInFlight(double dataAmount)
+		{
+			base.RemoveDataCollectedInFlight(dataAmount);
+			SyncStockSubjectCommittedScience();
+		}
+
+		public override void RemoveScienceCollectedInFlight(double credits)
+		{
+			base.RemoveScienceCollectedInFlight(credits);
+			SyncStockSubjectCommittedScience();
+		}
+
+		public override void ClearDataCollectedInFlight()
+		{
+			base.ClearDataCollectedInFlight();
+			SyncStockSubjectCommittedScience();
+		}
+
+		public override double RetrieveScience(double scienceValue, bool showMessage = false, ProtoVessel fromVessel = null, File file = null)
+		{
+			double scienceRetrieved = base.RetrieveScience(scienceValue, showMessage, fromVessel, file);
+			SyncStockSubjectCommittedScience();
+			return scienceRetrieved;
+		}
+
+		/// <summary>
+		/// Expose retrieved + in-flight science on the stock subject so mods that gate repeats on
+		/// <see cref="ScienceSubject.science"/> (e.g. CactEye) cannot re-run while data is still aboard.
+		/// </summary>
+		public void SyncStockSubjectCommittedScience()
+		{
+			if (!ExistsInRnD)
+				CreateSubjectInRnD();
+			if (!ExistsInRnD)
+				return;
+
+			RnDSubject.science = (float)Math.Min(ScienceCollectedTotal, RnDSubject.scienceCap);
+			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
+		}
+
+		/// <summary>
+		/// Persist only recovered/transmitted science on the stock subject; in-flight data lives on drives.
+		/// </summary>
+		public void PrepareStockSubjectForSave()
+		{
+			if (!ExistsInRnD)
+				return;
+
+			RnDSubject.science = (float)Math.Min(ScienceRetrievedInKSC, RnDSubject.scienceCap);
+			RnDSubject.scientificValue = ResearchAndDevelopment.GetSubjectValue(RnDSubject.science, RnDSubject);
+		}
 	}
 }

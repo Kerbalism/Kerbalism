@@ -22,7 +22,7 @@ namespace KERBALISM
 
 			foreach (Part part in v.parts)
 			{
-				if (part.FindModuleImplementing<CryoTankKerbalismUpdater>() == null)
+				if (!part.HasModuleImplementingFast<CryoTankKerbalismUpdater>())
 					continue;
 
 				PartModule cryo = CryoTanks.FindCryoTankModule(part);

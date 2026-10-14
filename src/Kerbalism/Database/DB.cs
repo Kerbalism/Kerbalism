@@ -11,12 +11,7 @@ namespace KERBALISM
         {
             // get version (or use current one for new savegames)
             string versionStr = Lib.ConfigValue(node, "version", Lib.KerbalismVersion.ToString());
-            // sanitize old saves (pre 3.1) format (X.X.X.X) to new format (X.X)
-            if (versionStr.Split('.').Length > 2) versionStr = versionStr.Split('.')[0] + "." + versionStr.Split('.')[1];
             version = new Version(versionStr);
-
-            // if this is an unsupported version, print warning
-            if (version <= new Version(1, 2)) Lib.Log("loading save from unsupported version " + version);
 
             // get unique id (or generate one for new savegames)
             uid = Lib.ConfigValue(node, "uid", Lib.RandomInt(int.MaxValue));
@@ -33,6 +28,7 @@ namespace KERBALISM
 
 			// load the science database, has to be before vessels are loaded
 			ScienceDB.Load(node);
+			ScanCoverageStore.LoadGlobal(node);
 
 			Profiler.BeginSample("DB.Load.Vessels");
 			vessels.Clear();
@@ -59,33 +55,6 @@ namespace KERBALISM
 				}
 			}
 			Profiler.EndSample();
-
-			// for compatibility with old saves, convert drives data (it's now saved in PartData)
-			if (node.HasNode("drives"))
-			{
-				Dictionary<uint, PartData> allParts = new Dictionary<uint, PartData>();
-				foreach (VesselData vesselData in vessels.Values)
-				{
-					foreach (PartData partData in vesselData.PartDatas)
-					{
-						// we had a case of someone having a save with multiple parts having the same flightID
-						// 5 duplicates, all were asteroids.
-						if (!allParts.ContainsKey(partData.FlightId))
-						{
-							allParts.Add(partData.FlightId, partData);
-						}
-					}
-				}
-
-				foreach (var drive_node in node.GetNode("drives").GetNodes())
-				{
-					uint driveId = Lib.Parse.ToUInt(drive_node.name);
-					if (allParts.ContainsKey(driveId))
-					{
-						allParts[driveId].Drive = new Drive(drive_node);
-					}
-				}
-			}
 
 			// load bodies data
 			storms = new Dictionary<string, StormData>();
@@ -120,6 +89,14 @@ namespace KERBALISM
 			// migrate pre-3.25 process controllers
 			ProcessController.MigrateSaves(version);
 
+			// 3.42 background thermal sim wrote false SystemHeat reactor meltdowns on unload (#1200).
+			// Revert them once per save last written by 3.42; the flag keeps this from re-running on
+			// saves produced by the fixed code (same Major.Minor when shipped as a point release).
+			systemHeatMeltdownMigrated = Lib.ConfigValue(node, "systemHeatMeltdownMigrated", false);
+			if (!systemHeatMeltdownMigrated && version.Major == 3 && version.Minor == 42)
+				SystemHeatBackgroundThermal.MigrateFalseMeltdowns();
+			systemHeatMeltdownMigrated = true;
+
 			// if an old savegame was imported, log some debug info
 			if (version != Lib.KerbalismVersion) Lib.Log("savegame converted from version " + version + " to " + Lib.KerbalismVersion);
         }
@@ -131,6 +108,8 @@ namespace KERBALISM
 
             // save unique id
             node.AddValue("uid", uid);
+
+			node.AddValue("systemHeatMeltdownMigrated", systemHeatMeltdownMigrated);
 
 			// save kerbals data
 			var kerbals_node = node.AddNode("kerbals");
@@ -160,6 +139,7 @@ namespace KERBALISM
 
 			// save the science database
 			ScienceDB.Save(node);
+			ScanCoverageStore.SaveGlobal(node);
 
             // save bodies data
             var bodies_node = node.AddNode("bodies");
@@ -276,6 +256,7 @@ namespace KERBALISM
 
         public static Version version;                         // savegame version
         public static int uid;                                 // savegame unique id
+        public static bool systemHeatMeltdownMigrated;         // #1200 false meltdown revert already applied to this save
         private static Dictionary<string, KerbalData> kerbals; // store data per-kerbal
         private static Dictionary<Guid, VesselData> vessels = new Dictionary<Guid, VesselData>();    // store data per-vessel
         public static Dictionary<string, StormData> storms;     // store data per-body

@@ -22,7 +22,7 @@ namespace KERBALISM
 
 		private void InitializeDeployState()
 		{
-			requiresDeploy = requireDeploy && part.FindModuleImplementing<ModuleAnimationGroup>() != null;
+			requiresDeploy = requireDeploy && part.HasModuleImplementingFast<ModuleAnimationGroup>();
 			if (!requiresDeploy || Lib.IsEditor())
 				deployed = true;
 			else
@@ -35,7 +35,7 @@ namespace KERBALISM
 
 		private void SyncDeployedFromAnimator()
 		{
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			if (animator == null)
 				return;
 
@@ -61,7 +61,7 @@ namespace KERBALISM
 			if (!DeployGateActive())
 				return true;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			return animator == null || IsAnimatorReadyForUse(animator);
 		}
 
@@ -114,7 +114,7 @@ namespace KERBALISM
 			if (!DeployGateActive())
 				return;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			deployed = IsAnimatorReadyForUse(animator);
 		}
 
@@ -151,21 +151,11 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			if (DeployGateActive())
-				Events["Toggle"].guiActive = IsDeployedForUse() && !broken;
-			else
-				Events["Toggle"].guiActive = !broken;
-
-			Events["Toggle"].guiName = Lib.StatusToggle(lastMultiplier + " " + title,
-				broken ? Local.ProcessController_broken
-					: running ? Local.ProcessController_running
-					: Local.ProcessController_stopped);
-
-			if (Events["DumpValve"].active)
-			{
-				Events["DumpValve"].guiActive = !DeployGateActive() || IsDeployedForUse();
-				ProcessControllerUiHelper.RefreshDumpValveLabel(this);
-			}
+			bool toggleActive = DeployGateActive() ? IsDeployedForUse() && !broken : !broken;
+			bool? dumpActive = Events["DumpValve"].active
+				? !DeployGateActive() || IsDeployedForUse()
+				: (bool?)null;
+			RefreshPAWLabels(toggleActive, dumpActive, false);
 		}
 	}
 }

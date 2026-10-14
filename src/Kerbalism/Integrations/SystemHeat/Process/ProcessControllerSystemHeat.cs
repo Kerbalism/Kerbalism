@@ -44,13 +44,27 @@ namespace KERBALISM
 		private float lastUiPowerPercent = -1f;
 		private int flightThermalGraceFrames = 0;
 		private int fissionLoopRestoreFrames = 0;
+		private bool efficiencyDisplayInitialized;
+		private bool lastEfficiencyWasPlaceholder;
+		private double lastEfficiencyPercent;
+		private bool coreStatusInitialized;
+		private bool lastCoreStatusWasMeltdown;
+		private double lastCoreHealthPercent;
 		private const int DeployAnimationSettleFrames = 2;
 
 		public string ReactorPowerStatus => IsRunning() ? CurrentPowerPercent.ToString("0.#") + "%" : Local.Generic_STOPPED;
 
 		private double ReactorPowerScale => IsRunning() ? Mathf.Clamp(CurrentPowerPercent, 0f, 100f) / 100.0 : 0.0;
 
-		private bool IsFissionReactor() => resource == "_Nukereactor";
+		/// <summary>
+		/// True when core-damage thresholds are configured on this module.
+		/// Gate is independent of the process pseudo-resource name so multi-recipe
+		/// reactors can keep distinct modifiers and still get fission UI / damage.
+		/// </summary>
+		internal static bool HasCoreDamageConfig(float meltdownTemperature, float maximumTemperature)
+			=> meltdownTemperature > 0f && maximumTemperature > meltdownTemperature;
+
+		internal bool IsFissionReactor() => HasCoreDamageConfig(meltdownTemperature, MaximumTemperature);
 
 		private float EffectiveShutdownTemperature() => IsFissionReactor() ? CurrentSafetyOverride : shutdownTemperature;
 
@@ -262,16 +276,18 @@ namespace KERBALISM
 					protoHeat = protoModule;
 			}
 
-			if (protoHeat == null || !Lib.Proto.GetBool(protoHeat, "backgroundFluxAnchorValid"))
+			if (protoHeat == null)
 				return false;
 
-			float anchorTemp = Lib.Proto.GetFloat(protoHeat, "backgroundFluxAnchorTemperature");
-			return anchorTemp > 0f && anchorTemp <= shutdown;
+			// The persisted loop temperature is where the loop was when the vessel last left the loaded state.
+			// A hotter live reading during the first frames after load is a SystemHeat loop rebuild transient.
+			float persistedTemp = Lib.Proto.GetFloat(protoHeat, "currentLoopTemperature");
+			return persistedTemp > 0f && persistedTemp <= shutdown;
 		}
 
 		private void InitializeDeployState()
 		{
-			requiresDeploy = requireDeploy && part.FindModuleImplementing<ModuleAnimationGroup>() != null;
+			requiresDeploy = requireDeploy && part.HasModuleImplementingFast<ModuleAnimationGroup>();
 			if (!requiresDeploy || Lib.IsEditor())
 				deployed = true;
 			else
@@ -284,7 +300,7 @@ namespace KERBALISM
 
 		private void SyncDeployedFromAnimator()
 		{
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			if (animator == null)
 				return;
 
@@ -310,7 +326,7 @@ namespace KERBALISM
 			if (!DeployGateActive())
 				return true;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			return animator == null || IsAnimatorReadyForUse(animator);
 		}
 
@@ -363,7 +379,7 @@ namespace KERBALISM
 			if (!DeployGateActive())
 				return;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			deployed = IsAnimatorReadyForUse(animator);
 		}
 
@@ -465,14 +481,27 @@ namespace KERBALISM
 
 			if (CoreDamage >= 100f || broken)
 			{
-				CoreStatus = Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatFissionReactor_Field_CoreStatus_Meltdown");
+				if (coreStatusInitialized && lastCoreStatusWasMeltdown)
+					return;
+
+				Lib.SetPAWValue(ref CoreStatus,
+					Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatFissionReactor_Field_CoreStatus_Meltdown"));
+				coreStatusInitialized = true;
+				lastCoreStatusWasMeltdown = true;
 				return;
 			}
 
 			float loopK = heatModule != null ? SystemHeat.CurrentLoopTemperature(heatModule) : 0f;
 			float health = SystemHeatEditorSimulation.GetCoreHealthPercent(
 				loopK, meltdownTemperature, MaximumTemperature, CoreDamage);
-			CoreStatus = string.Format("{0:F2} %", health);
+			double roundedHealth = Math.Round(health, 2, MidpointRounding.ToEven);
+			if (coreStatusInitialized && !lastCoreStatusWasMeltdown && lastCoreHealthPercent.Equals(roundedHealth))
+				return;
+
+			Lib.SetPAWValue(ref CoreStatus, string.Format("{0:F2} %", roundedHealth));
+			coreStatusInitialized = true;
+			lastCoreStatusWasMeltdown = false;
+			lastCoreHealthPercent = roundedHealth;
 		}
 
 		internal void SyncPlannerPseudoResource()
@@ -496,7 +525,26 @@ namespace KERBALISM
 
 		private void SetEfficiencyPlaceholder()
 		{
-			ConverterOfEfficiency = Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", "-1");
+			if (efficiencyDisplayInitialized && lastEfficiencyWasPlaceholder)
+				return;
+
+			Lib.SetPAWValue(ref ConverterOfEfficiency,
+				Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", "-1"));
+			efficiencyDisplayInitialized = true;
+			lastEfficiencyWasPlaceholder = true;
+		}
+
+		private void SetEfficiencyDisplay(double efficiency)
+		{
+			double percent = Math.Round(efficiency * 100.0, 1, MidpointRounding.ToEven);
+			if (efficiencyDisplayInitialized && !lastEfficiencyWasPlaceholder && lastEfficiencyPercent.Equals(percent))
+				return;
+
+			Lib.SetPAWValue(ref ConverterOfEfficiency,
+				Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", percent.ToString("F1")));
+			efficiencyDisplayInitialized = true;
+			lastEfficiencyWasPlaceholder = false;
+			lastEfficiencyPercent = percent;
 		}
 
 		public new void Update()
@@ -526,21 +574,11 @@ namespace KERBALISM
 			if (!part.IsPAWVisible())
 				return;
 
-			if (DeployGateActive())
-				Events["Toggle"].guiActive = IsDeployedForUse() && !broken;
-			else
-				Events["Toggle"].guiActive = !broken;
-
-			Events["Toggle"].guiName = Lib.StatusToggle(lastMultiplier + " " + title,
-				broken ? Local.ProcessController_broken
-					: running ? Local.ProcessController_running
-					: Local.ProcessController_stopped);
-
-			if (Events["DumpValve"].active)
-			{
-				Events["DumpValve"].guiActive = !DeployGateActive() || IsDeployedForUse();
-				ProcessControllerUiHelper.RefreshDumpValveLabel(this);
-			}
+			bool toggleActive = DeployGateActive() ? IsDeployedForUse() && !broken : !broken;
+			bool? dumpActive = Events["DumpValve"].active
+				? !DeployGateActive() || IsDeployedForUse()
+				: (bool?)null;
+			RefreshPAWLabels(toggleActive, dumpActive, false);
 		}
 
 		public override void Configure(bool enable, int multiplier)
@@ -686,7 +724,7 @@ namespace KERBALISM
 			float loopK = SystemHeat.CurrentLoopTemperature(heatModule);
 			double thermalEff = SystemHeatEditorSimulation.CalculateProcessEfficiency(systemEfficiency, loopK, systemPower, false);
 			double displayEff = IsFissionReactor() ? Math.Min(thermalEff, 1.0) : thermalEff;
-			ConverterOfEfficiency = Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", (displayEff * 100f).ToString("F1"));
+			SetEfficiencyDisplay(displayEff);
 		}
 
 		private void ApplyThermalCapacityScale(bool force = false)
@@ -725,7 +763,7 @@ namespace KERBALISM
 			double thermalEff = SystemHeatEditorSimulation.CalculateProcessEfficiency(systemEfficiency, loopK, systemPower, SystemHeatEditorSimulation.IsEditorScene);
 			double displayEff = IsFissionReactor() ? Math.Min(thermalEff, 1.0) : thermalEff;
 
-			ConverterOfEfficiency = Localizer.Format("#LOC_SystemHeat_ModuleSystemHeatConverter_Field_Efficiency_Value", (displayEff * 100f).ToString("F1"));
+			SetEfficiencyDisplay(displayEff);
 
 			double desiredCapacity = SystemHeatEditorSimulation.IsEditorScene
 				? configuredCapacity * ReactorPowerScale
@@ -742,7 +780,7 @@ namespace KERBALISM
 
 		private void ApplyCoreDamage(float loopTemperature, float elapsedSeconds)
 		{
-			if (!IsFissionReactor() || meltdownTemperature <= 0f || elapsedSeconds <= 0f)
+			if (!IsFissionReactor() || elapsedSeconds <= 0f)
 				return;
 
 			CoreDamage = SystemHeatEditorSimulation.AccumulateCoreDamage(
@@ -778,7 +816,7 @@ namespace KERBALISM
 
 			ClearFlux();
 
-			foreach (Reliability reliability in part.FindModulesImplementing<Reliability>())
+			foreach (Reliability reliability in part.FindModulesImplementingReadOnly<Reliability>())
 			{
 				if (!MatchesProcessReliability(reliability))
 					continue;
@@ -810,7 +848,8 @@ namespace KERBALISM
 			List<KeyValuePair<string, double>> resourceChangeRequest,
 			double elapsed_s)
 		{
-			if (Lib.Proto.GetString(moduleSnapshot, "resource") == "_Nukereactor")
+			ProcessControllerSystemHeat heatPrefab = protoPartModule as ProcessControllerSystemHeat;
+			if (heatPrefab != null && heatPrefab.IsFissionReactor())
 				SystemHeatBackgroundThermal.SyncFrozenProcessReactor(v, partSnapshot, moduleSnapshot, protoPartModule, protoPart, elapsed_s);
 			else
 				SystemHeatBackgroundThermal.TryRun(v, elapsed_s);

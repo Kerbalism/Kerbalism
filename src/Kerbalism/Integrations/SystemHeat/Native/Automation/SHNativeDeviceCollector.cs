@@ -22,20 +22,20 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				if (part.FindModuleImplementing<SystemHeatConverterKerbalismUpdater>() != null)
+				SystemHeatConverterKerbalismUpdater updater = part.FindModuleImplementingFast<SystemHeatConverterKerbalismUpdater>();
+				if (updater != null)
 				{
-					SystemHeatConverterKerbalismUpdater updater = part.FindModuleImplementing<SystemHeatConverterKerbalismUpdater>();
 					PartModule converter = SystemHeat.FindConverter(part, updater.converterModuleID);
 					if (converter != null)
 						AddConverterDevice(devices, converter, updater.converterModuleID);
 				}
 
-				if (part.FindModuleImplementing<SystemHeatHarvesterKerbalismUpdater>() != null)
+				SystemHeatHarvesterKerbalismUpdater harvesterUpdater = part.FindModuleImplementingFast<SystemHeatHarvesterKerbalismUpdater>();
+				if (harvesterUpdater != null)
 				{
-					SystemHeatHarvesterKerbalismUpdater updater = part.FindModuleImplementing<SystemHeatHarvesterKerbalismUpdater>();
-					PartModule harvester = SystemHeat.FindHarvester(part, updater.harvesterModuleID);
+					PartModule harvester = SystemHeat.FindHarvester(part, harvesterUpdater.harvesterModuleID);
 					if (harvester != null)
-						AddHarvesterDevice(devices, harvester, updater.harvesterModuleID);
+						AddHarvesterDevice(devices, harvester, harvesterUpdater.harvesterModuleID);
 				}
 			}
 		}
