@@ -15,7 +15,6 @@ namespace KERBALISM
 	internal struct SubStepOrbitNative
 	{
 		public byte IsValid;
-		public int ParentBody;
 		public double Eccentricity;
 		public double MeanMotion;
 		public double Epoch;
@@ -144,11 +143,9 @@ namespace KERBALISM
 
 	internal struct SubStepBodyNative
 	{
-		public int FlightGlobalsIndex;
 		public int ParentBody;
 		public SubStepOrbitNative Orbit;
 		public double Radius;
-		public double AtmosphereDepth;
 		public double AngularVelocity;
 		public double ReferenceUT;
 		public double3 RootPosition;

@@ -60,11 +60,9 @@ namespace KERBALISM
 		public int BodyIndex { get; internal set; }
 		public Vector3d EndpointDirection { get; internal set; }
 		public double EndpointDistance { get; internal set; }
-		public double EndpointRawFlux { get; internal set; }
 		public double SunlightFactor { get; internal set; }
 		public double AtmosphericFactor { get; internal set; }
 		public double AverageRawFlux { get; internal set; }
-		public double AverageUnshadowedFlux { get; internal set; }
 		public double AverageDirectFlux { get; internal set; }
 		public ReadOnlyCollection<SubStepSunSample> Samples { get; internal set; }
 	}
@@ -75,28 +73,23 @@ namespace KERBALISM
 	public sealed class SubStepIntervalResult
 	{
 		private readonly Dictionary<int, SubStepSunResult> suns;
-		private readonly ReadOnlyDictionary<int, SubStepSunResult> readOnlySuns;
 
 		public Guid VesselId { get; }
 		public double StartUT { get; }
 		public double EndUT { get; }
 		public double ElapsedSeconds => EndUT - StartUT;
-		public int Generation { get; }
 		public string FallbackReason { get; }
 		public bool IsValid => string.IsNullOrEmpty(FallbackReason) && Samples.Count > 0;
 		public ReadOnlyCollection<SubStepGeometrySample> Samples { get; }
-		public IReadOnlyDictionary<int, SubStepSunResult> Suns => readOnlySuns;
 
-		internal SubStepIntervalResult(Guid vesselId, double startUT, double endUT, int generation,
+		internal SubStepIntervalResult(Guid vesselId, double startUT, double endUT,
 			SubStepGeometrySample[] samples, Dictionary<int, SubStepSunResult> suns, string fallbackReason)
 		{
 			VesselId = vesselId;
 			StartUT = startUT;
 			EndUT = endUT;
-			Generation = generation;
 			Samples = Array.AsReadOnly(samples ?? Array.Empty<SubStepGeometrySample>());
 			this.suns = suns ?? new Dictionary<int, SubStepSunResult>();
-			readOnlySuns = new ReadOnlyDictionary<int, SubStepSunResult>(this.suns);
 			FallbackReason = fallbackReason;
 		}
 
@@ -119,9 +112,9 @@ namespace KERBALISM
 			return rawFlux > 0.0 ? visibleFlux / rawFlux : 0.0;
 		}
 
-		internal static SubStepIntervalResult Invalid(Vessel vessel, double startUT, double endUT, int generation, string reason)
+		internal static SubStepIntervalResult Invalid(Vessel vessel, double startUT, double endUT, string reason)
 		{
-			return new SubStepIntervalResult(vessel == null ? Guid.Empty : vessel.id, startUT, endUT, generation,
+			return new SubStepIntervalResult(vessel == null ? Guid.Empty : vessel.id, startUT, endUT,
 				Array.Empty<SubStepGeometrySample>(), null, reason);
 		}
 	}

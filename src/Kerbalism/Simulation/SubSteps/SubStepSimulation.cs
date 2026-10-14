@@ -32,7 +32,6 @@ namespace KERBALISM
 		}
 
 		private static readonly Dictionary<Guid, VesselCache> cache = new Dictionary<Guid, VesselCache>();
-		private static int generation;
 		private static NativeArray<SubStepTimeNative> timeBuffer;
 		private static NativeArray<SubStepBodyNative> bodySnapshotBuffer;
 		private static NativeArray<SubStepVesselNative> vesselSnapshotBuffer;
@@ -41,13 +40,10 @@ namespace KERBALISM
 		private static NativeArray<SubStepVesselGeometryNative> vesselGeometryBuffer;
 		private static NativeArray<SubStepSunNative> sunResultBuffer;
 
-		public static int LastSampleCount { get; private set; }
-		public static int LastVesselCount { get; private set; }
 		public static int LastBodyPositionEvaluations { get; private set; }
 		public static double LastCoarseningRatio { get; private set; }
 		public static double LastJobsMilliseconds { get; private set; }
 		public static double LastCompleteWaitMilliseconds { get; private set; }
-		public static string LastFallbackReason { get; private set; }
 
 		public static void Init()
 		{
@@ -58,14 +54,10 @@ namespace KERBALISM
 		{
 			cache.Clear();
 			DisposeBuffers();
-			generation++;
-			LastSampleCount = 0;
-			LastVesselCount = 0;
 			LastBodyPositionEvaluations = 0;
 			LastCoarseningRatio = 1.0;
 			LastJobsMilliseconds = 0.0;
 			LastCompleteWaitMilliseconds = 0.0;
-			LastFallbackReason = string.Empty;
 		}
 
 		private static void DisposeBuffers()
@@ -79,21 +71,11 @@ namespace KERBALISM
 			if (timeBuffer.IsCreated) timeBuffer.Dispose();
 		}
 
-		public static void Invalidate(Vessel vessel)
-		{
-			if (vessel != null)
-			{
-				vessel.KerbalismData().SetSubStepInterval(null);
-				Invalidate(vessel.id);
-			}
-		}
-
 		public static void Invalidate(Guid vesselId)
 		{
 			cache.Remove(vesselId);
 			Vessel vessel = FlightGlobals.FindVessel(vesselId);
 			vessel?.KerbalismData().SetSubStepInterval(null);
-			generation++;
 		}
 
 		/// <summary>
@@ -139,21 +121,18 @@ namespace KERBALISM
 		{
 			double elapsedSeconds = endUT - startUT;
 			if (vessel == null)
-				return SubStepIntervalResult.Invalid(null, startUT, endUT, generation, "null vessel");
+				return SubStepIntervalResult.Invalid(null, startUT, endUT, "null vessel");
 			if (elapsedSeconds <= 0.0)
 			{
 				vessel.KerbalismData().SetSubStepInterval(null);
-				return SubStepIntervalResult.Invalid(vessel, startUT, endUT, generation, "empty interval");
+				return SubStepIntervalResult.Invalid(vessel, startUT, endUT, "empty interval");
 			}
 
 			if (TryGetCached(vessel.id, startUT, endUT, out SubStepIntervalResult cached))
 				return cached;
 
 			ComputeBatch(new List<Vessel> { vessel }, startUT, endUT);
-			if (TryGetCached(vessel.id, startUT, endUT, out cached))
-				return cached;
-			vessel.KerbalismData().SetSubStepInterval(null);
-			return SubStepIntervalResult.Invalid(vessel, startUT, endUT, generation, "batch produced no result");
+			return cache[vessel.id].Current;
 		}
 
 		private static bool TryGetCached(Guid vesselId, double startUT, double endUT, out SubStepIntervalResult result)
@@ -190,18 +169,13 @@ namespace KERBALISM
 				cache.Add(result.VesselId, entry);
 			}
 
-			if (!ReferenceEquals(entry.Current, result))
-			{
-				entry.Previous = entry.Current;
-				entry.Current = result;
-			}
+			entry.Previous = entry.Current;
+			entry.Current = result;
 		}
 
 		private static void ComputeBatch(List<Vessel> vessels, double startUT, double endUT)
 		{
 			Profiler.BeginSample("Kerbalism.SubStepSimulation");
-			generation++;
-			LastFallbackReason = string.Empty;
 			double elapsed = endUT - startUT;
 			if (elapsed <= 0.0)
 			{
@@ -211,7 +185,6 @@ namespace KERBALISM
 			if (Lib.HasPrincipia)
 			{
 				const string reason = "Principia non-Keplerian trajectories";
-				LastFallbackReason = reason;
 				for (int i = 0; i < vessels.Count; i++)
 					StoreInvalid(vessels[i], startUT, endUT, reason);
 				Profiler.EndSample();
@@ -221,7 +194,6 @@ namespace KERBALISM
 			List<CelestialBody> orderedBodies = BuildBodyOrder(out string bodyOrderFailure);
 			if (orderedBodies == null)
 			{
-				LastFallbackReason = bodyOrderFailure;
 				for (int i = 0; i < vessels.Count; i++)
 					StoreInvalid(vessels[i], startUT, endUT, bodyOrderFailure);
 				Profiler.EndSample();
@@ -243,12 +215,11 @@ namespace KERBALISM
 				}
 				else
 				{
-					LastFallbackReason = reason;
 					StoreInvalid(vessel, startUT, endUT, reason);
 				}
 			}
 
-			if (requests.Count == 0 || orderedBodies.Count == 0)
+			if (requests.Count == 0)
 			{
 				Profiler.EndSample();
 				return;
@@ -261,8 +232,6 @@ namespace KERBALISM
 			int bodyCount = orderedBodies.Count;
 			int sunCount = Sim.suns.Count;
 
-			LastSampleCount = sampleCount;
-			LastVesselCount = vesselCount;
 			LastBodyPositionEvaluations = sampleCount * bodyCount;
 			LastCoarseningRatio = sampleDuration / DefaultMaxStepSeconds;
 			LastJobsMilliseconds = 0.0;
@@ -323,7 +292,8 @@ namespace KERBALISM
 					};
 				}
 
-				System.Diagnostics.Stopwatch jobsTimer = System.Diagnostics.Stopwatch.StartNew();
+				System.Diagnostics.Stopwatch jobsTimer = Settings.SubStepSimulationLogging
+					? System.Diagnostics.Stopwatch.StartNew() : null;
 				JobHandle bodyHandle = new SubStepBodyPositionJob
 				{
 					Times = times,
@@ -360,13 +330,17 @@ namespace KERBALISM
 				}.Schedule(sampleCount * vesselCount * sunCount, 32, vesselHandle);
 				outstandingHandle = solarHandle;
 
-				System.Diagnostics.Stopwatch completeWaitTimer = System.Diagnostics.Stopwatch.StartNew();
+				System.Diagnostics.Stopwatch completeWaitTimer = Settings.SubStepSimulationLogging
+					? System.Diagnostics.Stopwatch.StartNew() : null;
 				solarHandle.Complete();
 				hasOutstandingHandle = false;
-				completeWaitTimer.Stop();
-				jobsTimer.Stop();
-				LastJobsMilliseconds = jobsTimer.Elapsed.TotalMilliseconds;
-				LastCompleteWaitMilliseconds = completeWaitTimer.Elapsed.TotalMilliseconds;
+				if (Settings.SubStepSimulationLogging)
+				{
+					completeWaitTimer.Stop();
+					jobsTimer.Stop();
+					LastJobsMilliseconds = jobsTimer.Elapsed.TotalMilliseconds;
+					LastCompleteWaitMilliseconds = completeWaitTimer.Elapsed.TotalMilliseconds;
+				}
 				ValidateBodyPositions(bodyPositions, sampleCount * bodyCount);
 				if (Settings.SubStepSimulationLogging)
 				{
@@ -376,12 +350,11 @@ namespace KERBALISM
 						Lib.LogLevel.Message, LastBodyPositionEvaluations, LastCoarseningRatio,
 						LastJobsMilliseconds, LastCompleteWaitMilliseconds);
 				}
-				BuildManagedResults(requests, orderedBodies, bodySlots, times, bodyPositions, vesselGeometry,
+				BuildManagedResults(requests, orderedBodies, times, bodyPositions, vesselGeometry,
 					sunResults, startUT, endUT, sampleCount, vesselCount, sunCount);
 			}
 			catch (Exception e)
 			{
-				LastFallbackReason = e.GetType().Name;
 				Lib.Log("Substep batch failed: {0}", Lib.LogLevel.Error, e);
 				for (int i = 0; i < requests.Count; i++)
 					StoreInvalid(requests[i].Vessel, startUT, endUT, e.GetType().Name);
@@ -406,7 +379,7 @@ namespace KERBALISM
 		private static void StoreInvalid(Vessel vessel, double startUT, double endUT, string reason)
 		{
 			vessel?.KerbalismData().SetSubStepInterval(null);
-			Store(SubStepIntervalResult.Invalid(vessel, startUT, endUT, generation, reason));
+			Store(SubStepIntervalResult.Invalid(vessel, startUT, endUT, reason));
 		}
 
 		private static void ValidateBodyPositions(NativeArray<double3> bodyPositions, int positionCount)
@@ -596,7 +569,7 @@ namespace KERBALISM
 		}
 
 		private static void BuildManagedResults(List<VesselRequest> requests, List<CelestialBody> bodies,
-			Dictionary<CelestialBody, int> bodySlots, NativeArray<SubStepTimeNative> times,
+			NativeArray<SubStepTimeNative> times,
 			NativeArray<double3> bodyPositions, NativeArray<SubStepVesselGeometryNative> vesselGeometry,
 			NativeArray<SubStepSunNative> sunResults, double startUT, double endUT,
 			int sampleCount, int vesselCount, int sunCount)
@@ -610,7 +583,6 @@ namespace KERBALISM
 					// Body positions are shared, but a failed vessel conic must not
 					// discard the other vessels' completed intervals.
 					const string reason = "non-finite vessel or solar geometry";
-					LastFallbackReason = reason;
 					StoreInvalid(vessel, startUT, endUT, reason);
 					continue;
 				}
@@ -633,7 +605,6 @@ namespace KERBALISM
 					double visibleDuration = 0.0;
 					double atmoDuration = 0.0;
 					double integratedRawFlux = 0.0;
-					double integratedUnshadowedFlux = 0.0;
 					double integratedFlux = 0.0;
 					SubStepSunSample[] starSamples = new SubStepSunSample[sampleCount];
 
@@ -648,7 +619,6 @@ namespace KERBALISM
 						double atmoFactor = AtmosphereFactor(mainBody, geometry.Altitude, radial, nativeSun.Direction);
 						atmoDuration += duration * atmoFactor;
 						integratedRawFlux += duration * rawFlux;
-						integratedUnshadowedFlux += duration * rawFlux * atmoFactor;
 						if (nativeSun.Visible != 0)
 						{
 							visibleDuration += duration;
@@ -665,18 +635,16 @@ namespace KERBALISM
 						BodyIndex = sunData.bodyIndex,
 						EndpointDirection = direction,
 						EndpointDistance = distance,
-						EndpointRawFlux = sunData.SolarFlux(distance),
 						SunlightFactor = visibleDuration / elapsed,
 						AtmosphericFactor = atmoDuration / elapsed,
 						AverageRawFlux = integratedRawFlux / elapsed,
-						AverageUnshadowedFlux = integratedUnshadowedFlux / elapsed,
 						AverageDirectFlux = integratedFlux / elapsed,
 						Samples = Array.AsReadOnly(starSamples)
 					});
 				}
 
 				SubStepIntervalResult result = new SubStepIntervalResult(
-					vessel.id, startUT, endUT, generation, samples, suns, null);
+					vessel.id, startUT, endUT, samples, suns, null);
 				vessel.KerbalismData().SetSubStepInterval(result);
 				Store(result);
 			}
@@ -735,7 +703,7 @@ namespace KERBALISM
 			}
 
 			snapshot.Trajectory = 1;
-			snapshot.Orbit = CreateOrbitSnapshot(orbit, mainBody);
+			snapshot.Orbit = CreateOrbitSnapshot(orbit);
 			if (snapshot.Orbit.IsValid == 0)
 				reason = "unsupported vessel conic";
 			return snapshot.Orbit.IsValid != 0;
@@ -748,8 +716,7 @@ namespace KERBALISM
 			Orbit orbit = body.orbitDriver?.orbit;
 			if (orbit != null && orbit.referenceBody != null && orbit.referenceBody != body)
 			{
-				if (!bodySlots.TryGetValue(orbit.referenceBody, out parent))
-					parent = -2;
+				parent = bodySlots[orbit.referenceBody];
 			}
 
 			Vector3d north = (body.GetWorldSurfacePosition(90.0, 0.0, 0.0) - body.position).normalized;
@@ -758,11 +725,9 @@ namespace KERBALISM
 
 			return new SubStepBodyNative
 			{
-				FlightGlobalsIndex = body.flightGlobalsIndex,
 				ParentBody = parent,
-				Orbit = parent >= 0 ? CreateOrbitSnapshot(orbit, parent) : default,
+				Orbit = parent >= 0 ? CreateOrbitSnapshot(orbit) : default,
 				Radius = body.Radius,
-				AtmosphereDepth = body.atmosphereDepth,
 				AngularVelocity = 2.0 * Math.PI * body.rotPeriodRecip,
 				ReferenceUT = referenceUT,
 				RootPosition = ToDouble3(body.position),
@@ -772,7 +737,7 @@ namespace KERBALISM
 			};
 		}
 
-		private static SubStepOrbitNative CreateOrbitSnapshot(Orbit orbit, int parentBody)
+		private static SubStepOrbitNative CreateOrbitSnapshot(Orbit orbit)
 		{
 			if (orbit == null || !IsFinite(orbit.eccentricity) || orbit.eccentricity < 0.0
 				|| Math.Abs(orbit.eccentricity - 1.0) < 1e-8
@@ -785,7 +750,6 @@ namespace KERBALISM
 			return new SubStepOrbitNative
 			{
 				IsValid = 1,
-				ParentBody = parentBody,
 				Eccentricity = orbit.eccentricity,
 				MeanMotion = orbit.meanMotion,
 				Epoch = orbit.epoch,

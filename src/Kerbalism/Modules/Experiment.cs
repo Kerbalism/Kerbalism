@@ -445,12 +445,11 @@ namespace KERBALISM
 
 			string issue;
 			SubjectData subjectData;
-			double backgroundProdFactor;
 
 			Profiler.BeginSample("Experiment.BackgroundUpdate.RunningUpdate");
 			try
 			{
-				backgroundProdFactor = RunningUpdate(
+				double prodFactor = RunningUpdate(
 					v, vd, GetSituation(vd), this, privateHdId, didPrepare, shrouded, // "this" is the prefab
 					ec,
 					resources,
@@ -475,7 +474,7 @@ namespace KERBALISM
 			Lib.Proto.Set(m, "situationId", situationId);
 			Lib.Proto.Set(m, "status", newStatus);
 			Lib.Proto.Set(m, "issue", issue);
-			Lib.Proto.Set(m, "prodFactor", backgroundProdFactor);
+			Lib.Proto.Set(m, "prodFactor", prodFactor);
 
 			if (expInfo.SampleMass > 0.0)
 				Lib.Proto.Set(m, "remainingSampleMass", remainingSampleMass);
@@ -496,7 +495,7 @@ namespace KERBALISM
 
 			int intervalStartSituationId = lastSituationId;
 			bool distributeBodyBiomes = TryGetBodyBiomeInterval(
-				v, vd, prefab, expInfo, elapsed_s, out SubStepIntervalResult subStepInterval);
+				v, expInfo, elapsed_s, out SubStepIntervalResult subStepInterval);
 			subjectData = ScienceDB.GetSubjectData(expInfo, vs);
 
 			bool subjectHasChanged = false;
@@ -708,12 +707,10 @@ namespace KERBALISM
 			public double ProductiveDuration;
 		}
 
-		private static bool TryGetBodyBiomeInterval(Vessel v, VesselData vd,
-			Experiment prefab, ExperimentInfo expInfo, double elapsedSeconds, out SubStepIntervalResult interval)
+		private static bool TryGetBodyBiomeInterval(Vessel v, ExperimentInfo expInfo,
+			double elapsedSeconds, out SubStepIntervalResult interval)
 		{
 			interval = null;
-			if (v == null || vd == null || expInfo == null)
-				return false;
 			if (expInfo.IsSample)
 				return false;
 			if (!SubStepSimulation.RequiresIntervalSampling(elapsedSeconds))

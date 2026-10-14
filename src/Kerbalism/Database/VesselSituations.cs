@@ -120,8 +120,6 @@ namespace KERBALISM
 		/// </summary>
 		public Situation GetExperimentSituationAt(ExperimentInfo expInfo, double altitude, double latitude, double longitude)
 		{
-			if (body == null || expInfo == null)
-				return null;
 			if (altitude < 0.0 || (body.atmosphere && altitude < body.atmosphereDepth))
 				return null;
 
@@ -255,12 +253,13 @@ namespace KERBALISM
 
 		public static int GetBiomeIndex(Vessel vessel)
 		{
-			return vessel == null ? -1 : GetBiomeIndex(vessel.mainBody, vessel.latitude, vessel.longitude);
+			double latitude = (vessel.latitude + 180.0 + 90.0) % 180.0 - 90.0;
+			return GetBiomeIndex(vessel.mainBody, latitude, vessel.longitude);
 		}
 
 		public static int GetBiomeIndex(CelestialBody body, double latitude, double longitude)
 		{
-			CBAttributeMapSO biomeMap = body?.BiomeMap;
+			CBAttributeMapSO biomeMap = body.BiomeMap;
 			if (biomeMap == null)
 				return -1;
 
