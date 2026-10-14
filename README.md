@@ -46,7 +46,7 @@ Optional :
 - [Module Manager]
 - [HarmonyKSP]
 - [KSPCommunityFixes]
-- [KSPBurst] v1.7.4.11 or later (full compiler package)
+- [KSPBurst] (full compiler package)
 - [CommunityResourcePack] (required by **KerbalismConfig** only, third-party config packs might not require it) 
 
 **Configuration packs**

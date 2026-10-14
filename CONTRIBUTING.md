@@ -324,9 +324,8 @@ and compiles `Kerbalism.dll`; compiler output is written under
 
 Open `Kerbalism.slnx` in Visual Studio or Rider for IDE debugging.
 
-This branch requires KSPBurst v1.7.4.11. Before publishing a release, add the
-`KSPBurst` dependency to Kerbalism's external NetKAN metadata (minimum version
-`v1.7.4.11`); the metadata is no longer maintained in this repository.
+Before publishing a release, add the `KSPBurst` dependency to Kerbalism's
+external NetKAN metadata; the metadata is no longer maintained in this repository.
 
 ### Debugging
 
