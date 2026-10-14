@@ -46,7 +46,7 @@ namespace KERBALISM
 			{
 				double rate = PETTurbineResourceSim.GetLoadedRate(module, module.vessel);
 				if (rate > 0.0)
-					ResourceCache.GetResource(module.vessel, "ElectricCharge").Produce(rate * Kerbalism.elapsed_s, ResourceBroker.WindTurbine);
+					ResourceCache.GetResource(module.vessel, "ElectricCharge").Produce(rate * SubStepSimulation.FixedStepSeconds, ResourceBroker.WindTurbine);
 				return false;
 			}
 			catch (System.Exception ex)

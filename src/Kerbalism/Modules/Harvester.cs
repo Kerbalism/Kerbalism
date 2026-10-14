@@ -209,7 +209,7 @@ namespace KERBALISM
 		public void FixedUpdate()
 		{
 			if (!SubStepSimulation.UsesLoadedResourceSteps)
-				SubStepUpdate(Kerbalism.elapsed_s);
+				SubStepUpdate(SubStepSimulation.FixedStepSeconds);
 		}
 
 		public void SubStepUpdate(double elapsedSeconds)

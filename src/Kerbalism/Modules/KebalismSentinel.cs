@@ -113,7 +113,7 @@ namespace KERBALISM
 		{
 			if (SubStepSimulation.UsesLoadedResourceSteps)
 				return !__instance.isTrackingEnabled || __instance.isTracking;
-			return UpdateTracking(__instance, Kerbalism.elapsed_s);
+			return UpdateTracking(__instance, SubStepSimulation.FixedStepSeconds);
 		}
 
 		public void SubStepUpdate(double elapsedSeconds)

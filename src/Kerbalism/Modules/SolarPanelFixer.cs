@@ -437,7 +437,7 @@ namespace KERBALISM
 			// At large timesteps the vessel scheduler accounts for every exposure step.
 			if (SubStepSimulation.UsesLoadedResourceSteps)
 				return;
-			SubStepUpdate(Kerbalism.elapsed_s);
+			SubStepUpdate(SubStepSimulation.FixedStepSeconds);
 		}
 
 		public void SubStepUpdate(double elapsedSeconds)

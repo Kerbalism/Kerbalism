@@ -956,7 +956,7 @@ namespace KERBALISM
 			{
 				// consume EC for the headlamps
 				if (kerbalEVA.lampOn && !SubStepSimulation.UsesLoadedResourceSteps)
-					ec.Consume(Settings.HeadLampsCost * TimeWarp.fixedDeltaTime, ResourceBroker.Light);
+					ec.Consume(Settings.HeadLampsCost * SubStepSimulation.FixedStepSeconds, ResourceBroker.Light);
 
 				if (ec.Amount > 0.0)
 				{
