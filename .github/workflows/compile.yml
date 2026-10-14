@@ -6,7 +6,6 @@ on:
       - '**/*.cs'
       - '**/*.csproj'
       - '**/*.props'
-      - '.github/workflows/compile.yml'
   workflow_dispatch:
 
 jobs:
