@@ -4,6 +4,8 @@ Support module designed to detect and patch the solar panel partmodule present o
 It patches or disable the target module at runtime, zeroing it's EC generation while keeping it's animation capacities. It implement it's own UI and support for the Planner and the Automation.
 It does it's own EC output calculations based on the Kerbalism simulation for both loaded and unloaded vessels and feed the result to the Kerbalism resource simulation.
 
+In-space vessels always reuse the latest loaded, realtime sunlit exposure while unloaded or in analytic timewarp. Saves without a measured exposure use 100% until the next realtime sunlit update; the former freeze difficulty setting is ignored. Body shadows and the analytic orbit sunlight fraction still affect electricity generation. Landed and splashed vessels retain their day/night and panel-orientation calculations.
+
 Note that if SolarPanelFixer is MM-patch added to a part, it must be added **after** the target module if that module is also added trough a MM-patch.
 
 As this module implement support for Kopernicus-modified systems with multi-star evaluation, tracking and selection, the Kopernicus own solar panel module should be removed from the configs.
