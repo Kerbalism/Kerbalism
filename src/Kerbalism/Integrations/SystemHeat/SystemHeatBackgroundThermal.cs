@@ -1894,7 +1894,7 @@ namespace KERBALISM
 			return true;
 		}
 
-		private static ProtoPartModuleSnapshot GetLinkedHeatModule(ProtoPartSnapshot part, Part prefab, string moduleId)
+		internal static ProtoPartModuleSnapshot GetLinkedHeatModule(ProtoPartSnapshot part, Part prefab, string moduleId)
 		{
 			return TryResolveHeatLink(part, prefab, moduleId, out HeatLink link) ? link.snapshot : null;
 		}
@@ -2352,7 +2352,7 @@ namespace KERBALISM
 			if (fuelAmount <= double.Epsilon || heatCost <= 0f)
 				return 0f;
 
-			if (maxCryoTemperature > 0f && loopTemperature > maxCryoTemperature)
+			if (maxCryoTemperature > 0f && SystemHeatCryoResourceSim.IsAboveCoolingTemperature(loopTemperature, maxCryoTemperature))
 				return 0f;
 
 			return (float)(heatCost * fuelAmount * 0.001);

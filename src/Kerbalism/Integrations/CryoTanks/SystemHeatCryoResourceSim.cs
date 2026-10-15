@@ -8,7 +8,14 @@ namespace KERBALISM
 	internal static class SystemHeatCryoResourceSim
 	{
 		internal const string BrokerName = "SystemHeatCryoTank";
+		internal const float CoolingTemperatureToleranceK = 0.05f;
 		internal static string BrokerTitle => Localizer.Format("#KERBALISM_Brokers_Cryotank");
+
+		// SystemHeat's float loop temperature can settle slightly above its cooling target.
+		internal static bool IsAboveCoolingTemperature(float loopTemperature, float coolingTemperature)
+		{
+			return loopTemperature > coolingTemperature + CoolingTemperatureToleranceK;
+		}
 
 		internal static PartModule FindCryoModule(Part part, string moduleId)
 		{
@@ -119,7 +126,12 @@ namespace KERBALISM
 				return BrokerTitle;
 
 			SystemHeatBackgroundThermal.TryRun(v, elapsed_s);
-			float loopTemp = GetLoopTemperature(part, SystemHeat.Get(cryoPrefab, "systemHeatModuleID", ""), v);
+			ProtoPartModuleSnapshot heatModule = SystemHeatBackgroundThermal.GetLinkedHeatModule(
+				part, cryoPrefab.part, SystemHeat.Get(cryoPrefab, "systemHeatModuleID", ""));
+			if (heatModule == null)
+				return BrokerTitle;
+
+			float loopTemp = Lib.Proto.GetFloat(heatModule, "currentLoopTemperature");
 
 			bool allFuelsBoiloff = !coolingAllowed || !coolingEnabled;
 			bool boiloffOccuring = false;
@@ -135,7 +147,7 @@ namespace KERBALISM
 					continue;
 
 				float cryoTemp = SystemHeatCryoTankAccess.GetCryoTemperature(fuel);
-				bool fuelShouldBoiloff = allFuelsBoiloff || (cryoTemp > 0f && loopTemp > cryoTemp);
+				bool fuelShouldBoiloff = allFuelsBoiloff || (cryoTemp > 0f && IsAboveCoolingTemperature(loopTemp, cryoTemp));
 				if (!fuelShouldBoiloff)
 					continue;
 
@@ -147,25 +159,6 @@ namespace KERBALISM
 
 			Lib.Proto.Set(cryoSnapshot, "BoiloffOccuring", boiloffOccuring);
 			return BrokerTitle;
-		}
-
-		static float GetLoopTemperature(ProtoPartSnapshot part, string systemHeatModuleId, Vessel v)
-		{
-			foreach (ProtoPartModuleSnapshot module in part.modules)
-			{
-				if (module.moduleName != "ModuleSystemHeat")
-					continue;
-
-				string moduleId = Lib.Proto.GetString(module, "moduleID");
-				if (!string.IsNullOrEmpty(systemHeatModuleId) && moduleId != systemHeatModuleId)
-					continue;
-
-				float temp = Lib.Proto.GetFloat(module, "currentLoopTemperature");
-				if (temp > 0f)
-					return temp;
-			}
-
-			return 300f;
 		}
 	}
 }

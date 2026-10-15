@@ -125,7 +125,8 @@ namespace KERBALISM
 		// Things like vessel situation, sunlight, temperature, radiation, 
 
 		/// <summary>
-		/// [environment] true when timewarping faster at 10000x or faster. When true, some fields are updated more frequently
+		/// [environment] true when the evaluation step is long compared to the vessel orbital period, or to the solar day
+		/// length when landed (see GetAnalyticThreshold). When true, some fields are updated more frequently
 		/// and their evaluation is changed to an analytic, timestep-independant and vessel-position-independant mode.
 		/// </summary>
 		public bool EnvIsAnalytic => isAnalytic; bool isAnalytic;
@@ -1468,11 +1469,47 @@ namespace KERBALISM
 		#endregion
 
 		#region environment evaluation
+		/// <summary>
+		/// Evaluation step length (in seconds) above which the environment is evaluated in analytic mode.
+		/// Discrete evaluation stays accurate as long as a step only covers a small part of the
+		/// sunlight cycle : the solar day when landed, the orbital period otherwise.
+		/// </summary>
+		private double GetAnalyticThreshold()
+		{
+			// minimum threshold, ~ 1/16 of a low Kerbin orbit (~ x6000 timewarp speed for loaded vessels)
+			const double minThreshold = 120.0;
+			// number of evaluation steps per sunlight cycle below which we switch to analytic mode
+			const double minStepsPerCycle = 16.0;
+
+			double cyclePeriod;
+			if (Lib.Landed(Vessel))
+			{
+				// double.MaxValue for bodies tidally locked to their star
+				cyclePeriod = Math.Abs(Vessel.mainBody.solarDayLength);
+			}
+			else
+			{
+				Orbit orbit = Vessel.orbitDriver?.orbit;
+				if (orbit == null)
+					return minThreshold;
+
+				// escape trajectories are never in shadow for long
+				if (orbit.eccentricity >= 1.0)
+					return double.MaxValue;
+
+				cyclePeriod = orbit.period;
+			}
+
+			if (double.IsNaN(cyclePeriod) || cyclePeriod <= 0.0)
+				return minThreshold;
+
+			return Math.Max(minThreshold, cyclePeriod / minStepsPerCycle);
+		}
+
 		private void EvaluateEnvironment(double elapsedSeconds)
 		{
 			Profiler.BeginSample("EvaluateEnvironment");
-			// we use analytic mode if more than 2 minutes of game time has passed since last evaluation (~ x6000 timewarp speed)
-			bool newAnalytic = elapsedSeconds > 120.0;
+			bool newAnalytic = elapsedSeconds > GetAnalyticThreshold();
 			if (newAnalytic != isAnalytic)
 			{
 				// Do not display a value computed with the other mode's semantics while
