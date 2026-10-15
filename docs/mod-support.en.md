@@ -46,6 +46,12 @@ These can run alongside Kerbalism, but some features will not work as their auth
 
 If `BackgroundResources` is loaded (often with DeepFreeze or TAC-LS), Kerbalism tries to disable its unloaded-vessel processing and may show a popup. That is a **conflict**, not “full support.” Prefer not running DeepFreeze or TAC-LS alongside Kerbalism.
 
+## Kerbal Construction Time
+
+Kerbalism automatically resupplies experiment consumables when a vessel is recovered to KCT storage. Previously recovered craft in VAB/SPH warehouses or build queues are also prepared for resupply when the save is loaded. Experiments start the next mission stopped, with fresh consumables based on their current configuration and reservoir upgrades. Broken experiments retain their failure state; collected science still uses the normal recovery process.
+
+This integration targets linuxgurugamer's KCT 1.4.13.1 and requires no KCT changes or module-template edits. RP-1's KCT fork is not covered by this integration.
+
 ## RemoteTech
 
 Code integration for RemoteTech antennas / control path still exists, and Settings.cfg has RT-specific EC factors. A large RT install is still **poorly maintained** compared to stock CommNet. Expect warnings and edge cases.

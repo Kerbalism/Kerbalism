@@ -46,6 +46,12 @@ Kerbalism 得在**未加载飞船**上继续跑生命维持、ISRU、科研、�
 
 若加载了 `BackgroundResources`（常随 DeepFreeze 或 TAC-LS 一起），Kerbalism 会尝试关掉它的卸载船处理，并可能弹窗。这是**冲突**，不是「完整支持」。实践里别和 DeepFreeze 或 TAC-LS 同装。
 
+## Kerbal Construction Time
+
+通过 KCT 回收整船时，Kerbalism 会自动为实验耗材安排补给。载入存档时，也会处理 VAB/SPH 仓库和建造队列中此前回收的飞船。下一次任务开始时，实验处于停止状态，并按当前配置和样本容量升级装满耗材。故障实验保留故障状态，已经取得的科学成果仍走正常回收流程。
+
+此集成针对 linuxgurugamer 的 KCT 1.4.13.1，无需修改 KCT 或其模块重置模板。RP-1 的 KCT 分支不在此次支持范围内。
+
 ## RemoteTech
 
 天线 / 控制路径的集成代码还在，Settings.cfg 里也有 RT 专用耗电系数。但大型 RT 安装相对原版 CommNet **维护很差**。边角问题会有，请自己测。

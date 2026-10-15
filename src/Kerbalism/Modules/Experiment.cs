@@ -221,6 +221,9 @@ namespace KERBALISM
 			Actions["StartAction"].guiName = Local.Generic_START + ": " + ExpInfo.Title;
 			Actions["StopAction"].guiName = Local.Generic_STOP + ": " + ExpInfo.Title;
 
+			if (Lib.IsEditor() && firstStart)
+				FirstStart();
+
 			if (Lib.IsFlight())
 			{
 				foreach (HardDrive hd in part.FindModulesImplementingReadOnly<HardDrive>())
@@ -238,9 +241,9 @@ namespace KERBALISM
 
 		private void FirstStart()
 		{
-			// initialize the remaining sample mass
-			// this needs to be done only once just after launch
-			if (!sample_collecting && ExpInfo.SampleMass > 0.0 && remainingSampleMass == 0)
+			// Preview fresh/resupplied consumables in the editor, then fill again at launch
+			// using the final configuration (including sample reservoir upgrades).
+			if (!sample_collecting && ExpInfo.SampleMass > 0.0)
 			{
 				remainingSampleMass = ExpInfo.SampleMass * sample_amount;
 				if (double.IsNaN(remainingSampleMass))
