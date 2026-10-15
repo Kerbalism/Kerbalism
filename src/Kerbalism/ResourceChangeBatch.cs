@@ -263,15 +263,14 @@ namespace KERBALISM
 				}
 			}
 
-			// Only these sets are covered by the one-shot rebuilds below. Other
-			// PartSets (resource UI, third-party/custom sets) must process every event.
+			// Only vessel sets are covered by the one-shot rebuilds below. Editor
+			// and custom sets must process events: ShipConstruct.UpdateResourceSets
+			// does not rebuild when the ship's parts are unchanged.
 			suppressedPartSets.Clear();
 			foreach (Vessel vessel in vessels)
 				AddSuppressedPartSets(vessel);
-			if (editorShip != null)
-				AddSuppressedPartSets(editorShip);
 
-			// Replay every notification, in order, using the resource's current value.
+			// Replay notifications in order, skipping transitions that are now no-ops.
 			// The writes have already happened; restoring historical values here would
 			// undo changes made after a startup scope ended. Harmony prefixes skip
 			// only the costly stock PartSet/Vessel handlers during this replay.
@@ -287,7 +286,7 @@ namespace KERBALISM
 				suppressedPartSets.Clear();
 			}
 
-			// Replace skipped handlers with one full refresh per loaded vessel/ship.
+			// Replace skipped handlers with one full refresh per loaded vessel.
 			foreach (Vessel vessel in vessels)
 			{
 				if (vessel != null)
@@ -307,15 +306,6 @@ namespace KERBALISM
 			AddSuppressedPartSets(vessel.crossfeedSets);
 			AddSuppressedPartSets(vessel.simulationCrossfeedSets);
 			AddSuppressedPartSets(vessel.parts);
-		}
-
-		private static void AddSuppressedPartSets(ShipConstruct ship)
-		{
-			if (ship == null)
-				return;
-
-			AddSuppressedPartSet(ship.resourcePartSet);
-			AddSuppressedSimulationPartSets(ship.parts);
 		}
 
 		private static void AddSuppressedPartSets(List<PartSet> partSets)
@@ -343,19 +333,6 @@ namespace KERBALISM
 			}
 		}
 
-		private static void AddSuppressedSimulationPartSets(List<Part> parts)
-		{
-			if (parts == null)
-				return;
-
-			for (int i = 0; i < parts.Count; i++)
-			{
-				Part part = parts[i];
-				if (part != null)
-					AddSuppressedPartSet(part.simulationCrossfeedPartSet);
-			}
-		}
-
 		private static void AddSuppressedPartSet(PartSet partSet)
 		{
 			if (partSet != null)
@@ -371,6 +348,9 @@ namespace KERBALISM
 						return;
 					bool flowState = change.Resource.flowState;
 					SyncSimulationResourceFlowState(change.Resource, flowState);
+					// Stock handlers assume a real transition and may remove resources on a no-op.
+					if (change.FromState == flowState)
+						return;
 					GameEvents.onPartResourceFlowStateChange.Fire(
 						new GameEvents.HostedFromToAction<PartResource, bool>(
 							change.Resource, change.FromState, flowState));
@@ -381,6 +361,8 @@ namespace KERBALISM
 						return;
 					PartResource.FlowMode flowMode = change.Resource.flowMode;
 					SyncSimulationResourceFlowMode(change.Resource, field, flowMode);
+					if (change.FromMode == flowMode)
+						return;
 					GameEvents.onPartResourceFlowModeChange.Fire(
 						new GameEvents.HostedFromToAction<PartResource, PartResource.FlowMode>(
 							change.Resource, change.FromMode, flowMode));
