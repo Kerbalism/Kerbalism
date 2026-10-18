@@ -229,7 +229,7 @@ namespace KERBALISM
 			else if (status == ExpStatus.Forced && subjectData != null)
 			{
 				sb.Append(", ");
-				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P1"), Lib.Kolor.Yellow, true));
+				sb.Append(Lib.Color(subjectData.PercentCollectedTotal.ToString("P2"), Lib.Kolor.Yellow, true));
 				sb.Append(" ");
 				sb.Append(Local.SCIENCEARCHIVE_collected);//collected
 			}
@@ -239,7 +239,7 @@ namespace KERBALISM
 				sb.Append("\n");
 				sb.Append(Local.SCIENCEARCHIVE_samples);//samples
 				sb.Append(" :<pos=20em>");
-				sb.Append(Lib.Color((remainingSampleMass / expInfo.SampleMass).ToString("F1"), Lib.Kolor.Yellow, true));
+				sb.Append(Lib.Color((remainingSampleMass / expInfo.SampleMass).ToString("F2"), Lib.Kolor.Yellow, true));
 				sb.Append(" (");
 				sb.Append(Lib.Color(Lib.HumanReadableMass(remainingSampleMass), Lib.Kolor.Yellow, true));
 				sb.Append(")");
