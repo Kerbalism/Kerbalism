@@ -93,11 +93,11 @@ namespace KERBALISM
 			if (part == null)
 				return;
 
-			ModuleAnimationGroup animator = part.FindModuleImplementing<ModuleAnimationGroup>();
+			ModuleAnimationGroup animator = part.FindModuleImplementingFast<ModuleAnimationGroup>();
 			if (animator == null)
 				return;
 
-			foreach (ProcessControllerSystemHeat module in part.FindModulesImplementing<ProcessControllerSystemHeat>())
+			foreach (ProcessControllerSystemHeat module in part.FindModulesImplementingReadOnly<ProcessControllerSystemHeat>())
 			{
 				if (!module.RequiresDeployGate())
 					continue;
@@ -113,7 +113,7 @@ namespace KERBALISM
 					module.DisableModule();
 			}
 
-			foreach (ProcessControllerDeployable module in part.FindModulesImplementing<ProcessControllerDeployable>())
+			foreach (ProcessControllerDeployable module in part.FindModulesImplementingReadOnly<ProcessControllerDeployable>())
 			{
 				if (!module.RequiresDeployGate())
 					continue;

@@ -20,6 +20,7 @@ namespace KERBALISM
 			Apply("SpaceDust", SpaceDust.Installed, () => SpaceDustIntegration.ApplyHarmonyPatches(harmony));
 			Apply("PlanetsideExplorationTechnologies", PlanetsideExplorationTechnologies.Installed, () => PlanetsideExplorationTechnologiesIntegration.ApplyHarmonyPatches(harmony));
 			Apply("SCANsat", SCANsat.APIAvailable, () => SCANsatIntegration.ApplyHarmonyPatches(harmony));
+			Apply("KCT", Features.Science && KCTIntegration.Installed, () => KCTIntegration.ApplyHarmonyPatches(harmony));
 			Apply("DynamicRadiation", true, () => DynamicRadiationIntegration.ApplyHarmonyPatches(harmony));
 
 			TryApplySystemHeatHarmony(harmony);

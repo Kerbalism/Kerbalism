@@ -20,15 +20,15 @@ Kerbalism is a mod for Kerbal Space Program that alters the game to add life sup
 
 For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 
-## Current version: 3.41
+## Current version: 3.43
  
-**Download** : **[Github releases]** - **[CKAN]**  
-**Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]  
-**License** : [Unlicense] (public domain)  
-**KSP version** : 1.12.x  
+**Download** : **[Github releases]** - **[CKAN]**
+**Docs & support** : **[Documentation]** - **[Discord]** - [FAQ] - [Github issues] - [KSP forums thread]
+**License** : [Unlicense] (public domain)
+**KSP version** : 1.12.x
 **Requires** : [Module Manager], [CommunityResourcePack], [HarmonyKSP], [KSPCommunityFixes]
 
-**[Mod compatibility]** - [Changelog] - [Dev Builds]
+**[Mod compatibility]** - [Changelog]
 
 ## Download and installation
 
@@ -36,8 +36,7 @@ For more detailed information, go to the **[Documentation]** and the **[FAQ]**.
 
 Two packages are required :
 - **Kerbalism** is the core plugin, always required.
-- **KerbalismConfig** is the official configuration pack.\
-  It can be be replaced by other packs distributed elsewhere.
+- **KerbalismConfig** is the official configuration pack, but it can be be replaced by other packs distributed elsewhere.
 
 Optional :
 - **KerbalismEngineFailures** adds engine ignition counts, rated burn time and turn-on failures. Recommended by CKAN with official KerbalismConfig. Conflicts with TestFlight / RO / RP-1.
@@ -65,20 +64,18 @@ Don't combine packs unless there is explicit instructions to do so.
 
 ## Important notice
 
-Kerbalism hasn't been under full active developement since many years now. Despite various minor bugs and shortcomings, the mod is still functional and can be quite fun to play with.
-However, do note that due to the lack of maintainance, there are a lot of compatibility issues with the wider modding ecosystem.  R-T-B is maintaining it now and doing his best, but the reality is there are probably more integration bugs than he has time to fix.  So PR's are most welcome.
+There may be compatibility issues with some mods. R-T-B is maintaining it now and doing his best. PRs are most welcome.
 
-In the current state of things, **Kerbalism is best played in a very lightly modded game**.
-
-In particular, mods introducing mechanisms or features that greatly differ from the stock ones are very likely to cause issues.
-This notably include most "future scope" mods like KSPIE, Near Future Tech, Far Future Tech, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
-Many large part packs are also improperly supported, BDB notably, but a few others too.
+Mods introducing mechanisms or features that greatly differ from the stock ones are more likely to cause issues.
+This notably include most "future scope" mods like KSPIE, USI MKS, BlueShift, as well as "interstellar" scoped planet packs.
 
 ## Mod compatibility and support
 
-The **[mod compatibility]** page is quite outdated, but can still help to avoid some issues.
+The **[mod compatibility]** page may contain outdated information, but can still help to avoid some issues.
 
 Kerbalism does very custom stuff. This can break other mods. For a lot of mods that breaks or need balancing, we provide support code and configuration patches. However some mods are incompatible because there is too much feature overlap or support is too complex to implement.
+
+**SystemHeat users**: Kerbalism's SystemHeat extras (`KerbalismSystemHeatCore` / `KerbalismSystemHeatCompat`) are exclusive. Do **not** also install the upstream SystemHeat extras (`SystemHeatFissionEngines`, `SystemHeatFissionReactors`, `SystemHeatIonEngines`, `SystemHeatConverters`, `SystemHeatHarvesters`, `SystemHeatCryoTanks` / `SystemHeatBoiloff`, or the legacy `Kerbalism-SystemHeat`). Mixing both will double-patch parts. See [Extras/README.md](Extras/README.md) for details.
 
 ## Documentation, help and bug-reporting
 
@@ -86,7 +83,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 - Need **help** ?
 
-  Ask on **[Discord]** or in the **[KSP forums thread]**\
+  Ask on **[Discord]**\
   Also see [this short YouTube video](https://www.youtube.com/watch?v=eW9pW_839sw) about useful UI tips.
 
 - You **found a bug** ?
@@ -95,7 +92,7 @@ Kerbalism does very custom stuff. This can break other mods. For a lot of mods t
 
 - You want to **report a bug** ?
   - Install the [KSPBugReport] plugin and generate a bug report with it. Support requests that don't provide full logs and KSP database dumps are often ignored.
-  - Report it on [Github issues] (preferred) or in the [KSP forums thread] (we don't go there often).
+  - Report it on [Discord] (preferred) or on [Github issues].
 
 - You want to **contribute** or add support for your mod ?
   - Check the technical guide in the [Documentation]

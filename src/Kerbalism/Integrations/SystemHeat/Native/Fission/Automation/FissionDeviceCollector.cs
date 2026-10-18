@@ -19,7 +19,7 @@ namespace KERBALISM
 		{
 			foreach (Part part in v.parts)
 			{
-				SystemHeatFissionEngineKerbalismUpdater engineUpdater = part.FindModuleImplementing<SystemHeatFissionEngineKerbalismUpdater>();
+				SystemHeatFissionEngineKerbalismUpdater engineUpdater = part.FindModuleImplementingFast<SystemHeatFissionEngineKerbalismUpdater>();
 				if (engineUpdater != null)
 				{
 					PartModule engine = engineUpdater.FindEngineModule(part, engineUpdater.engineModuleID);
@@ -28,7 +28,7 @@ namespace KERBALISM
 					continue;
 				}
 
-				SystemHeatFissionReactorKerbalismUpdater reactorUpdater = part.FindModuleImplementing<SystemHeatFissionReactorKerbalismUpdater>();
+				SystemHeatFissionReactorKerbalismUpdater reactorUpdater = part.FindModuleImplementingFast<SystemHeatFissionReactorKerbalismUpdater>();
 				if (reactorUpdater == null)
 					continue;
 

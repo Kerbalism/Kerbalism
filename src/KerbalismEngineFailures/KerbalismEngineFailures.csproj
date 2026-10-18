@@ -4,7 +4,7 @@
     <FileVersion>$(Version)</FileVersion>
     <AssemblyName>KerbalismEngineFailures</AssemblyName>
     <RootNamespace>KERBALISM.EngineFailures</RootNamespace>
-    <TargetFramework>net481</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
 
     <Description>Optional Kerbalism companion mod for engine ignition, burn time, and turn-on failures.</Description>
     <Product>KerbalismEngineFailures</Product>
@@ -31,6 +31,11 @@
     <ProjectReference Include="..\Kerbalism\Kerbalism.csproj">
       <Private>false</Private>
     </ProjectReference>
+    <ModReference Include="KSPCommunityFixes">
+      <DLLPath>GameData/KSPCommunityFixes/Plugins/KSPCommunityFixes.dll</DLLPath>
+      <CKANIdentifier>KSPCommunityFixes</CKANIdentifier>
+      <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
+    </ModReference>
   </ItemGroup>
 
   <ItemGroup>

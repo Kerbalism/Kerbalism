@@ -47,6 +47,13 @@ namespace KERBALISM
 		public uint message;        // used to avoid sending messages multiple times
 		public double time_since;   // time since last execution, if interval > 0
 		public bool lifetime;       // is this a life time value or not
+
+		// None of the fields below are persisted.
+		// Cached Rule.BaseVariance() result. NaN means "not computed yet".
+		public double variance_base = double.NaN;
+		// The 2 fields below are kerbal stats the variance was derived from
+		public float variance_courage;
+		public float variance_stupidity;
 	}
 
 

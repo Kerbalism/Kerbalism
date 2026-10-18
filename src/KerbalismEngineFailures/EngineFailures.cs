@@ -464,7 +464,8 @@ namespace KERBALISM.EngineFailures
 
 				Apply(false);
 
-				part.FindModulesImplementing<Configure>().ForEach(k => k.DoConfigure());
+				foreach (Configure cfg in part.FindModulesImplementingReadOnly<Configure>())
+					cfg.DoConfigure();
 
 				Message.Post
 				(
@@ -638,7 +639,7 @@ namespace KERBALISM.EngineFailures
 
 			bool brokenState = false;
 			bool criticalState = false;
-			foreach (EngineFailures m in p.FindModulesImplementing<EngineFailures>())
+			foreach (EngineFailures m in p.FindModulesImplementingReadOnly<EngineFailures>())
 			{
 				brokenState |= m.broken;
 				criticalState |= m.critical;

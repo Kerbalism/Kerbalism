@@ -43,16 +43,25 @@ namespace KERBALISM
 			// Resolve home star / AU before converting pack "flux at 1 AU" into total luminosity (#829 / #1080)
 			ResolveHomeSystem();
 
+			// PostSpawnOrbit can update orbital elements before CelestialBody.position is synchronized (#1211).
+			var referenceBodies = new List<CelestialBody> { HomeBody };
+			foreach (SunData sd in suns)
+				referenceBodies.Add(sd.body);
+			var referencePositions = new BodyCache();
+			referencePositions.SetForOccluders(referenceBodies);
+			referencePositions.SetForUT(Planetarium.GetUniversalTime(), referenceBodies);
+			Vector3d homePosition = referencePositions.GetBodyPosition(HomeBody.flightGlobalsIndex);
+			double homeStarFluxAtAU = 0.0;
+
 			// calculate each sun total flux (must be done after the "suns" list is populated and AU is known)
 			foreach (SunData sd in suns)
 			{
 				sd.InitSolarFluxTotal();
 
-				// in some cases, weird Kopernicus (binary home stars ?) systems might imply a solar luminosity at home 
-				// that is higher than what is defined in PhysicsGlobals.SolarLuminosityAtHome.
-				// Can't remember what case exactly, if that code is causing issues,
-				// remove it and just always use PhysicsGlobals.SolarLuminosityAtHome
-				double distance = (HomeBody.position - sd.body.position).magnitude;
+				if (sd.body == HomeStar)
+					homeStarFluxAtAU = sd.SolarFlux(AU, false);
+
+				double distance = (homePosition - referencePositions.GetBodyPosition(sd.bodyIndex)).magnitude;
 				double sunSolarFluxAtHome = sd.SolarFlux(distance, false);
 				if (sunSolarFluxAtHome > 0.1)
 				{
@@ -60,10 +69,10 @@ namespace KERBALISM
 				}
 			}
 
-			// The above calculations will likely end up with a slightly lower SolarFluxAtHome than expected, correct if necessary.
-			if (SolarFluxAtHome < PhysicsGlobals.SolarLuminosityAtHome)
+			// Keep the home star's nominal reference as the floor, independent of Kopernicus' active star.
+			if (SolarFluxAtHome < homeStarFluxAtAU)
 			{
-				SolarFluxAtHome = PhysicsGlobals.SolarLuminosityAtHome;
+				SolarFluxAtHome = homeStarFluxAtAU;
 			}
 
 			// get scaled space planetary layer for physic raytracing

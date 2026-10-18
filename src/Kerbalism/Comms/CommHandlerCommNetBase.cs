@@ -160,15 +160,27 @@ namespace KERBALISM
 			// with Kerbalism's resource cache so an unpowered vessel can't act as a relay.
 			if (vd.IsSimulated && !Lib.IsPowered(__instance.Vessel))
 			{
+				// Remember only vessels we ourselves took offline for power, so a later
+				// restore does not force canComm on ships that were already unable to comm.
+				if (___canComm)
+					vd.CommNetPowerDisabled = true;
+
 				___canComm = false;
-				vd.CommNetPowerDisabled = true;
 				return;
 			}
 
-			vd.CommNetPowerDisabled = false;
-
-			if (!___canComm)
+			// Power is back. Stock often leaves unloaded canComm false after we forced it
+			// off, even when unloadedDoOnce triggers UpdateComm. Explicitly restore it so
+			// the vessel can rejoin CommNet without being focused (#1162).
+			if (vd.CommNetPowerDisabled)
+			{
+				___canComm = true;
+				vd.CommNetPowerDisabled = false;
+			}
+			else if (!___canComm)
+			{
 				return;
+			}
 
 			if (vd.EnvStormRadiation > 0.0)
 			{

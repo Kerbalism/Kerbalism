@@ -89,7 +89,7 @@ namespace KERBALISM
 				List<Part> parts = Lib.GetPartsRecursively(EditorLogic.RootPart);
 				foreach (var p in parts)
 				{
-					var habitat = p.FindModuleImplementing<Habitat>();
+					var habitat = p.FindModuleImplementingFast<Habitat>();
 					if (habitat != null) habitats.Add(habitat);
 				}
 			}
