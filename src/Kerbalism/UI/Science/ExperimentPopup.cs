@@ -280,21 +280,21 @@ namespace KERBALISM
 				if (subjectData.PercentRetrieved > 0.0)
 				{
 					sb.Append(" (");
-					sb.Append(Lib.Color(subjectData.PercentRetrieved.ToString("P0"), Lib.Kolor.Yellow, true));
+					sb.Append(Lib.Color(subjectData.PercentRetrieved.ToString("P2"), Lib.Kolor.Yellow, true));
 					sb.Append(")");
 				}
 
 				sb.Append("\n");
 				sb.Append(Local.SCIENCEARCHIVE_collected);//collected
 				sb.Append(" :<pos=20em>");
-				sb.Append(Lib.Color(subjectData.ScienceRetrievedInKSC.ToString("F1"), Lib.Kolor.Science, true));
+				sb.Append(Lib.Color(subjectData.ScienceRetrievedInKSC.ToString("F2"), Lib.Kolor.Science, true));
 				sb.Append(Lib.InlineSpriteScience);
 				sb.Append(" ");
 				sb.Append(Local.SCIENCEARCHIVE_inRnD);//in RnD
 				if (subjectData.ScienceCollectedInFlightValue > 0.05)
 				{
 					sb.Append(" (");
-					sb.Append(Lib.Color(Lib.BuildString("+", subjectData.ScienceCollectedInFlightValue.ToString("F1")), Lib.Kolor.Science, true));
+					sb.Append(Lib.Color(Lib.BuildString("+", subjectData.ScienceCollectedInFlightValue.ToString("F2")), Lib.Kolor.Science, true));
 					sb.Append(Lib.InlineSpriteScience);
 					sb.Append(" ");
 					sb.Append(Local.SCIENCEARCHIVE_inflight);//in flight)
@@ -303,7 +303,7 @@ namespace KERBALISM
 				sb.Append("\n");
 				sb.Append(Local.SCIENCEARCHIVE_value);//value
 				sb.Append(" :<pos=20em>");
-				sb.Append(Lib.Color(subjectData.ScienceMaxValue.ToString("F1"), Lib.Kolor.Science, true));
+				sb.Append(Lib.Color(subjectData.ScienceMaxValue.ToString("F2"), Lib.Kolor.Science, true));
 				sb.Append(Lib.InlineSpriteScience);
 			}
 
