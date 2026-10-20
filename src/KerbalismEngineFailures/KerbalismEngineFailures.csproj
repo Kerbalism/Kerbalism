@@ -48,7 +48,17 @@
       <KSP_Version_Max>1.12.99</KSP_Version_Max>
     </KSPVersionFile>
   </ItemGroup>
-
+  <ItemGroup>
+    <Reference Include="netstandard">
+	  <HintPath>$(KSPBT_GameRoot)/KSP_x64_Data/Managed/netstandard.dll</HintPath>
+      <Private>False</Private>
+	</Reference>
+	
+	<Reference Include="mscorlib">
+	  <HintPath>$(KSPBT_GameRoot)/KSP_x64_Data/Managed/mscorlib.dll</HintPath>
+      <Private>False</Private>
+	</Reference>
+  </ItemGroup>
   <Target Name="DeployGameDataToKsp" AfterTargets="KSPBT_CopyDLLsToPluginFolder"
           Condition=" '$(Kerbalism_DeployToKsp)' == 'true' And '$(KSPBT_GameRoot)' != '' ">
     <PropertyGroup>

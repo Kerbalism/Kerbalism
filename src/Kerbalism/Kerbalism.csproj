@@ -41,11 +41,6 @@
       <CKANIdentifier>Harmony2</CKANIdentifier>
       <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
     </ModReference>
-    <ModReference Include="KSPCommunityFixes">
-      <DLLPath>GameData/KSPCommunityFixes/Plugins/KSPCommunityFixes.dll</DLLPath>
-      <CKANIdentifier>KSPCommunityFixes</CKANIdentifier>
-      <KSPAssemblyVersion>0.0</KSPAssemblyVersion>
-    </ModReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -64,9 +59,21 @@
       <Generator>SettingsSingleFileGenerator</Generator>
     </None>
   </ItemGroup>
-
-  <Target Name="DeployGameDataToKsp" AfterTargets="KSPBT_CopyDLLsToPluginFolder"
-          Condition=" '$(Kerbalism_DeployToKsp)' == 'true' And '$(KSPBT_GameRoot)' != '' ">
+  <ItemGroup>
+    <Reference Include="Lingoona">
+      <HintPath>$(KSPBT_GameRoot)/KSP_x64_Data/Managed/Lingoona.dll</HintPath>
+    </Reference>
+    <Reference Include="netstandard">
+	  <HintPath>$(KSPBT_GameRoot)/KSP_x64_Data/Managed/netstandard.dll</HintPath>
+      <Private>False</Private>
+	</Reference>
+	
+	<Reference Include="mscorlib">
+	  <HintPath>$(KSPBT_GameRoot)/KSP_x64_Data/Managed/mscorlib.dll</HintPath>
+      <Private>False</Private>
+	</Reference>
+  </ItemGroup>
+  <Target Name="DeployGameDataToKsp" AfterTargets="KSPBT_CopyDLLsToPluginFolder" Condition=" '$(Kerbalism_DeployToKsp)' == 'true' And '$(KSPBT_GameRoot)' != '' ">
     <PropertyGroup>
       <_KspKerbalismDeployDir>$(KSPBT_GameRoot)/GameData/Kerbalism</_KspKerbalismDeployDir>
       <_KspKerbalismConfigDeployDir>$(KSPBT_GameRoot)/GameData/KerbalismConfig</_KspKerbalismConfigDeployDir>

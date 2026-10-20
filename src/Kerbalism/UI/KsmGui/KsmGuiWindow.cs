@@ -34,7 +34,7 @@ namespace KERBALISM.KsmGui
 
 			void Awake()
 			{
-				inputLockId = "KsmGuiInputLock:" + gameObject.GetInstanceID();
+				inputLockId = "KsmGuiInputLock:" + (int)(gameObject.GetEntityId().GetRawData() & 0xFFFFFFFFu);
 			}
 
 			public void OnPointerEnter(PointerEventData pointerEventData)

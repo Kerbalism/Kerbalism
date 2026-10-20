@@ -579,7 +579,7 @@ namespace KERBALISM
 			else
 			{
 				// if the part doesn't exist anymore (eg: removed, user hit undo)
-				if (GetInstanceID() == 0) return;
+				if ((int)(GetEntityId().GetRawData() & 0xFFFFFFFFu) == 0) return;
 			}
 
 			vessel_experiment_ids = CollectVesselExperimentIds();
