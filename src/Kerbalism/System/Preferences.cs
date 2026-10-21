@@ -443,9 +443,6 @@ namespace KERBALISM
 
 	public class PreferencesGeneral : GameParameters.CustomParameterNode
 	{
-		[GameParameters.CustomParameterUI("#KERBALISM_FreezeUnloadedSolarPanelExposure", toolTip = "#KERBALISM_FreezeUnloadedSolarPanelExposure_desc")]//Freeze Unloaded Solar Exposure--In-space vessels keep sunlit solar-panel exposure from the last realtime evaluation (loaded high-warp or unloaded). Low-warp shadow still zeros output; analytic still applies the orbit sunlight fraction. Disable to recalculate panel facing while unloaded or in analytic warp.
-		public bool freezeUnloadedSolarPanelExposure = true;
-
 		[GameParameters.CustomIntParameterUI("#KERBALISM_BackgroundVesselsFlight", minValue = 1, maxValue = 32, toolTip = "#KERBALISM_BackgroundVesselsFlight_desc")]//BG vessel evaluations / frame (flight)--Maximum number of unloaded vessels that get background processing on each physics tick while in flight.\nExtra vessels are only processed once they have piled up more than two minutes of unsimulated time, so this does nothing at low time warp.\nRaising it improves accuracy during fast warp, at the cost of framerate.
 		public int backgroundVesselsFlight = 2;
 
@@ -454,24 +451,7 @@ namespace KERBALISM
 
 		public override GameParameters.GameMode GameMode { get { return GameParameters.GameMode.ANY; } }
 
-		public override bool HasPresets { get { return true; } }
-
-		public override void SetDifficultyPreset(GameParameters.Preset preset)
-		{
-			switch (preset)
-			{
-				case GameParameters.Preset.Easy:
-				case GameParameters.Preset.Normal:
-					freezeUnloadedSolarPanelExposure = true;
-					break;
-				case GameParameters.Preset.Moderate:
-				case GameParameters.Preset.Hard:
-					freezeUnloadedSolarPanelExposure = false;
-					break;
-				default:
-					break;
-			}
-		}
+		public override bool HasPresets { get { return false; } }
 
 		public override string DisplaySection { get { return Local.Preferences_Section2; } }
 
