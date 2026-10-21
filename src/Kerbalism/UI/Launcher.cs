@@ -138,6 +138,8 @@ namespace KERBALISM
 				// store window geometry
 				win_rect = new Rect(left, top, width, height);
 
+				tooltip.Begin();
+
 				// begin window area
 				GUILayout.BeginArea(win_rect, Styles.win);
 

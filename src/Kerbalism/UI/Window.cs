@@ -127,6 +127,8 @@ namespace KERBALISM
 
 		void Draw_window(int _)
 		{
+			tooltip.Begin();
+
 			// render window title
 			GUILayout.BeginHorizontal(Styles.title_container);
 			GUILayout.Label(Textures.empty, Styles.left_icon);
