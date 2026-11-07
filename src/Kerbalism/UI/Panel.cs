@@ -94,6 +94,20 @@ namespace KERBALISM
 
 		public void AddContent(string label, string value = "", string tooltip = "", Action click = null, Action hover = null, Action rightClick = null)
 		{
+			AddEntry(label, value, tooltip, click, hover, rightClick, selectable: false, wrap: false);
+		}
+
+		/// <summary>
+		/// Adds a row that grows with wrapped value text. Used by the message log so
+		/// long science/transmission lines do not paint over the next entry (#1204).
+		/// </summary>
+		public void AddWrappingContent(string label, string value = "")
+		{
+			AddEntry(label, value, string.Empty, null, null, null, selectable: false, wrap: true);
+		}
+
+		void AddEntry(string label, string value, string tooltip, Action click, Action hover, Action rightClick, bool selectable, bool wrap)
+		{
 			Entry e = new Entry
 			{
 				label = label,
@@ -102,10 +116,12 @@ namespace KERBALISM
 				click = click,
 				hover = hover,
 				rightClick = rightClick,
-				selectable = false,
+				selectable = selectable,
+				wrap = wrap,
 				icons = new List<Icon>()
 			};
-			if (sections.Count > 0) {
+			if (sections.Count > 0)
+			{
 				Section section = sections[sections.Count - 1];
 				section.entries.Add(e);
 				section.needsSort = section.sort;
@@ -115,22 +131,7 @@ namespace KERBALISM
 		/// <summary>Adds an opt-in, whole-row selectable entry that can grow when its label wraps.</summary>
 		public void AddSelectableContent(string label, string value, string tooltip, Action click)
 		{
-			Entry e = new Entry
-			{
-				label = label,
-				value = value,
-				tooltip = tooltip,
-				click = click,
-				hover = null,
-				selectable = true,
-				icons = new List<Icon>()
-			};
-			if (sections.Count > 0)
-			{
-				Section section = sections[sections.Count - 1];
-				section.entries.Add(e);
-				section.needsSort = section.sort;
-			}
+			AddEntry(label, value, tooltip, click, null, null, selectable: true, wrap: false);
 		}
 
 		///<summary> Adds an icon to the last added header or content (doesn't support sections) </summary>
@@ -204,37 +205,10 @@ namespace KERBALISM
 				}
 				foreach (Entry e in p.entries)
 				{
-					// Selectable rows use the same fixed-height container as normal
-					// content so Height() matches layout (avoids bottom-row flicker).
-					GUILayout.BeginHorizontal(Styles.entry_container);
-					if (e.leftIcon != null)
-					{
-						GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
-						if (e.leftIcon.click != null && Lib.IsClicked())
-							callbacks.Add(e.leftIcon.click);
-					}
-					if (e.selectable)
-						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label_nowrap, GUILayout.Height(Styles.entry_label.fontSize));
+					if (e.wrap)
+						RenderWrappingEntry(e);
 					else
-						GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
-					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					if (e.selectable)
-						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Width(Styles.ScaleWidthFloat(20.0f)), GUILayout.Height(Styles.entry_value.fontSize));
-					else
-						GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
-					if (!e.selectable && e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
-					if (!e.selectable && e.rightClick != null && Lib.IsClicked(1))
-					{
-						callbacks.Add(e.rightClick);
-						Event.current.Use();
-					}
-					if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
-					foreach (Icon i in e.icons)
-					{
-						GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
-						if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
-					}
-					GUILayout.EndHorizontal();
+						RenderFixedEntry(e);
 
 					if (e.selectable)
 					{
@@ -269,6 +243,107 @@ namespace KERBALISM
 				foreach (Action func in callbacks) func();
 				callbacks.Clear();
 			}
+		}
+
+		void RenderFixedEntry(Entry e)
+		{
+			// Selectable rows use the same fixed-height container as normal
+			// content so Height() matches layout (avoids bottom-row flicker).
+			GUILayout.BeginHorizontal(Styles.entry_container);
+			if (e.leftIcon != null)
+			{
+				GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
+				if (e.leftIcon.click != null && Lib.IsClicked())
+					callbacks.Add(e.leftIcon.click);
+			}
+			if (e.selectable)
+				GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label_nowrap, GUILayout.Height(Styles.entry_label.fontSize));
+			else
+				GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label, GUILayout.Height(Styles.entry_label.fontSize));
+			if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
+			if (e.selectable)
+				GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Width(Styles.ScaleWidthFloat(20.0f)), GUILayout.Height(Styles.entry_value.fontSize));
+			else
+				GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value, GUILayout.Height(Styles.entry_value.fontSize));
+			if (!e.selectable && e.click != null && Lib.IsClicked()) callbacks.Add(e.click);
+			if (!e.selectable && e.rightClick != null && Lib.IsClicked(1))
+			{
+				callbacks.Add(e.rightClick);
+				Event.current.Use();
+			}
+			if (e.hover != null && Lib.IsHover()) callbacks.Add(e.hover);
+			foreach (Icon i in e.icons)
+			{
+				GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
+				if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
+			}
+			GUILayout.EndHorizontal();
+		}
+
+		void RenderWrappingEntry(Entry e)
+		{
+			float labelWidth;
+			float valueWidth;
+			float rowHeight;
+			MeasureWrappedEntry(e, out labelWidth, out valueWidth, out rowHeight);
+
+			// MinHeight (not Height) so a narrower column can still grow if the
+			// precomputed wrap used a slightly wider panel width.
+			GUILayout.BeginHorizontal(Styles.entry_container_wrap, GUILayout.MinHeight(rowHeight), GUILayout.MaxWidth(min_width));
+			if (e.leftIcon != null)
+			{
+				GUILayout.Label(new GUIContent(e.leftIcon.texture, e.leftIcon.tooltip), Styles.left_icon);
+				if (e.leftIcon.click != null && Lib.IsClicked())
+					callbacks.Add(e.leftIcon.click);
+			}
+			if (!string.IsNullOrEmpty(e.label))
+				GUILayout.Label(new GUIContent(e.label, e.tooltip), Styles.entry_label_wrap, GUILayout.Width(labelWidth));
+			// A wrapping label inside a horizontal group needs a bounded width.
+			// The inner vertical group takes the remaining column and wraps there.
+			GUILayout.BeginVertical(GUILayout.MaxWidth(valueWidth));
+			GUILayout.Label(new GUIContent(e.value, e.tooltip), Styles.entry_value_wrap);
+			GUILayout.EndVertical();
+			foreach (Icon i in e.icons)
+			{
+				GUILayout.Label(new GUIContent(i.texture, i.tooltip), Styles.right_icon);
+				if (i.click != null && Lib.IsClicked()) callbacks.Add(i.click);
+			}
+			GUILayout.EndHorizontal();
+			GUILayout.Space(Styles.ScaleFloat(4.0f));
+		}
+
+		float WrappedEntryHeight(Entry e)
+		{
+			float labelWidth;
+			float valueWidth;
+			float rowHeight;
+			MeasureWrappedEntry(e, out labelWidth, out valueWidth, out rowHeight);
+			return rowHeight + Styles.ScaleFloat(4.0f);
+		}
+
+		void MeasureWrappedEntry(Entry e, out float labelWidth, out float valueWidth, out float rowHeight)
+		{
+			float contentWidth = Math.Max(1.0f, min_width - Styles.ScaleWidthFloat(20.0f));
+			if (e.leftIcon != null)
+				contentWidth = Math.Max(1.0f, contentWidth - Styles.ScaleFloat(16.0f));
+			if (e.icons != null)
+				contentWidth = Math.Max(1.0f, contentWidth - e.icons.Count * Styles.ScaleFloat(24.0f));
+
+			labelWidth = 0.0f;
+			if (!string.IsNullOrEmpty(e.label))
+			{
+				labelWidth = Styles.entry_label_wrap.CalcSize(new GUIContent(e.label)).x;
+				labelWidth = Math.Min(labelWidth, contentWidth * 0.45f);
+			}
+
+			valueWidth = Math.Max(1.0f, contentWidth - labelWidth);
+			float labelHeight = string.IsNullOrEmpty(e.label)
+				? 0.0f
+				: Styles.entry_label_wrap.CalcHeight(new GUIContent(e.label), Math.Max(1.0f, labelWidth));
+			float valueHeight = string.IsNullOrEmpty(e.value)
+				? 0.0f
+				: Styles.entry_value_wrap.CalcHeight(new GUIContent(e.value), valueWidth);
+			rowHeight = Math.Max(Styles.entry_container.fixedHeight, Math.Max(labelHeight, valueHeight));
 		}
 
 		void RenderSectionTitle(Section section)
@@ -306,7 +381,10 @@ namespace KERBALISM
 				h += Styles.ScaleFloat(34.0f);
 				foreach (Entry e in p.entries)
 				{
-					h += Styles.entry_container.fixedHeight;
+					if (e.wrap)
+						h += WrappedEntryHeight(e);
+					else
+						h += Styles.entry_container.fixedHeight;
 					if (e.selectable)
 						h += Styles.ScaleFloat(4.0f);
 				}
@@ -419,6 +497,7 @@ namespace KERBALISM
 			public Action rightClick;
 			public Action hover;
 			public Boolean selectable;
+			public Boolean wrap;
 			public List<Icon> icons;
 			public Icon leftIcon;
 		}
