@@ -948,6 +948,7 @@ namespace KERBALISM
 			isSerenityGroundController = Lib.ConfigValue(node, "isGroundCtrl", false);
 
 			deviceTransmit = Lib.ConfigValue(node, "deviceTransmit", true);
+			CommNetPowerDisabled = Lib.ConfigValue(node, "commNetPowerDisabled", false);
 
 			// Keep the existing key for save compatibility. It now specifically stores
 			// the high-warp/full-period exposure metric.
@@ -1107,6 +1108,7 @@ namespace KERBALISM
 			node.AddValue("isGroundCtrl", isSerenityGroundController);
 
 			node.AddValue("deviceTransmit", deviceTransmit);
+			node.AddValue("commNetPowerDisabled", CommNetPowerDisabled);
 
 			node.AddValue("solarPanelsAverageAnalyticExposure", solarPanelsAverageHighWarpExposure);
 			node.AddValue("scienceTransmitted", scienceTransmitted);
