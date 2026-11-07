@@ -165,13 +165,38 @@ namespace KERBALISM
 			foreach (ConfigureSetup setup in setups)
 			{
 				// if unlocked
-				if (setup.tech.Length == 0 || Lib.HasTech(setup.tech))
+				if (IsUnlocked(setup))
 				{
 					// unlock
 					unlockedSetups.Add(setup);
 				}
 			}
 			return unlockedSetups;
+		}
+
+		public static bool IsUnlocked(ConfigureSetup setup)
+		{
+			return setup.tech.Length == 0 || Lib.HasTech(setup.tech);
+		}
+
+		/// <summary>
+		/// Get the display name of a technology.
+		/// Non-stock technologies may return empty titles, in which case the tech id is used.
+		/// </summary>
+		public static string TechTitle(string tech_id)
+		{
+			// this works in KSP 1.6
+			string tech_title = Localizer.Format(ResearchAndDevelopment.GetTechnologyTitle(tech_id));
+			tech_title = !string.IsNullOrEmpty(tech_title) ? tech_title : tech_id;
+
+			// this seems to have worked for KSP < 1.6
+			if (tech_title.StartsWith("#", StringComparison.Ordinal))
+				tech_title = Localizer.Format(ResearchAndDevelopment.GetTechnologyTitle(tech_id.ToLower()));
+
+			// safeguard agains having #autoloc_1234 texts in the UI
+			if (tech_title.StartsWith("#", StringComparison.Ordinal)) tech_title = tech_id;
+
+			return tech_title;
 		}
 
 		public List<IConfigurable> GetIConfigurableModules()
@@ -226,7 +251,7 @@ namespace KERBALISM
 				active &= enabled;
 
 				// fix issue #949 : re-detect if setup is allowed due to tech restrictions
-				active &= setup.tech.Length == 0 || Lib.HasTech(setup.tech);
+				active &= IsUnlocked(setup);
 
 				// detect if the setup was previously selected in multiple slots
 				int prev_count = (prev_selected.FindAll(x => x == setup.name)).Count;
@@ -498,19 +523,7 @@ namespace KERBALISM
 				string tech_id = pair.Key;
 				List<string> setup_titles = pair.Value;
 
-				// get tech title
-				// note: non-stock technologies will return empty titles, so we use tech-id directly in that case
-
-				// this works in KSP 1.6
-				string tech_title = Localizer.Format(ResearchAndDevelopment.GetTechnologyTitle(tech_id));
-				tech_title = !string.IsNullOrEmpty(tech_title) ? tech_title : tech_id;
-
-				// this seems to have worked for KSP < 1.6
-				if (tech_title.StartsWith("#", StringComparison.Ordinal))
-					tech_title = Localizer.Format(ResearchAndDevelopment.GetTechnologyTitle(tech_id.ToLower()));
-
-				// safeguard agains having #autoloc_1234 texts in the UI
-				if (tech_title.StartsWith("#", StringComparison.Ordinal)) tech_title = tech_id;
+				string tech_title = TechTitle(tech_id);
 
 				// add tech name
 				//specs.Add(string.Empty);
@@ -600,14 +613,18 @@ namespace KERBALISM
 				if (expandedSlot >= 0 && selected_i != expandedSlot) continue;
 
 				// find index in unlocked setups
-				for (int setup_i = 0; setup_i < unlocked.Count; ++setup_i)
+				int setup_i = unlocked.FindIndex(k => k.name == selected[selected_i]);
+				if (setup_i >= 0)
 				{
-					if (unlocked[setup_i].name == selected[selected_i])
-					{
-						// commit panel
-						Render_panel(p, unlocked[setup_i], selected_i, setup_i);
-					}
+					Render_panel(p, unlocked[setup_i], selected_i, setup_i);
+					continue;
 				}
+
+				// a setup that requires unresearched tech can be selected when loading a craft made in another save,
+				// render it too so that it can be swapped for an unlocked one
+				ConfigureSetup lockedSetup = setups.Find(k => k.name == selected[selected_i]);
+				if (lockedSetup != null)
+					Render_panel(p, lockedSetup, selected_i, -1);
 			}
 
 			// set metadata
@@ -618,6 +635,7 @@ namespace KERBALISM
 			p.ScrollOnlyOnOverflow();
 		}
 
+		/// <param name="setup_i">index of the setup in the unlocked setups, -1 if the setup is locked</param>
 		void Render_panel(Panel p, ConfigureSetup setup, int selected_i, int setup_i)
 		{
 			// generate details, just once
@@ -625,11 +643,15 @@ namespace KERBALISM
 			//       see comment inside generate_details() to understand why this was necessary instead
 			setup.Generate_details(this);
 
-			bool canReconfigure = unlocked.Count > selected.Count;
+			bool isLocked = setup_i < 0;
+			// a locked setup can always be swapped for any unlocked one
+			bool canReconfigure = isLocked ? unlocked.Count > 0 : unlocked.Count > selected.Count;
 			bool isExpanded = canReconfigure && expanded_slots.Contains(selected_i);
 			string setupTitle = Localizer.Format(setup.title);
-			string setupDesc = Localizer.Format(setup.desc);
-			string titleColor = SetupHighlightColor(setup, selected_i);
+			string setupDesc = isLocked
+				? Lib.Color(Local.Module_Configure_requires.Format(TechTitle(setup.tech)), Lib.Kolor.Orange)
+				: Localizer.Format(setup.desc);
+			string titleColor = isLocked ? Lib.KolorToHex(Lib.Kolor.Orange) : SetupHighlightColor(setup, selected_i);
 			string titleText = Lib.Ellipsis(setupTitle, Styles.ScaleStringLength(70));
 			if (titleColor != null)
 			{
@@ -724,7 +746,8 @@ namespace KERBALISM
 			{
 				if (i == currentSlot) continue;
 				ConfigureSetup other = setups.Find(k => k.name == selected[i]);
-				if (other == null) continue;
+				// locked setups are never active, so they don't conflict with anything
+				if (other == null || !IsUnlocked(other)) continue;
 				if (other.name == setup.name) return true;
 				if (experimentIds.Count > 0 && SetupOverlapsExperimentIds(other, experimentIds)) return true;
 			}
@@ -780,8 +803,7 @@ namespace KERBALISM
 					foreach (string selectedName in other.selected)
 					{
 						ConfigureSetup selectedSetup = other.setups?.Find(k => k.name == selectedName);
-						if (selectedSetup == null
-							|| (selectedSetup.tech.Length > 0 && !Lib.HasTech(selectedSetup.tech)))
+						if (selectedSetup == null || !IsUnlocked(selectedSetup))
 							continue;
 
 						foreach (string experimentId in SetupExperimentIds(selectedSetup))
