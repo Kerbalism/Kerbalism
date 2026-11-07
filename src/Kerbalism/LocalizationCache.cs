@@ -757,6 +757,8 @@ namespace KERBALISM
 		public static string Module_Configure_Reconfigure = GetLoc("Module_Configure_Reconfigure"); // "Reconfigure"
 		public static string Module_Configure_Setups = GetLoc("Module_Configure_Setups"); // "Setups:"
 		public static ParamString Module_Configure_techAt = new ParamString("Module_Configure_techAt"); // "at <<1>>"
+		public static ParamString Module_Configure_requires = new ParamString("Module_Configure_requires"); // "Requires <<1>>"
+		public static ParamString Module_Configure_lockedSetups = new ParamString("Module_Configure_lockedSetups"); // "replace setups that need unresearched tech: <<1>>"
 		public static string Module_Configurable = GetLoc("Module_Configurable"); // "Configurable"
 		public static string Module_Emitter = GetLoc("Module_Emitter"); // "Emitter"
 		public static string Module_Resources = GetLoc("Module_Resources"); // "Resources"
