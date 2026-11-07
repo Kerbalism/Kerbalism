@@ -195,12 +195,15 @@ namespace KERBALISM
 
 		public static void SetupPods()
 		{
-			// add supply resources to all pods
-			foreach (AvailablePart p in PartLoader.LoadedPartsList)
+			using (ResourceChangeBatch.Begin())
 			{
-				foreach (Supply supply in supplies)
+				// add supply resources to all pods
+				foreach (AvailablePart p in PartLoader.LoadedPartsList)
 				{
-					supply.SetupPod(p);
+					foreach (Supply supply in supplies)
+					{
+						supply.SetupPod(p);
+					}
 				}
 			}
 		}
