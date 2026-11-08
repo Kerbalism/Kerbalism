@@ -434,7 +434,11 @@ namespace KERBALISM
 			PartResource res;
 			public override double Amount { get => res.amount; set => res.amount = value; }
 			public override double MaxAmount { get => res.maxAmount; set => res.maxAmount = value; }
-			public override bool FlowState { get => res.flowState; set => res.flowState = value; }
+			public override bool FlowState
+			{
+				get => res.flowState;
+				set => ResourceChangeBatch.SetFlowState(res, value);
+			}
 
 			public LoadedResource(PartResource res) => this.res = res;
 		}

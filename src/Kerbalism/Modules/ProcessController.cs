@@ -33,7 +33,7 @@ namespace KERBALISM
 			set
 			{
 				if (pseudoResource != null)
-					pseudoResource.flowState = value;
+					ResourceChangeBatch.SetFlowState(pseudoResource, value);
 			}
 		}
 
@@ -78,6 +78,12 @@ namespace KERBALISM
 			if (Lib.DisableScenario(this))
 				return;
 
+			using (ResourceChangeBatch.Begin())
+				StartBatched();
+		}
+
+		private void StartBatched()
+		{
 			// configure on start, must be executed with enabled true on parts first load.
 			Configure(true, 1);
 
