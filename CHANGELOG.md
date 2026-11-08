@@ -1,3 +1,27 @@
+## v3.44 for KSP 1.12.x
+
+ - 2026-11-08
+
+ ### Changes since the last release
+ * Added: Validate Configure setups before RP-1 vessel integration and report setups that require unresearched technology (#1237, @siimav)
+ * Fixed: ModuleManager patch conditions for SystemHeat, KerbalAtomics, SSTU, Sterling Systems, and process module cleanup (#1217, #1218, #1219, @sparr)
+ * Fixed: RDK radiation patches failing to remove stock radiation values (#1220, @sparr)
+ * Fixed: Vessels being marked as simulated before their first evaluation, which could disrupt life support (@R-T-B)
+ * Fixed: Excessive atmospheric harvesting rates with SpaceDust (#1221, @Aebestach)
+ * Fixed: SCANsat full-drive warnings ignoring the vessel's battery notification setting (#1223, @Aebestach)
+ * Fixed: Restore experiment consumables on craft recovered by KCT, including craft already in storage (#1225, @Aebestach)
+ * Fixed: EVA habitat setup aborting on incomplete DLC suit prefabs (#957, #1174, @Aebestach)
+ * Fixed: SystemHeat cryotank boiloff temperature and state across reloads (#1202, #1228, @Aebestach)
+ * Fixed: Incorrect reference solar flux when Kopernicus relocates the homeworld through PostSpawnOrbit (#1224, @Aebestach)
+ * Fixed: CryoTanks resource conversion rates and liquid-hydrogen fuel cell balance (#1227, @Aebestach, @DangerNoodle9000)
+ * Fixed: CommNet power state persistence across save and load (#1239, @Aebestach)
+ * Fixed: Allow Configure setups from imported craft to be replaced when their required technology is still locked (#1236, @siimav)
+ * Changed: Localized background vessel processing settings and tooltips (#1231, @Aebestach)
+ * Changed: Translated the new Configure technology warnings across all supported languages (#1240, @Aebestach)
+ * Changed: Base the analytic mode threshold on the vessel's orbital period or the body's solar day (#1229, @siimav)
+ * Changed: Show up to two decimal places in the experiment popup (#1232, @Clayell)
+ * Optimized: Reuse per-step resource update collections and bind module update callbacks to reduce allocations (#1215, Matt Chambers)
+
 ## v3.43 for KSP 1.12.x
 
  - 2026-09-27
