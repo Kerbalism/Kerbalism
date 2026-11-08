@@ -180,6 +180,48 @@ namespace KERBALISM
 		}
 
 		/// <summary>
+		/// Checks that no selected setup requires a technology that hasn't been researched yet.
+		/// Such selections can come from craft files made in another save.
+		/// Called from RP-1 through reflection before a vessel is integrated.
+		/// RP-1 looks the method up by name and exact signature, so don't rename it or change its parameters.
+		/// </summary>
+		/// <param name="validationError">description of the problem, null if validation passed</param>
+		/// <param name="canBeResolved">always false, the setups have to be changed by the player</param>
+		/// <param name="costToResolve">always 0</param>
+		/// <param name="techToResolve">id of a technology required by one of the locked setups</param>
+		/// <returns>true if all selected setups are unlocked</returns>
+		public bool Validate(out string validationError, out bool canBeResolved, out float costToResolve, out string techToResolve)
+		{
+			validationError = null;
+			canBeResolved = false;
+			costToResolve = 0f;
+			techToResolve = null;
+
+			if (setups == null || selected == null || !enabled)
+				return true;
+
+			List<string> lockedSetupTitles = null;
+			foreach (ConfigureSetup setup in setups)
+			{
+				if (!selected.Contains(setup.name) || IsUnlocked(setup))
+					continue;
+
+				if (lockedSetupTitles == null)
+					lockedSetupTitles = new List<string>();
+
+				lockedSetupTitles.Add(Lib.BuildString(Localizer.Format(setup.title), " (", TechTitle(setup.tech), ")"));
+				if (techToResolve == null)
+					techToResolve = setup.tech;
+			}
+
+			if (lockedSetupTitles == null)
+				return true;
+
+			validationError = Local.Module_Configure_lockedSetups.Format(string.Join(", ", lockedSetupTitles.ToArray()));
+			return false;
+		}
+
+		/// <summary>
 		/// Get the display name of a technology.
 		/// Non-stock technologies may return empty titles, in which case the tech id is used.
 		/// </summary>
