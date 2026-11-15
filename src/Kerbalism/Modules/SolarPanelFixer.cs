@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 
@@ -78,8 +79,14 @@ namespace KERBALISM
 		/// </summary>
 		[KSPField(isPersistant = true)]
 		public FloatCurve timeEfficCurve;
-		private static FloatCurve teCurve = null;
 		private bool prefabDefinesTimeEfficCurve = false;
+
+		/// <summary>
+		/// Parsed timeEfficCurve of unloaded panels, keyed by the "timeEfficCurve" node of the proto module.
+		/// Parsing a curve allocates, so it is done once per node instead of on every background update.
+		/// Entries are dropped automatically when the node is garbage collected.
+		/// </summary>
+		private static readonly ConditionalWeakTable<ConfigNode, FloatCurve> protoTimeEfficCurves = new ConditionalWeakTable<ConfigNode, FloatCurve>();
 
 		/// <summary>UT of part creation in flight, used to evaluate the timeEfficCurve</summary>
 		[KSPField(isPersistant = true)]
@@ -202,11 +209,6 @@ namespace KERBALISM
 				Local.SolarPanelFixer_Selecttrackedstar,//"Select Tracked Star"
 				UISkinManager.GetSkin("MainMenuSkin"),
 				options), false, UISkinManager.GetSkin("MainMenuSkin"));
-		}
-
-		public override void OnAwake()
-		{
-			if (teCurve == null) teCurve = new FloatCurve();
 		}
 
 		public override void OnLoad(ConfigNode node)
@@ -844,9 +846,10 @@ namespace KERBALISM
 			}
 
 			// get wear factor (output degradation with time)
-			if (m.moduleValues.HasNode("timeEfficCurve"))
+			ConfigNode teCurveNode = m.moduleValues.GetNode("timeEfficCurve");
+			if (teCurveNode != null)
 			{
-				teCurve.Load(m.moduleValues.GetNode("timeEfficCurve"));
+				FloatCurve teCurve = GetProtoTimeEfficCurve(teCurveNode);
 				double launchUT = Lib.Proto.GetDouble(m, "launchUT");
 				efficiencyFactor *= Lib.Clamp(teCurve.Evaluate((float)((Planetarium.GetUniversalTime() - launchUT) / 3600.0)), 0.0, 1.0);
 			}
@@ -1036,20 +1039,42 @@ namespace KERBALISM
 			return ((Vector3d)(worldRot * partLocalDir)).normalized;
 		}
 
-		static bool TryGetProtoVector3Components(ProtoPartModuleSnapshot m, string prefix, out Vector3 value)
+		/// <summary>
+		/// Return the parsed curve for a proto module "timeEfficCurve" node, parsing it on first use only.
+		/// The node content must not be modified after the first call.
+		/// </summary>
+		static FloatCurve GetProtoTimeEfficCurve(ConfigNode node)
+		{
+			if (!protoTimeEfficCurves.TryGetValue(node, out FloatCurve curve))
+			{
+				curve = new FloatCurve();
+				curve.Load(node);
+				protoTimeEfficCurves.Add(node, curve);
+			}
+			return curve;
+		}
+
+		/// <summary>Read a vector saved as three scalar values. False if a component is missing or the vector is zero.</summary>
+		static bool TryGetProtoVector3Components(ProtoPartModuleSnapshot m, string nameX, string nameY, string nameZ, out Vector3 value)
 		{
 			value = Vector3.zero;
-			if (m?.moduleValues == null
-				|| !m.moduleValues.HasValue(prefix + "X")
-				|| !m.moduleValues.HasValue(prefix + "Y")
-				|| !m.moduleValues.HasValue(prefix + "Z"))
+			if (m?.moduleValues == null)
 				return false;
 
-			value = new Vector3(
-				(float)Lib.Proto.GetDouble(m, prefix + "X"),
-				(float)Lib.Proto.GetDouble(m, prefix + "Y"),
-				(float)Lib.Proto.GetDouble(m, prefix + "Z"));
+			string x = m.moduleValues.GetValue(nameX);
+			string y = m.moduleValues.GetValue(nameY);
+			string z = m.moduleValues.GetValue(nameZ);
+			if (x == null || y == null || z == null)
+				return false;
+
+			value = new Vector3((float)ParseProtoDouble(x), (float)ParseProtoDouble(y), (float)ParseProtoDouble(z));
 			return value.sqrMagnitude > 1e-8f;
+		}
+
+		/// <summary>Parse a saved double. Unparsable, NaN and infinite values give zero.</summary>
+		static double ParseProtoDouble(string s)
+		{
+			return double.TryParse(s, out double v) && !double.IsNaN(v) && !double.IsInfinity(v) ? v : 0.0;
 		}
 
 		static bool TryGetProtoPanelOrientation(Vessel v, ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot m, bool isTracking, out Vector3d pivotWorld, out Vector3d normalWorld)
@@ -1060,8 +1085,8 @@ namespace KERBALISM
 			if (!Lib.Proto.GetBool(m, "hasPanelOrientation"))
 				return false;
 
-			bool hasPivot = TryGetProtoVector3Components(m, "panelPivotPartLocal", out Vector3 pivotLocal);
-			bool hasNormal = TryGetProtoVector3Components(m, "panelNormalPartLocal", out Vector3 normalLocal);
+			bool hasPivot = TryGetProtoVector3Components(m, "panelPivotPartLocalX", "panelPivotPartLocalY", "panelPivotPartLocalZ", out Vector3 pivotLocal);
+			bool hasNormal = TryGetProtoVector3Components(m, "panelNormalPartLocalX", "panelNormalPartLocalY", "panelNormalPartLocalZ", out Vector3 normalLocal);
 			if (isTracking)
 			{
 				if (!hasPivot)
