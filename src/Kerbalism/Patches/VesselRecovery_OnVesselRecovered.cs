@@ -164,9 +164,9 @@ namespace KERBALISM
 					RecoveryWidgetData entry = new RecoveryWidgetData(
 						subject.RnDSubject,
 						(float)scienceCredited,
-						Lib.BuildString(subject.ScienceMaxValue.ToString("F1"), " ", "subject value"),
-						Lib.BuildString(subject.ScienceRetrievedInKSC.ToString("F1"), " ", "in RnD"),
-						Lib.BuildString(scienceCredited.ToString("+0.0"), " ", "earned"));
+						Lib.BuildString(subject.ScienceMaxValue.ToString("F2"), " ", "subject value"),
+						Lib.BuildString(subject.ScienceRetrievedInKSC.ToString("F2"), " ", "in RnD"),
+						Lib.BuildString(scienceCredited.ToString("+0.00"), " ", "earned"));
 
 					recoveryScienceWidgets.Add(entry);
 				}
